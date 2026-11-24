@@ -27,7 +27,7 @@ import { registerCadHost } from './hosts';
 /** What holds an aimed point that no object snap took: the ortho line from the base (on, or Shift held), a polar angle from the base, or a tracking guide through an acquired point. */
 export type AimLock = 'ortho' | 'polar' | 'tracking' | 'parallel' | 'tangent';
 
-export interface Aimed { point: Vec2; kind: 'point' | 'grid' | 'free'; mode?: SnapMode; guides: Guide[]; lock?: AimLock; /** The drafted shape the object snap took the point from (its id), when it is one. */ shapeId?: string; /** With a parallel or tangent lock: the drafted side or curve that holds it. */ to?: Ref }
+export interface Aimed { point: Vec2; kind: 'point' | 'grid' | 'free'; mode?: SnapMode; guides: Guide[]; lock?: AimLock; /** The drafted shape the object snap took the point from (its id), when it is one. */ shapeId?: string; /** With a parallel or tangent lock: the drafted side or curve that holds it. */ to?: Ref; /** An object snap at a point of its own (an end, a middle, a crossing), not slid along a line: what is placed along a wall goes there exactly (forum topic 226). */ exact?: boolean }
 
 /**
  * The aim's rule, with the snap already found: an object snap (other than
@@ -59,7 +59,7 @@ export function resolveAim(raw: Vec2, c: AimInput): Aimed {
   }
   const { base, snap: s, tol } = c;
   const ortho = c.ortho && !!base;
-  if (s && !isLineSnap(s)) return { point: s.point, kind: 'point', mode: s.mode, guides: [] };
+  if (s && !isLineSnap(s)) return { point: s.point, kind: 'point', mode: s.mode, guides: [], exact: true };
   // Guide lines: the orthogonal lines through acquired points (and the base), the polar angles.
   const pool = base ? [...c.acquired, base] : c.acquired;
   if (ortho && base) {
@@ -179,6 +179,8 @@ export function useCadCanvas(o: {
   scale: number;
   /** Anything selectable under a point (the view's own picking). */
   pickAny: (p: Vec2) => string | null;
+  /** A model element under a point, drafting and annotations left out. */
+  pickModel?: (p: Vec2) => string | null;
   /** An element's outline in this view (a plan's modelling lines), for previews and the move's ghost. */
   outlines?: (id: string) => Shape[];
   /** Everything selectable a region takes (the command line's WP and CP). */
@@ -219,6 +221,8 @@ export function useCadCanvas(o: {
   scaleRef.current = o.scale;
   const pickRef = useRef(o.pickAny);
   pickRef.current = o.pickAny;
+  const pickModelRef = useRef(o.pickModel);
+  pickModelRef.current = o.pickModel;
   const outlinesRef = useRef(o.outlines);
   outlinesRef.current = o.outlines;
   const regionRef = useRef(o.inRegion);
@@ -250,6 +254,7 @@ export function useCadCanvas(o: {
         return out.sort((a, b) => a.d - b.d);
       },
       pickAny: (p) => pickRef.current(p),
+      pickModel: (p) => pickModelRef.current?.(p) ?? null,
       pickLevel: (p) => levelLineAt(p, 8 / scaleRef.current, marks),
       shapeOf: (id) => drafts.get(id)?.[0] ?? null,
       outlinesOf: (id) => {

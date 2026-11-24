@@ -64,6 +64,27 @@ public sealed class ElementEditTests
     }
 
     [Fact]
+    public void A_wall_split_beside_a_T_is_cut_exactly_where_clicked_and_keeps_its_T()
+    {
+        // Forum topic 248: the cut clicked on the corner of a wall that stops on this one (its face's endpoint) went in
+        // half a face lower, the T worked out again as a corner that pulled the cut to it.
+        var f = F();
+        var v = f.Wall(0, -3, 0, 3);
+        var h = f.Wall(0, 0, 5, 0);
+        var t = f.Session.Catalog.Get<IPathElements>()!.FrameOf(f.Model.Get(v)!, f.Model)!.Thickness;
+        Assert.Equal("T", (string?)Joins.Between(f.Model, v, h)!.Attrs!["kind"]);
+
+        var second = Ids(f.Run("element.split", new JsonObject { ["id"] = v, ["at"] = P(t / 2, t / 2) }))[1];
+        Near(0, -3, S(f, v)); Near(0, t / 2, E(f, v));
+        Near(0, t / 2, S(f, second)); Near(0, 3, E(f, second));
+        // The wall that stopped on it still stops on the part it meets, where it was.
+        var tee = Joins.Between(f.Model, v, h)!;
+        Assert.Equal("T", (string?)tee.Attrs!["kind"]);
+        Near(0, 0, S(f, h)); Near(5, 0, E(f, h));
+        Assert.NotNull(Joins.Between(f.Model, v, second));
+    }
+
+    [Fact]
     public void A_split_hands_the_far_ends_joins_to_the_second_part_and_refuses_a_cut_through_a_door()
     {
         var f = F();

@@ -352,6 +352,37 @@ public class JoinModelTests
     }
 
     [Fact]
+    public void Join_walls_carries_two_walls_that_do_not_reach_each_other_on_to_their_corner_or_onto_the_wall_they_stop_at()
+    {
+        // Forum topic 249: Join walls on two walls apart, as Revit's trim/extend to corner.
+        var f = new Fixture();
+        var a = f.Wall(0, 0, 0, 3);
+        var b = f.Wall(2, 4, 6, 4);
+        Assert.Empty(JoinRels(f));
+        // Without extend, as before: too far apart.
+        Assert.Throws<CommandException>(() => f.Run("architecture.joinWalls", new JsonObject { ["a"] = a, ["b"] = b }));
+        var r = f.Run("architecture.joinWalls", new JsonObject { ["a"] = a, ["b"] = b, ["extend"] = true })!;
+        Assert.Equal("L", (string?)r["kind"]);
+        Assert.Equal(new Vec2(0, 4), Joins.End(Get(f, a)));
+        Assert.Equal(new Vec2(0, 4), Joins.Start(Get(f, b)));
+        Assert.Equal(new Vec2(6, 4), Joins.End(Get(f, b)));
+        Assert.Single(JoinRels(f));
+
+        // A wall stopping short of another's run is carried on to it: a T, the other left whole.
+        var c = f.Wall(3, 0.5, 3, 2.5);
+        r = f.Run("architecture.joinWalls", new JsonObject { ["a"] = b, ["b"] = c, ["extend"] = true })!;
+        Assert.Equal("T", (string?)r["kind"]);
+        Assert.Equal(new Vec2(3, 4), Joins.End(Get(f, c)));
+        Assert.Equal(new Vec2(0, 4), Joins.Start(Get(f, b)));
+        Assert.Equal(new Vec2(6, 4), Joins.End(Get(f, b)));
+
+        // Parallel and apart, not in line: still refused.
+        var d = f.Wall(8, 0, 8, 3);
+        var e = Assert.Throws<CommandException>(() => f.Run("architecture.joinWalls", new JsonObject { ["a"] = a, ["b"] = d, ["extend"] = true }));
+        Assert.Contains("not in line", e.Message);
+    }
+
+    [Fact]
     public void Deleting_a_wall_drops_its_joins_and_squares_the_wall_it_left()
     {
         var f = new Fixture();

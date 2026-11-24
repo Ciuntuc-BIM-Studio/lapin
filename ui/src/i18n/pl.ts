@@ -5048,6 +5048,8 @@ export const PL: Record<string, string> = {
   "Place from catalogue…": "Wstaw z katalogu…",
   "All types": "Wszystkie typy",
   "Join walls": "Połącz ściany",
+  "Join walls: click the first wall, then the wall to join it to · Enter finishes": "Połącz ściany: kliknij pierwszą ścianę, potem ścianę, z którą ją połączyć · Enter kończy",
+  "Click the wall to join it to: both are carried on to where they meet · Esc cancels": "Kliknij ścianę, z którą ją połączyć: obie zostaną przedłużone do miejsca spotkania · Esc anuluje",
   "Join linework": "Połącz linie",
   "Trim linework": "Przytnij linie",
   "Extend linework": "Wydłuż linie",

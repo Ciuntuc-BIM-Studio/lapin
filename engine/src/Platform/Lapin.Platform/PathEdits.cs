@@ -322,7 +322,9 @@ public static class PathEdits
 
         if (ctx.Services.Get<IPathElements>() is { } paths)
         {
-            Joins.Refresh(ctx, paths, [e.Id, second.Id]);
+            // The joins at the far ends are worked out again; one that meets a part along its run (a T it carries, a crossing)
+            // stays as it was: worked out again, a T near the cut became a corner that pulled the cut to it (forum topic 248).
+            Joins.Refresh(ctx, paths, [e.Id, second.Id], r => Mine(r, r.Relating == second.Id || r.Related.Contains(second.Id) ? second.Id : e.Id) != "ATPATH");
             // The two parts meet in line at the cut, as one element did.
             try { Joins.Join(ctx, paths, ctx.Model.Get(e.Id)!, ctx.Model.Get(second.Id)!); } catch (CommandException) { }
         }

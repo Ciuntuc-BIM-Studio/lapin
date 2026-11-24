@@ -106,7 +106,7 @@
     {"name":"architecture.importLintelProducts","module":"architecture","label":"Lintel products","args":[{"name":"text","type":"str"}]},
     {"name":"architecture.importSchedule","module":"architecture","label":"Schedule from template","args":[{"name":"builtin","type":"str"},{"name":"text"},{"name":"template"},{"name":"choices","type":"dict"},{"name":"all","type":"str"},{"name":"name","type":"str"}]},
     {"name":"architecture.importTypes","module":"architecture","label":"Import types","args":[{"name":"text","type":"str"},{"name":"materials"},{"name":"types"}]},
-    {"name":"architecture.joinWalls","module":"architecture","label":"Join walls","args":[{"name":"a","type":"str"},{"name":"b","type":"str"},{"name":"priority","type":"str"},{"name":"style"}]},
+    {"name":"architecture.joinWalls","module":"architecture","label":"Join walls","args":[{"name":"a","type":"str"},{"name":"b","type":"str"},{"name":"priority","type":"str"},{"name":"extend","type":"bool"},{"name":"style"}]},
     {"name":"architecture.joineryMaterials","module":"architecture","label":"Set door and window materials","args":[{"name":"kind","type":"str"}]},
     {"name":"architecture.joinerySymbols","module":"architecture","label":"Opening symbols","args":[{"name":"convention","type":"str"},{"name":"hardware","type":"bool"},{"name":"windowSwing","type":"str"}]},
     {"name":"architecture.makeDownpipes","module":"architecture","label":"Make downpipes editable","args":[{"name":"id","type":"str"}]},

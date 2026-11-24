@@ -152,6 +152,11 @@ describe('the Wall axis on a line, with the grid', () => {
     const a = resolveAim(P(3.1, 1.6), { base: null, ortho: false, polar: false, acquired: [], tol: 0.2, grid: 1, snap: { point: P(3.12, 1.56), mode: 'wallAxis', shape: axis, along: true } });
     expect(a.mode).toBe('wallAxis');
     nearPt(a.point, P(3, 1.5));
+    // slid along a line: not a point of its own, so a door placed there still takes the grid along the wall (forum topic 226)
+    expect(a.exact).toBeUndefined();
+    const mid = resolveAim(P(5.1, 2.6), { base: null, ortho: false, polar: false, acquired: [], tol: 0.2, grid: 1, snap: { point: P(5, 2.5), mode: 'midpoint', shape: axis } });
+    expect(mid.exact).toBe(true);
+    nearPt(mid.point, P(5, 2.5));
   });
 });
 

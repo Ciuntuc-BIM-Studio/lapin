@@ -63,7 +63,7 @@ import { editDimension } from './dimensionEdit';
 import { openPickedView } from './openView';
 import { CadOverlay } from './cad/canvas';
 import { Crosshair } from './Crosshair';
-import { snapAlong } from '../platform/anchor';
+import { placeAlong } from '../platform/anchor';
 import { setDatum, useDatum } from './datum';
 import { DatumMark } from './DatumMark';
 import { snapShapes, useCadCanvas, type Aimed } from './cad/aim';
@@ -425,7 +425,7 @@ export function PlanView() {
     return o;
   }, [items]);
   const { aim, acquire } = useCadCanvas({
-    viewId: planViewOf, drawing, extra, scale: view.scale, pickAny: (p) => pick(p)?.id ?? null, outlines,
+    viewId: planViewOf, drawing, extra, scale: view.scale, pickAny: (p) => pick(p)?.id ?? null, pickModel: (p) => pick(p, ['*'])?.id ?? null, outlines,
     inRegion: (takes) => regionIds(takes, pickItems, nodes, scope ? undefined : drawing?.marks), axes, turn: rot,
     wallAxes: snapWallAxes, gridAxes: snapGridAxes, curves: snapCurves,
   });
@@ -433,8 +433,11 @@ export function PlanView() {
   /** The selection dragged by its body (its trace shows over the plan). */
   const dragTrace = useTrace((s) => s.trace?.owner === 'drag');
 
-  /** A point on a host (a wall a door goes on) moved along its axis to the grid step in force: the grid snap for what is placed along a host. */
-  const alongGrid = (host: NodeDto, at: Vec2): Vec2 => { const arc = arcOf(host.props); return arc ? snapAlong(arc, at, gridSnapStep(view.scale)) : at; };
+  /**
+   * Where what is placed along a host (a door on a wall) goes: the object snap the cursor shows (a wall's midpoint: forum
+   * topic 226), else the cursor moved along the host's axis to the grid step in force.
+   */
+  const alongGrid = (host: NodeDto, at: Vec2): Vec2 => { const arc = arcOf(host.props); return arc ? placeAlong(arc, at, gridSnapStep(view.scale), useCad.getState().aim) : at; };
 
   const snapAt = useCallback((clientX: number, clientY: number, from?: Vec2): Aimed => {
     const rect = svgRef.current!.getBoundingClientRect();

@@ -224,7 +224,8 @@ export function DrawingView() {
       case 'pick':
       case 'face': {
         const n = pickFor(raw, g.types);
-        if (n) void complete([raw], n);
+        // What is placed along a host (a door on a wall) goes to the object snap shown, a wall's midpoint (forum topic 226).
+        if (n) void complete([g.kind === 'pick' && g.placing && useCad.getState().aim?.exact ? p : raw], n);
         else useSession.setState({ error: 'Pick an element this tool works on.' });
         break;
       }

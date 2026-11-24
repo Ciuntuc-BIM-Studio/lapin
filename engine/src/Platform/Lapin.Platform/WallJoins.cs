@@ -49,7 +49,8 @@ public sealed record WallJoin(JoinKind Kind, JoinStyle Style, Vec2 Point, char R
 /// <param name="Priority">Which wall runs through a corner or a crossing and relates an in-line join: a or b. Default: the thicker, a on a tie. The crossed wall of a T always runs through.</param>
 /// <param name="Style">Corners only: butt (one wall through) or mitre (both on the diagonal). A T and an in-line join are always butt.</param>
 /// <param name="Through">The wall (a or b) that only runs through: a T wherever the other ends on its run, even near its own end, where a free join would make a corner and shorten it (a flat's inner wall stopping in the building's wall, docs/plan-units.md). The other must end there.</param>
-public sealed record JoinOptions(double? Tolerance = null, char? Priority = null, JoinStyle Style = JoinStyle.Butt, char? Through = null);
+/// <param name="Extend">An end any distance short of the joint is carried on to it, where the joint lies past that end (Join walls clicked on two walls that do not reach each other, forum topic 249); a joint on a wall's run is still on its run. In line, the gap between the tips may be any length.</param>
+public sealed record JoinOptions(double? Tolerance = null, char? Priority = null, JoinStyle Style = JoinStyle.Butt, char? Through = null, bool Extend = false);
 
 /// <summary>A wall body's plan outline in its own frame (origin at Start, X along the axis, Y to the left): right-start, right-end, left-end, left-start.</summary>
 public sealed record WallOutline(Vec2[] Corners, bool Rectangular, double Length);
@@ -130,13 +131,15 @@ public static class WallJoins
         /// on this wall: at a tip (within the tolerance; the nearer one when
         /// both qualify), on the run between the tips, or nowhere (null).
         /// </summary>
-        public Connection? Reach(Vec2 x, double tolerance)
+        public Connection? Reach(Vec2 x, double tolerance, bool extend = false)
         {
             var toStart = (x - Wall.Start).Length;
             var toEnd = (x - Wall.End).Length;
             if (Math.Min(toStart, toEnd) <= tolerance) return toStart <= toEnd ? Connection.AtStart : Connection.AtEnd;
             var s = Vec2.Dot(x - Wall.Start, Along);
-            return s > 0 && s < Length ? Connection.AtPath : null;
+            if (s > 0 && s < Length) return Connection.AtPath;
+            // Carried on: the end the joint lies past.
+            return extend ? s <= 0 ? Connection.AtStart : Connection.AtEnd : null;
         }
 
         /// <summary>
@@ -215,8 +218,8 @@ public static class WallJoins
         if (parallel) return EndToEnd(la, lb, tolerance, options);
 
         var joint = la.Axis.Meet(lb.Axis)!.Value;
-        var onA = la.Reach(joint, tolerance);
-        var onB = lb.Reach(joint, tolerance);
+        var onA = la.Reach(joint, tolerance, options.Extend);
+        var onB = lb.Reach(joint, tolerance, options.Extend);
         if (options.Through is { } through)
         {
             static Connection? OnRun(Laid wall, Vec2 x) => Vec2.Dot(x - wall.Wall.Start, wall.Along) is var s && s >= -Tiny && s <= wall.Length + Tiny ? Connection.AtPath : null;
@@ -299,7 +302,7 @@ public static class WallJoins
         var reach = Math.Max(la.Length, lb.Length);
         if (Math.Abs(la.Lateral(tipB)) > Tiny + ParallelSin * reach)
             throw new CommandException("The walls are parallel but not in line: a join needs their axes to meet.");
-        if (space > tolerance || space < -tolerance)
+        if ((space > tolerance && !options.Extend) || space < -tolerance)
             throw new CommandException($"The walls are in line but their ends are not within {tolerance:0.###} m of each other.");
 
         var joint = (tipA + tipB) * 0.5;

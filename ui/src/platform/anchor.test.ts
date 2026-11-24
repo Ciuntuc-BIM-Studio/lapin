@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { ANCHORS, alongShift, anchorFor, anchorsOf, insertionAt, readAnchors, screenSense, setAnchor, shiftedAlong, snapAlong, stepAnchor, useAnchors } from './anchor';
+import { ANCHORS, alongShift, anchorFor, anchorsOf, insertionAt, readAnchors, placeAlong, screenSense, setAnchor, shiftedAlong, snapAlong, stepAnchor, useAnchors } from './anchor';
 import { requestFor, placedAt } from './placement';
 import type { NodeDto } from '../engine/protocol';
 
@@ -90,6 +90,18 @@ describe('the grid along a wall', () => {
     const d = arc([0, 0], [3, 4]);
     const p = snapAlong(d, { x: 1.5, y: 2 }, 1); // 2.5 along → 3 (or 2) m along
     expect(Math.hypot(p.x, p.y)).toBeCloseTo(3, 9);
+  });
+});
+
+describe('a door or window put on an object snap (forum topic 226)', () => {
+  it('goes to the snap\'s own point (the wall\'s midpoint), not to the grid step from the raw cursor', () => {
+    const a = arc([0, 0], [5.3, 0]);
+    const raw = { x: 2.69, y: 0.1 };
+    // the midpoint snap shown at 2.65: kept exactly, though the 0.5 m grid would put it at 2.5
+    expect(placeAlong(a, raw, 0.5, { point: { x: 2.65, y: 0 }, exact: true })).toEqual({ x: 2.65, y: 0 });
+    // no snap, or one slid along a line: the grid along the wall, as before
+    expect(placeAlong(a, raw, 0.5, null).x).toBeCloseTo(2.5, 9);
+    expect(placeAlong(a, raw, 0.5, { point: { x: 2.69, y: 0 } }).x).toBeCloseTo(2.5, 9);
   });
 });
 

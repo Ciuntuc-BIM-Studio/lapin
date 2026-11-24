@@ -90,6 +90,14 @@ export function snapAlong(arc: Arc, at: Vec2, step: number): Vec2 {
   return { x: at.x + p.x - q.x, y: at.y + p.y - q.y };
 }
 
+/**
+ * Where the cursor stands on a host for what is placed along it (a door, a window): an object snap's own point when one
+ * holds (a wall's middle, an end, a crossing: forum topic 226), else the cursor moved along the host to the grid step.
+ */
+export function placeAlong(arc: Arc, raw: Vec2, step: number, aim?: { point: Vec2; exact?: boolean } | null): Vec2 {
+  return aim?.exact ? aim.point : snapAlong(arc, raw, step);
+}
+
 /** A point moved `shift` m along the wall's axis from where it falls on it, its side of the wall kept: the opening's centre for a cursor that is at its anchor. */
 export function shiftedAlong(arc: Arc, at: Vec2, shift: number): Vec2 {
   if (!shift) return at;

@@ -12,7 +12,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
 import { createScheduleOf } from '../../shell/fieldSchedule';
 import { activeStorey, execute, query, useSession } from '../../engine/session';
-import { registerCommand, startCommand, type Step } from '../../viewport/cad/session';
+import { cadLog, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
 import type { Shape } from '../../viewport/cad/shapes';
 import { num, ofClass, relatingOf, typeLayers, typeOf, usageOf } from '../../engine/model';
 import { alongShift, anchorFor, shiftedAlong } from '../../platform/anchor';
@@ -211,12 +211,48 @@ const selectedWalls = () => {
   return useUi.getState().selected.filter((id) => nodes.get(id)?.type === 'IfcWall');
 };
 
+/** Two walls joined, carried on to where their axes meet however far apart (forum topic 249): a corner, or a T onto a wall's run. */
+const joinPair = (a: string, b: string) => execute('architecture.joinWalls', { a, b, style: useWallPrefs.getState().joinStyle, extend: true });
+const isWall = (id: string) => useSession.getState().nodes.get(id)?.type === 'IfcWall';
+/**
+ * JOINWALLS (JW): click a wall, then the wall to join it to, again and again until Enter or Esc. A wall already selected is
+ * the first; two selected are joined at once. Walls that do not reach each other are carried on to their corner (forum topic 249).
+ */
+function joinWallsCommand(first?: string): Step {
+  const firstStep = (): Step => ({
+    prompt: 'Click the first wall (Enter to finish)', want: 'pick', hover: true, elementsFirst: isWall,
+    hint: 'Join walls: click the first wall, then the wall to join it to · Enter finishes',
+    pick: () => { cadLog('Click a wall.'); return firstStep(); },
+    pickElement: (id) => (isWall(id) ? second(id) : (cadLog('Click a wall.'), firstStep())),
+    element: (id) => (isWall(id) ? second(id) : (cadLog('Click a wall.'), firstStep())),
+    enter: () => null,
+  });
+  const take = async (a: string, b: string): Promise<Step> => {
+    if (!isWall(b)) { cadLog('Click a wall.'); return second(a); }
+    if (b === a) { cadLog('Click another wall.'); return second(a); }
+    await joinPair(a, b);
+    return firstStep();
+  };
+  const second = (a: string): Step => ({
+    prompt: 'Click the wall to join it to (Enter for another pair)', want: 'pick', hover: true, elementsFirst: isWall,
+    hint: 'Click the wall to join it to: both are carried on to where they meet · Esc cancels',
+    pick: () => { cadLog('Click a wall.'); return second(a); },
+    pickElement: (b) => take(a, b),
+    element: (b) => take(a, b),
+    enter: () => firstStep(),
+  });
+  return first ? second(first) : firstStep();
+}
+registerCommand({ names: ['JOINWALLS'], label: 'Join walls', start: () => {
+  const walls = selectedWalls();
+  return joinWallsCommand(walls.length === 1 ? walls[0] : undefined);
+} });
 const join: ToolDef = {
   id: 'architecture.join', label: 'Join walls', icon: Link2, shortcut: 'JW',
   run: () => {
     const walls = selectedWalls();
-    if (walls.length !== 2) { notify('Select the two walls to join (Shift-click the second).'); return; }
-    void execute('architecture.joinWalls', { a: walls[0], b: walls[1], style: useWallPrefs.getState().joinStyle });
+    if (walls.length === 2) { void joinPair(walls[0], walls[1]); return; }
+    void startCommand('JOINWALLS');
   },
 };
 const restyle = (label: string, id: string, icon: ToolDef['icon'], args: Record<string, unknown>): ToolDef => ({

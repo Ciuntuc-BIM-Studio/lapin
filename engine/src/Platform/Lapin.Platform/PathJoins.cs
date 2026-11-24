@@ -327,7 +327,8 @@ public static class Joins
     /// its own, and a new corner is mitred (decision 175; a T is butt whatever is asked).
     /// </summary>
     /// <param name="stop"><paramref name="b"/> stops in <paramref name="a"/>, which is left as it is (<see cref="StopsOn"/>); a join made so stays so.</param>
-    public static WallJoin Join(IEdit edit, IPathElements paths, Entity a, Entity b, JoinStyle? style = null, char? priority = null, bool stop = false)
+    /// <param name="extend">Ends short of the joint, any distance, are carried on to it (<see cref="JoinOptions.Extend"/>; Join walls, forum topic 249).</param>
+    public static WallJoin Join(IEdit edit, IPathElements paths, Entity a, Entity b, JoinStyle? style = null, char? priority = null, bool stop = false, bool extend = false)
     {
         if (a.Id == b.Id) throw new CommandException("An element cannot be joined to itself.");
         if (a.Class != b.Class) throw new CommandException($"A {a.Class} joins only a {a.Class}.");
@@ -337,7 +338,9 @@ public static class Joins
         // A curved element and a straight one: the arc runs through (on along its tangent), the straight one stops at its face.
         if (priority == null && PathCurve.Of(a).IsArc != PathCurve.Of(b).IsArc) priority = PathCurve.Of(a).IsArc ? 'a' : 'b';
         var (fa, fb) = Tangents(a, b, existing, Frame(paths, edit.Model, a), Frame(paths, edit.Model, b));
-        var join = WallJoins.Compute(fa, fb, new JoinOptions(Priority: priority, Style: style ?? (existing != null ? StyleOf(existing) : JoinStyle.Mitre), Through: through));
+        var join = WallJoins.Compute(fa, fb, new JoinOptions(Priority: priority, Style: style ?? (existing != null ? StyleOf(existing) : JoinStyle.Mitre), Through: through,
+            // Carried on along a straight axis only: an arc's frame is only a tangent.
+            Extend: extend && !PathCurve.Of(a).IsArc && !PathCurve.Of(b).IsArc));
         // A crossing is worked out on straight axes: an arc's frame is only a tangent, which says nothing of where it crosses.
         if (join.Kind == JoinKind.X && (PathCurve.Of(a).IsArc || PathCurve.Of(b).IsArc))
             throw new CommandException("A curved element is not joined where it crosses another: split it there.");

@@ -5008,6 +5008,8 @@ export const IT: Record<string, string> = {
   "Place from catalogue…": "Inserisci dal catalogo…",
   "All types": "Tutti i tipi",
   "Join walls": "Unisci muri",
+  "Join walls: click the first wall, then the wall to join it to · Enter finishes": "Unisci muri: fai clic sul primo muro, poi sul muro a cui unirlo · Invio termina",
+  "Click the wall to join it to: both are carried on to where they meet · Esc cancels": "Fai clic sul muro a cui unirlo: entrambi vengono prolungati fino al loro incontro · Esc annulla",
   "Join linework": "Unisci linee",
   "Trim linework": "Taglia linee",
   "Extend linework": "Estendi linee",

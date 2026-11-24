@@ -425,6 +425,21 @@ describe('edits on elements: TRIM/EXTEND on walls, TRIMEXTEND, SPLITELEMENT, OFF
     expect(engine.execute).toHaveBeenCalledWith('element.split', { id: 'w1', at: [3, 0] });
   });
 
+  it('SPLITELEMENT takes the wall under an imported drawing\'s line on its face (forum topic 248)', async () => {
+    await startCommand('SPLITELEMENT');
+    draftAt({ type: 'line', a: P(0, 0.15), b: P(6, 0.15) });
+    pickAt('d1');
+    useCad.getState().host!.pickModel = () => 'w1';
+    await feedPoint(P(3.02, 0.15), undefined, P(3, 0.15));
+    expect(engine.execute).toHaveBeenCalledWith('element.split', { id: 'w1', at: [3, 0.15] });
+    // nothing it splits under the line: the drawing's line is picked as before, and refused
+    engine.execute.mockClear();
+    useCad.getState().host!.pickModel = () => null;
+    await feedPoint(P(3.02, 0.15), undefined, P(3, 0.15));
+    expect(engine.execute).not.toHaveBeenCalled();
+    delete useCad.getState().host!.pickModel;
+  });
+
   it('SPLITELEMENT, TRIMEXTEND and OFFSET take railings and paths along their lines', async () => {
     await startCommand('SPLITELEMENT');
     pickAt('r1'); await feedPoint(P(2, 0));

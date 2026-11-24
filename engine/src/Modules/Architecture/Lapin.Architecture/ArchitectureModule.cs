@@ -1230,7 +1230,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var w1 = Spatial.Require(ctx.Model, (string?)a["a"], IfcClass.Wall);
             var w2 = Spatial.Require(ctx.Model, (string?)a["b"], IfcClass.Wall);
             var priority = (string?)a["priority"] switch { "a" => 'a', "b" => 'b', _ => (char?)null };
-            var join = Joins.Join(ctx, Paths(ctx), w1, w2, Style(a["style"]), priority);
+            // extend: the walls carried on to where their axes meet, however far (the Join walls tool, forum topic 249).
+            var extend = a["extend"] is JsonValue xv && xv.TryGetValue<bool>(out var xb) && xb;
+            var join = Joins.Join(ctx, Paths(ctx), w1, w2, Style(a["style"]), priority, extend: extend);
             return new JsonObject { ["kind"] = join.Kind.ToString(), ["style"] = join.Style == JoinStyle.Mitre ? "mitre" : "butt" };
         });
 

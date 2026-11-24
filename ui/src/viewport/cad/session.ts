@@ -50,6 +50,8 @@ export interface CadHost {
   pickLevel?(p: Vec2): { id: string; y: number } | null;
   /** Anything selectable under a point (a drafted shape, an annotation, an element). */
   pickAny(p: Vec2): string | null;
+  /** A model element under a point, drafting and annotations left out (the one Tab chose first). */
+  pickModel?(p: Vec2): string | null;
   /** A drafted shape's geometry, for previews. */
   shapeOf(id: string): Shape | null;
   /** What anything selectable looks like in this view (a drafted shape, an annotation's lines, an element's outline in plan), for previews and the move's ghost. */
@@ -108,6 +110,11 @@ export interface Step {
   pickInViews?: boolean;
   /** A pick step whose point matters (SPLITELEMENT's cut): the cursor snaps as for a point, the marker shows, and `pickElement` / `pick` get the snapped point; the element is still the one under the raw cursor. */
   snap?: boolean;
+  /**
+   * A pick step that takes an element it wants before a drafted line under the point (Split element): a wall traced over an
+   * imported DXF is split, not refused for the drawing's line on its face (forum topic 248). Says which elements it wants.
+   */
+  elementsFirst?: (id: string) => boolean;
 }
 
 interface CadState {
@@ -797,7 +804,7 @@ function splitElement(): Step {
     prompt: atCrossing
       ? 'Pick the element to split where something crosses it [Point] (Enter to finish)'
       : 'Click the element where to split it [Intersection] (Enter to finish)',
-    want: 'pick', snap: true,
+    want: 'pick', snap: true, elementsFirst: (id) => isOutlineElement(id) || isEditableLine(id),
     keywords: { I: toggle(true), INTERSECTION: toggle(true), P: toggle(false), POINT: toggle(false) },
     pick: () => { log('Pick a wall, a beam, a strip footing, a floor or a ceiling.'); return first(); },
     pickElement: async (id, at) => {
@@ -1034,8 +1041,11 @@ const feed = serial(async (p: Vec2, typed: { length?: number; angle?: number } |
   if (!s.step) return;
   useCad.setState({ lastPoint: p, snapOverride: null });
   if (s.step.want === 'pick' && s.host) {
-    const hit = s.host.pickDraft(p);
-    const element = !hit && s.step.pickElement && (s.host.isPlan?.() !== false || s.step.pickInViews) ? s.host.pickAny(p) : null;
+    const canElement = !!s.step.pickElement && (s.host.isPlan?.() !== false || !!s.step.pickInViews);
+    const model = canElement && s.step.elementsFirst ? s.host.pickModel?.(p) ?? null : null;
+    const wanted = model && s.step.elementsFirst!(model) ? model : null;
+    const hit = wanted ? null : s.host.pickDraft(p);
+    const element = wanted ?? (!hit && canElement ? s.host.pickAny(p) : null);
     const at = s.step.snap && snapped ? snapped : p;
     if (element) { await advance(s.step.pickElement!(element, at)); return; }
     if (!hit) { log(s.step.pickElement ? 'Nothing to pick there.' : 'Nothing drafted there.'); return; }

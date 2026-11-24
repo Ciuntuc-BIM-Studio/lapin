@@ -5101,6 +5101,8 @@ export const LO: Record<string, string> = {
   "Place from catalogue…": "ວາງຈາກແຄັດຕາລັອກ…",
   "All types": "ທຸກປະເພດ",
   "Join walls": "ເຊື່ອມຝາ",
+  "Join walls: click the first wall, then the wall to join it to · Enter finishes": "ເຊື່ອມຝາ: ຄລິກຝາທຳອິດ, ແລ້ວຄລິກຝາທີ່ຈະເຊື່ອມກັບມັນ · Enter ສຳເລັດ",
+  "Click the wall to join it to: both are carried on to where they meet · Esc cancels": "ຄລິກຝາທີ່ຈະເຊື່ອມກັບມັນ: ທັງສອງຈະຖືກຕໍ່ອອກໄປຈົນພົບກັນ · Esc ຍົກເລີກ",
   "Join linework": "ເຊື່ອມເສັ້ນ",
   "Trim linework": "ຕັດເສັ້ນ",
   "Extend linework": "ຍືດເສັ້ນ",

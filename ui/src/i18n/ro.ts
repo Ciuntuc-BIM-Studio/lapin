@@ -5001,6 +5001,8 @@ export const RO: Record<string, string> = {
   "Place from catalogue…": "Pune din catalog…",
   "All types": "Toate tipurile",
   "Join walls": "Îmbină pereții",
+  "Join walls: click the first wall, then the wall to join it to · Enter finishes": "Îmbină pereții: clic pe primul perete, apoi pe peretele de îmbinat cu el · Enter termină",
+  "Click the wall to join it to: both are carried on to where they meet · Esc cancels": "Clic pe peretele de îmbinat cu el: amândoi sunt prelungiți până unde se întâlnesc · Esc anulează",
   "Join linework": "Îmbină liniile",
   "Trim linework": "Taie liniile",
   "Extend linework": "Prelungește liniile",

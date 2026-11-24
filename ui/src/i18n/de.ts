@@ -5005,6 +5005,8 @@ export const DE: Record<string, string> = {
   "Place from catalogue…": "Aus dem Katalog platzieren…",
   "All types": "Alle Typen",
   "Join walls": "Wände verbinden",
+  "Join walls: click the first wall, then the wall to join it to · Enter finishes": "Wände verbinden: die erste Wand anklicken, dann die Wand, mit der sie verbunden wird · Enter beendet",
+  "Click the wall to join it to: both are carried on to where they meet · Esc cancels": "Die Wand anklicken, mit der sie verbunden wird: beide werden bis zu ihrem Treffpunkt verlängert · Esc bricht ab",
   "Join linework": "Linienarbeit verbinden",
   "Trim linework": "Linienarbeit stutzen",
   "Extend linework": "Linienarbeit dehnen",

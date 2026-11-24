@@ -5009,6 +5009,8 @@ export const FR: Record<string, string> = {
   "Place from catalogue…": "Poser depuis le catalogue…",
   "All types": "Tous les types",
   "Join walls": "Joindre les murs",
+  "Join walls: click the first wall, then the wall to join it to · Enter finishes": "Joindre les murs : cliquez sur le premier mur, puis sur le mur auquel le joindre · Entrée termine",
+  "Click the wall to join it to: both are carried on to where they meet · Esc cancels": "Cliquez sur le mur auquel le joindre : les deux sont prolongés jusqu’à leur rencontre · Échap annule",
   "Join linework": "Joindre le tracé",
   "Trim linework": "Ajuster le tracé",
   "Extend linework": "Prolonger le tracé",

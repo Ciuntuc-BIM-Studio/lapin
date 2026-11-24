@@ -5042,6 +5042,8 @@ export const DA: Record<string, string> = {
   "Place from catalogue…": "Indsæt fra kataloget…",
   "All types": "Alle typer",
   "Join walls": "Sammenføj vægge",
+  "Join walls: click the first wall, then the wall to join it to · Enter finishes": "Sammenføj vægge: klik på den første væg, derefter på den væg, den skal samles med · Enter afslutter",
+  "Click the wall to join it to: both are carried on to where they meet · Esc cancels": "Klik på den væg, den skal samles med: begge forlænges, til de mødes · Esc annullerer",
   "Join linework": "Sammenføj streger",
   "Trim linework": "Trim streger",
   "Extend linework": "Forlæng streger",

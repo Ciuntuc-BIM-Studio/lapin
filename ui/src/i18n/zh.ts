@@ -5044,6 +5044,8 @@ export const ZH: Record<string, string> = {
   "Place from catalogue…": "从目录放置…",
   "All types": "所有类型",
   "Join walls": "连接墙",
+  "Join walls: click the first wall, then the wall to join it to · Enter finishes": "连接墙：单击第一面墙，再单击要与之连接的墙 · Enter 结束",
+  "Click the wall to join it to: both are carried on to where they meet · Esc cancels": "单击要与之连接的墙：两面墙都延伸到相交处 · Esc 取消",
   "Join linework": "连接线条",
   "Trim linework": "修剪线条",
   "Extend linework": "延伸线条",
