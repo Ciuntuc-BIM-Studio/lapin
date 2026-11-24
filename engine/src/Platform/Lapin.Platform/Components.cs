@@ -213,11 +213,30 @@ public static class Components
         if (frame is not { } fr || Groups.Of(m, e.Id) is not { } g || Of(g) == null) return still;
         var dir = new Vec3(-fr.Right.Y, fr.Right.X, 0);
         if (SideMap(m, g, new ViewFrame(fr.Origin, fr.Right, fr.Up, dir)) is not { } a || a.Side != e.Str(DetailSideKey) || Shown(e, a) is not { } d) return still;
-        // d: kept → drawing, x = x0 + s·x, y = y0 + y; the view's placement seen from the kept points.
-        var (x0, y0) = (d.Point(new Vec2(0, 0)).X, d.Point(new Vec2(0, 0)).Y);
+        // d: kept → drawing; the view's placement seen from the kept points.
+        var back = Inverse(d);
         var s = d.Mirrored ? -1.0 : 1.0;
-        Vec2 Back(Vec2 p) => new(s * (p.X - x0), p.Y - y0);
-        return new Placement2D(p => Back(t.Point(d.Point(p))), s > 0 ? t.Turn : -t.Turn, t.Mirrored, s > 0 ? t.Axis : Math.PI - t.Axis, t.Rise);
+        return new Placement2D(p => back.Point(t.Point(d.Point(p))), s > 0 ? t.Turn : -t.Turn, t.Mirrored, s > 0 ? t.Axis : Math.PI - t.Axis, t.Rise);
+    }
+
+    /// <summary>The way back of a side's map (x = x0 + s·x', y = y0 + y'): a drawing's points to the kept ones.</summary>
+    static Placement2D Inverse(Placement2D d)
+    {
+        var o = d.Point(new Vec2(0, 0));
+        var s = d.Mirrored ? -1.0 : 1.0;
+        return MapOf(-s * o.X, -o.Y, s);
+    }
+
+    /// <summary>
+    /// How points given in a view's drawing (a grip dragged, a shape written afresh, <c>drafting.updateDraft</c> with its
+    /// <c>viewId</c>) go to a side detail's kept points: through the side the view sees of the detail's instance, as it stands
+    /// now. Null for anything else (a plan's detail, plain drafting, a view that does not see its side): the points as given.
+    /// </summary>
+    public static Placement2D? FromView(ICommandContext ctx, Entity e, string? viewId)
+    {
+        if (viewId == null || !IsSideDetail(e) || Views.Find(ctx.Model, viewId) is not { } view || view.Str("kind") is not ("section" or "elevation")) return null;
+        if (Groups.Of(ctx.Model, e.Id) is not { } g || Of(g) == null || Views.SpecOf(ctx.Query, view) is not { } spec) return null;
+        return SideMap(ctx.Model, g, spec.Frame) is { } a && a.Side == e.Str(DetailSideKey) && Shown(e, a) is { } d ? Inverse(d) : null;
     }
 
     /// <summary>

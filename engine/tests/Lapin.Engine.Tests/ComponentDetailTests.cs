@@ -423,4 +423,38 @@ public class ComponentDetailTests : IDisposable
         var there = Drawn(f, north, copy);
         Assert.True(At(there, n.Map(new Vec3(24, 4, 1))) && At(there, n.Map(new Vec3(23, 4, 1))));
     }
+
+    [Fact]
+    public void A_side_details_points_edited_in_any_view_that_sees_it_land_right_in_every_instance()
+    {
+        var (f, group, twin, line, south, north) = Sides();
+        var copy = DraftOf(f, twin);
+        // A grip of the turned instance's copy, on the north elevation: its end raised to 2 m.
+        var n = FrameOf(f, north);
+        f.Run("drafting.updateDraft", new JsonObject { ["id"] = copy, ["viewId"] = north, ["shape"] = new JsonObject { ["type"] = "line", ["a"] = P(n.Map(new Vec3(24, 4, 1))), ["b"] = P(n.Map(new Vec3(23, 4, 2))) } });
+        Assert.Equal(copy, DraftOf(f, twin));
+        var there = Drawn(f, north, copy);
+        Assert.True(At(there, n.Map(new Vec3(24, 4, 1))) && At(there, n.Map(new Vec3(23, 4, 2))));
+        var s = FrameOf(f, south);
+        var drawn = Drawn(f, south, line);
+        Assert.True(At(drawn, s.Map(new Vec3(1, 0, 1))) && At(drawn, s.Map(new Vec3(2, 0, 2))));
+        // The first instance moved 3 m along, then its line edited on the south elevation: both follow.
+        f.Run("element.transform", new JsonObject { ["ids"] = Ids(group), ["op"] = "move", ["by"] = P(3, 0) });
+        s = FrameOf(f, south);
+        f.Run("drafting.updateDraft", new JsonObject { ["id"] = line, ["viewId"] = south, ["shape"] = new JsonObject { ["type"] = "line", ["a"] = P(s.Map(new Vec3(4, 0, 1))), ["b"] = P(s.Map(new Vec3(5, 0, 0.5))) } });
+        drawn = Drawn(f, south, line);
+        Assert.True(At(drawn, s.Map(new Vec3(4, 0, 1))) && At(drawn, s.Map(new Vec3(5, 0, 0.5))));
+        n = FrameOf(f, north);
+        there = Drawn(f, north, DraftOf(f, twin));
+        Assert.True(At(there, n.Map(new Vec3(24, 4, 1))) && At(there, n.Map(new Vec3(23, 4, 0.5))));
+        // A mirrored instance's copy edited on its own view: the first instance takes it mirrored back.
+        var mirrored = TwinOf(f, f.Run("element.transform", new JsonObject { ["ids"] = Ids(group), ["op"] = "mirror", ["a"] = P(-1, 0), ["b"] = P(-1, 1), ["copy"] = true })!);
+        s = FrameOf(f, south);
+        // The first instance (middle 5.5) at 4–5 is, about x = -1, at -6 to -7 in the mirrored one: its end there put at 1.5 m.
+        f.Run("drafting.updateDraft", new JsonObject { ["id"] = DraftOf(f, mirrored), ["viewId"] = south, ["shape"] = new JsonObject { ["type"] = "line", ["a"] = P(s.Map(new Vec3(-6, 0, 1))), ["b"] = P(s.Map(new Vec3(-7, 0, 1.5))) } });
+        var flipped = Drawn(f, south, DraftOf(f, mirrored));
+        Assert.True(At(flipped, s.Map(new Vec3(-6, 0, 1))) && At(flipped, s.Map(new Vec3(-7, 0, 1.5))));
+        drawn = Drawn(f, south, line);
+        Assert.True(At(drawn, s.Map(new Vec3(4, 0, 1))) && At(drawn, s.Map(new Vec3(5, 0, 1.5))));
+    }
 }
