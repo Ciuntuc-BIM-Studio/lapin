@@ -12,7 +12,7 @@ export interface SegmentRow {
 }
 
 /** The keys a segment may hold of its own. */
-export const SEGMENT_KEYS = ['frontBatter', 'backBatter', 'frontBatterEnd', 'backBatterEnd', 'thickness', 'baseThickness', 'topStart', 'topEnd', 'footingLevel', 'warp'] as const;
+export const SEGMENT_KEYS = ['frontBatter', 'backBatter', 'frontBatterEnd', 'backBatterEnd', 'thickness', 'baseThickness', 'topStart', 'topEnd', 'footingLevel', 'footingThickness', 'toe', 'heel', 'warp'] as const;
 
 const norm = (deg: number) => { let d = deg; while (d > 180) d -= 360; while (d <= -180) d += 360; return d; };
 

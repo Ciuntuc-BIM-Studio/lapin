@@ -11,6 +11,11 @@ describe("a retaining wall's segments", () => {
     expect(rows[2].own).toEqual({ warp: true, frontBatterEnd: 0.667 });
   });
 
+  it("keeps a segment's own footing: its thickness, toe and heel", () => {
+    const rows = segmentRows([[0, 0], [10, 0], [10, 6]], [{ toe: 0.5, heel: 1.5, footingThickness: 0.4, junk: 1 }]);
+    expect(rows[0].own).toEqual({ toe: 0.5, heel: 1.5, footingThickness: 0.4 });
+  });
+
   it('drops repeated points as the engine does, and reads batters as n:1', () => {
     expect(cleanPath([[0, 0], [0, 0.0000001], [1, 0], 'x'])).toEqual([[0, 0], [1, 0]]);
     expect(batterText(10)).toBe('10:1');
