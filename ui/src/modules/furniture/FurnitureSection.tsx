@@ -33,6 +33,8 @@ export function FurnitureSection({ node }: { node: NodeDto }) {
         </dd>
         <dt>Kind</dt><dd>{kinds.find((k) => k.key === kind)?.label ?? '—'}</dd>
         <dt>Size</dt><dd className="small" data-no-i18n>{sizeOf(type, kinds)}</dd>
+        {/* A sanitary fixture is written to IFC as its class says (forum topic #245): IfcSanitaryTerminal and its predefined type. */}
+        {typeof node.props.exportAs === 'string' && <><dt>IFC</dt><dd className="small" data-no-i18n>{node.props.exportAs} · {String(node.props.predefinedType ?? '')}</dd></>}
         <dt>Rotation</dt><dd><NumberField value={Number(node.props.rotation ?? 0)} suffix="°" onCommit={(v) => { if (v != null) update({ rotation: ((v % 360) + 360) % 360 }); }} /></dd>
         <dt title="Raised above its storey's floor (on a podium, a wall unit hung higher)">Above the floor</dt>
         <dd><LengthField metres={Number(node.props.offset ?? 0)} onCommit={(v) => update({ offset: v ?? 0 })} /></dd>

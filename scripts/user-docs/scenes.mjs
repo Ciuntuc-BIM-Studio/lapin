@@ -10868,6 +10868,61 @@ export const scenes = [
     },
   },
   {
+    // Sanitary fixtures (forum topic #245): a bathroom of 3.0 × 2.4 m — a WC and a wash basin clicked by its walls (backed onto
+    // them), a bidet, a shower in the corner with its door, a bath across the end wall, a towel rail and a mirror — and a kitchen
+    // sink, in plan by their symbols and in 3D; the types dialog on the shower with its common sizes (indicative) and preview.
+    id: 'furniture-sanitary',
+    touches: ['furniture'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const room = [[0, 0], [3, 0], [3, 2.4], [0, 2.4]];
+      for (let i = 0; i < 4; i++) await t.cmd('architecture.addWall', { storeyId: s, x1: room[i][0], y1: room[i][1], x2: room[(i + 1) % 4][0], y2: room[(i + 1) % 4][1] });
+      await t.cmd('architecture.addSlab', { storeyId: s, points: room });
+      await t.fit();
+      await t.button('Interior', { exact: true });
+      // The WC by a click near the south wall, from the Sanitary group's tool: its back on the wall, its front to the room.
+      await t.tool('furniture.sanitary');
+      await t.wait(400);
+      t.expect(await t.page.evaluate(async () => (await import('/src/modules/furniture/placeKind.ts')).usePlaceKind.getState().kind) === 'toilet', 'the Sanitary tool starts on a WC');
+      { const [px, py] = await t.planPoint(0.6, 0.5); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(800); }
+      await t.keys('Escape');
+      const fixtures = async () => (await t.nodes()).filter((n) => n.type === 'IfcFurniture');
+      const wc = (await fixtures())[0];
+      t.expect(wc && wc.props.exportAs === 'IfcSanitaryTerminal' && wc.props.predefinedType === 'TOILETPAN', 'the WC is written to IFC as a sanitary terminal');
+      const place = (kind, x, y, extra = {}) => t.cmd('furniture.place', { storeyId: s, kind, x, y, ...extra });
+      await place('bidet', 1.1, 0.5);
+      await place('washbasin', 1.75, 0.5);
+      const shower = (await t.cmd('furniture.createType', { kind: 'shower', spec: { shape: 'quadrant', enclosure: 'door' } })).id;
+      await t.cmd('furniture.place', { storeyId: s, typeId: shower, x: 0.5, y: 1.9 });
+      await place('bath', 2.0, 2.0);
+      await place('bathAccessory', 2.6, 0.2, { rotation: 0 });
+      const mirror = (await t.cmd('furniture.createType', { kind: 'bathAccessory', spec: { item: 'mirror' } })).id;
+      await t.cmd('furniture.place', { storeyId: s, typeId: mirror, x: 1.75, y: 0.3 });
+      await place('kitchenSink', 4.4, 0.4, { against: false, rotation: 0 });
+      await t.ui({ selection: null, selected: [], keyPlan: false });
+      await t.fit();
+      await t.wait(1200);
+      t.expect((await fixtures()).length >= 8, `the bathroom is fitted out (${(await fixtures()).length} pieces)`);
+      await t.shot('furniture-sanitary-plan', { of: '[data-testid=plan]', pad: 0 });
+      // The shower's type: its common sizes, indicative, beside the engine's preview of its tray and door.
+      await t.tool('furniture.types');
+      await t.wait(400);
+      const showerType = (await t.nodes()).find((n) => n.id === shower);
+      await t.page.locator('.dialog [data-furniture-type]').filter({ hasText: showerType.name }).first().click();
+      await t.wait(1500);
+      t.expect(await t.page.locator('.dialog [data-field=furniture-common-size] option').count() >= 4, 'a sanitary type offers its common sizes');
+      t.expect(await t.page.locator('.dialog [data-param=enclosure] select').count() === 1, 'the shower\'s enclosure is edited there');
+      await t.shot('furniture-sanitary-types', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog button[title="Close"]').first().click();
+      await t.wait(300);
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.6, pitch: -1.2, distance: 7.5, target: { x: 2.2, y: 1.2, z: 0.4 } }, false));
+      await t.wait(1500);
+      await t.shot('furniture-sanitary-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     // Balconies (a tester's report, #96): on the first floor of the house, a Juliet balcony clicked by its door with the
     // Balcony tool, a balcony stacked on posts (and stacked again on the second floor), a corner balcony, a loggia cut into
     // the north wall, a curved one with a parapet, one hung from tie rods and one with rounded corners; the plan (the

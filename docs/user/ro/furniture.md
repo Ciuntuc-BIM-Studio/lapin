@@ -1,7 +1,7 @@
 ---
 title: Mobilier
 order: 47
-summary: Canapele, canapele de colț, fotolii, scaune, paturi, dulapuri, comode, biblioteci, bufete, mese, birouri și bucătării în șase dispuneri, din tipuri parametrice, puse lângă pereți cu un clic.
+summary: Canapele, canapele de colț, fotolii, scaune, paturi, dulapuri, comode, biblioteci, bufete, mese, birouri, bucătării în șase dispuneri și obiecte sanitare, din tipuri parametrice, puse lângă pereți cu un clic.
 ---
 
 ## Așezarea mobilierului
@@ -211,6 +211,37 @@ Implicit, un plan desenează o piesă ca pe corpul ei văzut de sus. Un tip poat
 ![Un tip dintr-un model propriu, cu simbolul lui în plan](shots/furniture-plan-symbol-field.webp)
 
 ![O canapea dintr-un model propriu, în plan, desenată de simbolul ei](shots/furniture-plan-symbol.webp)
+
+## Obiecte sanitare
+
+Grupul **Sanitare** din tabul **Interior** are **Obiect sanitar**: aceeași unealtă de plasare, pusă pe obiectele sanitare, pe care bara le arată sub **Sanitare**:
+
+- un **WC**, suspendat sau pe pardoseală, cu rezervor încastrat (clapeta lui pe perete) sau monobloc;
+- un **bideu**, suspendat sau pe pardoseală, cu baterie sau fără;
+- un **lavoar**, dreptunghiular sau oval, pe perete, pe piedestal sau pe semipiedestal, cu bateria pe blat, din perete sau fără;
+- un **mobilier de baie cu lavoar**: un corp cu sertare, suspendat sau pe soclu, cu lavoarul în blatul lui;
+- un **duș**: cădiță dreptunghiulară sau semirotundă, înălțimea ei și paravanul: ușă batantă, panouri glisante, perete walk-in sau niciunul; bateria, bara și para pe peretele din spate;
+- o **cadă**, cu panou frontal sau fără (fără el stă pe picioare), cu bateria pe margine, din perete sau fără;
+- o **chiuvetă de bucătărie**, încastrată în blat: una sau două cuve, picurătorul la stânga sau la dreapta, bateria;
+- **accesorii de baie**: port-prosop, bară de sprijin, oglindă și suport de hârtie igienică, fiecare agățat la înălțimea lui.
+
+Un clic lângă un perete lipește obiectul de el, ca la mobilier: spatele unui WC sau al unui lavoar pe fața peretelui, fața spre încăpere, mutat cât să nu intre în peretele din colț. Un duș semirotund dat cu clic lângă un colț se așază în el.
+
+Planurile desenează fiecare obiect cu simbolul obișnuit: vasul și capacul WC-ului, cu rezervorul; cuva, scurgerea și bateria lavoarului; marginea cădiței de duș, crucea care coboară spre sifon și deschiderea ușii (de la 1:200 în jos); cuva, scurgerea și bateria căzii; cuvele și picurătorul chiuvetei. Secțiunile, fațadele și 3D arată corpurile, cu materialele lor.
+
+![O baie și o chiuvetă de bucătărie în plan](shots/furniture-sanitary-plan.webp)
+
+![Baia în 3D](shots/furniture-sanitary-3d.webp)
+
+În **Tipuri de mobilier** obiectele sanitare au grupul lor, **Sanitare**. Pe lângă lățime, adâncime și înălțime (la WC înălțimea e a capacului, la lavoar și la chiuvetă a marginii, la cadă a marginii de sus, la duș a parei), un tip de obiect sanitar are **Mărime uzuală**: dimensiunile în care se găsesc de obicei aceste obiecte, care dau tipului dimensiunile (și montajul care le însoțește) dintr-o singură alegere. Sunt **orientative**: dimensiunile unui producător sunt în catalogul lui, iar un tip poate lua orice dimensiune. **Proprie** înseamnă că dimensiunile tipului nu sunt dintre cele din listă. Materialele sunt pe roluri: ceramica, capacul WC-ului, bateriile și accesoriile, sticla dușului, oțelul chiuvetei, sticla oglinzii.
+
+**Simbol în plan** arată întâi simbolurile din categoria **Sanitare**: un tip poate fi desenat cu un simbol desenat de tine, ca orice piesă de mobilier.
+
+![Un tip de duș: dimensiunile uzuale și previzualizarea](shots/furniture-sanitary-types.webp)
+
+În IFC un obiect sanitar e un **IfcSanitaryTerminal** al tipului lui, **IfcSanitaryTerminalType**, cu tipul predefinit: TOILETPAN, BIDET, WASHHANDBASIN (lavoarul și mobilierul cu lavoar), SHOWER, BATH sau SINK. Are punctele de racord ca **IfcDistributionPort**: apă rece și caldă la intrare (WC-ul doar rece, la rezervor), scurgerea la ieșire, în perete sau prin pardoseală, cu diametrul obișnuit (110 mm la WC). Un program de instalații, sau mai târziu modulul MEP al lui Lapin, își poate lega țevile de ele. Accesoriile sunt **IfcFurniture**, USERDEFINED cu felul lor (Towel rail, Grab bar, Mirror, Toilet roll holder). Lapin își citește înapoi obiectele sanitare ca piese native, editabile; panoul Proprietăți arată clasa cu care e scrisă o piesă.
+
+Obiectele sanitare intră în extrasele de mobilier, cu celelalte piese.
 
 ## Proprietățile unei piese
 

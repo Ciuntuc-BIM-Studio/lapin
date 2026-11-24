@@ -8,7 +8,7 @@ Cerut de utilizator la 05.11.2026 („dezvoltăm și funcții pentru mobilier?�
 - Clasele lui: **`IfcFurniture`** (elementul) și **`IfcFurnitureType`** (tipul), cele ale IFC4; Studio rămâne cu `IfcFurnishingElement`, mobilierul de sub scară cu scara.
 - Ca la uși și ferestre: **tipul ține forma** (felul, dimensiunile, parametrii felului, materialele pe roluri), elementul ține locul (`at`, centrul amprentei; `rotation`; `offset` deasupra nivelului; `mirror`). Corpul și simbolul de plan sunt derivate, niciodată stocate.
 - Fără modele 3D sau biblioteci luate de altundeva: corpurile sunt construite de Lapin din blocuri cu colțuri rotunjite, cilindri și perne, low-poly, ca anturajul (decizia 324). Licența rămâne MIT curată.
-- Obiectele sanitare rămân la MEP (terminale), nu aici.
+- Obiectele sanitare ca noduri ale schemei rămân la MEP (terminale); obiectele sanitare de arhitectură (WC, bideu, lavoar, mobilier cu lavoar, duș, cadă, chiuvetă, accesorii) sunt felurile grupei **Sanitary** de aici (forum topic #245), scrise în IFC ca `IfcSanitaryTerminal` prin `exportAs`, cu porturile lor (mai jos, Obiectele sanitare).
 
 ## Felurile
 
@@ -111,3 +111,7 @@ Cerut de utilizator la 11.11.2026, după bucătăria cu corpuri proprii (decizia
 
 Rămas din etapa 1, dacă e cerut: corpuri suprapuse ca elemente separate, colțuri (L) pentru corpuri, cant (benzi de margine) și feronerie în listă, prețuri pe placă în deviz, export al listei de debitare pentru optimizare.
 
+
+## Obiectele sanitare (forum topic #245)
+
+Grupa **Sanitary** (`Sanitary.cs`): `toilet` (TOILETPAN), `bidet` (BIDET), `washbasin` și `vanity` (WASHHANDBASIN), `shower` (SHOWER), `bath` (BATH), `kitchenSink` (SINK), scrise ca `IfcSanitaryTerminal` al unui `IfcSanitaryTerminalType` (elementul rămâne `IfcFurniture` cu `exportAs`: clasa e a modulului `mep`); `bathAccessory` rămâne `IfcFurniture` USERDEFINED după obiect (Towel rail, Grab bar, Mirror, Toilet roll holder). Înălțimea tipului e a marginii (capacul WC-ului, marginea lavoarului, a căzii, a chiuvetei; la duș para). Materiale noi pe roluri: ceramic, seat, fittings, screen, steel, mirror. Fiecare fel are `sizes`, dimensiunile uzuale, orientative (`sizesIndicative`). Porturile (`Sanitary.Ports`, în cadrul piesei; `PortsOf`, în proiect) au serviciile MEP (`coldWater`, `hotWater`, `drainage`) și ies în IFC ca `IfcDistributionPort` (`SanitaryNetwork`). Rămase: robinete separate, pisoar, cadă de colț, cabină cu două laturi, legarea la rețeaua MEP, spațiile de folosință, recunoașterea din IFC.

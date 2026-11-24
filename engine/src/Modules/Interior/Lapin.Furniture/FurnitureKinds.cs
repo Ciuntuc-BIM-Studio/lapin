@@ -8,6 +8,9 @@ namespace Lapin.Furniture;
 /// <summary>A parameter of a furniture kind, as the types dialog edits it: a length, a number, a choice or a switch.</summary>
 public sealed record KindParam(string Key, string Label, string Kind, double? Min = null, double? Max = null, string[]? Choices = null, string[]? Layouts = null);
 
+/// <summary>A common size a kind offers (indicative): a word on what it is (empty for a plain size; the interface adds its sizes) and the values it gives a type's spec.</summary>
+public sealed record KindSize(string Label, JsonObject Spec);
+
 /// <summary>
 /// A kind of furniture (docs/plan-furniture.md, Felurile): its key, label, group, IFC predefined type (USERDEFINED with
 /// its object type when IFC has none), the size a new type starts with, its own parameters with their first values and
@@ -16,6 +19,12 @@ public sealed record KindParam(string Key, string Label, string Kind, double? Mi
 public sealed record FurnitureKind(string Key, string Label, string Group, string Predefined, string? ObjectType,
     double Width, double Depth, double Height, IReadOnlyList<KindParam> Params, JsonObject Defaults, IReadOnlyList<string> Roles)
 {
+    /// <summary>The IFC class its pieces are written as: IfcFurniture, a sanitary fixture's IfcSanitaryTerminal (forum topic #245).</summary>
+    public string IfcClass { get; init; } = FurnitureModule.Class;
+
+    /// <summary>The common sizes it offers, indicative (a manufacturer's are its own).</summary>
+    public IReadOnlyList<KindSize> Sizes { get; init; } = [];
+
     public JsonObject ToJson() => new()
     {
         ["key"] = Key, ["label"] = Label, ["group"] = Group, ["predefined"] = Predefined, ["objectType"] = ObjectType,
@@ -28,6 +37,9 @@ public sealed record FurnitureKind(string Key, string Label, string Group, strin
         })]),
         ["defaults"] = Defaults.DeepClone(),
         ["roles"] = new JsonArray([.. Roles.Select(r => (JsonNode)r)]),
+        ["ifcClass"] = IfcClass,
+        ["sizes"] = new JsonArray([.. Sizes.Select(z => (JsonNode)new JsonObject { ["label"] = z.Label, ["spec"] = z.Spec.DeepClone() })]),
+        ["sizesIndicative"] = Sizes.Count > 0 ? true : null,
     };
 }
 
@@ -55,9 +67,16 @@ public static class FurnitureKinds
         ["shade"] = ("Lamp shade linen", "#f1e6c8"),
         ["foliage"] = ("Plant foliage", "#5f8a4a"),
         ["pot"] = ("Terracotta", "#b8673f"),
+        // Sanitary fixtures (forum topic #245): the ceramic, a WC's seat, the taps and fittings, a shower's glass, a sink's steel, a mirror.
+        ["ceramic"] = ("Sanitary ceramic white", "#f4f3ef"),
+        ["seat"] = ("Plastic white", "#f1f0ec"),
+        ["fittings"] = ("Chrome", "#c9ced3"),
+        ["screen"] = ("Clear glass", "#cfe3e8"),
+        ["steel"] = ("Stainless steel", "#b7bcc1"),
+        ["mirror"] = ("Mirror glass", "#dfe8ec"),
     };
 
-    public static readonly string[] RoleOrder = ["body", "upholstery", "top", "fronts", "linen", "metal", "glass", "plinth", "handles", "back", "legs", "accent", "shade", "foliage", "pot"];
+    public static readonly string[] RoleOrder = ["body", "upholstery", "top", "fronts", "linen", "metal", "glass", "plinth", "handles", "back", "legs", "accent", "shade", "foliage", "pot", "ceramic", "seat", "fittings", "screen", "steel", "mirror"];
 
     /// <summary>The colours of the materials the presets and styles name, when the project has not made them yet (indicative).</summary>
     public static readonly IReadOnlyDictionary<string, string> MaterialColors = new Dictionary<string, string>
@@ -78,13 +97,18 @@ public static class FurnitureKinds
     public static (string Predefined, string? ObjectType) IfcOf(Spec s) => s.Kind.Key switch
     {
         Casework.Key => Casework.Ifc(s),
+        // A sanitary fixture's own (forum topic #245); an accessory USERDEFINED by its item („Grab bar”).
+        _ when Sanitary.Is(s.Kind) => Sanitary.Ifc(s),
         // A model's own: a sofa SOFA, a chair CHAIR, a lamp USERDEFINED „Floor lamp” (decision 477).
         FurnitureModels.Key => FurnitureModels.Of(s) is var m ? (m.Predefined, m.Predefined == "USERDEFINED" ? m.ObjectType ?? m.Name : null) : default,
         _ => (s.Kind.Predefined, s.Kind.ObjectType),
     };
 
     /// <summary>Whether a type's IFC type follows its spec (a casework's preset, a model): changed, its pieces are retyped.</summary>
-    public static bool Retypes(FurnitureKind k) => k.Key is Casework.Key or FurnitureModels.Key;
+    public static bool Retypes(FurnitureKind k) => k.Key is Casework.Key or FurnitureModels.Key or Sanitary.AccessoryKey;
+
+    /// <summary>The IFC class a type of the spec's pieces are written as (forum topic #245): its kind's.</summary>
+    public static string ClassOf(Spec s) => s.Kind.IfcClass;
 
     static KindParam L(string k, string l, double min = 0, double max = 3) => new(k, l, "length", min, max);
     static KindParam N(string k, string l, double min, double max) => new(k, l, "number", min, max);
@@ -209,6 +233,8 @@ public static class FurnitureKinds
             [C("model", "Model", [.. FurnitureModels.All.Select(m => m.Id)]), L("mount", "Hung at (its underside)", 0, 3)],
             D(("model", FurnitureModels.All[0].Id), ("mount", FurnitureModels.All[0].Mount)),
             FurnitureModels.Roles),
+        // Sanitary fixtures (forum topic #245): IfcSanitaryTerminal, the accessories IfcFurniture.
+        .. Sanitary.Kinds,
     ];
 
     public static FurnitureKind? Find(string? key) => All.FirstOrDefault(k => k.Key == key);
@@ -240,6 +266,8 @@ public static class FurnitureKinds
             var m = FurnitureModels.Find(id) ?? throw new CommandException($"There is no furniture model „{id}”.");
             if ((string?)spec["model"] != m.Id) StartModel(spec, m, given);
         }
+        // An accessory of another item (forum topic #245): the item's size and height first, then what was given.
+        if (k.Key == Sanitary.AccessoryKey) Sanitary.StartItem(spec, given);
         foreach (var (key, v) in given)
         {
             if (key is "kind" or "model" && model) continue;
@@ -288,7 +316,9 @@ public static class FurnitureKinds
             if (key is "width" or "depth" or "height")
             {
                 var d = Json.Number(v) ?? throw new CommandException($"The {key} is a length in metres.");
-                if (!(d >= 0.1 && d <= 12)) throw new CommandException($"A piece of furniture's {key} is between 100 mm and 12 m.");
+                // A towel rail is 50 mm high, a mirror 20 mm deep (forum topic #245).
+                var least = Sanitary.Is(k) ? 0.01 : 0.1;
+                if (!(d >= least && d <= 12)) throw new CommandException($"A piece of furniture's {key} is between {least * 1000:0} mm and 12 m.");
                 spec[key] = d;
                 continue;
             }

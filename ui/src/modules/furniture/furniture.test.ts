@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NodeDto } from '../../engine/protocol';
-import { appliesTo, furnitureGrips, planBox, planPaths, sizeOf, typesOfKind, type FurnitureKind, type KindParam, type PreviewDto } from './furniture';
+import { appliesTo, furnitureGrips, planBox, planPaths, sizeIndex, sizeLabel, sizeOf, typesOfKind, type FurnitureKind, type KindParam, type KindSize, type PreviewDto } from './furniture';
 
 const node = (id: string, type: string, props: Record<string, unknown>, name = id): NodeDto => ({ id, type, name, props } as unknown as NodeDto);
 
@@ -49,5 +49,26 @@ describe('a kitchen’s layouts (report #124)', () => {
     const defaults = { layout: 'one-wall' };
     expect(params.filter((p) => appliesTo(p, {}, defaults)).map((p) => p.key)).toEqual(['layout', 'unit']);
     expect(params.filter((p) => appliesTo(p, { layout: 'u-shaped' }, defaults)).map((p) => p.key)).toEqual(['layout', 'leg', 'unit']);
+  });
+});
+
+describe('a sanitary kind’s common sizes (forum topic #245)', () => {
+  const sizes: KindSize[] = [
+    { label: 'Wall-hung', spec: { width: 0.36, depth: 0.54, height: 0.4, mount: 'wallHung' } },
+    { label: '', spec: { width: 0.6, depth: 0.46, height: 0.85 } },
+    { label: 'Floor-standing', spec: { width: 0.36, depth: 0.54, height: 0.4, mount: 'floor' } },
+  ];
+
+  it('lists each by its word and its size in mm, the word in the interface’s language', () => {
+    expect(sizeLabel(sizes[0])).toBe('Wall-hung 360 × 540 × 400');
+    expect(sizeLabel(sizes[1])).toBe('600 × 460 × 850');
+    expect(sizeLabel(sizes[2], (w) => (w === 'Floor-standing' ? 'Pe pardoseală' : w))).toBe('Pe pardoseală 360 × 540 × 400');
+  });
+
+  it('knows which one a type is, by every value the size gives, and none when it was changed', () => {
+    expect(sizeIndex(sizes, { width: 0.36, depth: 0.54, height: 0.4, mount: 'floor', cistern: 'concealed' })).toBe(2);
+    expect(sizeIndex(sizes, { width: 0.36, depth: 0.54, height: 0.4, mount: 'wallHung' })).toBe(0);
+    expect(sizeIndex(sizes, { width: 0.37, depth: 0.54, height: 0.4, mount: 'wallHung' })).toBe(-1);
+    expect(sizeIndex(undefined, {})).toBe(-1);
   });
 });

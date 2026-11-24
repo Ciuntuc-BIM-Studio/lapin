@@ -1,7 +1,7 @@
 ---
 title: Furniture
 order: 47
-summary: Sofas, corner sofas, armchairs, chairs, beds, wardrobes, chests, bookcases, sideboards, tables, desks and kitchens in six layouts, from parametric types, placed against walls with a click.
+summary: Sofas, corner sofas, armchairs, chairs, beds, wardrobes, chests, bookcases, sideboards, tables, desks, kitchens in six layouts and sanitary fixtures, from parametric types, placed against walls with a click.
 ---
 
 <!-- video furniture -->
@@ -213,6 +213,37 @@ By default a plan draws a piece as its body seen from above. A type can use a sy
 ![A type of a model of your own with its plan symbol](shots/furniture-plan-symbol-field.webp)
 
 ![A sofa of a model of your own in plan, drawn by its symbol](shots/furniture-plan-symbol.webp)
+
+## Sanitary fixtures
+
+The **Interior** tab's **Sanitary** group has **Sanitary fixture**: the same Place tool, set to the fixtures, which the bar lists under **Sanitary**:
+
+- a **WC**, wall-hung or floor-standing, with a concealed cistern (its flush plate on the wall) or a close-coupled one;
+- a **bidet**, wall-hung or floor-standing, with or without its tap;
+- a **wash basin**, rectangular or oval, on the wall, on a pedestal or a half pedestal, its tap on the deck, out of the wall or none;
+- a **vanity unit**: a cabinet of drawers, on the wall or on a plinth, with the basin set in its top;
+- a **shower**: a rectangular or quadrant tray, its height, and its enclosure: a hinged door, sliding panels, a walk-in screen or none; the mixer, riser and head on the wall behind it;
+- a **bath**, with or without its front panel (without it, it stands on feet), its tap on the deck, out of the wall or none;
+- a **kitchen sink**, set in a worktop: one or two bowls, a drainer on the left or right, a tap;
+- **bathroom accessories**: a towel rail, a grab bar, a mirror and a toilet roll holder, each hung at its height.
+
+Click near a wall and the fixture backs onto it, as furniture does: a WC's or a basin's back on the wall's face, its front to the room, slid clear of the wall across a corner. A quadrant shower clicked by a corner takes it.
+
+Plans draw each fixture by its usual symbol: a WC's pan and seat, with its cistern; a basin's bowl, waste and tap; a shower tray's rim, the cross falling to its drain and its door's swing (from 1:200 on); a bath's tub, waste and tap; a sink's bowls and drainer. Sections, elevations and 3D show their bodies, with their materials.
+
+![A bathroom and a kitchen sink in plan](shots/furniture-sanitary-plan.webp)
+
+![The bathroom in 3D](shots/furniture-sanitary-3d.webp)
+
+In **Furniture types** the fixtures are in their own **Sanitary** group. Besides the width, depth and height (a WC's height is its seat's, a basin's or a sink's its rim's, a bath's its top's, a shower's its head's), a fixture type has **Common size**: the sizes these fixtures usually come in, which set the type's sizes (and the mounting that goes with them) in one choice. They are **indicative**: a manufacturer's own sizes are in its catalogue, and a type can take any size. **Its own** means the type's sizes are not one of the list. The materials are by role: the ceramic, a WC's seat, the taps and fittings, the shower's glass, a sink's steel, a mirror's glass.
+
+**Plan symbol** lists the symbols of the **Sanitary** category first: a type can be drawn by a symbol you drew, as any piece of furniture.
+
+![A shower type: its common sizes and its preview](shots/furniture-sanitary-types.webp)
+
+In IFC a fixture is an **IfcSanitaryTerminal** of its **IfcSanitaryTerminalType**, with its predefined type: TOILETPAN, BIDET, WASHHANDBASIN (a basin and a vanity unit), SHOWER, BATH or SINK. It carries its connection points as **IfcDistributionPort**s: cold and hot water in (a WC only cold, to its cistern), its waste out, into the wall or down through the floor, with the size it usually takes (110 mm for a WC). An MEP program, or Lapin's MEP later, can join its pipes to them. The accessories are **IfcFurniture**, USERDEFINED with their item (Towel rail, Grab bar, Mirror, Toilet roll holder). Lapin reads its fixtures back as native, editable pieces; the Properties panel shows the class a piece is written as.
+
+The fixtures are counted in the furniture schedules with the rest.
 
 ## A piece's properties
 
