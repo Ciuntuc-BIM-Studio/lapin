@@ -189,7 +189,7 @@ Fișa SubD arată punctele și fețele cuștii și dacă este deschisă sau înc
 
 ## Rețele din alte programe
 
-**Fișier → Importă rețea (OBJ, STL, glTF)…** aduce o rețea ca referințe pe care le vezi și la care te prinzi. Un fișier OBJ sau STL nu spune în ce unitate e și care axă e în sus, așa că Lapin întreabă. O referință se mută, se rotește, se oglindește și se copiază așa cum e, ca orice element. Ca să-i schimbi forma, selecteaz-o și apasă **Fă solid Studio**. Primește apoi împinge/trage, racordări, booleene și ceilalți pași. Aceeași unealtă merge pe pereți, plăci și elemente din fișiere IFC.
+**Fișier → Importă rețea (OBJ, STL, glTF, PLY)…** aduce o rețea ca referințe pe care le vezi și la care te prinzi. Un fișier OBJ, STL sau PLY nu spune în ce unitate e și care axă e în sus, așa că Lapin întreabă. O referință se mută, se rotește, se oglindește și se copiază așa cum e, ca orice element. Ca să-i schimbi forma, selecteaz-o și apasă **Fă solid Studio**. Primește apoi împinge/trage, racordări, booleene și ceilalți pași. Aceeași unealtă merge pe pereți, plăci și elemente din fișiere IFC.
 
 ## Booleene
 

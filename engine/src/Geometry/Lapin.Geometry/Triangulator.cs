@@ -142,6 +142,7 @@ public static class Triangulator
         }
 
         double Corner(int k) => Cross2(pos[prev[k]], pos[k], pos[next[k]]);
+        var relaxed = false;
 
         // Whether corner p, reflex or flat, stands in the ear a b c (its own corners and their twins left out).
         bool Blocks(int p, int ia, int ib, int ic, double x0, double x1, double y0, double y1)
@@ -151,11 +152,15 @@ public static class Triangulator
             if (q.X < x0 || q.X > x1 || q.Y < y0 || q.Y > y1) return false;
             Vec2 a = pos[ia], b = pos[ib], c = pos[ic];
             if (Same(q, a, tol) || Same(q, b, tol) || Same(q, c, tol)) return false;
-            if (InTriangle(a, b, c, q)) return Corner(p) <= tol;
-            // A flat corner on the ear's new edge c–a, a hair outside it once projected, blocks it too (else a T-junction).
+            // Flat within the ear's own scale: a corner in a line with its neighbours, rounded a hair convex once projected, still
+            // blocks (else the ear's edge passes by it, a T-junction).
             var span = x1 - x0 + (y1 - y0);
             var eps = 1e-12 * span * span;
-            return Math.Abs(Corner(p)) <= eps && Math.Abs(Cross2(c, a, q)) <= eps && Vec2.Dot(q - c, a - c) > 0 && Vec2.Dot(q - a, c - a) > 0;
+            if (InTriangle(a, b, c, q)) return Corner(p) <= Math.Max(tol, eps);
+            // A flat corner on the ear's new edge c–a, a hair outside it once projected, blocks it too (else a T-junction); a reflex
+            // one there (a face of coplanar triangles whose loop turns back at a point on the edge, as a terrain's on a regular grid
+            // of points) while an ear clear of it is still to be found: round the ring without one, it no longer blocks.
+            return (relaxed ? Math.Abs(Corner(p)) : Corner(p)) <= eps && Math.Abs(Cross2(c, a, q)) <= eps && Vec2.Dot(q - c, a - c) > 0 && Vec2.Dot(q - a, c - a) > 0;
         }
 
         bool IsEar(int ib)
@@ -165,6 +170,9 @@ public static class Triangulator
             if (Cross2(a, b, c) <= tol) return false;
             double x0 = Math.Min(a.X, Math.Min(b.X, c.X)), x1 = Math.Max(a.X, Math.Max(b.X, c.X));
             double y0 = Math.Min(a.Y, Math.Min(b.Y, c.Y)), y1 = Math.Max(a.Y, Math.Max(b.Y, c.Y));
+            // The bounds a hair wider: a corner on the ear's edge, rounded just outside them once projected, is still looked at.
+            var pad = 1e-9 * (x1 - x0 + (y1 - y0));
+            x0 -= pad; x1 += pad; y0 -= pad; y1 += pad;
             if (!hashed)
             {
                 for (int p = next[ic]; p != ia; p = next[p])
@@ -190,10 +198,14 @@ public static class Triangulator
                 Remove(ear);
                 count--;
                 ear = stop = next[after];
+                relaxed = false;
                 continue;
             }
             ear = next[ear];
             if (ear != stop) continue;
+            // Round the ring without an ear clear of every reflex corner on its new edge: once more, letting those pass.
+            if (!relaxed) { relaxed = true; continue; }
+            relaxed = false;
             // Round the ring without an ear: self-intersecting or degenerate. Force-clip the most convex
             // corner so we still emit geometry instead of hanging.
             int best = ear;

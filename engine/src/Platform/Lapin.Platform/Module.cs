@@ -246,6 +246,11 @@ public interface IQueryContext
     /// radii and sloping flanges), built when first asked for; the element's own geometry when it has no finer shape.
     /// </summary>
     ElementGeometry? FineGeometry(string entityId) => Geometry(entityId);
+    /// <summary>
+    /// The element as a view in the vegetation's maquette style draws it (<see cref="ElementGeometry.VegetationShape"/>: a planting's
+    /// neutral faceted trees, decision 818), built when first asked for; the element's own geometry when it has no such body.
+    /// </summary>
+    ElementGeometry? MaquetteGeometry(string entityId) => Geometry(entityId);
     /// <summary>The project's file name without its extension ("House"), what the interface calls the project; null before it has a file.</summary>
     string? Title => null;
     /// <summary>The elements built from what <paramref name="id"/> is (its attributes, or its relationships): built again when it changes (<see cref="Dependencies"/>).</summary>
@@ -540,6 +545,13 @@ public sealed record ElementGeometry(IReadOnlyList<GeometryPart> Parts, IReadOnl
     /// only a view at LOD 400 draws (decision 415); everything else, the quantities, exports and every lower level, keep this one.
     /// </summary>
     public bool FineShape { get; init; }
+
+    /// <summary>
+    /// Its producer builds another body for a view whose vegetation style is the maquette (<see cref="GeometryOptions.Maquette"/>,
+    /// decision 818): a planting's neutral faceted trees, which only such a view draws; everything else, the quantities, the IFC
+    /// export and every coloured view, keep this one.
+    /// </summary>
+    public bool VegetationShape { get; init; }
 }
 
 /// <summary>
@@ -564,7 +576,8 @@ public sealed class CommandException(string message) : ModelException(message);
 /// through <see cref="IServices"/>; absent, the views' geometry.
 /// </summary>
 /// <param name="Fine">The real section of a member (<see cref="ElementGeometry.FineShape"/>), as a view at LOD 400 draws it.</param>
-public sealed record GeometryOptions(bool CutOpenings = true, bool Fine = false);
+/// <param name="Maquette">The vegetation as an architectural model's (<see cref="ElementGeometry.VegetationShape"/>, decision 818), as a view in the maquette style draws it.</param>
+public sealed record GeometryOptions(bool CutOpenings = true, bool Fine = false, bool Maquette = false);
 
 /// <summary>The body of a void (an IfcOpeningElement) in its host, for whoever writes it out; a service of the module that owns the host.</summary>
 public interface IVoidShapes

@@ -9,6 +9,10 @@
  * the issue and saves the project as a version named after it, in one call:
  * the project is clean after. The dialog then shows that issue as issued —
  * its names, its files — until it is closed or a new issue is started.
+ * With a remote (W4, CdePublish.tsx IssueOnServer) the issue then goes on: submitted for approval on a CDE server, or its issue tag
+ * made directly where the rules allow.
+ * The same documents issued again are a new revision of their issue (ISO 19650: issue 1 at P01, then P02, C01…): its number and
+ * GlobalId kept, the revision after its last; "New issue" stays a choice, and any earlier issue can be picked.
  */
 
 import { backdropClose } from '../../../shell/Dialog';
@@ -19,11 +23,13 @@ import { engineInBrowser, useSession } from '../../../engine/session';
 import { keepProjectFile, saveProject } from '../../../engine/files';
 import { FindingsList } from './CheckDialog';
 import {
-  canIssue, canUseFolder, cdeCheck, cdeNames, cdeSettings, containerFor, isRevision, issue, issuedSummary, issuePhase, nextRevision, openFolder, openIssued,
-  type CdeSettings, type CheckResult, type Names,
+  canIssue, canUseFolder, cdeCheck, cdeNames, cdeSettings, containerFor, isRevision, issue, issuedSummary, issuePhase, openFolder, openIssued, revisionFits, revisionFor,
+  type CdeSettings, type CheckResult, type Names, type Series,
 } from './cde';
 import { PendingDialog } from '../PendingDialog';
 import { documentPictures } from '../documents/documents';
+import { IssueOnServer } from '../CdePublish';
+import { t } from '../../../i18n';
 
 export function IssueDialog() {
   const nodes = useSession((s) => s.nodes);
@@ -48,6 +54,9 @@ export function IssueDialog() {
   const [check, setCheck] = useState<{ key: string; result: CheckResult | null } | null>(null);
   const [names, setNames] = useState<Names | null>(null);
   const [anyway, setAnyway] = useState(false);
+  // What the issue is: '' a new issue, else a new revision of the issue with this GlobalId; proposed from what is chosen until the user picks.
+  const [target, setTarget] = useState('');
+  const [picked, setPicked] = useState(false);
   const [phase, dispatch] = useReducer(issuePhase, { kind: 'form' });
   const done = phase.kind === 'done' ? phase.result : null;
   const busy = phase.kind === 'issuing';
@@ -74,29 +83,49 @@ export function IssueDialog() {
   // each answer is kept with what it was asked for, so an issue goes only on the checks of what is chosen now.
   const showing = done != null;
   const asked = JSON.stringify([ids, revision, status]);
+  const namesFor = JSON.stringify([ids, docIds, model, target]);
   useEffect(() => {
     if (showing || !chosen || !isRevision(revision)) return;
     let live = true;
     const t = setTimeout(() => {
       void (async () => {
         const c = await cdeCheck(ids, revision);
-        const n = await cdeNames({ sheets: ids, revision, status });
+        const n = await cdeNames({ sheets: ids, documents: docIds, model, revision, status, ...(target ? { of: target } : {}) });
         if (live) { setCheck({ key: asked, result: c }); setNames(n); }
       })();
     }, 300);
     return () => { live = false; clearTimeout(t); };
-  }, [showing, chosen, ids, revision, status, asked, nodes]);
+    // namesFor stands for the documents, the model and the target, whose names follow them too.
+  }, [showing, chosen, ids, revision, status, asked, namesFor, nodes]);
   const current = check?.key === asked ? check.result : undefined;
+  const series: Series[] = names?.series ?? [];
+  const targetSeries = target ? series.find((x) => x.issueId === target) ?? null : null;
+
+  // A new revision of an issue, or a new issue: its revision proposed after that issue's last (or the project's), its name the issue's.
+  const aim = (id: string, c = contractual) => {
+    const sr = id ? series.find((x) => x.issueId === id) ?? null : null;
+    setTarget(id);
+    setRevision(revisionFor(sr, c, s?.lastRevision ?? null));
+    setName(sr ? sr.name : `Issue ${s?.nextNumber ?? 1}`);
+  };
+  // Until the user picks, the issue whose last revision sent exactly what is chosen is the default: a new revision of it.
+  const matchId = names?.match?.issueId ?? '';
+  useEffect(() => {
+    if (picked || showing || !names || matchId === target) return;
+    aim(matchId);
+    // aim reads the series of these names; it runs when the match changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchId, picked, showing, names]);
 
   const toggle = (id: string) => setChosen((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const toggleDoc = (id: string) => setChosenDocs((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const chooseStatus = (code: string) => { setStatus(code); setContainer(containerFor(code)); };
-  const chooseKind = (c: boolean) => { setContractual(c); setRevision(nextRevision(s?.lastRevision ?? null, c)); };
+  const chooseKind = (c: boolean) => { setContractual(c); setRevision(revisionFor(targetSeries, c, s?.lastRevision ?? null)); };
 
   const folderHere = canUseFolder() && Boolean(s?.folder);
   const blocked = (current?.blocking ?? 0) > 0;
   const warned = (current?.warnings ?? 0) > 0;
-  const ready = canIssue() && current != null && chosen && (ids.length > 0 || model || docIds.length > 0) && isRevision(revision) && !blocked && (!warned || anyway) && !busy && !done;
+  const ready = canIssue() && current != null && chosen && (ids.length > 0 || model || docIds.length > 0) && revisionFits(revision, targetSeries) && !blocked && (!warned || anyway) && !busy && !done;
 
   const go = async () => {
     if (!ready) return;
@@ -113,7 +142,7 @@ export function IssueDialog() {
       const r = await issue({
         name: name.trim(), revision, status, container, sheets: ids, model, keepModel: model && keepModel, dxf, set, note: note.trim(), documents: docIds, documentsDocx: withDocx,
         ...(documentImages ? { documentImages } : {}),
-        toFolder: folderHere && toFolder, ...(engineInBrowser ? { bytes: true } : {}),
+        toFolder: folderHere && toFolder, ...(engineInBrowser ? { bytes: true } : {}), ...(target ? { of: target } : {}),
       });
       if (r.file) await keepProjectFile(r.file);
       dispatch({ type: 'issued', result: r });
@@ -129,8 +158,10 @@ export function IssueDialog() {
   // A new issue: the form back, its name and revision proposed after the one just made.
   const again = async () => {
     const r = await cdeSettings();
-    if (r) { setS(r); setName(`Issue ${r.nextNumber}`); setRevision(nextRevision(r.lastRevision, contractual)); }
+    if (r) { setS(r); setName(`Issue ${r.nextNumber}`); setRevision(revisionFor(null, contractual, r.lastRevision)); }
     setAnyway(false);
+    setTarget('');
+    setPicked(false);
     dispatch({ type: 'new' });
   };
 
@@ -156,17 +187,27 @@ export function IssueDialog() {
               ))}
             </ul>
             {done.path && canUseFolder() && <button type="button" className="link" onClick={() => void openFolder(done.path!)}><FolderOpen size={12} /> Open folder</button>}
+            <IssueOnServer issue={done} />
           </div>
         ) : (
           <div className="dialog-body cde">
             {!canIssue() && <p className="cde-warn">Only the host of a shared session can issue.</p>}
             <div className="cde-issue-grid">
+              {series.length > 0 && (
+                <label className="row"><span className="muted small loc-label">Issue as</span>
+                  <select value={target} onChange={(e) => { setPicked(true); aim(e.target.value); }} aria-label="Issue as" data-field="issue-target">
+                    <option value="" data-no-i18n>{`${t('New issue')} #${s.nextNumber}`}</option>
+                    {series.map((x) => <option key={x.issueId} value={x.issueId} data-no-i18n>{`${t('New revision of issue')} #${x.number} · ${x.name} (${x.revisions.join(', ')})`}</option>)}
+                  </select>
+                  {names?.match && target === names.match.issueId && <span className="muted small">Same documents as its last revision</span>}
+                </label>
+              )}
               <label className="row"><span className="muted small loc-label">Issue</span><input value={name} onChange={(e) => setName(e.target.value)} aria-label="Issue name" /></label>
               <label className="row"><span className="muted small loc-label">Revision</span>
-                <input value={revision} onChange={(e) => setRevision(e.target.value.toUpperCase())} aria-label="Revision" className={isRevision(revision) ? undefined : 'invalid'} style={{ width: 60 }} />
+                <input value={revision} onChange={(e) => setRevision(e.target.value.toUpperCase())} aria-label="Revision" className={revisionFits(revision, targetSeries) ? undefined : 'invalid'} style={{ width: 60 }} />
                 <label className="small"><input type="radio" checked={!contractual} onChange={() => chooseKind(false)} /> preliminary (P)</label>
                 <label className="small"><input type="radio" checked={contractual} onChange={() => chooseKind(true)} /> contractual (C)</label>
-                {s.lastRevision && <span className="muted small">last {s.lastRevision}</span>}
+                {targetSeries ? <span className="muted small">last <span data-no-i18n>{`#${targetSeries.number} ${targetSeries.lastRevision}`}</span></span> : s.lastRevision && <span className="muted small">last {s.lastRevision}</span>}
               </label>
               <label className="row"><span className="muted small loc-label">Status</span>
                 <select value={status} onChange={(e) => chooseStatus(e.target.value)} aria-label="Status">{s.statuses.map((x) => <option key={x.code} value={x.code}>{x.code} · {x.label}</option>)}</select>

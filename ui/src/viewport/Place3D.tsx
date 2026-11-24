@@ -97,6 +97,8 @@ export function Place3D({ camera, canvas, scene }: ViewRefs) {
     if (!g || !tool) return;
     const s = state.current;
     const v = s.text ? parseVcb(s.text, (x) => parseLength(x)) : null;
+    // Measuring (Scale image, Calibrate scale): the second point is the cursor's, the length typed their true distance.
+    if (v && g.kind === 'twoPoints' && g.measure && s.pts.length === 1 && v.kind === 'length' && s.at) { placeAt(cursor2(s.at)!, v.value, s.at); return; }
     if (v) {
       const p = typedPoint(g, s.pts, v, cursor2(s.at));
       if (p) placeAt(p, v.kind === 'length' || v.kind === 'lengthAngle' ? v.value : undefined);
@@ -180,29 +182,35 @@ export function Place3D({ camera, canvas, scene }: ViewRefs) {
   if (!active || !g || !tool) return null;
   const z = level();
   const project = projector(refs);
-  const w = (p: Vec2): Vec3 => ({ x: p.x, y: p.y, z });
+  // A tool that measures in space (Measure): its points drawn at the heights they were snapped at, the cursor's at its own.
+  const space = !!tool.inSpace;
+  const heightAt = (i: number) => (space ? (i < pts.length ? zs.current[i] ?? z : at && at.kind !== 'On level' ? at.point.z : z) : z);
+  const w = (p: Vec2, i = -1): Vec3 => ({ x: p.x, y: p.y, z: i < 0 ? z : heightAt(i) });
   const cur2 = cursor2(at);
   const vcb = text ? parseVcb(text, (x) => parseLength(x)) : null;
   const typed = vcb ? typedPoint(g, pts, vcb, cur2) : null;
   const aim = typed ?? (cur2 ? constrained(g, pts, cur2) : null);
   const shape = previewOf(g, pts, aim);
-  const screen = shape.pts.map((p) => project(w(p)));
+  const screen = shape.pts.map((p, i) => project(w(p, space ? i : -1)));
   const path = screenPath(screen, !!shape.closed);
   const cur = at ? project(at.point) : null;
   // A point snapped off the level (a beam's end, a slab's top above it): a plumb line down to where the tool takes it.
   const foot = at && Math.abs(at.point.z - z) > 1e-3 ? project({ x: at.point.x, y: at.point.y, z }) : null;
   const guide = at?.guide ? [project(at.guide.from), project(at.guide.to)] : null;
   const lastPt = pts[pts.length - 1];
-  const label = lastPt && aim ? formatLength(Math.hypot(aim.x - lastPt.x, aim.y - lastPt.y)) : '';
+  // In space (Measure, Calibrate scale): the leg's true length, its heights counted.
+  const label = lastPt && aim ? formatLength(Math.hypot(aim.x - lastPt.x, aim.y - lastPt.y, space ? heightAt(pts.length) - heightAt(pts.length - 1) : 0)) : '';
   const markClass = at?.kind === 'Endpoint' ? 'sketch-end' : at?.kind === 'Midpoint' ? 'sketch-mid' : at?.kind === 'On edge' ? 'sketch-edge' : 'face-sketch-cursor';
   const storey = activeStorey();
+  // What the tool measures so far, the cursor's point counted (Measure's running total, its area).
+  const info = tool.liveInfo ? tool.liveInfo([...pts.map((p, i) => ({ x: p.x, y: p.y, z: heightAt(i) })), ...(aim ? [{ x: aim.x, y: aim.y, z: heightAt(pts.length) }] : [])]) : null;
 
   return (
     <>
       <svg className="grip-overlay axis-drag face-sketch" data-place3d="overlay">
         {guide?.[0] && guide[1] && <line x1={guide[0].x} y1={guide[0].y} x2={guide[1].x} y2={guide[1].y} className={`sketch-guide ${at!.guide!.color}`} />}
         {path && <path d={path} className={shape.closed ? 'face-sketch-shape' : 'face-sketch-line'} />}
-        {pts.map((p, i) => { const s = project(w(p)); return s && <circle key={i} cx={s.x} cy={s.y} r={3.5} className="axis-origin" />; })}
+        {pts.map((p, i) => { const s = project(w(p, space ? i : -1)); return s && <circle key={i} cx={s.x} cy={s.y} r={3.5} className="axis-origin" />; })}
         {cur && foot && <line x1={cur.x} y1={cur.y} x2={foot.x} y2={foot.y} className="sketch-guide blue" strokeDasharray="3 3" />}
         {cur && <circle cx={cur.x} cy={cur.y} r={at && at.kind !== 'On face' && at.kind !== 'On level' ? 5 : 3} className={markClass} />}
       </svg>
@@ -217,7 +225,8 @@ export function Place3D({ camera, canvas, scene }: ViewRefs) {
       )}
       <div className="axis-drag-chip mode-chip" data-place3d="chip">
         <span>{tool.label}</span>
-        {storey && <><span>Placing on</span><span data-no-i18n>{storey.name}</span></>}
+        {info && <span className="mode-hint mode-info" data-place3d="info">{info}</span>}
+        {storey && !space && <><span>Placing on</span><span data-no-i18n>{storey.name}</span></>}
         <span className="mode-hint">{HINT[g.kind]}</span>
         {pts.length > 0 && <span className="mode-hint">{lock ? 'Locked: the arrow again lets go' : '→ red · ← green'}</span>}
         <button type="button" className="mode-close" title="Done (Esc)" aria-label="Done" onClick={() => setTool(null)}><X size={12} /></button>

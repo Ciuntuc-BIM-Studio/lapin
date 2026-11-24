@@ -229,7 +229,8 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
                 if (filters.Select(f => f.For(reader, view, e)).FirstOrDefault(x => x != null) is { Hide: true }) continue;
             }
             ElementGeometry? geo;
-            try { geo = q.Geometry(e.Id); }
+            // The plants as the view's vegetation style has them (decision 818), as the 3D view shows them.
+            try { geo = vg != null ? vg.Shaped(q, e.Id, q.Geometry(e.Id)) : q.Geometry(e.Id); }
             catch (Exception ex) when (ex is ModelException or InvalidOperationException or ArgumentException) { notes.Add($"„{e.Name}” was left out: {ex.Message}"); continue; }
             var parts = geo?.Parts.Where(p => p.Solid.Faces.Length > 0 && ViewStyles.Shows3d(m, layers, e.Id, p, bands) && !partFilters.Any(f => f.Hides(reader, view!, e, p.Key)) && !(vg?.HidesPart(e, p.Key) ?? false)).ToList() ?? [];
             if (parts.Count == 0) continue;

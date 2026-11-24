@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { containerFor, formatSize, groupFindings, isRevision, issuedSummary, issuePhase, nextRevision, type Finding, type IssuePhase, type IssueResult } from './cde';
+import { compareRevisions, containerFor, formatSize, groupFindings, isRevision, issuedSummary, issuePhase, nextRevision, revisionFits, revisionFor, type Finding, type IssuePhase, type IssueResult } from './cde';
 
 describe('revisions as ISO 19650-2 has them', () => {
   it('go P01, P02… and C01, C02…, a contractual issue starting at C01', () => {
@@ -94,5 +94,31 @@ describe('the Issue dialog after an issue', () => {
     expect(formatSize(512)).toBe('512 B');
     expect(formatSize(2048)).toBe('2 kB');
     expect(formatSize(9_000_000)).toBe('8.6 MB');
+  });
+});
+
+describe('a new revision of an earlier issue (ISO 19650: the same documents issued again)', () => {
+  it('orders revisions P before C, then by number, as the engine does', () => {
+    expect(compareRevisions('P01', 'P02')).toBeLessThan(0);
+    expect(compareRevisions('P10', 'P09')).toBeGreaterThan(0);
+    expect(compareRevisions('C01', 'P99')).toBeGreaterThan(0);
+    expect(compareRevisions('P02', 'P02')).toBe(0);
+  });
+
+  it('proposes the revision after that issue\'s last, C01 once contractual, and the project\'s next for a new issue', () => {
+    expect(revisionFor({ lastRevision: 'P01' }, false, 'P07')).toBe('P02');
+    expect(revisionFor({ lastRevision: 'P02' }, true, 'P07')).toBe('C01');
+    expect(revisionFor({ lastRevision: 'C01' }, true, 'P07')).toBe('C02');
+    expect(revisionFor(null, false, 'P07')).toBe('P08');
+    expect(revisionFor(null, false, null)).toBe('P01');
+  });
+
+  it('takes only a revision after the issue\'s last for a new revision, any for a new issue', () => {
+    expect(revisionFits('P02', { lastRevision: 'P01' })).toBe(true);
+    expect(revisionFits('P01', { lastRevision: 'P01' })).toBe(false);
+    expect(revisionFits('P01', { lastRevision: 'C01' })).toBe(false);
+    expect(revisionFits('C01', { lastRevision: 'P04' })).toBe(true);
+    expect(revisionFits('P01', null)).toBe(true);
+    expect(revisionFits('X1', null)).toBe(false);
   });
 });

@@ -43,7 +43,7 @@ public interface ISupportDesk
 /// <c>issues/blobs/</c>. And it holds the entries other tools put in the
 /// file (<see cref="PackageForeign"/>), written back as they were read.
 /// </summary>
-public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Session, string, PackageVersions, IssueFiles?, PackageForeign> write)
+public sealed partial class ProjectFiles(Func<Session, string, Diff> open, Action<Session, string, PackageVersions, IssueFiles?, PackageForeign> write)
 {
     PackageVersions _versions = PackageVersions.None;
     /// <summary>The session path the versions belong to: another path (a recovered project's) has them read from its file.</summary>
@@ -119,9 +119,11 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     }
 
     /// <summary>What a save leaves: the versions, issued files and other tools' entries found in the package just written from now on.</summary>
-    void After(string name, Func<PackageVersions> reread, PackageVersions versions, PackageIssues issues, IReadOnlyDictionary<string, long> written, PackageForeign foreign, PackageWriteReport? report)
+    void After(string name, Func<PackageVersions> reread, PackageVersions versions, PackageIssues issues, IReadOnlyDictionary<string, long> written, PackageForeign foreign, PackageWriteReport? report, Func<Stream>? reopen = null)
     {
-        KeepForeign(name, foreign.Unreadable != null ? PackageForeign.None : foreign);
+        // The history's blobs are in the file just written from now on (docs/spec-lapin-remote.md §6.4), what it held in memory written there.
+        var history = reopen != null && foreign.History.Any ? foreign.History.From(reopen) : foreign.History;
+        KeepForeign(name, (foreign.Unreadable != null ? PackageForeign.None : foreign).WithHistory(history));
         Keep(name, versions.Unreadable != null ? reread() : versions);
         KeepIssues(name, issues);
         LastWarnings = report?.Warnings ?? [];
@@ -170,7 +172,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
         _page = null;
         var diff = session.Saved(name);
         Adopt(null, null);
-        After(name, () => PackageVersions.Of(bytes), versions.From(bytes), issues.Store.From(bytes, report.Issues), report.Issues, foreign, report);
+        After(name, () => PackageVersions.Of(bytes), versions.From(bytes), issues.Store.From(bytes, report.Issues), report.Issues, foreign, report, () => new MemoryStream(bytes, writable: false));
         return (bytes, diff);
     }
 
@@ -239,7 +241,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
         var saved = session.Path ?? target;
         var source = Take(saved);
         var written = report?.Issues ?? Written(issues);
-        After(saved, () => PackageVersions.Of(source), versions.From(source), issues.Store.From(source, written), written, foreign, report);
+        After(saved, () => PackageVersions.Of(source), versions.From(source), issues.Store.From(source, written), written, foreign, report, () => File.OpenRead(source));
         return diff;
     }
 
@@ -371,7 +373,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
             _page = null;
             var diff = session.Saved(name);
             Adopt(null, null);
-            After(name, () => PackageVersions.Of(bytes), versions.From(bytes), issues.Store.From(bytes, r.Issues), r.Issues, foreign, r);
+            After(name, () => PackageVersions.Of(bytes), versions.From(bytes), issues.Store.From(bytes, r.Issues), r.Issues, foreign, r, () => new MemoryStream(bytes, writable: false));
             Warn(result);
             result["name"] = name;
             result["data"] = Convert.ToBase64String(bytes);
@@ -381,7 +383,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
         var report = LapinPackage.Write(path, build, versions, issues, foreign);
         var saved = session.Saved(path);
         var source = Take(path);
-        After(path, () => PackageVersions.Of(source), versions.From(source), issues.Store.From(source, report.Issues), report.Issues, foreign, report);
+        After(path, () => PackageVersions.Of(source), versions.From(source), issues.Store.From(source, report.Issues), report.Issues, foreign, report, () => File.OpenRead(source));
         Warn(result);
         result["path"] = path;
         return (result, saved);
@@ -643,8 +645,21 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     /// <summary>One call: its reply frame, and the diff it caused (null: nothing changed).</summary>
     public (byte[] Reply, Diff? Diff) Handle(string text) => Handle(text, Caller.Local);
 
-    /// <summary>One call from <paramref name="caller"/>: refused unless they may make it; their edits are theirs (their own undo).</summary>
-    public (byte[] Reply, Diff? Diff) Handle(string text, Caller caller)
+    /// <summary>
+    /// One call from <paramref name="caller"/>, waited for: <see cref="HandleAsync(string, Caller)"/>, which ends at once for every call
+    /// but the history's and the remote's. The browser's engine never waits (it has one thread): it awaits <see cref="HandleAsync(string, Caller)"/>.
+    /// </summary>
+    public (byte[] Reply, Diff? Diff) Handle(string text, Caller caller) => HandleAsync(text, caller).GetAwaiter().GetResult();
+
+    /// <summary>One call, awaited (<see cref="HandleAsync(string, Caller)"/>) as the local interface's.</summary>
+    public Task<(byte[] Reply, Diff? Diff)> HandleAsync(string text) => HandleAsync(text, Caller.Local);
+
+    /// <summary>
+    /// One call from <paramref name="caller"/>: refused unless they may make it; their edits are theirs (their own undo). The history
+    /// and remote calls (<c>history.*</c>, <c>remote.*</c>) are awaited (a server's HTTP; Atrium docs/plan-cde-web.md §2.1 A); every
+    /// other call ends before this returns. The host calls one at a time, so nothing changes the session while a remote call waits.
+    /// </summary>
+    public async Task<(byte[] Reply, Diff? Diff)> HandleAsync(string text, Caller caller)
     {
         JsonNode? id = null;
         try
@@ -664,7 +679,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             session.Cancellation = stop.Token;
             try
             {
-                var (result, diff) = Dispatch(method, p);
+                var (result, diff) = IsRemoteCall(method) ? await RemoteCallAsync(method, p) : Dispatch(method, p);
                 if (result is Diff { Reset: true } snapshot)
                 {
                     if (Parts(snapshot) is { Count: > 1 } parts)
@@ -685,6 +700,12 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
         catch (Exception ex) when (ex is ModelException or JsonException or IOException or UnauthorizedAccessException or FormatException or InvalidDataException)
         {
             return (BinaryFrame.Encode(new Reply(id, null, ex.Message), ContractsOnly), null);
+        }
+        // A server out of reach (no network, a name that does not resolve, the browser's fetch refused) or a call that timed out.
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            var why = ex is TaskCanceledException ? "The server took too long to answer." : $"The server could not be reached: {ex.Message}";
+            return (BinaryFrame.Encode(new Reply(id, null, why), ContractsOnly), null);
         }
         catch (Exception ex)
         {
@@ -744,7 +765,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
         if (method == "doc.query" && (string?)p["name"] is { } q && HostOnlyQueries.Any(x => q.StartsWith(x, StringComparison.Ordinal))) return "Only the host can do that.";
         switch (method)
         {
-            case "session.info" or "session.catalogue" or "doc.snapshot" or "doc.query" or "quantities.of" or "quantities.many" or "view.caps" or "view.fine" or "pointcloud.tiles"
+            case "session.info" or "session.catalogue" or "doc.snapshot" or "doc.query" or "quantities.of" or "quantities.many" or "view.caps" or "view.fine" or "pointcloud.tiles" or "pointcloud.splats"
                 or "project.versions" or "project.compareVersions"
                 or "export.pdf" or "export.dxf" or "project.exportIfc" or "project.exportStep" or "project.exportMesh" or "project.exportSurvey" or "project.exportHtml" or "project.htmlPlan":
                 return null;
@@ -911,12 +932,16 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             case "doc.redo": return (null, session.Redo(session.Author));
             case "doc.query":
                 return (session.Query((string?)p["name"] ?? throw new CommandException("The query is missing."), p["args"] as JsonObject ?? [])?.DeepClone(), null);
-            case "view.caps": return (session.Caps(ClipPlanes(p["planes"]), drawing: (string?)p["style"] == "drawing", scale: Json.Number(p["scale"]) is { } sc && sc > 0 ? sc : 50, layers: ViewStyles.LayersOf(p["layers"]), fine: p["fine"] is JsonValue fv && fv.TryGetValue<bool>(out var fb) && fb), null);
+            case "view.caps": return (session.Caps(ClipPlanes(p["planes"]), drawing: (string?)p["style"] == "drawing", scale: Json.Number(p["scale"]) is { } sc && sc > 0 ? sc : 50, layers: ViewStyles.LayersOf(p["layers"]), fine: p["fine"] is JsonValue fv && fv.TryGetValue<bool>(out var fb) && fb,
+                maquette: p["maquette"] is JsonValue mv && mv.TryGetValue<bool>(out var mb) && mb), null);
             // What a 3D view at LOD 400 draws finer than the render (decision 415): {id, ids}; no ids, every such element.
             case "view.fine": return (session.FineBodies((string?)p["id"], (p["ids"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToList()), null);
             // A point cloud's tiles for the 3D view, by name, as raw arrays (docs/point-clouds.md).
             case "pointcloud.tiles":
                 return (PointCloudLinks.Tiles(session.Model, Links.Require(session.Model, (string?)p["id"]), (p["nodes"] as JsonArray ?? []).Select(x => (string?)x).OfType<string>()), null);
+            // A splat link's Gaussians, a page at a time, as raw arrays (docs/plan-gaussian-splats.md): {id, start, budget}.
+            case "pointcloud.splats":
+                return (PointCloudLinks.Splats(session.Model, Links.Require(session.Model, (string?)p["id"]), (long)(Json.Number(p["start"]) ?? 0), (long)(Json.Number(p["budget"]) ?? 3_000_000)), null);
             case "quantities.of": return (session.Quantities((string?)p["id"] ?? throw new CommandException("Which element?")), null);
             // Several elements' quantity sets in one call (the model assistant's lists and sums): id → sets; an id the model lacks is left out.
             // At most MaxQuantityIds a call: more is refused with the number, never cut without a word (audit 22.11.2026).
@@ -1530,6 +1555,9 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             case "recovery.discard":
                 (recovery ?? throw new CommandException("No recovery here.")).Discard(PathParam());
                 return (null, null);
+            // The project's history and its remote (docs/spec-lapin-remote.md, decision 793): EngineDispatcher.Remote.cs.
+            // Awaited by HandleAsync before it gets here; a caller of the synchronous Handle (the desktop's tests, a script) waits for it.
+            case var _ when IsRemoteCall(method): return RemoteCallAsync(method, p).GetAwaiter().GetResult();
             default: throw new CommandException($"Unknown method „{method}”.");
         }
     }

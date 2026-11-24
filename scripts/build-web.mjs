@@ -7,6 +7,10 @@
 //
 //   node scripts/build-web.mjs [id]        (default: lapin)
 //   --engine-only                           the engine alone (build/<id>/web-engine)
+//   --ui-only                               the interface alone, over the engine built last time
+//   --cde                                   the build for a CDE server's origin (cde.lapinbim.com: Atrium Server's APIs
+//                                           on the same origin, Atrium docs/plan-cde-web.md W1) → build/<id>/web-cde;
+//                                           its start screen signs in to that server (ui/src/engine/cdeServer.ts)
 //
 // Needs the .NET wasm-tools workload: DOTNET_ROOT, else ~/.dotnet-wasm
 // (engine/src/Host/Lapin.Browser/README.md says how to install it).
@@ -27,6 +31,7 @@ const uiOnly = args.includes('--ui-only');
 // For the browser: the desktop-only modules (the Speckle connector) left out, engine and interface (scripts/product.mjs).
 const product = resolveProduct(root, id, { target: 'web' });
 if (product.desktopOnly) console.log(`▸ desktop only, left out of the browser's build: ${product.desktopOnly.join(', ')}`);
+const cde = args.includes('--cde');
 const host = join(root, 'engine/src/Host/Lapin.Browser');
 const out = join(root, 'build', id);
 const sh = (cmd, a, opts = {}) => execFileSync(cmd, a, { cwd: root, stdio: 'inherit', ...opts, env: { ...process.env, ...(opts.env ?? {}) } });
@@ -126,12 +131,13 @@ console.log(`▸ engine for ${id}: ${engineMB.first.toFixed(1)} MB at the first 
 if (engineOnly) process.exit(0);
 
 // 4. The interface, talking to the engine in a worker, with this product's modules.
-const web = join(out, 'web');
+const webName = cde ? 'web-cde' : 'web';
+const web = join(out, webName);
 rmSync(web, { recursive: true, force: true });
 const manifest = join(out, 'product.json');
 mkdirSync(out, { recursive: true });
 writeFileSync(manifest, JSON.stringify(product, null, 2));
-sh('pnpm', ['--filter', 'ui', 'build'], { env: { LAPIN_PRODUCT_FILE: manifest, LAPIN_UI_OUT: web, VITE_ENGINE: 'worker', LAPIN_UI_BASE: './' } });
+sh('pnpm', ['--filter', 'ui', 'build'], { env: { LAPIN_PRODUCT_FILE: manifest, LAPIN_UI_OUT: web, VITE_ENGINE: 'worker', LAPIN_UI_BASE: './', ...(cde ? { VITE_CDE_SERVER: 'same-origin' } : {}) } });
 cpSync(join(engineOut, 'wwwroot'), join(web, 'engine'), { recursive: true });
 // The interface's first load: the page's entry and what it imports statically, the engine's worker, the styles.
 const assets = join(web, 'assets');
@@ -142,10 +148,13 @@ follow(entry);
 for (const f of readdirSync(assets)) if (/^engine\.worker-.*\.js$/.test(f)) follow(f);
 const first = (p) => !p.startsWith(assets) || firstUi.has(p.slice(assets.length + 1)) || p.endsWith('.css');
 const total = downloadMB(web, first);
-console.log(`▸ ${product.name} for the browser → build/${id}/web: ${total.first.toFixed(1)} MB at the first load, ${total.all.toFixed(1)} MB with every lazy part (brotli)`);
+console.log(`▸ ${product.name} for the browser → build/${id}/${webName}: ${total.first.toFixed(1)} MB at the first load, ${total.all.toFixed(1)} MB with every lazy part (brotli)`);
 
 // 5. The budgets (docs/plan-browser-engine.md, stage 3 and Lazy parts): the first load, and everything a session may fetch.
 const BUDGET_MB = 20;
-const BUDGET_ALL_MB = 22;
+// 22.5 since the CDE web W4 (publishing screens, their strings in every language): the W3 build stood at 22.0.
+// 23 since the CDE stack met main (24.11.2026): main alone stood at 22.0, the CDE stack adds 0.9 (pdf.js 0.46, the
+// CDE screens and their strings), together 22.9.
+const BUDGET_ALL_MB = 23;
 if (total.first > BUDGET_MB) { console.error(`build-web: the first load, ${total.first.toFixed(1)} MB, is over the ${BUDGET_MB} MB budget.`); process.exit(1); }
 if (total.all > BUDGET_ALL_MB) { console.error(`build-web: ${total.all.toFixed(1)} MB with the lazy parts is over the ${BUDGET_ALL_MB} MB budget.`); process.exit(1); }

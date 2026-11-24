@@ -364,9 +364,13 @@ public class SteelTests
             var booleans = f.Session.Catalog.Get<ISolidBooleans>()!;
             var product = model.Products.Single(p => p.Class.Equals("IfcMember", StringComparison.OrdinalIgnoreCase));
             var (body, openings) = model.Shape(product.Id, booleans);
-            Assert.Equal(Volume(f, m), MeshVolume(body.Single().Mesh), 7);
             var cope = Assert.Single(openings);
             Assert.True(cope.Closed());
+            // The cope taken out of it: the top flange and the web 40 mm down over 120 mm (until the end faces were triangulated
+            // without a T-junction, Lapin's own cut failed silently and the uncut body matched the uncut read-back).
+            var voided = booleans.Difference(SolidFromMesh.Build(body.Single().Mesh.V, body.Single().Mesh.T)!, [SolidFromMesh.Build(cope.V, cope.T)!])!;
+            Assert.Equal(Volume(f, m), Measure.Volume(voided), 7);
+            Assert.Equal(0.15 * 0.0107 * 0.12 + (0.04 - 0.0107) * 0.0071 * 0.12, MeshVolume(body.Single().Mesh) - Volume(f, m), 6);
             // The cope's box over the member's top, at its end.
             Assert.Equal(3.15 - 0.04, cope.V.Min(p => p.Z), 6);
             Assert.Equal(6 - 0.12, cope.V.Min(p => p.X), 6);

@@ -143,6 +143,33 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .template-name { font-weight: 700; font-size: 14px; padding: 0 12px; }
 .template .muted { padding: 0 12px; }
 .start-foot { grid-column: 1 / -1; align-self: end; display: flex; justify-content: space-between; padding: 14px 0; border-top: 1px solid var(--rule); }
+/* In front of a CDE server (shell/CdeStart.tsx): sign in, projects, a project's history, branches, activity and members. */
+.cde-start { padding-bottom: 48px; }
+.cde-start .start-left > .btn.big { margin-top: 8px; }
+.cde-notice { margin: 0 0 10px; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--panel); }
+.cde-signin { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.cde-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.cde-actions .btn { width: auto; display: inline-flex; align-items: center; gap: 6px; }
+.cde-title { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 22px; }
+.cde-project .eyebrow { margin: 16px 0 6px; display: flex; align-items: center; gap: 6px; }
+.cde-project .eyebrow .link { display: inline-flex; align-items: center; gap: 4px; text-transform: none; letter-spacing: 0; font-size: 12px; }
+.cde-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.cde-row { display: flex; align-items: center; gap: 12px; padding: 6px 10px; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+.cde-row-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cde-row-body .recent-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cde-row-actions { display: inline-flex; align-items: center; gap: 4px; }
+.cde-row-actions .btn { width: auto; display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; }
+.cde-row-actions .icon { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; }
+.cde-activity li { padding: 2px 0; }
+.cde-members { border-collapse: collapse; margin-bottom: 8px; }
+.cde-members td { padding: 3px 10px 3px 0; }
+.cde-add { display: flex; gap: 6px; align-items: center; max-width: 560px; }
+.cde-add input { flex: 1; min-width: 0; }
+.cde-add .btn { width: auto; display: inline-flex; align-items: center; gap: 4px; }
+@media (max-width: 760px) {
+  .start.cde-start { grid-template-columns: 1fr; gap: 24px; padding: 24px 16px; }
+  .cde-row { flex-wrap: wrap; }
+}
 
 /* Workspace */
 .workspace { display: flex; flex-direction: column; height: 100%; }
@@ -1072,6 +1099,58 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .cde-block { color: var(--err); }
 .cde-warn { color: var(--warn, #b7791f); }
 .cde-ok { color: var(--ok); }
+/* CDE web W5: checks on foreign documents (modules/core/CdeChecks.tsx). */
+.cde-checks-line { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.cde-checks-line .spin, .cde-page-loading .spin { animation: cde-spin 1s linear infinite; }
+@keyframes cde-spin { to { transform: rotate(360deg); } }
+.cde-count.sev-error { color: var(--err); }
+.cde-count.sev-warning { color: var(--warn, #b7791f); }
+.cde-checks { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 8px; }
+.cde-checked-file { border: 1px solid var(--rule); border-radius: 3px; padding: 6px 10px; background: var(--panel); }
+.cde-checked-name { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 0 0 4px; }
+.cde-findings-list { list-style: none; margin: 0 0 6px; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.cde-finding { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; padding: 2px 4px; border-radius: 3px; }
+.cde-finding > svg { flex: none; margin-top: 2px; }
+.cde-finding.sev-error > svg { color: var(--err); }
+.cde-finding.sev-warning > svg { color: var(--warn, #b7791f); }
+.cde-finding.sev-info > svg { color: var(--accent); }
+.cde-finding.active { background: var(--accent-wash); }
+.cde-finding-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.cde-finding code { font-size: 11px; }
+.cde-facts { display: flex; flex-wrap: wrap; gap: 2px 12px; }
+.cde-fact { overflow-wrap: anywhere; }
+.cde-severity-group .eyebrow, .cde-file-level .eyebrow { display: flex; align-items: center; gap: 4px; margin: 6px 0 2px; }
+.cde-page-view { margin-top: 6px; }
+.cde-page-scroll { max-width: 100%; max-height: 640px; overflow: auto; border: 1px solid var(--rule); background: var(--bg, #fff); }
+.cde-page { position: relative; background: #fff; box-shadow: 0 0 0 1px var(--rule); }
+.cde-page-canvas { position: absolute; inset: 0; }
+.cde-page-loading { position: absolute; left: 8px; top: 8px; margin: 0; display: inline-flex; gap: 4px; align-items: center; }
+.cde-box { position: absolute; box-sizing: border-box; pointer-events: none; }
+.cde-box.titleblock { border: 1px dashed #6b6357; }
+.cde-box.field { border: 1px dotted #9a9184; line-height: 1; color: #1e2a3a; overflow: visible; white-space: nowrap; font-family: Arial, Helvetica, sans-serif; }
+.cde-box.finding { border: 2px solid var(--err); background: rgba(161, 38, 13, 0.08); pointer-events: auto; }
+.cde-box.finding.sev-warning { border-color: #b7791f; background: rgba(183, 121, 31, 0.08); }
+.cde-box.finding.sev-info { border-color: #0067c0; background: rgba(0, 103, 192, 0.06); }
+.cde-box.finding.active { box-shadow: 0 0 0 3px rgba(161, 38, 13, 0.35); }
+.cde-box-tag { position: absolute; left: -2px; top: -16px; font-size: 10px; line-height: 14px; padding: 0 3px; background: var(--err); color: #fff; white-space: nowrap; }
+.cde-box.sev-warning .cde-box-tag { background: #b7791f; }
+.cde-box.sev-info .cde-box-tag { background: #0067c0; }
+.cde-box-tip { display: none; position: absolute; left: 0; top: 100%; z-index: 2; width: max-content; max-width: 320px; padding: 4px 6px; font-size: 11px; background: var(--panel); color: var(--ink); border: 1px solid var(--rule); }
+.cde-box.finding:hover .cde-box-tip, .cde-box.finding.active .cde-box-tip { display: block; }
+.cde-register-table { max-height: 420px; overflow: auto; }
+.cde-register-table td { font-size: 12px; }
+.cde-check-settings textarea, .cde-check-settings td > input:not([type=checkbox]):not([type=number]) { width: 100%; box-sizing: border-box; }
+.cde-check-settings .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+.cde-settings-table td:first-child { white-space: nowrap; vertical-align: top; padding-top: 6px; }
+.cde-settings-table td:last-child { width: 100%; }
+.cde-settings-table input[type=number] { width: 80px; }
+.cde-check-list { display: flex; flex-direction: column; gap: 2px; }
+.cde-title-block { border-left: 2px solid var(--rule); padding-left: 10px; margin: 4px 0 8px; }
+.cde-region { flex-wrap: wrap; max-width: none; }
+.cde-region input[type=number] { width: 70px; flex: none; }
+.cde-fields-table input:not([type=checkbox]) { width: 100%; min-width: 60px; box-sizing: border-box; }
+.cde-bad-row td { background: rgba(161, 38, 13, 0.08); }
+.cde-bad { margin: 2px 0; }
 /* Manage → Openings vs MEP (decision 289): the kinds side by side, the tabs, the results as a table of rows to click. */
 .coordination .coordination-kinds { display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .coordination .tabs-row { display: flex; gap: 6px; margin: 10px 0 6px; }
@@ -1175,6 +1254,7 @@ input.invalid { outline: 1px solid var(--err); }
 .ask-foot input { min-width: 0; }
 .status-link { border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 2px; }
 .status-link:hover { color: var(--accent); }
+.status-link.status-warn { color: var(--warn, #b26a00); font-weight: 600; }
 
 /* A material's own image (Materials). */
 .own-image { display: grid; gap: 4px; margin: 6px 0; }
@@ -3192,3 +3272,17 @@ body.panel-dragging, body.panel-dragging * { cursor: grabbing !important; user-s
 .profile-place .btn { padding: 3px 10px; }
 .profile-legend { white-space: nowrap; flex: none; }
 .profile-bar .profile-readout { min-width: 0; }
+.remark-documents { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; flex: 1; min-width: 0; }
+.remark-documents .remark-document { display: inline-flex; align-items: center; gap: 3px; text-transform: none; letter-spacing: 0; font-size: 11px; }
+.remark-documents .remark-document .icon { padding: 0 2px; }
+.remark-documents select { max-width: 280px; }
+
+/* A point cloud's crop on its row in Manage → Links (G2 of docs/plan-gaussian-splats.md). */
+.cloud-crop { margin: 6px 0; padding: 6px 8px; border: 1px solid var(--border, #d8d2c6); border-radius: 6px; }
+.cloud-crop .row-tools { display: flex; gap: 6px; margin-bottom: 6px; }
+.cloud-crop-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 10px; }
+.cloud-crop-fields label { display: flex; flex-direction: column; font-size: 11px; }
+.cloud-crop-fields input { width: 100%; }
+
+/* A tool's live measure in the 3D placing chip (Measure's running total, its area): never cut short. */
+.mode-chip .mode-info { flex: none; font-weight: 600; overflow: visible; }

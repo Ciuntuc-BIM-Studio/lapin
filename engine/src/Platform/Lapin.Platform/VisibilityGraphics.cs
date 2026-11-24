@@ -130,8 +130,27 @@ public sealed class VisibilityGraphics
             ViewId = view.Id,
             // An MEP plan's walls, doors and furniture grey under the services (its style's, the view's own choice over it).
             Discipline = style is { HalftonesOthers: true } && DisciplineCategories.TryGetValue(style.Discipline ?? "", out var own) ? own : null,
+            // How its plants look (decision 818): its style's, its own over it; a 3D view's as a drawing's.
+            Vegetation = view.Class == Views.Class ? (style ?? ViewStyles.Of(m, view)).Vegetation : "coloured",
         };
     }
+
+    /// <summary>
+    /// How the view's plants look (decision 818, <see cref="ViewStyles.VegetationModes"/>): <c>coloured</c> (each species in its
+    /// colour; the default and graphics read as given) or <c>maquette</c> (neutral faceted bodies, an architectural model's).
+    /// </summary>
+    public string Vegetation { get; private init; } = "coloured";
+
+    /// <summary>Whether the view draws the plants as a maquette's.</summary>
+    public bool Maquette => Vegetation == ViewStyles.Maquette;
+
+    /// <summary>
+    /// The geometry an element draws by in this view: its maquette body when the view's vegetation is the maquette and it has one
+    /// (<see cref="ElementGeometry.VegetationShape"/>), else <paramref name="g"/> as it is. The 3D, the mesh exports and the
+    /// drawings all ask it, so they draw the same bodies.
+    /// </summary>
+    public ElementGeometry? Shaped(IQueryContext q, string id, ElementGeometry? g) =>
+        Maquette && g is { VegetationShape: true } ? q.MaquetteGeometry(id) ?? g : g;
 
     /// <summary>
     /// The categories of a discipline's own elements, for a view whose style draws the others halftone

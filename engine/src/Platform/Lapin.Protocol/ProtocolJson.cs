@@ -24,6 +24,7 @@ namespace Lapin.Protocol;
 [JsonSerializable(typeof(List<CapItem>))]
 [JsonSerializable(typeof(FineBodies))]
 [JsonSerializable(typeof(List<PointTile>))]
+[JsonSerializable(typeof(SplatPage))]
 [JsonSerializable(typeof(FrameBytes))]
 [JsonSerializable(typeof(JsonNode))]
 [JsonSerializable(typeof(JsonObject))]

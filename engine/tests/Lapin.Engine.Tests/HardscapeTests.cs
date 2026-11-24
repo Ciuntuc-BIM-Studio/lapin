@@ -470,4 +470,87 @@ public sealed class HardscapeTests
         Assert.Equal(id, h.Model.Get(kerb)?.Str(Kerbs.HostKey));
         Assert.Equal(Kerbs.Of(f.Model, id)!.Id, Kerbs.Of(h.Model, id)?.Id);
     }
+
+    /// <summary>
+    /// Plazas cut into a ground a section line's change has reshaped (its band of points on a regular grid, many of their
+    /// triangles coplanar): the ground's body stays closed, so both are cut into it, and nothing of the ground is left on their
+    /// tops (the grey stripes of a 3D view where the plazas sat: their cut refused, the ground's top coplanar with theirs).
+    /// </summary>
+    [Fact]
+    public void Plazas_are_cut_into_a_ground_a_section_line_reshaped()
+    {
+        var f = F();
+        static double G(double x, double y) => -2.4 + 0.04 * x + 0.03 * y + 0.25 * Math.Sin(x / 9) * Math.Cos(y / 11);
+        var pts = new JsonArray();
+        for (var x = 0; x <= 60; x += 2) for (var y = 0; y <= 44; y += 2) pts.Add(P(x, y, 100 + Math.Round(G(x, y), 3)));
+        var t = (string)f.Run("civil.addTerrain", new JsonObject { ["storeyId"] = f.Storey, ["points"] = pts, ["datum"] = 100, ["interval"] = 0.5 })!["id"]!;
+        // The profile editor: a point put in the section line and dragged 0.8 m down; the ground within its reach follows.
+        var sec = (string)f.Run("civil.addSectionLine", new JsonObject { ["points"] = Pts([4, 42], [56, 42]) })!["id"]!;
+        f.Run("civil.insertProfilePoint", new JsonObject { ["id"] = sec, ["station"] = 26 });
+        var z = (double)((JsonObject)f.Session.Query("civil.profile", new JsonObject { ["id"] = sec })!)["points"]![1]!["z"]!;
+        f.Run("civil.moveProfilePoint", new JsonObject { ["id"] = sec, ["index"] = 1, ["z"] = z - 0.8 });
+        var upper = Add(f, new JsonObject { ["storeyId"] = f.Storey, ["points"] = Rect(30, 10, 46, 26), ["elevation"] = -1, ["kerb"] = new JsonObject { ["all"] = true } });
+        var lower = Add(f, new JsonObject { ["storeyId"] = f.Storey, ["points"] = Rect(6, 10, 20, 26), ["elevation"] = -2 });
+        f.Run("civil.addGrading", new JsonObject { ["kind"] = "patch", ["edges"] = new JsonArray(new JsonObject { ["id"] = lower }, new JsonObject { ["id"] = upper }) });
+        var g = f.Session.Geometry(t)!;
+        Assert.DoesNotContain(g.Diagnostics ?? [], d => d.Contains("could not be cut"));
+        var ground = g.Parts.Single(p => p.Key == "ground").Solid;
+        foreach (var (top, x0, y0, x1, y1) in new[] { (-2.0, 6.0, 10.0, 20.0, 26.0), (-1.0, 30.0, 10.0, 46.0, 26.0) })
+            foreach (var fc in ground.Faces.Where(fc => fc.Normal.Z > 0.3))
+            {
+                var vs = fc.Outer.Select(i => ground.Vertices[i]).ToList();
+                var (cx, cy, cz) = (vs.Average(v => v.X), vs.Average(v => v.Y), vs.Average(v => v.Z));
+                if (cx > x0 + 0.5 && cx < x1 - 0.5 && cy > y0 + 0.5 && cy < y1 - 0.5) Assert.True(cz < top - 0.1, $"ground at {cz:0.000} under a plaza at {top}");
+            }
+    }
+
+    /// <summary>
+    /// The site-grading film's whole flow: a feature line with typed heights, a contour, a contour dragged, a section line with a
+    /// point put in, dragged and given a grade, then an upper plaza with a kerb round it (an arc edge), a gravel subregion made a
+    /// hardscape, a lower plaza, a grading between the two and a terrace with a slope to the ground. Every one of them is cut into
+    /// the ground: the upper plaza's kerb and layers taken out one after the other left a fin of ground of no thickness where the
+    /// kerb's face lay in the plane of the side its layers had just cut, the body was no longer closed and the lower plaza and the
+    /// terrace were not cut (their tops z-fighting the ground in 3D).
+    /// </summary>
+    [Fact]
+    public void Every_hardscape_of_the_site_grading_film_is_cut_into_the_ground()
+    {
+        var f = F();
+        static double G(double x, double y) => -2.4 + 0.04 * x + 0.03 * y + 0.25 * Math.Sin(x / 9) * Math.Cos(y / 11);
+        var pts = new JsonArray();
+        for (var x = 0; x <= 60; x += 2) for (var y = 0; y <= 44; y += 2) pts.Add(P(x, y, 100 + Math.Round(G(x, y), 3)));
+        var t = (string)f.Run("civil.addTerrain", new JsonObject { ["storeyId"] = f.Storey, ["points"] = pts, ["datum"] = 100, ["interval"] = 0.5, ["majorEvery"] = 2 })!["id"]!;
+        f.Run("civil.addFeatureLine", new JsonObject { ["points"] = Pts([4, 4, -2.3], [14, 4], [24, 7], [36, 7, -0.6]), ["arcs"] = P(0, 1.5, 1.5, 0) });
+        f.Run("civil.addFeatureLine", new JsonObject { ["points"] = Pts([30, 34], [32, 38], [34, 42]), ["elevation"] = 0.5 });
+        var near = (JsonObject)f.Session.Query("civil.contourNear", new JsonObject { ["x"] = 50, ["y"] = 38, ["within"] = 6 })!;
+        var grab = ((JsonArray)near["points"]!).Select(p => new Vec2((double)p![0]!, (double)p[1]!)).MinBy(p => (p - new Vec2(50, 38)).Length);
+        f.Run("civil.dragContour", new JsonObject { ["id"] = (string)near["id"]!, ["elevation"] = (double)near["elevation"]!, ["from"] = P(grab.X, grab.Y), ["to"] = P(grab.X + 2.5, grab.Y + 0.5), ["reach"] = 6 });
+        var sec = (string)f.Run("civil.addSectionLine", new JsonObject { ["points"] = Pts([4, 42], [56, 42]) })!["id"]!;
+        f.Run("civil.insertProfilePoint", new JsonObject { ["id"] = sec, ["station"] = 26 });
+        var z = (double)((JsonObject)f.Session.Query("civil.profile", new JsonObject { ["id"] = sec })!)["points"]![1]!["z"]!;
+        f.Run("civil.moveProfilePoint", new JsonObject { ["id"] = sec, ["index"] = 1, ["z"] = z - 0.35 });
+        f.Run("civil.setFeatureLineGrade", new JsonObject { ["id"] = sec, ["segment"] = 0, ["grade"] = 0.02, ["keep"] = "start" });
+        var upper = Add(f, new JsonObject { ["storeyId"] = f.Storey, ["points"] = Rect(30, 10, 46, 26), ["kerb"] = new JsonObject { ["all"] = true } });
+        f.Run("civil.updateHardscape", new JsonObject { ["id"] = upper, ["name"] = "Upper plaza", ["elevation"] = -1, ["arcs"] = P(0, 0, 0, 2.5) });
+        f.Run("civil.addSubregion", new JsonObject { ["terrainId"] = t, ["points"] = Rect(50, 8, 58, 16), ["material"] = "Gravel", ["name"] = "Gravel bed" });
+        f.Run("civil.subregionToHardscape", new JsonObject { ["terrainId"] = t, ["subregionId"] = Terrains.SubregionsOf(f.Model.Get(t)!)[0].Id });
+        var lower = Add(f, new JsonObject { ["storeyId"] = f.Storey, ["points"] = Rect(6, 10, 20, 26) });
+        f.Run("civil.updateHardscape", new JsonObject { ["id"] = lower, ["name"] = "Lower plaza", ["elevation"] = -2, ["arcs"] = P(0, -3.5, 0, 0) });
+        f.Run("civil.addGrading", new JsonObject { ["kind"] = "patch", ["edges"] = new JsonArray(new JsonObject { ["id"] = lower }, new JsonObject { ["id"] = upper }) });
+        var terrace = Add(f, new JsonObject { ["name"] = "Terrace", ["points"] = Rect(16, 32, 34, 40), ["type"] = "gravel", ["elevation"] = -0.1, ["terrainId"] = t });
+        f.Run("civil.addGrading", new JsonObject { ["kind"] = "slope", ["edges"] = new JsonArray(new JsonObject { ["id"] = terrace }), ["side"] = "out", ["cutSlope"] = 2, ["fillSlope"] = 3 });
+        var g = f.Session.Geometry(t)!;
+        Assert.DoesNotContain(g.Diagnostics ?? [], d => d.Contains("could not be cut"));
+        // Each one took its volume out of the ground.
+        var works = Terrains.EarthworksOf(g);
+        foreach (var h in Hardscapes.Of(f.Model, t)) Assert.True(works.Single(w => w.Pad == h.Id).Cut > 0, $"{h.Name} took nothing out");
+        var ground = g.Parts.Single(p => p.Key == "ground").Solid;
+        foreach (var (top, x0, y0, x1, y1) in new[] { (-2.0, 6.0, 10.0, 20.0, 26.0), (-1.0, 31.0, 10.0, 46.0, 26.0), (-0.1, 16.0, 32.0, 34.0, 40.0) })
+            foreach (var fc in ground.Faces.Where(fc => fc.Normal.Z > 0.3))
+            {
+                var vs = fc.Outer.Select(i => ground.Vertices[i]).ToList();
+                var (cx, cy, cz) = (vs.Average(v => v.X), vs.Average(v => v.Y), vs.Average(v => v.Z));
+                if (cx > x0 + 0.5 && cx < x1 - 0.5 && cy > y0 + 0.5 && cy < y1 - 0.5) Assert.True(cz < top - 0.05, $"ground at {cz:0.000} under a hardscape at {top}");
+            }
+    }
 }

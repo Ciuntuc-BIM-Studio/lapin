@@ -34,6 +34,11 @@ export interface CloudSpec {
   pointSize: number;
   /** The ASPRS classes hidden (0–31; above 31 counts as 31). */
   hiddenClasses: readonly number[];
+  /**
+   * Drawn as Gaussian splats (splats3d.ts), its link's file holding them and the link or the view saying so: its points are
+   * still streamed, not drawn, for the snaps.
+   */
+  splats?: boolean;
 }
 
 /** The points drawn at most, all clouds together, by the project's display quality (fewer in a browser). */
@@ -254,6 +259,8 @@ export class PointCloudLayer {
       u.zRange.value.set(c.hierarchy.box[2], c.hierarchy.box[5]);
       u.iRange.value.set(c.hierarchy.intensityRange[0], c.hierarchy.intensityRange[1]);
     }
+    // A cloud drawn as splats: its points' tiles stay (the snaps walk them), not drawn.
+    c.mat.visible = !c.spec.splats;
     c.mat.needsUpdate = true;
   }
 
@@ -364,7 +371,7 @@ export class PointCloudLayer {
   /** How many points are drawn now, all clouds. */
   drawn(): number {
     let n = 0;
-    for (const c of this.clouds.values()) if (c.group.visible) for (const t of c.tiles.values()) if (t.object.visible) n += t.object.geometry.getAttribute('position').count;
+    for (const c of this.clouds.values()) if (c.group.visible && !c.spec.splats) for (const t of c.tiles.values()) if (t.object.visible) n += t.object.geometry.getAttribute('position').count;
     return n;
   }
 
@@ -373,7 +380,16 @@ export class PointCloudLayer {
    * of the ray at a distance t along it (the cursor's tolerance in pixels as metres there), kept by the view's cuts.
    */
   pointsNear(ray: { origin: Vec3; dir: Vec3 }, reach: (t: number) => number, max = 8, kept: (p: Vec3) => boolean = () => true): Vec3[] {
-    const out: { p: Vec3; t: number }[] = [];
+    return this.near(ray, reach, kept).slice(0, max).map((q) => q.p);
+  }
+
+  /** The cloud whose drawn point is nearest the eye along the cursor's ray (the 3D view's menu: Calibrate scale…, Crop…), null when none. */
+  cloudNear(ray: { origin: Vec3; dir: Vec3 }, reach: (t: number) => number, kept: (p: Vec3) => boolean = () => true): string | null {
+    return this.near(ray, reach, kept)[0]?.id ?? null;
+  }
+
+  private near(ray: { origin: Vec3; dir: Vec3 }, reach: (t: number) => number, kept: (p: Vec3) => boolean): { p: Vec3; t: number; id: string }[] {
+    const out: { p: Vec3; t: number; id: string }[] = [];
     const { origin: o, dir: d } = ray;
     const sphere = new THREE.Sphere();
     for (const c of this.clouds.values()) {
@@ -399,12 +415,12 @@ export class PointCloudLayer {
           if (hidden.size && hidden.has(Math.min(31, cls[i]))) continue;
           const p = { x: pos[3 * i], y: pos[3 * i + 1], z: pos[3 * i + 2] };
           if (!kept(p)) continue;
-          out.push({ p, t: along });
+          out.push({ p, t: along, id: c.spec.id });
         }
       }
     }
     out.sort((a, b) => a.t - b.t);
-    return out.slice(0, max).map((q) => q.p);
+    return out;
   }
 
   dispose(): void {

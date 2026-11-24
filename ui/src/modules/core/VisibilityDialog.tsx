@@ -44,8 +44,8 @@ export interface ViewFilter { id: string; name: string; match: 'all' | 'any'; ru
 export type FilterRule = ViewRule;
 interface LinkInfo { id: string; name: string; kind: string; visible: boolean; halftone: boolean; classes: string[] }
 /** A point cloud as the tab lists it (decision 396): its link's own settings, what its points carry, the ASPRS classes they have. */
-interface CloudInfo { id: string; name: string; visible: boolean; halftone: boolean; colorMode: string; color: boolean; intensity: boolean; classification: boolean; classes: number[] }
-export interface CloudRow { hidden?: boolean; halftone?: boolean; colorMode?: string; hiddenClasses?: number[]; slice?: number }
+interface CloudInfo { id: string; name: string; visible: boolean; halftone: boolean; colorMode: string; color: boolean; intensity: boolean; classification: boolean; classes: number[]; splats?: boolean; display?: string | null }
+export interface CloudRow { hidden?: boolean; halftone?: boolean; colorMode?: string; hiddenClasses?: number[]; slice?: number; display?: string }
 export interface Visibility {
   graphics?: Graphics | null; graphicsSet?: string | null; fromStyle?: boolean; style?: string;
   /** Its level of development (decision 404): drawn at, its own (null: its style's), its style's. */ detail?: number; ownDetail?: number | null; styleDetail?: number;
@@ -570,6 +570,9 @@ export function Visibility3D() {
 /** The colour modes a cloud offers, as the tab names them. */
 const CLOUD_COLORS: [string, string][] = [['', 'as its link'], ['rgb', 'RGB'], ['intensity', 'Intensity'], ['elevation', 'Elevation'], ['classification', 'Classification']];
 
+/** How a splat cloud is drawn in a 3D view (docs/plan-gaussian-splats.md): its link's way, or splats, or points. */
+const CLOUD_DISPLAYS: [string, string][] = [['', 'as its link'], ['splats', 'Splats'], ['points', 'Points']];
+
 /** A row for a cloud cleared of what says nothing. */
 export function cloudRow(cur: CloudRow, patch: Partial<CloudRow>): CloudRow | null {
   const next: CloudRow = { ...cur, ...patch };
@@ -578,6 +581,7 @@ export function cloudRow(cur: CloudRow, patch: Partial<CloudRow>): CloudRow | nu
   if (!next.colorMode) delete next.colorMode;
   if (!next.hiddenClasses?.length) delete next.hiddenClasses;
   if (!next.slice) delete next.slice;
+  if (!next.display) delete next.display;
   return Object.keys(next).length ? next : null;
 }
 
@@ -593,7 +597,7 @@ function PointCloudsTab({ target, clouds, rows, in3d }: { target: string; clouds
   return (
     <div className="vv-clouds" data-testid="vv-clouds">
       <table className="layer-table">
-        <thead><tr><th>Shown</th><th>Point cloud</th><th>Halftone</th><th>Colours</th>{!in3d && <th title="How thick a slice a plan or a section draws round its cut">Slice (cm)</th>}<th /></tr></thead>
+        <thead><tr><th>Shown</th><th>Point cloud</th><th>Halftone</th><th>Colours</th>{clouds.some((c) => c.splats) && <th title="How a cloud of Gaussian splats is drawn in a 3D view">Drawn as</th>}{!in3d && <th title="How thick a slice a plan or a section draws round its cut">Slice (cm)</th>}<th /></tr></thead>
         <tbody>
           {clouds.map((c) => {
             const r = rows[c.id] ?? {};
@@ -607,6 +611,11 @@ function PointCloudsTab({ target, clouds, rows, in3d }: { target: string; clouds
                     {CLOUD_COLORS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                   </select>
                 </td>
+                {clouds.some((x) => x.splats) && <td>{c.splats && (
+                  <select aria-label="Drawn as" data-cloud-display={c.name} value={r.display ?? ''} onChange={(e) => put(c.id, { display: e.target.value || undefined })}>
+                    {CLOUD_DISPLAYS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  </select>
+                )}</td>}
                 {!in3d && <td><NumberField min={1} max={10000} style={{ width: 64 }} value={Math.round((r.slice ?? 0.1) * 100)} onCommit={(cm) => { if (cm != null && cm > 0) put(c.id, { slice: cm === 10 ? undefined : cm / 100 }); }} /></td>}
                 <td>{c.classes.length > 1 && <button type="button" className="btn small" data-cloud-classes={c.name} onClick={() => setOpen(open === c.id ? null : c.id)}>{open === c.id ? 'Close' : 'Classes…'}</button>}</td>
               </tr>
