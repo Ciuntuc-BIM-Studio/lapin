@@ -439,6 +439,46 @@ public static class FeatureLines
     }
 
     /// <summary>
+    /// The pieces of a line in space outside the areas (the hardscapes' outlines): each segment split where it crosses an area's
+    /// edge, the pieces whose middle is inside one dropped; a new end's height is the line's there. None: the line as it is.
+    /// </summary>
+    public static List<List<Vec3>> OutsideAreas(IReadOnlyList<Vec3> line, IReadOnlyList<IReadOnlyList<Vec2>> areas)
+    {
+        if (areas.Count == 0 || line.Count < 2) return [[.. line]];
+        var pieces = new List<List<Vec3>>();
+        List<Vec3>? run = null;
+        for (var i = 0; i + 1 < line.Count; i++)
+        {
+            var (a, b) = (line[i], line[i + 1]);
+            var d = b.Xy - a.Xy;
+            var ts = new List<double> { 0, 1 };
+            foreach (var poly in areas)
+                for (var j = 0; j < poly.Count; j++)
+                {
+                    var (p, q) = (poly[j], poly[(j + 1) % poly.Count]);
+                    var e = q - p;
+                    var den = Vec2.Cross(d, e);
+                    if (Math.Abs(den) < 1e-15) continue;
+                    var t = Vec2.Cross(p - a.Xy, e) / den;
+                    var u = Vec2.Cross(p - a.Xy, d) / den;
+                    if (t > 1e-12 && t < 1 - 1e-12 && u >= -1e-12 && u <= 1 + 1e-12) ts.Add(t);
+                }
+            ts.Sort();
+            for (var k = 0; k + 1 < ts.Count; k++)
+            {
+                if (ts[k + 1] - ts[k] < 1e-12) continue;
+                var mid = a.Xy + d * ((ts[k] + ts[k + 1]) / 2);
+                if (areas.Any(x => Polygon2.Contains(x, mid))) { run = null; continue; }
+                var p0 = a + (b - a) * ts[k];
+                var p1 = a + (b - a) * ts[k + 1];
+                if (run == null) { run = [p0]; pieces.Add(run); }
+                run.Add(p1);
+            }
+        }
+        return pieces.Where(p => p.Count >= 2).ToList();
+    }
+
+    /// <summary>
     /// The pieces of a line in space over a ground: each segment split where it crosses the ground's edge, the pieces whose middle
     /// is on the ground kept, joined where they meet; a new end's height is the line's there.
     /// </summary>
@@ -504,6 +544,9 @@ public static class FeatureLines
         var ground = Terrains.Base(terrain);
         var datum = terrain.Num("datum");
         var list = new JsonArray();
+        // The hardscapes' outlines: the ground inside one is its top, so the other lines stop at its edge (a contour or a line drawn
+        // across a plaza before it was there kept its points inside it, and the ground rose through the plaza to them).
+        var covered = hardscapes.Where(h => Hardscapes.Corners(h).Count >= 3).Select(h => (IReadOnlyList<Vec2>)Hardscapes.Edge(h).Select(p => p.Xy).ToList()).ToList();
         // The hardscapes' top edges first (T4): rigid, they hold where a feature line crosses them; the ground under each one goes.
         foreach (var h in hardscapes)
         {
@@ -544,7 +587,7 @@ public static class FeatureLines
                 });
             }
             else laid = Line(s, z);
-            foreach (var piece in Clip(laid, ground))
+            foreach (var piece in Clip(laid, ground).SelectMany(c => OutsideAreas(c, covered)))
                 list.Add((JsonNode)new JsonObject
                 {
                     ["id"] = line.Id,
