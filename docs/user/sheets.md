@@ -93,3 +93,20 @@ What is drawn on the sheet prints on it, over the views, exactly as shown: in it
 ## Printing
 
 The **PDF** and **DXF** buttons in the sheet's bar export the sheet. A PDF is ready to print or send. A DXF opens in AutoCAD and other CAD programs with its layers, lines and hatches; circles, arcs and ellipses (drafted, or the curved edges of floors and other outlines on a plan) are written as real CIRCLE, ARC and ELLIPSE entities, not short lines, and come back as curves when the DXF is imported again. **Print** sends the sheet to a printer or plotter at its own paper size, at 1:1, as vector lines: choose the plotter and the paper in the print dialog. On a smaller printer, choose fit to page.
+
+### Publish sets
+
+**Manage → Publish…** (Issue group) exports several sheets and views in one go. A **publish set** is a named choice of sheets and views, kept in the project: it is saved with it, and each change is one undo step.
+
+![Publish: a set of sheets and views, its formats](shots/publish-sets.webp)
+
+- **Publish set** opens a set you saved. **Save set** keeps your changes to it, **Save as new set** keeps what is ticked as a new set, and the bin deletes the set. The sheets and views stay in the project.
+- The sheets are listed by number. The views are grouped by kind: floor plans, site, sections, elevations, reference planes and 3D views. Each group has **All** and **None**.
+- Choose the formats: **Each as a PDF**, **All in one PDF** (every sheet, then every view, named after the set) and **Each as a DXF**. The dialog says how many files that makes.
+- A view exported on its own gets a page as large as its drawing at its scale, with a 10 mm margin and its name and scale under it. Its crop region counts.
+- A sheet's file is named after its number and name (*A-101 Ground floor.pdf*), a view's after the view. Two files with the same name are numbered *(2)*.
+- **Export…** on the desktop writes into a folder you pick. In a browser one file comes as itself, and more than one come as a single zip named after the set.
+
+A sheet or view deleted since the set was saved drops out of it, and the dialog says how many are no longer in the project.
+
+Exporting records nothing. To issue the sheets with a revision, a status and checks, use **Manage → Issue…**, which can start from a set's sheets (see [Issuing](cde.md#issuing)).

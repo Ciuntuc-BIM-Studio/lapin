@@ -93,3 +93,20 @@ Ce e desenat pe planșă se tipărește pe ea, peste vederi, exact cum se vede: 
 ## Tipărirea
 
 Butoanele **PDF** și **DXF** din bara planșei o exportă. Un PDF e gata de tipărit sau de trimis. Un DXF se deschide în AutoCAD și în alte programe CAD cu layerele, liniile și hașurile lui; cercurile, arcele și elipsele (desenate, sau laturile curbe ale planșeelor și ale altor contururi pe un plan) sunt scrise ca CIRCLE, ARC și ELLIPSE adevărate, nu ca linii scurte, și revin ca curbe când DXF-ul e importat din nou. **Tipărește** trimite planșa la imprimantă sau plotter la formatul ei, la 1:1, în linii vectoriale: alegi plotterul și hârtia în fereastra de tipărire. Pe o imprimantă mai mică, alegi încadrarea în pagină.
+
+### Seturi de publicare
+
+**Gestionare → Publică…** (grupul Emitere) exportă mai multe planșe și vederi dintr-o dată. Un **set de publicare** este o alegere cu nume de planșe și vederi, păstrată în proiect: se salvează odată cu el, iar fiecare schimbare e un singur pas de anulare.
+
+![Publică: un set de planșe și vederi, formatele lui](shots/publish-sets.webp)
+
+- **Set de publicare** deschide un set salvat. **Salvează setul** păstrează schimbările tale, **Salvează ca set nou** păstrează ce e bifat ca set nou, iar coșul șterge setul. Planșele și vederile rămân în proiect.
+- Planșele sunt listate după număr. Vederile sunt grupate după fel: planuri de etaj, amplasament, secțiuni, fațade, plane de referință și vederi 3D. Fiecare grup are **Toate** și **Niciunul**.
+- Alege formatele: **Fiecare ca PDF**, **Toate într-un singur PDF** (fiecare planșă, apoi fiecare vedere, cu numele setului) și **Fiecare ca DXF**. Fereastra spune câte fișiere ies.
+- O vedere exportată singură primește o pagină cât desenul ei la scara ei, cu o margine de 10 mm și cu numele și scara dedesubt. Zona ei decupată contează.
+- Fișierul unei planșe poartă numărul și numele ei (*A-101 Parter.pdf*), cel al unei vederi, numele vederii. Două fișiere cu același nume se numerotează *(2)*.
+- **Exportă…** pe desktop scrie într-un folder pe care îl alegi. Într-un browser, un singur fișier vine ca atare, iar mai multe vin într-un singur zip cu numele setului.
+
+O planșă sau o vedere ștearsă după salvarea setului iese din el, iar fereastra spune câte nu mai sunt în proiect.
+
+Exportul nu înregistrează nimic. Ca să emiți planșele cu o revizie, un statut și verificări, folosește **Gestionare → Emite…**, care poate porni de la planșele unui set (vezi [Emiterea](cde.md#emiterea)).

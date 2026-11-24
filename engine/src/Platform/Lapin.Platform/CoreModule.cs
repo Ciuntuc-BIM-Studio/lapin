@@ -106,6 +106,8 @@ public sealed class CoreModule : ILapinModule
         GraphicsSets.Register(r);
         ViewFilters.Register(r);
         BrowserSets.Register(r);
+        // Publish sets: named choices of sheets and views exported again in one step (forum topic 225).
+        PublishSets.Register(r);
         ViewLinework.Register(r);
         Location.Register(r);
         DisplayQuality.Register(r);

@@ -1095,6 +1095,11 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .cde-issue-grid .row { gap: 8px; }
 .cde-issue-grid .row label.small { display: inline-flex; align-items: center; gap: 4px; }
 .cde-sheets .row code { margin-left: auto; font-size: 11px; }
+/* Manage → Publish… (publish sets, forum topic 225): the sheets beside the views, each list scrolling on its own. */
+.publish-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.publish-columns section { max-height: 40vh; overflow: auto; min-width: 0; }
+.publish-kind { margin-bottom: 6px; }
+@media (max-width: 640px) { .publish-columns { grid-template-columns: 1fr; } }
 .cde-findings { max-height: 260px; overflow-y: auto; }
 .cde-findings .version-group ul { columns: 1; }
 .cde-findings .version-group > span { font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }

@@ -13490,6 +13490,38 @@ export const scenes = [
     },
   },
   {
+    // Publish sets (forum topic 225): Manage → Publish…, a set kept in the project (a plan, a section and two sheets), opened in the
+    // dialog from its picker. Export is not clicked (it opens the system's folder picker).
+    id: 'publish-sets',
+    async run(t) {
+      await t.fresh();
+      await house(t);
+      const storey = await t.storey();
+      const plan = await t.cmd('view.create', { kind: 'plan', storeyId: storey, name: 'Ground floor plan', scale: 100 });
+      const section = await t.cmd('view.create', { kind: 'section', name: 'A-A', start: [5, -0.6], end: [5, 0.8], depth: 1, scale: 50 });
+      const first = await t.cmd('sheet.create', { name: 'Ground floor plan', number: 'A-101', paper: 'A3' });
+      await t.cmd('sheet.addViewport', { id: first.id, viewId: plan.id, x: 150, y: 120 });
+      const second = await t.cmd('sheet.create', { name: 'Sections', number: 'A-201', paper: 'A3' });
+      await t.cmd('sheet.addViewport', { id: second.id, viewId: section.id, x: 150, y: 120 });
+      await t.cmd('publish.setSet', { name: 'Building permit', sheets: [first.id, second.id], views: [plan.id], formats: { pdf: true, combined: true, dxf: false } });
+      await t.tool('manage.publish');
+      await t.page.waitForSelector('[data-testid=publish-dialog]', { timeout: 10_000 });
+      const picker = t.page.locator('select[data-field=publish-set]');
+      const value = await picker.locator('option', { hasText: 'Building permit' }).getAttribute('value');
+      await picker.selectOption(value);
+      await t.wait(400);
+      t.expect(await t.page.locator(`[data-field="publish-sheet-${first.id}"]`).isChecked(), 'the set\'s first sheet is ticked');
+      t.expect(await t.page.locator(`[data-field="publish-sheet-${second.id}"]`).isChecked(), 'the set\'s second sheet is ticked');
+      t.expect(await t.page.locator(`[data-field="publish-view-${plan.id}"]`).isChecked(), 'the set\'s view is ticked');
+      t.expect(!(await t.page.locator(`[data-field="publish-view-${section.id}"]`).isChecked()), 'the section is not in the set');
+      // Three items as a PDF each, plus the combined one: 4 files.
+      t.expect((await t.page.locator('[data-field=publish-count] [data-no-i18n]').innerText()).trim() === '4', 'the count line reads 4 files');
+      await t.shot('publish-sets', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog-head button[title=Close]').click();
+      await t.wait(300);
+    },
+  },
+  {
     // IDS 1.0 checks (docs/ids.md): an .ids file kept in the project (added through the engine, as the file input would), Manage → IDS…,
     // Run over the house as its IFC export writes it: walls named and with a material pass, the office's code fails on every wall;
     // the failing specification opened with its failures, each a link to its wall.
