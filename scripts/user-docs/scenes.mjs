@@ -9325,7 +9325,8 @@ export const scenes = [
       t.expect(/point/i.test(asks), `the command line asks for the next point (it says: ${asks.replace(/\s+/g, ' ').slice(0, 120)})`);
       await t.shot('command-line', { clip: { x: 250, y: 120, width: 860, height: 730 } });
       await t.keys('Escape', 'Escape');
-      // Rectangle: the box by the cursor switches to width and height with Space (the mode is remembered), Tab goes to the height.
+      // Rectangle: the box by the cursor opens on width and height (report #173), Space switches it to length and angle and back
+      // (the mode is remembered per tool), Tab goes to the height.
       await t.page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
       await t.page.keyboard.type('REC'); await t.page.keyboard.press('Enter');
       const [rx, ry] = await t.planPoint(2, 2);
@@ -9333,10 +9334,16 @@ export const scenes = [
       const [sx, sy] = await t.planPoint(4, 3.2);
       await t.page.mouse.move(sx, sy, { steps: 6 });
       await t.wait(300);
+      const boxLabel = (text) => t.page.locator('.live-box .live-label', { hasText: new RegExp(`^${text}$`) }).count();
+      t.expect(await boxLabel('W') === 1 && await boxLabel('H') === 1, 'a rectangle\'s box by the cursor opens on width and height');
       await t.page.keyboard.press(' ');
+      await t.wait(200);
+      t.expect(await boxLabel('L') === 1 && await boxLabel('W') === 0, 'Space switches the box to length and angle');
+      await t.page.keyboard.press(' ');
+      await t.wait(200);
       await t.page.keyboard.type('2000'); await t.page.keyboard.press('Tab'); await t.page.keyboard.type('-1500');
       await t.wait(300);
-      t.expect(await t.page.locator('.live-box .live-label', { hasText: 'W' }).count() === 1, 'Space turns the box by the cursor into width and height');
+      t.expect(await boxLabel('W') === 1, 'Space again turns the box back into width and height');
       await t.shot('rectangle-box', { clip: { x: 250, y: 120, width: 860, height: 730 } });
       await t.keys('Escape', 'Escape');
       // Move the inner wall (decision 165): from its middle (snapped), partway across the room with ortho on.
