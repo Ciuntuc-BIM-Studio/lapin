@@ -6,7 +6,7 @@ using Lapin.Platform;
 namespace Lapin.RoofPanels;
 
 /// <summary>
-/// The roof panel layout module (docs/plan-roof-panels.md, decision 847), stage 1: metal tiles and standing-seam panels laid
+/// The roof panel layout module (docs/plan-roof-panels.md, decision 848), stage 1: metal tiles and standing-seam panels laid
 /// out on the architecture module's roofs. A roof names its profile (<c>roofpanels.setRoofPanels</c>, one undo step); the
 /// layout, the edges' kinds and the quantities are a query (<c>roofpanels.layout</c>), worked out from the roof's planes
 /// on every ask; the panels are parts a field schedule lists (<c>roofPanels</c>). The built-in profiles are published as
