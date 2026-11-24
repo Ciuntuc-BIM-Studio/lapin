@@ -6539,6 +6539,25 @@ export const PL: Record<string, string> = {
   "the other side": "druga strona",
   // Forum topic 232: the held Tab's list over nothing.
   "Nothing under the pointer": "Nic pod kursorem",
+  // Materials: Import data… / Export data… (forum #251).
+  "Import data…": "Importuj dane…",
+  "Export data…": "Eksportuj dane…",
+  "The materials' parameters and property sets from a CSV or Excel file, matched by name, previewed, in one undo step": "Parametry i zestawy właściwości materiałów z pliku CSV lub Excel, dopasowane po nazwie, z podglądem, w jednym kroku cofania",
+  "Every material's data as an Excel workbook to fill in and import back": "Dane każdego materiału jako skoroszyt Excel do wypełnienia i ponownego importu",
+  "The same table as CSV": "Ta sama tabela jako CSV",
+  "The materials' data was saved: fill it in, then use Import data… to bring it back.": "Dane materiałów zapisano: wypełnij je, a potem użyj Importuj dane…, by je przywrócić.",
+  "Import material data…": "Importuj dane materiałów…",
+  "Import material data": "Importuj dane materiałów",
+  "Where each column goes": "Dokąd trafia każda kolumna",
+  "matched": "dopasowane",
+  "skipped (no such material)": "pominięte (brak takiego materiału)",
+  "Material data": "Dane materiałów",
+  "Material id": "Id materiału",
+  "Rows with no such material": "Wiersze bez takiego materiału",
+  "Fills or changes the data of the project's materials, found by name or id; each other column is a parameter (Set.Name for a property set, a unit in brackets).": "Wypełnia lub zmienia dane materiałów projektu, znalezionych po nazwie lub id; każda inna kolumna to parametr (Zestaw.Nazwa dla zestawu właściwości, jednostka w nawiasach).",
+  "The material's name, as the project has it (case and spaces aside).": "Nazwa materiału, tak jak ma ją projekt (bez względu na wielkość liter i spacje).",
+  "The material's id, as Export data… writes it: found even when its name changed (the Material column then renames it).": "Id materiału, tak jak zapisuje je Eksportuj dane…: znajdowany nawet po zmianie nazwy (kolumna Materiał wtedy zmienia mu nazwę).",
+  "Skip: only the project's materials change. Create: a row whose material the project lacks makes it.": "Pomiń: zmieniają się tylko materiały projektu. Utwórz: wiersz, którego materiału brak w projekcie, tworzy go.",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

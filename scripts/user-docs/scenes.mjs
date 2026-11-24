@@ -15554,6 +15554,40 @@ export const scenes = [
       t.expect(after.some((o) => o.name === 'BORDERY') && after.find((o) => o.name === 'HIDDENX')?.dashes.join(',') === '6,3', 'the import brought back the removed type and updated the changed one');
     },
   },
+  {
+    // Manage → Materials → Import data… (forum #251): material data pasted from a spreadsheet, matched by name case and spaces
+    // aside, a standard set's property, the Data tab's E with its unit in the heading, a row with no such material skipped, a
+    // value that is not a number; the preview's tally and columns' targets; then the import, one undo step.
+    id: 'material-import-data',
+    touches: ['core'],
+    async run(t) {
+      await t.fresh();
+      for (const name of ['EPS 100 F', 'Concrete C25/30', 'Steel S355']) await t.cmd('material.create', { name });
+      await t.tool('manage.materials');
+      await t.page.waitForSelector('[data-testid=material-import-data]', { timeout: 10_000 });
+      await t.page.locator('[data-testid=material-import-data]').click();
+      const dialog = t.page.locator('[data-dialog=import-table]');
+      await dialog.waitFor({ timeout: 10_000 });
+      await t.until(async () => (await dialog.locator('[data-field=table-target]').inputValue()) === 'core.materials', 'the import opens on the materials\' data');
+      await dialog.locator('[data-field=table-paste]').fill('Material\tPset_MaterialThermal.ThermalConductivity\tPset_MaterialCommon.MassDensity\tE (GPa)\tFire class\neps 100 f\t0,035\t20\t\tE\nConcrete C25/30\t\t2500\t33\tA1\nSTEEL S355\t\t7850\theavy\tA1\nRockwool Frontrock\t0,036\t140\t\tA1\n');
+      await dialog.locator('[data-field=table-use-pasted]').click();
+      await t.until(async () => (await dialog.locator('[data-testid=table-tally]').count()) > 0, 'the preview counts the rows');
+      t.expect(await dialog.locator('[data-tally=matched] strong').innerText() === '2', 'two rows are matched');
+      t.expect(await dialog.locator('[data-tally=skipped] strong').innerText() === '1', 'the material the project lacks is skipped');
+      t.expect(await dialog.locator('[data-field=table-errors]').innerText() === '1', 'the value that is not a number is an error');
+      t.expect((await dialog.locator('[data-testid=table-targets]').innerText()).includes("Young's modulus"), 'E (GPa) goes to Young\'s modulus');
+      await t.shot('material-import-data', { of: '[data-dialog=import-table]', pad: 0 });
+      await dialog.locator('[data-field=table-skip]').check();
+      await dialog.locator('[data-field=table-import]').click();
+      await t.wait(900);
+      const mats = (await t.nodes()).filter((n) => n.type === 'IfcMaterial');
+      const eps = mats.find((n) => n.name === 'EPS 100 F');
+      t.expect(eps?.props.params?.some((p) => p.pset === 'Pset_MaterialThermal' && p.name === 'ThermalConductivity' && p.value === 0.035), 'λ landed on EPS 100 F');
+      t.expect(mats.find((n) => n.name === 'Concrete C25/30')?.props.params?.some((p) => p.name === "Young's modulus" && p.value === 33000), 'E in MPa on the concrete');
+      t.expect(!mats.some((n) => n.name === 'Rockwool Frontrock'), 'the unmatched row made no material');
+      t.expect(await t.page.locator('[data-testid=material-import-data]').count() === 1, 'closing the import goes back to Materials');
+    },
+  },
   // [scenes:A]
   {
     // Import table… (docs/plan-user-extensibility.md §7.1): property values pasted from a spreadsheet (a mark, a property of a standard

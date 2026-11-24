@@ -14,12 +14,14 @@ import { pickFile, saveFile, toBase64 } from '../../../engine/files';
 import { storeys } from '../../../engine/model';
 import { activeStorey, useSession } from '../../../engine/session';
 import {
-  applyEntries, missingRequired, parseMappingFile, recallMapping, rememberMapping, setColumnKey, setColumnUnit, tableMappingText,
-  type MapItem, type TableTarget,
+  applyEntries, fileColumns, missingRequired, parseMappingFile, recallMapping, rememberMapping, setColumnKey, setColumnUnit, tableMappingText,
+  tallyEntries, type MapItem, type TableTarget,
 } from './tableModel';
 import { importTable, previewTable, readTable, tableDialog, tableTargets, tableTemplate, type TablePreview, type TableRead, type TableSource } from './tables';
 
 const LEAVE = '';
+/** The preview's tally, in words. */
+const TALLY: Record<string, string> = { matched: 'matched', new: 'new', skipped: 'skipped (no such material)' };
 const OPEN = 'open';
 
 export function ImportTableDialog() {
@@ -38,7 +40,8 @@ export function ImportTableDialog() {
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const target = targets.find((t) => t.id === targetId) ?? null;
-  const close = () => useUi.setState({ dialog: null });
+  // Back to the dialog it was opened from (Manage → Materials → Import data…), else closed.
+  const close = () => useUi.setState({ dialog: preset.back ?? null });
   const storeyList = useMemo(() => storeys(state), [state]);
 
   useEffect(() => { void tableTargets().then(setTargets); }, []);
@@ -83,7 +86,7 @@ export function ImportTableDialog() {
 
   // The defaults the target may need: a storey when the file has no storey column, and any required column the table lacks.
   const hasKey = (k: string) => mapping.some((m) => m.key === k);
-  const defaultKeys = target ? target.columns.filter((c) => !hasKey(c.key) && (c.key === 'storey' || c.required || c.key in (preset.defaults ?? {})) && (c.key === 'storey' || c.kind === 'choice' || c.kind === 'text')).map((c) => c.key) : [];
+  const defaultKeys = target ? target.columns.filter((c) => !hasKey(c.key) && (c.key === 'storey' || c.required || c.option || c.key in (preset.defaults ?? {})) && (c.key === 'storey' || c.kind === 'choice' || c.kind === 'text')).map((c) => c.key) : [];
   const effDefaults = useMemo(() => {
     const d: Record<string, string> = {};
     for (const k of defaultKeys) {
@@ -194,7 +197,7 @@ export function ImportTableDialog() {
                         <th key={i}>
                           <select value={m?.key ?? LEAVE} data-field={`table-column-${i}`} disabled={!target} onChange={(e) => setMapping(setColumnKey(mapping, i, e.target.value || null))}>
                             <option value={LEAVE}>(leave out)</option>
-                            {target?.columns.map((c) => <option key={c.key} value={c.key} title={c.help}>{c.label}{c.required ? ' *' : ''}</option>)}
+                            {target && fileColumns(target).map((c) => <option key={c.key} value={c.key} title={c.help}>{c.label}{c.required ? ' *' : ''}</option>)}
                             {target?.open && <option value={OPEN}>As a property</option>}
                           </select>
                           {units.length > 0 && (
@@ -247,6 +250,26 @@ export function ImportTableDialog() {
               {preview && (
                 <div data-testid="table-preview">
                   <p><strong data-field="table-ok">{preview.ok}</strong> <span>rows ready</span>{preview.errors ? <>, <strong className="row-bad" data-field="table-errors">{preview.errors}</strong> <span>with errors</span></> : ''} · <span data-no-i18n>{preview.steps}</span> <span>steps</span></p>
+                  {preview.tally && (
+                    <p className="small" data-testid="table-tally">{tallyEntries(preview.tally).map(([k, n], i) => (
+                      <span key={k} data-tally={k}>{i > 0 && ' · '}<strong data-no-i18n>{n}</strong> <span>{TALLY[k] ?? k}</span></span>
+                    ))}</p>
+                  )}
+                  {preview.columns && preview.columns.length > 0 && (
+                    <details open data-testid="table-targets">
+                      <summary className="small">Where each column goes</summary>
+                      <table className="layer-table">
+                        <tbody>
+                          {preview.columns.map((c) => (
+                            <tr key={c.heading} className={c.error ? 'row-bad' : ''}>
+                              <td data-no-i18n>{c.heading}</td>
+                              <td data-no-i18n>{c.error ?? c.target}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </details>
+                  )}
                   <div className="scroll-x">
                     <table className="layer-table">
                       <tbody>

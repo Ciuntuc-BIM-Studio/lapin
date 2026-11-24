@@ -11,6 +11,7 @@ Adesea datele sunt deja într-un tabel: încărcările din calculul unui inginer
 Același dialog se deschide, deja pe tabelul lui, de unde aparțin datele:
 
 - **Importă valori de proprietăți…**, lângă **Importă tabel…**, și în **Extrase…**, la baza dialogului.
+- **Importă datele materialelor…**, lângă ele, și **Importă date…** în **Gestionare → Materiale** ([Materiale](materials.md)).
 - **Importă încărcări…** și **Importă cazuri de încărcare…** în grupul **Încărcări** din tabul **Structură** și în dialogul **Încărcări** ([Încărcări](loads.md)).
 - **Importă elemente dintr-un tabel…** și **Clasifică elementele dintr-un tabel…** în **Gestionare → Clasificări…**, pentru sistemul de clasificare ales acolo.
 
@@ -61,6 +62,10 @@ Un rând pe încărcare. **Valoare** este singura coloană obligatorie.
 Completează sau schimbă parametri pe elemente. Prima coloană, **Element**, le găsește după **GlobalId**, după **marcă** sau după **nume** (toate elementele cu acel nume). Fiecare altă coloană e un parametru, luat după antetul ei: alege **Ca proprietate** pentru ea. Un antet scris *Pset_WallCommon.FireRating* (un set, un punct, o proprietate) pune valoarea în acel set de proprietăți, iar orice alt antet e un parametru al tău, cu felul (text, număr, da sau nu) citit din valori. O coloană corelată cu **Nume** redenumește elementele. Un rând al cărui element nu e în model este o eroare în previzualizare.
 
 Valorile importate sunt cele pe care le arată [Proprietățile](interface.md), iar un parametru cu formulă se calculează din ele ([Parametri calculați prin formule](interface.md)).
+
+### Datele materialelor
+
+Completează sau schimbă datele materialelor proiectului, așa cum le ține tabul lor **Date**. **Material** găsește fiecare material după nume (fără a ține cont de majuscule și spații), sau **Id material** după id; **Descriere** și **Categorie** sunt ale lor, iar fiecare altă coloană e un parametru: *Set.Nume* pentru un set de proprietăți (*Pset_MaterialThermal.ThermalConductivity*), un antet simplu pentru unul al materialului, o unitate între paranteze convertită (*E (GPa)*). **Rânduri fără un astfel de material** spune dacă acele rânduri sunt sărite sau fac materiale noi. Previzualizarea numără rândurile potrivite, noi și sărite și spune unde merge fiecare coloană. **Exportă date…** din **Gestionare → Materiale** scrie același tabel, de completat ([Materiale](materials.md)).
 
 ### Elemente și coduri de clasificare
 

@@ -161,7 +161,7 @@ public static partial class StructuralMaterials
     }
 
     /// <summary>The names a user gives Young's modulus in a material's own parameters (Manage → Materials → Data), squashed as <see cref="TagText.Squash"/> does.</summary>
-    static readonly HashSet<string> ModulusNames =
+    internal static readonly HashSet<string> ModulusNames =
     [
         "e", "youngmodulus", "youngsmodulus", "youngsmoduluse", "youngmoduluse", "modulusofelasticity", "modulusofelasticitye", "elasticmodulus",
         "elasticitymodulus", "emodulus", "elasticity", "moduluse", "ecm", "e0mean", "moduldeelasticitate", "modululdeelasticitate", "modululdeelasticitatee",
@@ -188,20 +188,20 @@ public static partial class StructuralMaterials
     /// first), the names it goes by (squashed), the range of a building material's (Pa), how its size gives a unit when none is
     /// written, and the unit it is written in (its scale).
     /// </summary>
-    sealed record Stress(string Label, string Set, HashSet<string> Names, double MinPa, double MaxPa, Func<double, (double Per, string Unit)> BySize, string Shown, double ShownPer);
+    internal sealed record Stress(string Label, string Set, HashSet<string> Names, double MinPa, double MaxPa, Func<double, (double Per, string Unit)> BySize, string Shown, double ShownPer);
 
     /// <summary>E: every building material's lies from 0.1 to 1000 GPa; by its size from 1e6 in Pa, from 500 in MPa (N/mm²), smaller in GPa.</summary>
     static readonly Stress Modulus = new("the modulus of a building material", "Pset_MaterialMechanical", ModulusNames, 1e8, 1e12,
         x => x >= 1e6 ? (1, "Pa") : x >= 500 ? (1e6, "MPa") : (1e9, "GPa"), "GPa", 1e9);
 
     /// <summary>fck, f'c: 5 to 150 MPa; by its size from 1e6 in Pa, else MPa (the Data tab's Compressive strength).</summary>
-    static readonly Stress Compressive = new("a concrete's compressive strength", "Pset_MaterialConcrete",
+    internal static readonly Stress Compressive = new("a concrete's compressive strength", "Pset_MaterialConcrete",
         ["compressivestrength", "compressivestrengthfck", "compressivestrengthfc", "characteristiccompressivestrength", "cylinderstrength", "fck", "fc",
          "rezistențălacompresiune", "rezistentalacompresiune", "rezistențălacompresiunefck", "rezistentalacompresiunefck", "rezistențacaracteristicălacompresiune", "rezistentacaracteristicalacompresiune"],
         5e6, 150e6, x => x >= 1e6 ? (1, "Pa") : (1e6, "MPa"), "MPa", 1e6);
 
     /// <summary>fy: 100 to 2000 MPa; by its size from 1e6 in Pa, else MPa (the Data tab's Yield strength fy).</summary>
-    static readonly Stress Yield = new("a steel's yield strength", "Pset_MaterialSteel",
+    internal static readonly Stress Yield = new("a steel's yield strength", "Pset_MaterialSteel",
         ["yieldstrength", "yieldstrengthfy", "yieldstress", "yieldstressfy", "yieldpoint", "tensileyieldstrength", "fy", "fyk", "fyd0",
          "limitădecurgere", "limitadecurgere", "limitădecurgerefy", "limitadecurgerefy", "rezistențădecurgere", "rezistentadecurgere", "rezistențalacurgere", "rezistentalacurgere"],
         100e6, 2000e6, x => x >= 1e6 ? (1, "Pa") : (1e6, "MPa"), "MPa", 1e6);
@@ -276,7 +276,7 @@ public static partial class StructuralMaterials
         return null;
     }
 
-    static (string Name, string? Unit) SplitUnit(string name) =>
+    internal static (string Name, string? Unit) SplitUnit(string name) =>
         NameWithUnit().Match(name) is { Success: true } m && m.Groups[1].Value.Trim().Length > 0 ? (m.Groups[1].Value.Trim(), m.Groups[2].Value) : (name, null);
 }
 

@@ -1122,6 +1122,7 @@
     {"name":"markRules.list","module":"core","args":[]},
     {"name":"markRules.preview","module":"core","args":[{"name":"category","type":"str"},{"name":"rule"}]},
     {"name":"marks.list","module":"core","args":[]},
+    {"name":"material.exportData","module":"core","args":[{"name":"ids","type":"list"},{"name":"format","type":"str"}]},
     {"name":"material.list","module":"core","args":[]},
     {"name":"material.preview","module":"core","args":[{"name":"kind","type":"str"},{"name":"scale","type":"float"},{"name":"width","type":"float"},{"name":"height","type":"float"},{"name":"layout","type":"str"},{"name":"id","type":"str"},{"name":"name","type":"str"},{"name":"graphics","type":"dict"},{"name":"color"}]},
     {"name":"material.uses","module":"core","args":[{"name":"id","type":"str"}]},

@@ -17,7 +17,7 @@
 
 import { ColourField } from '../../shell/ColourField';
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Copy, ClipboardCopy, FileUp, Library, MousePointerClick, Plus, Replace, RotateCcw, Search, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Copy, ClipboardCopy, FileDown, FileSpreadsheet, FileUp, Library, MousePointerClick, Plus, Replace, RotateCcw, Search, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
@@ -33,6 +33,9 @@ import { freeName, matches, PRESET_GROUPS, PRESETS, presetArgs, type Preset } fr
 import { lookOf, LOOK_RANGES, type Look } from '../../viewport/look';
 import { LengthField } from '../../shell/cells';
 import { MaterialDataTab } from './MaterialDataTab';
+import { exportedFile, MATERIAL_IMPORT } from './materialData';
+import { openImportTable } from './tables/tables';
+import { saveFile } from '../../engine/files';
 import { dropStash, returnToDialog } from './dialogReturn';
 import { commitDecimalField } from '../../shell/parseDecimal';
 
@@ -130,6 +133,13 @@ export function MaterialsDialog() {
     }
   };
 
+  // The materials' data as a table (forum #251): exported to fill in, imported back matched by name or id, in one undo step.
+  const importData = () => openImportTable(MATERIAL_IMPORT.target, MATERIAL_IMPORT.title, MATERIAL_IMPORT.defaults, 'materials');
+  const exportData = async (format: 'xlsx' | 'csv') => {
+    const f = exportedFile(await query<{ data?: string; text?: string; file: string }>('material.exportData', { format }));
+    if (f && await saveFile(f.bytes, f.name, f.type)) notify('The materials\' data was saved: fill it in, then use Import data… to bring it back.');
+  };
+
   const importPat = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -199,6 +209,11 @@ export function MaterialsDialog() {
             </div>
             <button type="button" className={`btn${library ? ' on' : ''}`} data-action="material-library" onClick={() => setLibrary((v) => !v)}><Library size={14} />From the library…</button>
             <button type="button" className="btn" onClick={importPat}><FileUp size={14} />Import .pat</button>
+            <button type="button" className="btn" data-testid="material-import-data" title="The materials' parameters and property sets from a CSV or Excel file, matched by name, previewed, in one undo step" onClick={importData}><FileSpreadsheet size={14} />Import data…</button>
+            <div className="row">
+              <button type="button" className="btn grow" data-testid="material-export-data" title="Every material's data as an Excel workbook to fill in and import back" onClick={() => void exportData('xlsx')}><FileDown size={14} />Export data…</button>
+              <button type="button" className="btn compact" data-testid="material-export-csv" title="The same table as CSV" onClick={() => void exportData('csv')}>CSV</button>
+            </div>
             <FirmFolderFiles ext="pat" onPick={(f) => importPatFile(f.name, new TextDecoder().decode(f.bytes))}
               save={{ disabled: mine.length === 0, choices: ['All my patterns', ...mine.map((f) => f.name)], get: async (c) => {
                 const files = c && c !== 'All my patterns' ? mine.filter((f) => f.name === c) : mine;

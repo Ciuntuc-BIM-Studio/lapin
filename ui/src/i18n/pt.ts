@@ -6536,6 +6536,25 @@ export const PT: Record<string, string> = {
   "the other side": "o outro lado",
   // Forum topic 232: the held Tab's list over nothing.
   "Nothing under the pointer": "Nada sob o ponteiro",
+  // Materials: Import data… / Export data… (forum #251).
+  "Import data…": "Importar dados…",
+  "Export data…": "Exportar dados…",
+  "The materials' parameters and property sets from a CSV or Excel file, matched by name, previewed, in one undo step": "Os parâmetros e conjuntos de propriedades dos materiais a partir de um arquivo CSV ou Excel, pareados pelo nome, com prévia, em um só passo de desfazer",
+  "Every material's data as an Excel workbook to fill in and import back": "Os dados de cada material como pasta de trabalho do Excel para preencher e importar de volta",
+  "The same table as CSV": "A mesma tabela em CSV",
+  "The materials' data was saved: fill it in, then use Import data… to bring it back.": "Os dados dos materiais foram salvos: preencha-os e use Importar dados… para trazê-los de volta.",
+  "Import material data…": "Importar dados de materiais…",
+  "Import material data": "Importar dados de materiais",
+  "Where each column goes": "Para onde vai cada coluna",
+  "matched": "pareadas",
+  "skipped (no such material)": "ignoradas (nenhum material com esse nome)",
+  "Material data": "Dados de materiais",
+  "Material id": "Id do material",
+  "Rows with no such material": "Linhas sem esse material",
+  "Fills or changes the data of the project's materials, found by name or id; each other column is a parameter (Set.Name for a property set, a unit in brackets).": "Preenche ou altera os dados dos materiais do projeto, encontrados pelo nome ou id; cada outra coluna é um parâmetro (Conjunto.Nome para um conjunto de propriedades, uma unidade entre parênteses).",
+  "The material's name, as the project has it (case and spaces aside).": "O nome do material, como o projeto o tem (maiúsculas e espaços à parte).",
+  "The material's id, as Export data… writes it: found even when its name changed (the Material column then renames it).": "O id do material, como Exportar dados… o escreve: encontrado mesmo que o nome tenha mudado (a coluna Material então o renomeia).",
+  "Skip: only the project's materials change. Create: a row whose material the project lacks makes it.": "Ignorar: só os materiais do projeto mudam. Criar: uma linha cujo material falta no projeto o cria.",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

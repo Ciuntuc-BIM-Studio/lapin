@@ -42,6 +42,20 @@ Tabul **Date** ține ce spune materialul despre el. Îl scrii o dată; îl cite�
 
 Exportul IFC scrie descrierea ca Description a materialului și parametrii ca seturile lui de proprietăți; importul le citește înapoi, și din fișierul altui program.
 
+## Datele mai multor materiale deodată: Importă date… și Exportă date…
+
+Când datele sunt în foaia unui furnizor sau în tabelul biroului tău, nu trebuie să le scrii material cu material. **Exportă date…**, în coloana de sub lista materialelor, salvează fiecare material ca un rând al unui registru Excel (**CSV**, alături, salvează același tabel ca CSV): **Material**, **Categorie**, **Descriere**, câte o coloană pentru fiecare parametru pe care îl au materialele și **Id** la sfârșit. Completează-l, adaugă coloane, apoi **Importă date…** îl citește înapoi.
+
+![Datele materialelor dintr-un tabel: rândurile potrivite, unde merge fiecare coloană, previzualizarea rând cu rând](shots/material-import-data.webp)
+
+- **Rândurile** își găsesc materialul după **Id** când fișierul are această coloană, altfel după **nume**, fără a ține cont de majuscule și spații (*eps 100  f* e *EPS 100 F*). Un fișier cu coloana Id și un nume schimbat redenumește materialul.
+- **Rândurile fără un astfel de material** sunt sărite implicit; alege **Creează** ca să fie făcute materiale noi.
+- **Coloanele** sunt parametri, după antetul lor. *Pset_MaterialThermal.ThermalConductivity* merge în acel set de proprietăți standard (doar cu numele proprietăților lui, în unități SI); orice alt *Set.Nume* într-un set al tău; un antet simplu e un parametru al materialului. Cei obișnuiți sunt găsiți după nume și simboluri, cum îi pune **Adaugă unul obișnuit…**: *λ*, *Conductivitate termică*, *Densitate*, *ρ*, *μ*, *E*, *Modul de elasticitate*, *fck*, *fy*, *Reacția la foc*.
+- **Unitățile** dintre paranteze după antet sunt convertite în unitatea în care e ținută valoarea: *E (GPa)* merge în **Young's modulus** în MPa, *λ (mW/(m·K))* în W/(m·K), *Densitate (t/m³)* în kg/m³, *Pset_MaterialMechanical.YoungModulus (MPa)* în pascali. O unitate scrisă în celulă (*31 GPa*) are întâietate față de cea din antet.
+- O **celulă goală** lasă valoarea cum era; ceilalți parametri ai materialului rămân.
+
+Previzualizarea numără rândurile **potrivite**, **noi** și **sărite**, spune **unde merge fiecare coloană** și arată orice valoare care nu e număr sau orice antet care nu e o proprietate a unui set standard, cu rândul ei. **Importă** schimbă totul într-un singur pas de anulare. Același tabel este **Gestionare → Documente → Importă datele materialelor…** ([Importă tabele](tables.md)).
+
 ## Un singur material pentru toate tocurile și toată sticla
 
 Ușile și ferestrele noi sunt făcute din materiale comune, parte cu parte: **Window frame**, **Door frame**, **Glass**, **Door leaf**, **Window board** și **Hardware**. Schimbi **Window frame** o dată și se schimbă tocul tuturor ferestrelor.

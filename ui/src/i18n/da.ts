@@ -6533,6 +6533,25 @@ export const DA: Record<string, string> = {
   "the other side": "den anden side",
   // Forum topic 232: the held Tab's list over nothing.
   "Nothing under the pointer": "Intet under markøren",
+  // Materials: Import data… / Export data… (forum #251).
+  "Import data…": "Importér data…",
+  "Export data…": "Eksportér data…",
+  "The materials' parameters and property sets from a CSV or Excel file, matched by name, previewed, in one undo step": "Materialernes parametre og egenskabssæt fra en CSV- eller Excel-fil, matchet efter navn, med forhåndsvisning, i ét fortryd-trin",
+  "Every material's data as an Excel workbook to fill in and import back": "Hvert materiales data som en Excel-projektmappe til at udfylde og importere igen",
+  "The same table as CSV": "Samme tabel som CSV",
+  "The materials' data was saved: fill it in, then use Import data… to bring it back.": "Materialernes data blev gemt: udfyld dem, og brug så Importér data… for at hente dem tilbage.",
+  "Import material data…": "Importér materialedata…",
+  "Import material data": "Importér materialedata",
+  "Where each column goes": "Hvor hver kolonne går hen",
+  "matched": "matchet",
+  "skipped (no such material)": "sprunget over (intet sådant materiale)",
+  "Material data": "Materialedata",
+  "Material id": "Materiale-id",
+  "Rows with no such material": "Rækker uden et sådant materiale",
+  "Fills or changes the data of the project's materials, found by name or id; each other column is a parameter (Set.Name for a property set, a unit in brackets).": "Udfylder eller ændrer projektets materialers data, fundet efter navn eller id; hver anden kolonne er en parameter (Sæt.Navn for et egenskabssæt, en enhed i parentes).",
+  "The material's name, as the project has it (case and spaces aside).": "Materialets navn, som projektet har det (store/små bogstaver og mellemrum ligegyldige).",
+  "The material's id, as Export data… writes it: found even when its name changed (the Material column then renames it).": "Materialets id, som Eksportér data… skriver det: fundet selv om navnet er ændret (kolonnen Materiale omdøber det så).",
+  "Skip: only the project's materials change. Create: a row whose material the project lacks makes it.": "Spring over: kun projektets materialer ændres. Opret: en række, hvis materiale mangler i projektet, opretter det.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

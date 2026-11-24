@@ -169,7 +169,7 @@ public sealed class TableImportTests
             var text = TableImport.Template(t);
             var header = Tables.Csv(text)[0];
             var guess = TableImport.Guess(t, header);
-            Assert.All(t.Columns, c => Assert.Contains(guess, g => g.Key == c.Key));
+            Assert.All(t.Columns.Where(c => !c.Option), c => Assert.Contains(guess, g => g.Key == c.Key));
         }
     }
 

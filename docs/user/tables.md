@@ -11,6 +11,7 @@ A spreadsheet is often where the data already is: the loads of a structural engi
 The same dialog opens, already on its table, from where the data belongs:
 
 - **Import property values…**, next to **Import table…**, and in **Schedules…** at the foot of the dialog.
+- **Import material data…**, next to them, and **Import data…** in **Manage → Materials** ([Materials](materials.md)).
 - **Import loads…** and **Import load cases…** in the **Loads** group of the **Structure** tab, and in the **Loads** dialog ([Loads](loads.md)).
 - **Import items from table…** and **Classify elements from table…** in **Manage → Classifications…**, for the classification system you have chosen there.
 
@@ -61,6 +62,10 @@ One row a load. **Value** is the only column that must be there.
 Fills or changes parameters on elements. The first column, **Element**, finds them by their **GlobalId**, their **mark**, or their **name** (every element of that name). Each other column is a parameter, taken by its heading: choose **As a property** for it. A heading written *Pset_WallCommon.FireRating* (a set, a dot, a property) puts the value in that property set, and any other heading is a parameter of your own, its kind (text, number, yes or no) read from the values. A column mapped to **Name** renames the elements. A row whose element is not in the model is an error in the preview.
 
 The values you import are the ones [Properties](interface.md) shows, and a formula parameter is worked out from them ([Parameters worked out by formulas](interface.md)).
+
+### Material data
+
+Fills or changes the data of the project's materials, as their **Data** tab holds it. **Material** finds each one by name (case and spaces aside), or **Material id** by its id; **Description** and **Category** are theirs, and every other column is a parameter: *Set.Name* for a property set (*Pset_MaterialThermal.ThermalConductivity*), a bare heading for the material's own, a unit in brackets converted (*E (GPa)*). **Rows with no such material** says whether those rows are skipped or make new materials. The preview counts the rows matched, new and skipped and says where each column goes. **Export data…** in **Manage → Materials** writes the same table to fill in ([Materials](materials.md)).
 
 ### Classification items and codes
 

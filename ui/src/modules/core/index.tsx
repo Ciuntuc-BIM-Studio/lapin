@@ -74,6 +74,7 @@ import './libraryKinds';
 import './boards';
 import { MarkerSymbolSection, slotsFor } from './symbols/SlotPicker';
 import { openImportTable } from './tables/tables';
+import { MATERIAL_IMPORT } from './materialData';
 import { FieldsInspectorDialog } from '../../shell/FieldsInspector';
 // A section profile's board on the shared sketch canvas (audit S11 stage 2): registered at once, so a project reopened with one open shows it.
 import './profileLibraries/profileBoard';
@@ -307,6 +308,8 @@ const core: LapinModule = {
         // Any table (loads, load cases, property values) read from a CSV or Excel file or pasted cells, its columns mapped, previewed and imported in one step (§7.1).
         { id: 'manage.importTable', label: 'Import table…', icon: Table2, run: () => openImportTable() },
         { id: 'manage.importProperties', label: 'Import property values…', icon: Table2, run: () => openImportTable('core.properties', 'Import property values') },
+        // The materials' data (parameters, property sets) from a table, matched by name or id (forum #251).
+        { id: 'manage.importMaterialData', label: 'Import material data…', icon: Table2, run: () => openImportTable(MATERIAL_IMPORT.target, MATERIAL_IMPORT.title, MATERIAL_IMPORT.defaults) },
       ] },
       // The project folder as a CDE (docs/plan-cde.md): the folder and its naming, the pre-issue checks, the issue.
       { label: 'Issue', tools: [

@@ -10,11 +10,13 @@ namespace Lapin.Platform;
 /// areaLoad, lineLoad, load — a value whose unit follows the row's kind —, choice, bool), whether a row needs it, the headings it
 /// is known by (any language; matched without case, accents, units or punctuation) and, for a choice, its values.
 /// </summary>
-public sealed record TableColumn(string Key, string Label, string Kind = "text", bool Required = false, string[]? Aliases = null, string[]? Choices = null, string? Help = null)
+/// <see cref="Option"/>: a choice for the whole table (the dialog asks it, its default applies), not a heading of the file: no guess, no template column.
+public sealed record TableColumn(string Key, string Label, string Kind = "text", bool Required = false, string[]? Aliases = null, string[]? Choices = null, string? Help = null, bool Option = false)
 {
     public JsonObject ToJson()
     {
         var o = new JsonObject { ["key"] = Key, ["label"] = Label, ["kind"] = Kind, ["required"] = Required };
+        if (Option) o["option"] = true;
         if (Choices != null) o["choices"] = new JsonArray(Choices.Select(c => (JsonNode)c).ToArray());
         if (Help != null) o["help"] = Help;
         if (TableUnits.Of(Kind) is { Count: > 0 } units) o["units"] = new JsonArray(units.Select(u => (JsonNode)u.Name).ToArray());
@@ -22,8 +24,15 @@ public sealed record TableColumn(string Key, string Label, string Kind = "text",
     }
 }
 
-/// <summary>A step an imported row makes: a command of the catalogue and its arguments, and what it does in words (the preview).</summary>
-public sealed record TableStep(string Command, JsonObject Args, string Describe);
+/// <summary>
+/// A step an imported row makes: a command of the catalogue and its arguments, and what it does in words (the preview). <see cref="Tally"/>:
+/// what the row is, counted in the preview (a material matched, new, skipped). A <see cref="Note"/> runs nothing: it only says what the row does not do.
+/// </summary>
+public sealed record TableStep(string Command, JsonObject Args, string Describe, string? Tally = null)
+{
+    public static TableStep Note(string describe, string? tally = null) => new("", [], describe, tally);
+    public bool IsNote => Command.Length == 0;
+}
 
 /// <summary>
 /// A target of the table import, registered by its module as a service: its columns, and how a row becomes steps (commands, one
@@ -31,7 +40,11 @@ public sealed record TableStep(string Command, JsonObject Args, string Describe)
 /// A row that cannot be read throws <see cref="CommandException"/> with why: the preview lists it, the import leaves it out.
 /// </summary>
 public sealed record TableTarget(string Id, string Label, string Module, IReadOnlyList<TableColumn> Columns, Func<IQueryContext, TableRow, IReadOnlyList<TableStep>> Steps,
-    bool Open = false, string? Description = null, IReadOnlyList<string[]>? Example = null);
+    bool Open = false, string? Description = null, IReadOnlyList<string[]>? Example = null)
+{
+    /// <summary>On an open target: where a heading of its own goes, in words, or why it cannot (the preview lists the columns).</summary>
+    public Func<IQueryContext, string, (string Target, string? Error)>? OpenColumn { get; init; }
+}
 
 /// <summary>A row as a target reads it: its cells by column key in the units chosen, the open columns by their heading, its number in the file.</summary>
 public sealed class TableRow(int number, IReadOnlyDictionary<string, string> cells, IReadOnlyDictionary<string, string> units, IReadOnlyList<(string Heading, string Value)> open, Dictionary<string, object>? shared = null)
@@ -190,7 +203,7 @@ public static class TableImport
         for (var i = 0; i < header.Count; i++)
         {
             var h = Norm(header[i]);
-            var col = h.Length == 0 ? null : t.Columns.FirstOrDefault(c => !used.Contains(c.Key) && (Norm(c.Key) == h || Norm(c.Label) == h || (c.Aliases ?? []).Any(al => Norm(al) == h)));
+            var col = h.Length == 0 ? null : t.Columns.FirstOrDefault(c => !c.Option && !used.Contains(c.Key) && (Norm(c.Key) == h || Norm(c.Label) == h || (c.Aliases ?? []).Any(al => Norm(al) == h)));
             if (col != null) used.Add(col.Key);
             o.Add((i, col?.Key, col != null ? TableUnits.FromHeading(header[i], col.Kind) : null));
         }
@@ -257,6 +270,15 @@ public static class TableImport
         return o;
     }
 
+    /// <summary>The headings of the columns an open target takes as its own, as <see cref="Plan"/> reads them.</summary>
+    public static List<string> OpenHeadings(TableTarget t, JsonObject a)
+    {
+        var rows = Rows(a);
+        if (rows.Count == 0) return [];
+        var header = rows[Json.Number(a["headerRow"]) is { } hr ? Math.Clamp((int)hr, 0, rows.Count - 1) : HeaderRow(rows)];
+        return [.. Mapping(t, a, header).Where(m => m.Key == "open" && m.Index < header.Count && header[m.Index].Trim().Length > 0).Select(m => header[m.Index].Trim())];
+    }
+
     /// <summary>A choice cell as one of its column's values: the value, its words without case or accents.</summary>
     public static string? Choice(TableColumn c, string value)
     {
@@ -268,7 +290,7 @@ public static class TableImport
     public static string Template(TableTarget t)
     {
         var sb = new StringBuilder();
-        sb.AppendLine(CsvText.Line(t.Columns.Select(c => TableUnits.Of(c.Kind) is { Count: > 0 } u ? $"{c.Label} ({u[0].Name})" : c.Label)));
+        sb.AppendLine(CsvText.Line(t.Columns.Where(c => !c.Option).Select(c => TableUnits.Of(c.Kind) is { Count: > 0 } u ? $"{c.Label} ({u[0].Name})" : c.Label)));
         foreach (var ex in t.Example ?? []) sb.AppendLine(CsvText.Line(ex));
         return sb.ToString();
     }
@@ -312,14 +334,27 @@ public static class TableImport
         {
             var t = Target(q.Services, (string?)a["target"]);
             var plan = Plan(q, t, a);
-            return new JsonObject
+            var o = new JsonObject
             {
                 ["rows"] = new JsonArray(plan.Take(PreviewRows * 5).Select(p => (JsonNode)new JsonObject
                 {
                     ["row"] = p.Row, ["error"] = p.Error, ["steps"] = new JsonArray(p.Steps.Select(s => (JsonNode)s.Describe).ToArray()),
                 }).ToArray()),
-                ["ok"] = plan.Count(p => p.Error == null), ["errors"] = plan.Count(p => p.Error != null), ["steps"] = plan.Sum(p => p.Steps.Count),
+                ["ok"] = plan.Count(p => p.Error == null), ["errors"] = plan.Count(p => p.Error != null), ["steps"] = plan.Sum(p => p.Steps.Count(s => !s.IsNote)),
             };
+            // What the rows are (a target that counts them: matched, new, skipped), each row by its first step that says.
+            var tally = plan.Where(p => p.Error == null).Select(p => p.Steps.FirstOrDefault(s => s.Tally != null)?.Tally).OfType<string>()
+                .GroupBy(x => x).ToList();
+            if (tally.Count > 0) o["tally"] = new JsonObject(tally.Select(g => KeyValuePair.Create(g.Key, (JsonNode?)g.Count())));
+            if (t.OpenColumn != null)
+                o["columns"] = new JsonArray(OpenHeadings(t, a).Select(h =>
+                {
+                    var (target, error) = t.OpenColumn(q, h);
+                    var c = new JsonObject { ["heading"] = h, ["target"] = target };
+                    if (error != null) c["error"] = error;
+                    return (JsonNode)c;
+                }).ToArray());
+            return o;
         });
 
         r.Query("tables.template", (q, a) =>
@@ -346,6 +381,7 @@ public static class TableImport
                 if (error != null) continue;
                 foreach (var step in steps)
                 {
+                    if (step.IsNote) continue;
                     var entry = catalog.Command(step.Command) ?? throw new CommandException($"Row {row}: this edition has no „{step.Command}”.");
                     JsonNode? result;
                     try { result = entry.Handler(ctx, step.Args); }

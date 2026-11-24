@@ -6592,6 +6592,25 @@ export const LO: Record<string, string> = {
   "the other side": "ອີກຂ້າງ",
   // Forum topic 232: the held Tab's list over nothing.
   "Nothing under the pointer": "ບໍ່ມີຫຍັງຢູ່ກ້ອງຕົວຊີ້",
+  // Materials: Import data… / Export data… (forum #251).
+  "Import data…": "ນຳເຂົ້າຂໍ້ມູນ…",
+  "Export data…": "ສົ່ງອອກຂໍ້ມູນ…",
+  "The materials' parameters and property sets from a CSV or Excel file, matched by name, previewed, in one undo step": "ພາຣາມິເຕີ ແລະ ຊຸດຄຸນສົມບັດຂອງວັດສະດຸຈາກໄຟລ໌ CSV ຫຼື Excel, ຈັບຄູ່ຕາມຊື່, ເບິ່ງກ່ອນ, ໃນຂັ້ນຕອນຍົກເລີກດຽວ",
+  "Every material's data as an Excel workbook to fill in and import back": "ຂໍ້ມູນຂອງວັດສະດຸແຕ່ລະອັນເປັນປຶ້ມວຽກ Excel ເພື່ອຕື່ມ ແລະ ນຳເຂົ້າຄືນ",
+  "The same table as CSV": "ຕາຕະລາງດຽວກັນເປັນ CSV",
+  "The materials' data was saved: fill it in, then use Import data… to bring it back.": "ບັນທຶກຂໍ້ມູນວັດສະດຸແລ້ວ: ຕື່ມມັນ, ແລ້ວໃຊ້ ນຳເຂົ້າຂໍ້ມູນ… ເພື່ອນຳມັນຄືນມາ.",
+  "Import material data…": "ນຳເຂົ້າຂໍ້ມູນວັດສະດຸ…",
+  "Import material data": "ນຳເຂົ້າຂໍ້ມູນວັດສະດຸ",
+  "Where each column goes": "ແຕ່ລະຖັນໄປໃສ",
+  "matched": "ຈັບຄູ່ແລ້ວ",
+  "skipped (no such material)": "ຂ້າມ (ບໍ່ມີວັດສະດຸນີ້)",
+  "Material data": "ຂໍ້ມູນວັດສະດຸ",
+  "Material id": "ລະຫັດວັດສະດຸ",
+  "Rows with no such material": "ແຖວທີ່ບໍ່ມີວັດສະດຸນີ້",
+  "Fills or changes the data of the project's materials, found by name or id; each other column is a parameter (Set.Name for a property set, a unit in brackets).": "ຕື່ມ ຫຼື ປ່ຽນຂໍ້ມູນຂອງວັດສະດຸໃນໂຄງການ, ຊອກຫາຕາມຊື່ ຫຼື ລະຫັດ; ຖັນອື່ນແຕ່ລະຖັນເປັນພາຣາມິເຕີ (ຊຸດ.ຊື່ ສຳລັບຊຸດຄຸນສົມບັດ, ຫົວໜ່ວຍໃນວົງເລັບ).",
+  "The material's name, as the project has it (case and spaces aside).": "ຊື່ຂອງວັດສະດຸ, ຕາມທີ່ໂຄງການມີ (ບໍ່ສົນໂຕພິມໃຫຍ່ ແລະ ຍະຫວ່າງ).",
+  "The material's id, as Export data… writes it: found even when its name changed (the Material column then renames it).": "ລະຫັດຂອງວັດສະດຸ, ຕາມທີ່ ສົ່ງອອກຂໍ້ມູນ… ຂຽນ: ພົບເຖິງແມ່ນວ່າຊື່ຂອງມັນປ່ຽນ (ຖັນ ວັດສະດຸ ຈະປ່ຽນຊື່ມັນ).",
+  "Skip: only the project's materials change. Create: a row whose material the project lacks makes it.": "ຂ້າມ: ມີແຕ່ວັດສະດຸຂອງໂຄງການທີ່ປ່ຽນ. ສ້າງ: ແຖວທີ່ວັດສະດຸບໍ່ມີໃນໂຄງການຈະສ້າງມັນ.",
 };
 
 /** Phrases with a number or a name in them. */

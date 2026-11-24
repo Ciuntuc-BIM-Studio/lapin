@@ -6535,6 +6535,25 @@ export const ZH: Record<string, string> = {
   "the other side": "另一侧",
   // Forum topic 232: the held Tab's list over nothing.
   "Nothing under the pointer": "指针下没有对象",
+  // Materials: Import data… / Export data… (forum #251).
+  "Import data…": "导入数据…",
+  "Export data…": "导出数据…",
+  "The materials' parameters and property sets from a CSV or Excel file, matched by name, previewed, in one undo step": "从 CSV 或 Excel 文件导入材料的参数和属性集，按名称匹配，可预览，一步撤销",
+  "Every material's data as an Excel workbook to fill in and import back": "每种材料的数据导出为 Excel 工作簿，填写后再导入",
+  "The same table as CSV": "同一张表，CSV 格式",
+  "The materials' data was saved: fill it in, then use Import data… to bring it back.": "材料数据已保存：填写后，使用“导入数据…”导回。",
+  "Import material data…": "导入材料数据…",
+  "Import material data": "导入材料数据",
+  "Where each column goes": "每列去向",
+  "matched": "已匹配",
+  "skipped (no such material)": "已跳过（无此材料）",
+  "Material data": "材料数据",
+  "Material id": "材料 ID",
+  "Rows with no such material": "没有此材料的行",
+  "Fills or changes the data of the project's materials, found by name or id; each other column is a parameter (Set.Name for a property set, a unit in brackets).": "填写或更改项目材料的数据，按名称或 ID 查找；其他每列是一个参数（属性集用 集.名称，单位写在括号里）。",
+  "The material's name, as the project has it (case and spaces aside).": "材料名称，与项目中的一致（不区分大小写和空格）。",
+  "The material's id, as Export data… writes it: found even when its name changed (the Material column then renames it).": "材料 ID，与“导出数据…”写出的一致：即使名称已更改也能找到（此时“材料”列会将其重命名）。",
+  "Skip: only the project's materials change. Create: a row whose material the project lacks makes it.": "跳过：只更改项目中的材料。创建：项目中缺少其材料的行会创建该材料。",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

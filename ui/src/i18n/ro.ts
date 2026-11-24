@@ -6492,6 +6492,25 @@ export const RO: Record<string, string> = {
   "the other side": "cealaltă parte",
   // Forum topic 232: the held Tab's list over nothing.
   "Nothing under the pointer": "Nimic sub cursor",
+  // Materials: Import data… / Export data… (forum #251).
+  "Import data…": "Importă date…",
+  "Export data…": "Exportă date…",
+  "The materials' parameters and property sets from a CSV or Excel file, matched by name, previewed, in one undo step": "Parametrii și seturile de proprietăți ale materialelor dintr-un fișier CSV sau Excel, potrivite după nume, cu previzualizare, într-un singur pas de anulare",
+  "Every material's data as an Excel workbook to fill in and import back": "Datele fiecărui material ca registru Excel de completat și importat înapoi",
+  "The same table as CSV": "Același tabel, ca CSV",
+  "The materials' data was saved: fill it in, then use Import data… to bring it back.": "Datele materialelor au fost salvate: completează-le, apoi folosește Importă date… ca să le aduci înapoi.",
+  "Import material data…": "Importă datele materialelor…",
+  "Import material data": "Importă datele materialelor",
+  "Where each column goes": "Unde merge fiecare coloană",
+  "matched": "potrivite",
+  "skipped (no such material)": "sărite (niciun material cu acest nume)",
+  "Material data": "Datele materialelor",
+  "Material id": "Id material",
+  "Rows with no such material": "Rânduri fără un astfel de material",
+  "Fills or changes the data of the project's materials, found by name or id; each other column is a parameter (Set.Name for a property set, a unit in brackets).": "Completează sau schimbă datele materialelor proiectului, găsite după nume sau id; fiecare altă coloană e un parametru (Set.Nume pentru un set de proprietăți, o unitate între paranteze).",
+  "The material's name, as the project has it (case and spaces aside).": "Numele materialului, așa cum îl are proiectul (fără a ține cont de majuscule și spații).",
+  "The material's id, as Export data… writes it: found even when its name changed (the Material column then renames it).": "Id-ul materialului, așa cum îl scrie Exportă date…: găsit chiar dacă i s-a schimbat numele (coloana Material îl redenumește atunci).",
+  "Skip: only the project's materials change. Create: a row whose material the project lacks makes it.": "Sari peste: se schimbă doar materialele proiectului. Creează: un rând al cărui material lipsește din proiect îl creează.",
 };
 
 /** Phrases with a number or a name in them. */

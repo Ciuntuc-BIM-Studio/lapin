@@ -11,7 +11,8 @@ export interface MapItem { column: number; key: string | null; unit?: string | n
 /** A mapping as kept: by the column's heading. */
 export interface MapEntry { header: string; key: string | null; unit?: string | null }
 
-export interface TargetColumn { key: string; label: string; kind: string; required?: boolean; choices?: string[]; help?: string; units?: string[] }
+/** `option`: a choice for the whole table (asked by the dialog, its default applied), not a heading of the file. */
+export interface TargetColumn { key: string; label: string; kind: string; required?: boolean; choices?: string[]; help?: string; units?: string[]; option?: boolean }
 export interface TableTarget { id: string; label: string; module: string; open: boolean; description?: string; columns: TargetColumn[] }
 
 /** A heading compared without case, accents, spaces or punctuation. */
@@ -74,6 +75,19 @@ export const setColumnUnit = (mapping: MapItem[], column: number, unit: string |
   mapping.map((m) => (m.column === column ? (unit ? { ...m, unit } : { column: m.column, key: m.key }) : m));
 
 /** The target's required columns no column is mapped to. */
+/** The columns a heading of the file may be (the target's options are asked for the whole table instead). */
+export const fileColumns = (target: TableTarget): TargetColumn[] => target.columns.filter((c) => !c.option);
+
+/** The target's options, asked once for the whole table. */
+export const askedOptions = (target: TableTarget): TargetColumn[] => target.columns.filter((c) => c.option);
+
+/** What the preview counts (a material matched, new, skipped), the known ones first. */
+export function tallyEntries(tally: Record<string, number> | undefined): [string, number][] {
+  const order = ['matched', 'new', 'skipped'];
+  const rank = (k: string) => (order.includes(k) ? order.indexOf(k) : order.length);
+  return Object.entries(tally ?? {}).sort((a, b) => rank(a[0]) - rank(b[0]));
+}
+
 export const missingRequired = (target: TableTarget, mapping: MapItem[], hasDefault: (key: string) => boolean = () => false): TargetColumn[] =>
   target.columns.filter((c) => c.required && !mapping.some((m) => m.key === c.key) && !hasDefault(c.key));
 

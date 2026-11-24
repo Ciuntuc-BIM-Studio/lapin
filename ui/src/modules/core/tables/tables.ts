@@ -8,7 +8,8 @@ import type { MapItem, TableTarget } from './tableModel';
 export type TableSource = { text: string } | { data: string };
 export interface TableRead { count: number; headerRow: number; rows: string[][]; mapping?: MapItem[] }
 export interface PreviewRow { row: number; error: string | null; steps: string[] }
-export interface TablePreview { rows: PreviewRow[]; ok: number; errors: number; steps: number }
+/** tally: what the rows are (matched, new, skipped), for a target that counts them; columns: where each of an open target's own headings goes. */
+export interface TablePreview { rows: PreviewRow[]; ok: number; errors: number; steps: number; tally?: Record<string, number>; columns?: { heading: string; target: string; error?: string }[] }
 export interface ImportOutcome { steps: number; rows: number; skipped: number; ids: string[] }
 
 /** A query whose refusal comes back as a sentence rather than nothing. */
@@ -29,11 +30,11 @@ export async function importTable(args: TableRequest & { skipErrors?: boolean })
   return r ?? { error: useSession.getState().error ?? 'The import failed.' };
 }
 
-/** What Import table… opens with: the target (none: the dialog asks) and its heading. */
-export const tableDialog = create<{ target: string | null; title: string | null; defaults: Record<string, string> | null }>(() => ({ target: null, title: null, defaults: null }));
+/** What Import table… opens with: the target (none: the dialog asks), its heading, and the dialog it goes back to when closed. */
+export const tableDialog = create<{ target: string | null; title: string | null; defaults: Record<string, string> | null; back: string | null }>(() => ({ target: null, title: null, defaults: null, back: null }));
 
-/** Opens Import table…, on a target when one is given (Import loads…, Import property values…). */
-export function openImportTable(target?: string, title?: string, defaults?: Record<string, string>): void {
-  tableDialog.setState({ target: target ?? null, title: title ?? null, defaults: defaults ?? null });
+/** Opens Import table…, on a target when one is given (Import loads…, Import property values…); `back`: the dialog it returns to. */
+export function openImportTable(target?: string, title?: string, defaults?: Record<string, string>, back?: string): void {
+  tableDialog.setState({ target: target ?? null, title: title ?? null, defaults: defaults ?? null, back: back ?? null });
   useUi.setState({ dialog: 'importTable' });
 }

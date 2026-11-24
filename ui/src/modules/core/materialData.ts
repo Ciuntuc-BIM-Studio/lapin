@@ -64,3 +64,19 @@ export function inCatalogue(sizesMm: number[], metres: number): boolean {
   const mm = metres * 1000;
   return sizesMm.length === 0 || mm <= 1e-6 || sizesMm.some((s) => Math.abs(s - mm) < 0.05);
 }
+
+/** Import data… (forum #251): the table import on the materials, a row whose material the project lacks skipped unless chosen otherwise. */
+export const MATERIAL_IMPORT = { target: 'core.materials', title: 'Import material data', defaults: { ifMissing: 'Skip' } };
+
+/** material.exportData's answer as the file to save: a workbook from its base64, a CSV from its text (a byte-order mark first, for Excel). */
+export function exportedFile(r: { data?: string; text?: string; file: string } | null): { bytes: Uint8Array; name: string; type: string } | null {
+  if (!r) return null;
+  if (r.data != null) {
+    return { bytes: Uint8Array.from(atob(r.data), (c) => c.charCodeAt(0)), name: r.file, type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' };
+  }
+  const text = new TextEncoder().encode(r.text ?? '');
+  const bytes = new Uint8Array(text.length + 3);
+  bytes.set([0xef, 0xbb, 0xbf]);
+  bytes.set(text, 3);
+  return { bytes, name: r.file, type: 'text/csv' };
+}

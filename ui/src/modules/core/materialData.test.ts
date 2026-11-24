@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { catalogueOf, inCatalogue, measureOf, paramKey, parseThicknesses, PARAM_PRESETS, unitOf } from './materialData';
+import { catalogueOf, exportedFile, inCatalogue, MATERIAL_IMPORT, measureOf, paramKey, parseThicknesses, PARAM_PRESETS, unitOf } from './materialData';
 import type { ModelState } from '../../engine/model';
 
 const model = (nodes: { id: string; type: string; name: string; props: Record<string, unknown> }[]): ModelState =>
@@ -49,5 +49,24 @@ describe('a material’s data', () => {
     expect(unitOf({ name: "Young's modulus", kind: 'number', value: 30000 })).toBe('MPa');
     expect(unitOf({ name: 'Yield strength', kind: 'number', value: 355 })).toBe('MPa');
     expect(unitOf({ name: 'Compressive strength', kind: 'number', value: 30 })).toBe('MPa');
+  });
+});
+
+describe('the materials data table (Import data… / Export data…)', () => {
+  it('turns the engine\'s export into the file to save: a workbook from base64, a CSV from text', () => {
+    const csv = exportedFile({ text: 'Material;Id\r\nSteel;m1\r\n', file: 'materials-data.csv' })!;
+    expect(csv.name).toBe('materials-data.csv');
+    expect(csv.type).toBe('text/csv');
+    // A byte-order mark first, so Excel reads the names' accents right.
+    expect(Array.from(csv.bytes.slice(0, 3))).toEqual([0xef, 0xbb, 0xbf]);
+    expect(new TextDecoder().decode(csv.bytes)).toBe('Material;Id\r\nSteel;m1\r\n');
+    const xlsx = exportedFile({ data: btoa('PK\u0003\u0004'), file: 'materials-data.xlsx' })!;
+    expect(Array.from(xlsx.bytes)).toEqual([0x50, 0x4b, 3, 4]);
+    expect(xlsx.type).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    expect(exportedFile(null)).toBeNull();
+  });
+
+  it('opens the import on the materials target, unmatched rows skipped unless chosen otherwise', () => {
+    expect(MATERIAL_IMPORT).toEqual({ target: 'core.materials', title: 'Import material data', defaults: { ifMissing: 'Skip' } });
   });
 });

@@ -42,6 +42,20 @@ The **Data** tab holds what the material says of itself. You write it once; ever
 
 The IFC export writes the description as the material's Description and the parameters as its property sets; an import reads them back, also from another program's file.
 
+## Data of many materials at once: Import data… and Export data…
+
+When the data is in a supplier's sheet or your office's spreadsheet, you do not have to type it material by material. **Export data…**, in the column under the list of materials, saves every material as one row of an Excel workbook (**CSV** beside it saves the same table as CSV): **Material**, **Category**, **Description**, a column for each parameter the materials have, and **Id** last. Fill it in, add columns, then **Import data…** reads it back.
+
+![Material data from a spreadsheet: the rows matched, the columns' targets, the preview row by row](shots/material-import-data.webp)
+
+- **Rows** find their material by **Id** when the file has one, else by **name**, case and spaces aside (*eps 100  f* is *EPS 100 F*). A file with an Id column and a changed name renames the material.
+- **Rows with no such material** are skipped by default; choose **Create** to make them as new materials.
+- **Columns** are parameters, by their headings. *Pset_MaterialThermal.ThermalConductivity* goes into that standard property set (its own property names only, in SI units); any other *Set.Name* into a set of your own; a bare heading is a parameter of the material's own. The usual ones are found by their names and symbols, as **Add a usual one…** puts them: *λ*, *Thermal conductivity*, *Density*, *ρ*, *μ*, *E*, *Young's modulus*, *fck*, *fy*, *Reaction to fire*.
+- **Units** in brackets after a heading are converted to the unit the value is held in: *E (GPa)* goes into **Young's modulus** in MPa, *λ (mW/(m·K))* into W/(m·K), *Density (t/m³)* into kg/m³, *Pset_MaterialMechanical.YoungModulus (MPa)* into pascals. A unit written in the cell (*31 GPa*) counts over the heading's.
+- An **empty cell** leaves the value as it was; the material's other parameters stay.
+
+The preview counts the rows **matched**, **new** and **skipped**, says **where each column goes**, and lists any value that is not a number or any heading that is not a standard set's property, with its row. **Import** changes everything in one step to undo. The same table is **Manage → Documents → Import material data…** ([Import tables](tables.md)).
+
 ## One material for all frames and all glass
 
 New doors and windows are made of shared materials, part by part: **Window frame**, **Door frame**, **Glass**, **Door leaf**, **Window board** and **Hardware**. Change **Window frame** once and every window frame changes.

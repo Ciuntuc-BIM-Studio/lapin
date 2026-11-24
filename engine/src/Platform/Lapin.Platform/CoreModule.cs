@@ -143,6 +143,7 @@ public sealed class CoreModule : ILapinModule
         // The table import (docs/plan-user-extensibility.md §7.1) and its first target, property values.
         TableImport.Register(r);
         r.Service<TableTarget>(PropertyTable.Target);
+        MaterialTable.Register(r);
         CutOrder.Register(r);
         StoreyMove.Register(r);
         StoreyCopy.Register(r);

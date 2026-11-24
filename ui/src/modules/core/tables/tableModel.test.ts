@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  applyEntries, entriesOf, headerSignature, layerMappingText, mergeOptions, missingRequired, optionDefaults, parseMappingFile, recallLayer, recallMapping, rememberLayers, rememberMapping,
-  setColumnKey, setColumnUnit, tableMappingText, type TableTarget,
+  applyEntries, askedOptions, entriesOf, fileColumns, headerSignature, layerMappingText, mergeOptions, missingRequired, optionDefaults, parseMappingFile, recallLayer, recallMapping, rememberLayers, rememberMapping,
+  setColumnKey, setColumnUnit, tableMappingText, tallyEntries, type TableTarget,
 } from './tableModel';
 
 const store: Record<string, string> = {};
@@ -102,5 +102,25 @@ describe('a mapping file installed as an extension', () => {
     expect(recallMapping('core.classification', ['Title', 'Code'])).toBeNull();
     expect(recallLayer('A-WALL')?.converter).toBe('old');
     expect(recallLayer('A-DOOR')).toBeNull();
+  });
+});
+
+describe('a target\'s options and the preview\'s tally', () => {
+  const materials: TableTarget = {
+    id: 'core.materials', label: 'Material data', module: 'core', open: true,
+    columns: [
+      { key: 'material', label: 'Material', kind: 'text' }, { key: 'description', label: 'Description', kind: 'text' },
+      { key: 'ifMissing', label: 'Rows with no such material', kind: 'choice', choices: ['Skip', 'Create'], option: true },
+    ],
+  };
+
+  it('offers a file\'s columns only the target\'s columns, and asks its options for the whole table', () => {
+    expect(fileColumns(materials).map((c) => c.key)).toEqual(['material', 'description']);
+    expect(askedOptions(materials).map((c) => c.key)).toEqual(['ifMissing']);
+  });
+
+  it('counts the rows matched, new and skipped in that order, the others after', () => {
+    expect(tallyEntries({ skipped: 2, other: 1, new: 1, matched: 5 })).toEqual([['matched', 5], ['new', 1], ['skipped', 2], ['other', 1]]);
+    expect(tallyEntries(undefined)).toEqual([]);
   });
 });
