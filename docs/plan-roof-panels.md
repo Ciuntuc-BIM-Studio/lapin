@@ -102,7 +102,7 @@ Un profil e date (`engine/src/Modules/Roofing/Lapin.RoofPanels/profiles.json`, c
 
 ## 6. Întrebări pentru proprietar
 
-Până răspunde, merg cu varianta implicită scrisă după fiecare.
+**Răspuns (24.11.2026):** proprietarul a ales variantele implicite la toate patru: panourile înlocuiesc placa învelitorii în IFC când acoperișul are un profil; lista de prețuri Bilka intră în repo ca șablon orientativ, adus doar la cerere; petrecerea Balcanic rămâne 130 mm; exportul JSON v1.0 nu mai e necesar.
 
 1. **În IFC, panourile înlocuiesc învelitoarea?** Implicit: da, când acoperișul are un profil, fiecare panou e un `IfcCovering` `ROOFING` în locul plăcii învelitoarei (cum scrie aplicația); fără profil, ca acum.
 2. **Lista de prețuri Bilka (Dedeman etc., 24.11.2026) intră în repo-ul deschis?** Implicit: da, ca șablon orientativ, cu data și sursa pe fiecare rând, adus în proiect doar la cerere; numele de comercianți rămân în coloana sursei.
