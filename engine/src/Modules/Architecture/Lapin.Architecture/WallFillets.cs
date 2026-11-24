@@ -286,7 +286,7 @@ public static class WallFillets
         return new JsonObject { ["ids"] = new JsonArray(w.Id, second.Id) };
     }
 
-    /// <summary>Extend the end of a straight wall nearer <c>at</c> to the first wall ahead (forum #109).</summary>
+    /// <summary>Extend the end of a straight wall nearer <c>at</c> to the first wall ahead (forum #109); with none, to the nearest wall's line carried on (forum topic 235).</summary>
     public static JsonObject Extend(ICommandContext ctx, JsonObject a, IPathElements paths)
     {
         var m = ctx.Model;
@@ -305,6 +305,8 @@ public static class WallFillets
         var (z0, z1) = (Spatial.Base(m, w), Spatial.Base(m, w) + Walls.HeightOf(m, w));
 
         double? best = null;
+        // With no wall ahead as the walls lie, the nearest wall's line carried on (forum topic 235, Archicad's and Revit's way).
+        double? carried = null;
         foreach (var other in m.OfClass(IfcClass.Wall))
         {
             if (other.Id == w.Id || PathCurve.Of(other).IsArc) continue;
@@ -320,8 +322,11 @@ public static class WallFillets
             var t = (dx * rayDir.Y - dy * rayDir.X) / denom;
             if (dist > 1e-4 && t >= -1e-4 && t <= 1 + 1e-4 && (best == null || dist < best))
                 best = dist;
+            else if (dist > 1e-4 && (carried == null || dist < carried))
+                carried = dist;
         }
-        if (best == null) throw new CommandException("No wall lies ahead to extend to.");
+        best ??= carried;
+        if (best == null) throw new CommandException("No wall lies ahead to extend to, nor a wall's line carried on.");
 
         foreach (var r in Joins.Of(m, w.Id).ToList())
         {

@@ -18,7 +18,7 @@ import { ucsOf, useLocation } from '../../app/location';
 import { directionFrom, directionOf, normalizeTurn, rotatedShape, rotationFromReference } from './rotate';
 import { applyOrtho, parseCoordinateInput, parseScalar, pointAlong } from './input';
 import { lengthText, parseLength } from '../../engine/unitsStore';
-import { arcThrough, arcTangent, bounds, dist, ellipseAt, ellipseOf, ellipsePoints, fromJson, normAngle, toJson, type Shape } from './shapes';
+import { arcThrough, arcTangent, bounds, dist, ellipseAt, ellipseOf, ellipsePoints, fromJson, nearestLine, normAngle, toJson, type Shape } from './shapes';
 import { mapShape } from '../insetMap';
 import { SNAP_CODES, type SnapOverride } from './snaps';
 import { liveBegin, liveEnd } from '../liveInput';
@@ -672,12 +672,14 @@ function offset(): Step {
 
 /**
  * TRIM and EXTEND: drafted lines, cut at or carried on to the lines that cross them. A wall picked in a plan is trimmed at the
- * walls that cross it, or carried on to the first ahead (architecture.trimWall, extendWall); other elements take Trim/Extend
- * elements (TRIMEXTEND), which brings them to a boundary picked first.
+ * walls that cross it, or carried on to the first ahead (architecture.trimWall, extendWall; with none ahead, to the nearest
+ * wall's line carried on); other elements take Trim/Extend elements (TRIMEXTEND), which brings them to a boundary picked
+ * first. Boundary (forum topic 235) is that: a boundary of any kind first, then lines and elements brought to its line.
  */
 function trimOrExtend(kind: 'trim' | 'extend'): Step {
   const step = (): Step => ({
-    prompt: kind === 'trim' ? 'Pick the piece to cut away (Enter to finish)' : 'Pick the end to extend (Enter to finish)', want: 'pick',
+    prompt: kind === 'trim' ? 'Pick the piece to cut away [Boundary] (Enter to finish)' : 'Pick the end to extend [Boundary] (Enter to finish)', want: 'pick',
+    keywords: { B: () => trimExtendElements(), BOUNDARY: () => trimExtendElements() },
     pick: async (hit, at) => { await execute(`drafting.${kind}`, { id: hit.id, at: xy(at) }); return step(); },
     pickElement: async (id, at) => {
       if (nodeOf(id)?.type === 'IfcWall') await execute(`architecture.${kind}Wall`, { id, at: xy(at) });
@@ -716,6 +718,18 @@ const isLineElement = (id: string) => {
 /** What Split, Trim/Extend and Offset take by its line: an axis or a polyline. */
 const isEditableLine = (id: string) => isAxisElement(id) || isLineElement(id);
 
+/**
+ * The straight line of an element nearest the pick, as a boundary (forum topic 235): a railing's, a path's or an MEP run's
+ * segment, else its lines in the view (a grid axis, a floor's or a column's edge).
+ */
+function elementLine(id: string, at: Vec2): [Vec2, Vec2] | null {
+  const n = nodeOf(id);
+  const run = n && (Array.isArray(n.props.points) ? n.props.points : Array.isArray(n.props.path) ? n.props.path : null);
+  const pts = (run ?? []).map((p: unknown) => pt(p)).filter((p: Vec2 | null): p is Vec2 => !!p);
+  const shapes: Shape[] = pts.length >= 2 ? [{ type: 'polyline', pts, closed: false }] : cadHost()?.outlinesOf?.(id) ?? [];
+  return nearestLine(shapes, at);
+}
+
 /** The straight axis of an element, as two points (none when it is curved). */
 function straightAxis(id: string): [Vec2, Vec2] | null {
   const n = nodeOf(id);
@@ -752,23 +766,30 @@ const faceKeys = (back: () => Step): Record<string, () => Next> => {
 };
 
 /**
- * TRIMEXTEND (TE; Modify → Trim/Extend elements), Revit's Trim/Extend: the boundary first (an element: its axis, or its face
- * near or far from the part kept; or a drafted line or arc), then, again and again until Enter, the elements to bring to it,
- * each clicked on the part to keep. A wall, beam or strip footing has the end on the other side (or the end nearer it) moved
- * to the boundary, curved ones round their circle (element.trimExtend); a floor or ceiling is cut along a straight boundary,
- * the side clicked kept (architecture.trimOutline).
+ * TRIMEXTEND (TE; Modify → Trim/Extend elements), Revit's Trim/Extend: the boundary first (a wall's, beam's or footing's axis,
+ * or its face near or far from the part kept; a grid axis, a railing's or a path's segment, an element's edge; or a drafted
+ * line or arc), then, again and again until Enter, the elements and drafted lines to bring to it, each clicked on the part to
+ * keep. The boundary's line runs on past its ends (forum topic 235): what does not meet it as it lies is carried on to its
+ * line. A wall, beam or strip footing has the end on the other side (or the end nearer it) moved to the boundary, curved ones
+ * round their circle (element.trimExtend); a drafted line or an open polyline likewise (drafting.trimExtend); a floor or
+ * ceiling is cut along a straight boundary, the side clicked kept (architecture.trimOutline).
  */
 function trimExtendElements(): Step {
+  const faceOf = (boundary: { boundary: string } | DraftBoundary) => ('boundary' in boundary ? { face: useCad.getState().trimFace } : {});
   const target = (boundary: { boundary: string } | DraftBoundary, line: [Vec2, Vec2] | null): Step => ({
-    prompt: `Pick an element to trim or extend, on the part to keep [Axis/Near/Far: ${faceWord()}] (Enter to finish)`, want: 'pick',
+    prompt: `Pick an element or a line to trim or extend, on the part to keep [Axis/Near/Far: ${faceWord()}] (Enter to finish)`, want: 'pick',
     keywords: faceKeys(() => target(boundary, line)),
-    pick: () => { log('Pick an element: a wall, a beam, a strip footing, a floor or a ceiling.'); return target(boundary, line); },
+    pick: async (hit, at) => {
+      if (hit.shape.type === 'line' || (hit.shape.type === 'polyline' && !hit.shape.closed)) await execute('drafting.trimExtend', { id: hit.id, at: xy(at), ...boundary, ...faceOf(boundary) });
+      else log('Drafted lines and open polylines are trimmed or extended to a boundary; pick an element, or a line.');
+      return target(boundary, line);
+    },
     pickElement: async (id, at) => {
       if (isOutlineElement(id)) {
         if (line) await execute(outlineCommand(id, 'trim'), { id, a: xy(line[0]), b: xy(line[1]), keep: xy(at) });
         else log('An outline (a floor, a ceiling, a roof, a room, a platform, a parcel) is trimmed by a straight boundary.');
       } else if (isEditableLine(id)) {
-        await execute('element.trimExtend', { id, at: xy(at), ...boundary, ...('boundary' in boundary ? { face: useCad.getState().trimFace } : {}) });
+        await execute('element.trimExtend', { id, at: xy(at), ...boundary, ...faceOf(boundary) });
       } else log('Trim/Extend takes walls, beams, strip footings, railings, MEP runs, paths, roads, floors, ceilings, roofs, rooms, platforms and parcels.');
       return target(boundary, line);
     },
@@ -776,15 +797,18 @@ function trimExtendElements(): Step {
     enter: () => null,
   });
   const first = (): Step => ({
-    prompt: `Pick the boundary: an element, or a drafted line or arc [Axis/Near/Far: ${faceWord()}]`, want: 'pick',
+    prompt: `Pick the boundary: an element, a grid axis, or a drafted line or arc [Axis/Near/Far: ${faceWord()}]`, want: 'pick',
     keywords: faceKeys(first),
     pick: (hit, at) => {
       const b = draftBoundary(hit.shape, at);
       return target(b, 'line' in b ? [pt(b.line[0])!, pt(b.line[1])!] : null);
     },
-    pickElement: (id) => {
-      if (!isAxisElement(id)) { log('A boundary is a wall, a beam, a strip footing, or a drafted line or arc.'); return first(); }
-      return target({ boundary: id }, straightAxis(id));
+    pickElement: (id, at) => {
+      if (isAxisElement(id)) return target({ boundary: id }, straightAxis(id));
+      // Anything else by its straight line nearest the pick: a grid axis, a railing's segment, an edge.
+      const l = elementLine(id, at);
+      if (!l) { log('A boundary is a wall, a beam, a strip footing, a grid axis, an element\'s straight edge, or a drafted line or arc.'); return first(); }
+      return target({ line: [xy(l[0]), xy(l[1])] }, l);
     },
     enter: () => null,
   });

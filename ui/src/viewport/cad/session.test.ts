@@ -405,6 +405,45 @@ describe('edits on elements: TRIM/EXTEND on walls, TRIMEXTEND, SPLITELEMENT, OFF
     expect(engine.execute).toHaveBeenCalledWith('element.trimExtend', { id: 'b1', at: [2, 5], line: [[10, 0], [10, 10]] });
   });
 
+  it('TRIMEXTEND brings a drafted line to a wall, its face asked (forum topic 235)', async () => {
+    await startCommand('TRIMEXTEND');
+    await submit('N');
+    pickAt('w2'); await feedPoint(P(4, 1));
+    pickAt(null); draftAt({ type: 'line', a: P(0, 3), b: P(2, 3) });
+    await feedPoint(P(1, 3));
+    expect(engine.execute).toHaveBeenCalledWith('drafting.trimExtend', { id: 'd1', at: [1, 3], boundary: 'w2', face: 'near' });
+  });
+
+  it('TRIMEXTEND takes a grid axis or a railing\'s segment as the boundary, by its line (forum topic 235)', async () => {
+    const host = useCad.getState().host!;
+    host.outlinesOf = (id: string) => (id === 'g#A' ? [{ type: 'line', a: P(9, -10), b: P(9, 10) }] : []) as never;
+    await startCommand('TRIMEXTEND');
+    pickAt('g#A'); await feedPoint(P(9, 1));
+    pickAt('w1'); await feedPoint(P(1, 0));
+    expect(engine.execute).toHaveBeenCalledWith('element.trimExtend', { id: 'w1', at: [1, 0], line: [[9, -10], [9, 10]] });
+    pickAt(null); draftAt({ type: 'line', a: P(0, 3), b: P(2, 3) });
+    await feedPoint(P(1, 3));
+    expect(engine.execute).toHaveBeenCalledWith('drafting.trimExtend', { id: 'd1', at: [1, 3], line: [[9, -10], [9, 10]] });
+    await submit('');
+    draftAt(null);
+    await startCommand('TRIMEXTEND');
+    pickAt('r1'); await feedPoint(P(3, 0));
+    pickAt('b1'); await feedPoint(P(2, 5));
+    expect(engine.execute).toHaveBeenCalledWith('element.trimExtend', { id: 'b1', at: [2, 5], line: [[0, 0], [4, 0]] });
+    delete host.outlinesOf;
+  });
+
+  it('EXTEND\'s Boundary option asks for a boundary first, then lines or elements to bring to it', async () => {
+    await startCommand('EXTEND');
+    expect(useCad.getState().step?.prompt).toMatch(/Boundary/);
+    await submit('B');
+    expect(useCad.getState().step?.prompt).toMatch(/Pick the boundary/);
+    pickAt('w2'); await feedPoint(P(4, 1));
+    pickAt(null); draftAt({ type: 'line', a: P(0, 3), b: P(2, 3) });
+    await feedPoint(P(1, 3));
+    expect(engine.execute).toHaveBeenCalledWith('drafting.trimExtend', { id: 'd1', at: [1, 3], boundary: 'w2', face: expect.any(String) });
+  });
+
   it('SPLITELEMENT splits an axis element where clicked, at an intersection, and a floor along two points', async () => {
     await startCommand('SPLITELEMENT');
     pickAt('w1'); await feedPoint(P(3, 0));
