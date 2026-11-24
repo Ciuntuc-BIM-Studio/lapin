@@ -11960,6 +11960,61 @@ export const scenes = [
     },
   },
   {
+    // Components with walls and a detail set (forum #224, docs/components.md): a facade bay of walls with its door made a
+    // component, its 2D notes put in the set "Technical", copied along the facade and mirrored; then a view hiding the set.
+    id: 'components-walls',
+    touches: ['architecture', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const wall = async (a, b) => (await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1] })).id;
+      // The building's facade; the bay: two fins from it and a back wall, a door in the back wall.
+      await wall([0, 0], [22, 0]);
+      const fins = [await wall([1, 0], [1, 3]), await wall([4, 0], [4, 3])];
+      const back = await wall([1, 3], [4, 3]);
+      await t.cmd('architecture.addDoor', { wallId: back, x: 2.5, y: 3 });
+      const plan = 'plan:' + s;
+      const line = (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'polyline', pts: [[1.4, 0.6], [3.6, 0.6], [3.6, 2.4], [1.4, 2.4]], closed: true } })).ids[0];
+      const text = (await t.cmd('drafting.addText', { viewId: plan, at: [1.7, 1.4], text: 'Loggia 6 m²' })).id;
+      await t.ui({ keyPlan: false, selected: [...fins, back], selection: back });
+      await t.wait(400);
+      await t.tool('modify.component');
+      await t.page.locator('.ask-box input').first().fill('Facade bay');
+      await t.page.locator('.ask-box .btn.primary').click();
+      await t.wait(800);
+      const group = (await t.nodes()).find((n) => n.type === 'IfcGroup');
+      t.expect(group?.props.component, 'the walls are an instance of a component');
+      // The notes selected with the instance, Modify → Add to detail set.
+      await t.ui({ selected: [group.id, line, text], selection: line });
+      await t.tool('modify.detailSet');
+      await t.page.locator('.ask-box input').first().fill('Technical');
+      await t.page.locator('.ask-box .btn.primary').click();
+      await t.wait(800);
+      t.expect((await t.nodes()).find((n) => n.id === line)?.props.detailSet === 'Technical', 'the notes are in the set');
+      await t.cmd('element.transform', { ids: [group.id], op: 'copy', by: [5, 0] });
+      await t.cmd('element.transform', { ids: [group.id], op: 'mirror', a: [11, 0], b: [11, 1], copy: true });
+      await t.wait(800);
+      const nodes = await t.nodes();
+      t.expect(nodes.filter((n) => n.type === 'IfcGroup').length === 3, 'three instances');
+      t.expect(nodes.filter((n) => n.type === 'IfcDoor').length === 3, 'each its door');
+      t.expect(nodes.filter((n) => n.props.detailSet === 'Technical').length === 6, 'each its notes');
+      await t.ui({ selected: [], selection: null });
+      await t.fit();
+      await t.wait(600);
+      await t.shot('component-walls-plan', { of: '[data-testid=plan]', pad: 0 });
+      // Visibility / Graphics → Annotations: the set listed, ticked off for this view.
+      await t.tool('view.layers');
+      await t.page.locator('[role=tab][data-tab=annotations]').click();
+      const row = t.page.locator('[data-testid=vv-detail-sets] [data-detail-set=Technical]');
+      await row.waitFor({ timeout: 5000 });
+      await t.shot('component-detail-sets', { of: '[data-testid=vv-detail-sets]', pad: 8 });
+      // The box follows the engine's answer: clicked, then read once the view's graphics say so.
+      await row.locator('input').click();
+      await t.page.waitForFunction(() => !document.querySelector('[data-testid=vv-detail-sets] [data-detail-set=Technical] input')?.checked, null, { timeout: 5000 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     // Another Lapin project linked in, as ArchiCAD's hotlink (a tester's wish, docs/links.md): a small flat saved, then placed twice in a new project, the second turned.
     id: 'hotlink',
     async run(t) {

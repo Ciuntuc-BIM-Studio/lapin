@@ -24,7 +24,7 @@ Double-click a member, or click **Edit group** (<kbd>EG</kbd>). The rest of the 
 
 ## Components
 
-A component is a group whose copies stay the same, as in SketchUp: change one and all of them change. It suits what you repeat many times: a planter, a bay of a canopy, a kitchen island, a roof light, a typical room's floor. It takes **Studio solids, floors and rooms**; walls cannot be part of one, since a wall's joins and doors depend on its neighbours.
+A component is a group whose copies stay the same, as in SketchUp, or as a model group in Revit: change one and all of them change. It suits what you repeat many times: a planter, a bay of a canopy or of a facade, a kitchen island, a roof light, a typical bathroom. It takes the project's own elements of any kind: **walls** (with the doors and windows in them), floors, rooms, furniture, Studio solids. Elements referenced from an imported file cannot be part of one: they stay where the file put them.
 
 Select the elements and choose **Modify → Make component** (<kbd>CK</kbd>). Then copy it as you copy anything: **Copy**, **Rotate**, **Copy to storeys**. Each copy is an **instance**.
 
@@ -32,10 +32,24 @@ Select the elements and choose **Modify → Make component** (<kbd>CK</kbd>). Th
 - **Move and turn** an instance on its own: the others stay where they are, and an edit reaches a turned instance turned.
 - **Make unique**, in its properties, lets one instance go its own way. **Select instances** selects them all.
 - **Mirror** keeps it an instance, of the other hand: what you change in either reaches the other mirrored.
+- **Walls** in a component join among themselves as you drew them, in every instance. Where one of them meets a wall that is not part of any instance, it stops in it: its end is cut at that wall's face and the other wall is left as it is, so moving or editing an instance never changes the walls around it. Select a door together with its wall: a door alone cannot be part of a component.
+
+![A facade bay of walls made a component, copied and mirrored along the facade, its notes in a detail set](shots/component-walls-plan.webp)
+
+### Detail sets
+
+A component can carry 2D information with it, as Revit's attached detail groups: lines, hatches, texts, symbols, tags and dimensions drawn on a plan, gathered in named **detail sets** such as *Technical* or *Sales*. Every instance draws them in its own place, turned or mirrored with it, in every plan of its storey.
+
+- Draw the notes on a plan over one instance. Select them together with the instance (or open the instance first) and choose **Modify → Add to detail set** (<kbd>DS</kbd>), or **Add to detail set** in the instance's properties. Type the set's name: a new name makes a new set. Drafting selected with the elements when you make the component goes into a set called *Details*.
+- Edit them inside any instance, as any member: move a line, change a text, delete a hatch. Every instance follows, in one undo step. A tag in a set tags the same element in each instance.
+- Each view chooses the sets it shows: **Visibility / Graphics → Annotations → Detail sets of components**. A new view shows them all; untick *Sales* on the technical plans and *Technical* on the plans for selling. A view template's graphics set does this for all its views.
+- **Remove from group** or **Ungroup** turns a detail back into plain drafting on its storey's plan.
+
+![A view's detail sets in Visibility / Graphics](shots/component-detail-sets.webp)
 
 ### Apartment types
 
-A component cannot hold walls, but an **apartment type** can. Select an apartment's walls, rooms and furniture and choose **Modify → Make apartment type** (<kbd>CU</kbd>). The doors and windows in those walls come with them. Copy it, rotate it or **Mirror** it, as the flat on the other side of a staircase: a change in one reaches the others, mirrored where they are, and every element keeps its identity in IFC.
+An **apartment type** is a component named and listed as an apartment. Select an apartment's walls, rooms and furniture and choose **Modify → Make apartment type** (<kbd>CU</kbd>). The doors and windows in those walls come with them. Copy it, rotate it or **Mirror** it, as the flat on the other side of a staircase: a change in one reaches the others, mirrored where they are, and every element keeps its identity in IFC.
 
 An apartment type holds the inner walls, the doors between the rooms, the rooms and the furniture. The building holds the facade, the walls between apartments and the corridor. Where the two meet belongs to each instance:
 
@@ -44,7 +58,7 @@ An apartment type holds the inner walls, the doors between the rooms, the rooms 
 
 An apartment type has a fixed size: it does not stretch to fit a wider or narrower slot.
 
-**Copy to storeys** copies an instance as another instance, which stops in that storey's walls. In IFC an instance is a group of ordinary elements with a `Lapin_Unit` property set. Import the file again with **As one group** unticked and it is an instance again; with the option ticked, as it is by default, its elements stay plain members of the file's one group.
+**Copy to storeys** copies an instance as another instance, which stops in that storey's walls. In IFC an instance is a group of ordinary elements with a `Lapin_Unit` property set (`Lapin_Component` for any other component). Import the file again with **As one group** unticked and it is an instance again; with the option ticked, as it is by default, its elements stay plain members of the file's one group.
 
 ![An apartment type in two instances, the second mirrored](shots/units-plan.webp)
 

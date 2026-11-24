@@ -184,6 +184,8 @@ public static class StoreyCopy
         foreach (var (g, t) in twins) names[g] = t;
         foreach (var id in map.Values.ToList())
             if (m.Get(id) is { } c && Remap(c.Attrs, names, relations ? null : relationKeys) is { } attrs) ctx.Replace(c.With(attrs: attrs));
+        // A component's instance takes its details along (forum #224), naming its twin's members.
+        foreach (var (g, t) in twins) Components.CopyDetails(ctx, g, t, names);
         // The tags and dimensions of the copied elements on their storey's plan, and what was selected on a plan, go to the new storey's plan.
         var fresh = m.OfClass(IfcClass.Annotation).Where(x => !notesBefore.Contains(x.Id)).ToList();
         foreach (var n in fresh)

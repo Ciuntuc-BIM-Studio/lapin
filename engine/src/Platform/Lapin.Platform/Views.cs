@@ -995,7 +995,9 @@ public static class Views
         if (crop != null) pens = [.. pens.Select(p => crop.Clip(p, crop.Model)).OfType<Pen>()];
 
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
-        var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry) { Services = q.Services, Query = q };
+        // Each component instance's details (forum #224) drawn as this view's own when it is a plan of their storey that shows their set.
+        var marked = Components.DetailsIn(m, view, graphics);
+        var ctx = new ViewContext(marked, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry) { Services = q.Services, Query = ReferenceEquals(marked, m) ? q : new OverlayQuery(q, marked) };
         // A sheet's paper (decision 620): only what is drawn on it, none of the views' own marks.
         var paper = spec.Kind == PaperViews.Kind;
         // A 3D view's drawing has no annotations: its drawing's frame need not be the model's (a perspective).

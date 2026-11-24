@@ -34,11 +34,10 @@ public class UnitTests
     static List<Entity> DoorsOf(Fixture f, string group) => WallsOf(f, group).SelectMany(w => Openings.Of(f.Model, w.Id)).Select(o => Openings.FillOf(f.Model, o.Id)).OfType<Entity>().ToList();
 
     [Fact]
-    public void A_plain_component_still_refuses_walls_and_a_type_takes_them()
+    public void A_type_takes_walls_and_is_named_an_apartment_type()
     {
         var f = new Fixture(new ArchitectureModule());
         var wall = f.Wall(0, 0, 4, 0);
-        Assert.Throws<CommandException>(() => f.Run("component.make", new JsonObject { ["ids"] = Ids(wall) }));
         var made = f.Run("component.make", new JsonObject { ["ids"] = Ids(wall), ["kind"] = "unit" })!;
         Assert.Equal("Apartment type 1", f.Model.Get((string)made["component"]!)!.Name);
     }

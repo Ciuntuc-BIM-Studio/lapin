@@ -72,7 +72,21 @@ public sealed class AnnotationPlacement : IElementPlacement
             case "TEXT" or DraftingTables.Predefined or DraftingTables.PartPredefined:
                 attrs["at"] = J(t.Point(P(attrs["at"])));
                 var deg = Json.Number(attrs["angle"]) ?? 0;
-                attrs["angle"] = t.Angle(deg * Math.PI / 180) * 180 / Math.PI;
+                var turned = t.Angle(deg * Math.PI / 180) * 180 / Math.PI;
+                // A text mirrored stays readable, as a symbol's and a DXF's do: never upside down (a component's mirrored instance, forum #224).
+                if (t.Mirrored && e.PredefinedType == "TEXT")
+                {
+                    turned = Math.IEEERemainder(turned, 360);
+                    if (turned > 90 + 1e-9 || turned <= -90 + 1e-9)
+                    {
+                        turned += turned > 0 ? -180 : 180;
+                        // Turned back to read, its box is the mirror of what it was: a box of its own drawn back from its point, else its lines aligned the other way.
+                        var dir = new Vec2(Math.Cos(turned * Math.PI / 180), Math.Sin(turned * Math.PI / 180));
+                        if (Json.Number(attrs["width"]) is { } w && w > 0) attrs["at"] = J(P(attrs["at"]) - dir * w);
+                        else if ((string?)attrs["align"] is not "center") attrs["align"] = (string?)attrs["align"] == "right" ? "left" : "right";
+                    }
+                }
+                attrs["angle"] = turned;
                 break;
             case "DIMENSION" when Dimensions.IsLinear(e) && Held(e, t, moving) is { } shift:
                 // Moved on its own while it measures elements that stay: it keeps measuring them, and only its line slides square to it (report #37).

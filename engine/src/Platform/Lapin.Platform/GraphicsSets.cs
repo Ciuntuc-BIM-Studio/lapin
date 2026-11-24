@@ -241,6 +241,12 @@ public static class GraphicsSets
                 if (!VisibilityGraphics.AnnotationCategories.Contains(ann)) throw new CommandException($"„{ann}” is not an annotation category.");
                 SetIn(g, "annotations", ann, value);
             }
+            // A components' detail set by its name (forum #224): {hidden: true}, or null (shown, as by default).
+            if ((string?)a["detailSet"] is { } detailSet)
+            {
+                if (detailSet.Trim().Length == 0) throw new CommandException("A detail set needs a name.");
+                SetIn(g, "detailSets", detailSet.Trim(), value is { Count: > 0 } ? value : null);
+            }
             // Only the view's own annotations (issue #111, decision 722): true, or false / null (every annotation it shows).
             if (a.ContainsKey("ownAnnotationsOnly"))
             {
@@ -395,6 +401,8 @@ public static class GraphicsSets
                 ["style"] = ViewStyles.StyleOf(q.Model, v).Name,
                 // Its level of development (decision 404): the one it draws at, the one it sets itself (null: its style's), its style's.
                 ["detail"] = ViewDetail.Of(q.Model, v), ["ownDetail"] = ViewDetail.Own(v, VisibilityGraphics.Of(q.Model, v)), ["styleDetail"] = ViewStyles.StyleOf(q.Model, v).Detail,
+                // The components' detail sets by name (forum #224), each shown here unless its row hides it.
+                ["detailSets"] = new JsonArray([.. q.Model.OfClass(Components.Class).SelectMany(c => Components.DetailSets(q.Model, c.Id)).Distinct().Order(StringComparer.OrdinalIgnoreCase).Select(x => (JsonNode)x)]),
                 ["subcategories"] = new JsonObject(VisibilityGraphics.SubcategoriesOf.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)new JsonArray(kv.Value.Select(x => (JsonNode)x).ToArray())))),
                 // What a subcategory's row may give (decision 682): hidden, cutHatch, fillColor, lineColor, lineWeight, halftone.
                 ["subcategoryFields"] = new JsonArray(VisibilityGraphics.SubFields.Select(x => (JsonNode)x).ToArray()),
