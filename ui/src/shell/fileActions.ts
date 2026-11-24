@@ -84,7 +84,8 @@ export const HOST_SECTIONS: FileSection[] = [
   { head: 'Speckle', ids: ['file.speckleSend', 'file.speckleReceive'] },
   { ids: ['file.extensions'] },
   { head: 'Server and collaboration', ids: ['file.cdeProjects', 'file.collaborate', 'file.saveServer', 'file.getLatest', 'file.openServer', 'file.share', 'file.join'] },
-  { ids: ['file.startScreen'] },
+  // Preferences (Developer extras among them) where the guide and the Script panel's hint send people: File → Preferences….
+  { ids: ['file.preferences', 'file.startScreen'] },
 ];
 
 /** A guest works in the host's project: the host opens and saves it; a guest exports what they need, or leaves. */
