@@ -136,10 +136,10 @@ roof/section 1:100
   CUT #000000 0.25 - - s=5 len=0.38 loops=0
 facade/elevation 1:20
   SURFACE-HATCH #000000 0.13 - - s=984 len=323.52 loops=0
-  SEEN #000000 0.25 - - s=168 len=310.54 loops=0
+  SEEN #000000 0.25 - - s=131 len=116.69 loops=0
 facade/elevation 1:50
   SURFACE-HATCH #000000 0.13 - - s=984 len=323.52 loops=0
-  SEEN #000000 0.25 - - s=168 len=310.54 loops=0
+  SEEN #000000 0.25 - - s=131 len=116.69 loops=0
 facade/elevation 1:100
   SURFACE-HATCH #000000 0.13 - - s=984 len=323.52 loops=0
-  SEEN #000000 0.25 - - s=168 len=310.54 loops=0
+  SEEN #000000 0.25 - - s=131 len=116.69 loops=0

@@ -37,6 +37,105 @@ public static class HiddenLines
     const double DepthEps = 1e-5;
     const double FeatureCos = 0.99996; // ~0.5°: coplanar faces of one solid show no edge between them
 
+    /// <summary>
+    /// <paramref name="s"/> with its corners at one place made one (to a micrometre) and every pair of faces that lie on each other
+    /// back to back (the joint between two pieces of one part) left empty, the faces' indices and normals kept: its edges are then
+    /// those of the one body the pieces make, a barrel roof's strips one curve, two slopes one ridge. The solid itself when no corner
+    /// repeats (its map null). Linear in its corners and faces.
+    /// </summary>
+    public static (Solid Whole, int[]? Map) Welded(Solid s)
+    {
+        var at = new Dictionary<(long, long, long), int>(s.Vertices.Length);
+        var map = new int[s.Vertices.Length];
+        var verts = new List<Vec3>(s.Vertices.Length);
+        static long Q(double v) => (long)Math.Round(v * 1e6);
+        for (var i = 0; i < s.Vertices.Length; i++)
+        {
+            var p = s.Vertices[i];
+            var k = (Q(p.X), Q(p.Y), Q(p.Z));
+            if (!at.TryGetValue(k, out var j)) { j = verts.Count; verts.Add(p); at[k] = j; }
+            map[i] = j;
+        }
+        if (verts.Count == s.Vertices.Length) return (s, null);
+        var faces = s.Faces.Select(f => f with { Outer = f.Outer.Select(i => map[i]).ToArray(), Holes = f.Holes.Select(h => h.Select(i => map[i]).ToArray()).ToArray() }).ToArray();
+        // Faces by their corners (sorted, hashed; the same corners checked on a match).
+        var bySet = new Dictionary<int, List<(int[] Corners, int Face)>>();
+        for (var fi = 0; fi < faces.Length; fi++)
+        {
+            if (faces[fi].Holes.Length > 0) continue;
+            var corners = faces[fi].Outer.Distinct().Order().ToArray();
+            var hash = new HashCode();
+            foreach (var c in corners) hash.Add(c);
+            var h = hash.ToHashCode();
+            if (!bySet.TryGetValue(h, out var same)) bySet[h] = same = [];
+            var k = same.FindIndex(x => x.Corners.AsSpan().SequenceEqual(corners) && Vec3.Dot(faces[x.Face].Normal, faces[fi].Normal) < -FeatureCos);
+            if (k >= 0)
+            {
+                faces[fi] = faces[fi] with { Outer = [] };
+                faces[same[k].Face] = faces[same[k].Face] with { Outer = [] };
+                same.RemoveAt(k);
+            }
+            else same.Add((corners, fi));
+        }
+        return (new Solid([.. verts], faces, s.Tag), map);
+    }
+
+    static (int, int) Key(int a, int b) => a < b ? (a, b) : (b, a);
+
+    /// <summary>How far apart two seams of one curve may point (rad): a revolved or swept curve's seams converge by its step.</summary>
+    const double SeamParallelCos = 0.9063; // cos 25°, over Chords.MaxStep (15°)
+
+    /// <summary>
+    /// The edges of <paramref name="s"/> that are seams between the chords of a curve, not folds someone drew. A seam turns gently
+    /// (between coplanar and the crease) and one of its two faces has another such edge beside it that turns the same way (both
+    /// convex or both concave), by a like angle (within ×3: the first chord off a tangent flat turns half a step, an ellipse's steps
+    /// vary) and nearly parallel to it (within 25°): a curve's flats are strips between parallel seams, while a ridge, a slab's fall
+    /// or a bent plate is one fold, and a hip meets the ridge or the other hip at an angle. Linear in the edges.
+    /// </summary>
+    public static HashSet<(int, int)> ChordSeams(Solid s, Topology topo, double creaseCos)
+    {
+        var gentle = new List<((int, int) Key, Vec3 Dir, double Angle, int Sense, int FaceA, int FaceB)>();
+        foreach (var (key, uses) in topo.ByEdge)
+        {
+            if (uses.Count != 2) continue;
+            var h = topo.HalfEdges[uses[0]];
+            int fa = h.Face, fb = topo.HalfEdges[uses[1]].Face;
+            if (fa == fb) continue;
+            Vec3 na = s.Faces[fa].Normal, nb = s.Faces[fb].Normal;
+            var dot = Vec3.Dot(na, nb);
+            if (dot > FeatureCos || dot <= creaseCos) continue;
+            var d = s.Vertices[h.To] - s.Vertices[h.From];
+            if (d.Length < 1e-12) continue;
+            d = d.Normalized();
+            gentle.Add((key, d, Math.Acos(Math.Clamp(dot, -1, 1)), Math.Sign(Vec3.Dot(Vec3.Cross(na, nb), d)), fa, fb));
+        }
+        var seams = new HashSet<(int, int)>();
+        if (gentle.Count < 2) return seams;
+        var byFace = new Dictionary<int, List<int>>();
+        for (var i = 0; i < gentle.Count; i++)
+            foreach (var f in new[] { gentle[i].FaceA, gentle[i].FaceB })
+                if (byFace.TryGetValue(f, out var l)) l.Add(i); else byFace[f] = [i];
+        bool Alike(int i, int j)
+        {
+            var (a, b) = (gentle[i], gentle[j]);
+            return a.Sense == b.Sense && a.Sense != 0 && Math.Abs(Vec3.Dot(a.Dir, b.Dir)) >= SeamParallelCos
+                && Math.Max(a.Angle, b.Angle) <= 3 * Math.Min(a.Angle, b.Angle);
+        }
+        for (var i = 0; i < gentle.Count; i++)
+        {
+            if (seams.Contains(gentle[i].Key)) continue;
+            foreach (var f in new[] { gentle[i].FaceA, gentle[i].FaceB })
+            {
+                var near = byFace[f];
+                // A face with very many gentle edges (a big flat beside a curved one) is checked only so far.
+                foreach (var j in near.Count > 64 ? near.Take(64) : near)
+                    if (j != i && Alike(i, j)) { seams.Add(gentle[i].Key); seams.Add(gentle[j].Key); goto next; }
+            }
+            next:;
+        }
+        return seams;
+    }
+
     sealed class Occluder
     {
         public required List<Vec2[]> Rings;
@@ -57,10 +156,14 @@ public static class HiddenLines
     /// nothing is drawn at the clip, and a solid wholly outside is left out.
     /// </param>
     /// <param name="rise">The same up and down (along <see cref="ViewFrame.Up"/>): a section across an element sees only its window.</param>
-    /// <param name="smooth">Solids whose curves are made of flats (a member's fillets): an edge between two faces that both face the eye and turn less than the 3D's crease angle draws no line; the outline, where a face turns away, still does.</param>
+    /// <param name="smooth">Solids whose curves are made of flats (a member's fillets at LOD 400): an edge between two faces that both face the eye and turn less than the 3D's crease angle draws no line; the outline, where a face turns away, still does.</param>
+    /// <param name="chords">
+    /// The same for every solid, but only on the seams between the chords of a curve (<see cref="ChordSeams"/>: a curved wall, an
+    /// arch, a barrel roof, a round column, a pipe); a gentle fold that was drawn (a low ridge, a slab's fall, a hip) keeps its line.
+    /// </param>
     public static (List<Seg2> Lines, List<CutArea> Cuts, List<Seg2> Hidden) Draw(IReadOnlyList<(Solid Solid, int Owner)> solids, ViewFrame view, bool cut = false,
         double maxDepth = double.PositiveInfinity, bool hidden = false, IReadOnlyList<string?>? keys = null, (double Min, double Max)? span = null, (double Min, double Max)? rise = null,
-        IReadOnlyList<bool>? smooth = null)
+        IReadOnlyList<bool>? smooth = null, bool chords = false)
     {
         var creaseCos = Math.Cos(Tessellator.CreaseDeg * Math.PI / 180);
         bool Joins(int i, int j) => i == j || keys == null || keys[i] != null && keys[i] == keys[j];
@@ -120,7 +223,12 @@ public static class HiddenLines
             }
 
             var topo = Topology.Build(s);
-            foreach (var (_, uses) in topo.ByEdge)
+            // The chords' seams, found on the one body a part's pieces make when they meet face to face (a barrel roof's strips):
+            // the joint between two strips is then a seam like any other, drawn by neither strip's edge along it.
+            var (whole, map) = chords && smooth?[si] != true ? Welded(s) : (s, null);
+            var wtopo = map == null ? topo : Topology.Build(whole);
+            var seams = chords && smooth?[si] != true ? ChordSeams(whole, wtopo, creaseCos) : null;
+            foreach (var (key, uses) in topo.ByEdge)
             {
                 var h = topo.HalfEdges[uses[0]];
                 int fa = h.Face, fb = uses.Count > 1 ? topo.HalfEdges[uses[1]].Face : -1;
@@ -130,6 +238,14 @@ public static class HiddenLines
                 // front (or on its outline, where the front face's edge is drawn already).
                 if (!(Vec3.Dot(na, view.Dir) < -1e-6 || fb >= 0 && Vec3.Dot(s.Faces[fb].Normal, view.Dir) < -1e-6)) continue;
                 if (smooth?[si] == true && fb >= 0 && Vec3.Dot(na, s.Faces[fb].Normal) > creaseCos && Vec3.Dot(na, view.Dir) < -1e-6 && Vec3.Dot(s.Faces[fb].Normal, view.Dir) < -1e-6) continue;
+                if (seams is { Count: > 0 })
+                {
+                    var wk = map == null ? key : Key(map[h.From], map[h.To]);
+                    // Both faces across the seam (on the whole body) turned to the eye: no line; one turned away, it is the outline.
+                    if (seams.Contains(wk) && wtopo.ByEdge.TryGetValue(wk, out var across) && across.Count == 2
+                        && Vec3.Dot(whole.Faces[wtopo.HalfEdges[across[0]].Face].Normal, view.Dir) < -1e-6
+                        && Vec3.Dot(whole.Faces[wtopo.HalfEdges[across[1]].Face].Normal, view.Dir) < -1e-6) continue;
+                }
                 edges.Add((s.Vertices[h.From], s.Vertices[h.To], si, fa, fb, owner));
             }
         }
