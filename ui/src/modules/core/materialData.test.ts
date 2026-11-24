@@ -47,5 +47,7 @@ describe('a material’s data', () => {
     const e = PARAM_PRESETS.find((p) => p.param.name === "Young's modulus");
     expect(e?.param.kind).toBe('number');
     expect(unitOf({ name: "Young's modulus", kind: 'number', value: 30000 })).toBe('MPa');
+    expect(unitOf({ name: 'Yield strength', kind: 'number', value: 355 })).toBe('MPa');
+    expect(unitOf({ name: 'Compressive strength', kind: 'number', value: 30 })).toBe('MPa');
   });
 });

@@ -82,10 +82,10 @@ public static partial class StructuralMaterials
             }
             return new(v, $"project: material „{name}”, {key} ({unit})");
         }
-        var e = Own("Pset_MaterialMechanical.YoungModulus", 1e6, 1e12, "Pa") ?? OwnModulus(fields, name, sources);
+        var e = Own("Pset_MaterialMechanical.YoungModulus", 1e6, 1e12, "Pa") ?? OwnStress(fields, name, Modulus, sources);
         var nu = Own("Pset_MaterialMechanical.PoissonRatio", 0, 0.5, "a ratio") ?? OwnRatio(fields, name, sources);
-        var fy = Own("Pset_MaterialSteel.YieldStress", 1e6, 5e9, "Pa");
-        var fc = Own("Pset_MaterialConcrete.CompressiveStrength", 1e6, 5e8, "Pa");
+        var fy = Own("Pset_MaterialSteel.YieldStress", 1e6, 5e9, "Pa") ?? OwnStress(fields, name, Yield, sources);
+        var fc = Own("Pset_MaterialConcrete.CompressiveStrength", 1e6, 5e8, "Pa") ?? OwnStress(fields, name, Compressive, sources);
         MaterialValue? density = MaterialMeasure.DensityOf(material) is { } rho && rho is > 1 and < 25000
             ? new(rho, $"project: material „{name}”, density (kg/m³)") : null;
 
@@ -145,6 +145,14 @@ public static partial class StructuralMaterials
         }
         else if (lower.Contains("timber") || lower.Contains("wood") || lower.Contains("lemn") || lower.Contains("glulam") || lower.Contains("clt")) kind = "timber";
 
+        // A concrete that names no class but gives its fck (Manage → Materials → Data): Ecm by EN 1992-1-1 Table 3.1's formula.
+        if (kind == "concrete" && fc is { } fck && e == null)
+        {
+            var mpa = fck.Value / 1e6;
+            var ecm = 22 * Math.Pow((mpa + 8) / 10, 0.3);
+            e = new(ecm * 1e9, $"EN 1992-1-1:2004 Table 3.1: Ecm = 22 (fcm/10)^0.3 = {ecm.ToString("0.#", CultureInfo.InvariantCulture)} GPa, fcm = fck + 8 MPa, from fck = {mpa.ToString("0.#", CultureInfo.InvariantCulture)} MPa");
+            nu ??= new(0.2, "EN 1992-1-1:2004 §3.1.3(4): ν = 0.2 for uncracked concrete");
+        }
         if (density == null && kind == "steel")
             density = new(7850, "EN 1993-1-1:2005 §3.2.6: ρ = 7850 kg/m³");
         if (density == null && kind == "concrete" && (lower.Contains("reinforced") || lower.Contains("armat")))
@@ -176,19 +184,43 @@ public static partial class StructuralMaterials
     }
 
     /// <summary>
-    /// Young's modulus from the material's own parameters, as a user adds it in Manage → Materials → Data: named E, Young's
-    /// modulus, Modulus of elasticity (any case, spaces, a unit in brackets after the name), a number or a text ("31 GPa",
-    /// "30000"). Its unit is the one written after the value, else after the name, else read from its size, every building
-    /// material's E lying from 0.5 to 1000 GPa: 1e6 and above in Pa, 500 and above in MPa (N/mm²), smaller in GPa. A value
-    /// that is not a modulus is left out with a note.
+    /// What one own value is (<see cref="OwnStress"/>): its label in notes, the standard set it stands beside (its own key read
+    /// first), the names it goes by (squashed), the range of a building material's (Pa), how its size gives a unit when none is
+    /// written, and the unit it is written in (its scale).
     /// </summary>
-    static MaterialValue? OwnModulus(MaterialFieldSet fields, string material, List<string> notes)
+    sealed record Stress(string Label, string Set, HashSet<string> Names, double MinPa, double MaxPa, Func<double, (double Per, string Unit)> BySize, string Shown, double ShownPer);
+
+    /// <summary>E: every building material's lies from 0.1 to 1000 GPa; by its size from 1e6 in Pa, from 500 in MPa (N/mm²), smaller in GPa.</summary>
+    static readonly Stress Modulus = new("the modulus of a building material", "Pset_MaterialMechanical", ModulusNames, 1e8, 1e12,
+        x => x >= 1e6 ? (1, "Pa") : x >= 500 ? (1e6, "MPa") : (1e9, "GPa"), "GPa", 1e9);
+
+    /// <summary>fck, f'c: 5 to 150 MPa; by its size from 1e6 in Pa, else MPa (the Data tab's Compressive strength).</summary>
+    static readonly Stress Compressive = new("a concrete's compressive strength", "Pset_MaterialConcrete",
+        ["compressivestrength", "compressivestrengthfck", "compressivestrengthfc", "characteristiccompressivestrength", "cylinderstrength", "fck", "fc",
+         "rezistențălacompresiune", "rezistentalacompresiune", "rezistențălacompresiunefck", "rezistentalacompresiunefck", "rezistențacaracteristicălacompresiune", "rezistentacaracteristicalacompresiune"],
+        5e6, 150e6, x => x >= 1e6 ? (1, "Pa") : (1e6, "MPa"), "MPa", 1e6);
+
+    /// <summary>fy: 100 to 2000 MPa; by its size from 1e6 in Pa, else MPa (the Data tab's Yield strength fy).</summary>
+    static readonly Stress Yield = new("a steel's yield strength", "Pset_MaterialSteel",
+        ["yieldstrength", "yieldstrengthfy", "yieldstress", "yieldstressfy", "yieldpoint", "tensileyieldstrength", "fy", "fyk", "fyd0",
+         "limitădecurgere", "limitadecurgere", "limitădecurgerefy", "limitadecurgerefy", "rezistențădecurgere", "rezistentadecurgere", "rezistențalacurgere", "rezistentalacurgere"],
+        100e6, 2000e6, x => x >= 1e6 ? (1, "Pa") : (1e6, "MPa"), "MPa", 1e6);
+
+    /// <summary>
+    /// A stress from the material's own parameters, as a user adds it in Manage → Materials → Data: E (Young's modulus,
+    /// Modulus of elasticity), fck (Compressive strength), fy (Yield strength), by any of its names (any case, spaces, a unit in
+    /// brackets after the name), a number or a text ("31 GPa", "30 MPa", "30000"). Its unit is the one written after the value,
+    /// else after the name, else read from its size (<see cref="Stress.BySize"/>). A value outside what a building material has,
+    /// or in a unit that is not a stress, is left out with a note. The standard set's own key is read before (in <see cref="Of"/>).
+    /// </summary>
+    static MaterialValue? OwnStress(MaterialFieldSet fields, string material, Stress q, List<string> notes)
     {
+        string F(double v) => v.ToString("0.###", CultureInfo.InvariantCulture);
         foreach (var p in fields.Params)
         {
-            if (p.Pset is "Pset_MaterialMechanical") continue;
+            if (p.Pset == q.Set) continue;
             var (bare, nameUnit) = SplitUnit(p.Name);
-            if (!ModulusNames.Contains(TagText.Squash(bare))) continue;
+            if (!q.Names.Contains(TagText.Squash(bare))) continue;
             string? text = p.Value is JsonValue jv && jv.TryGetValue<string>(out var t) ? t : null;
             double? number = text == null ? Json.Number(p.Value) : null;
             string? valueUnit = null;
@@ -202,7 +234,7 @@ public static partial class StructuralMaterials
             var key = p.Pset == null ? p.Name : $"{p.Pset}.{p.Name}";
             if (number is not { } x || !double.IsFinite(x) || x <= 0)
             {
-                notes.Add($"{key} = {p.Value?.ToJsonString() ?? "(empty)"} is not a modulus above zero: left out");
+                notes.Add($"{key} = {p.Value?.ToJsonString() ?? "(empty)"} is not a value above zero: left out");
                 continue;
             }
             var unit = valueUnit ?? nameUnit;
@@ -213,16 +245,18 @@ public static partial class StructuralMaterials
                 if (PascalPer(unit) is not { } k) { notes.Add($"{key}: „{unit}” is not a unit of stress (Pa, MPa, N/mm², GPa, psi, ksi): left out"); continue; }
                 (per, how) = (k, unit);
             }
-            else if (x >= 1e6) (per, how) = (1, "Pa, by its size (no unit given)");
-            else if (x >= 500) (per, how) = (1e6, "MPa, by its size (no unit given)");
-            else (per, how) = (1e9, "GPa, by its size (no unit given)");
-            var pa = x * per;
-            if (pa is < 1e8 or > 1e12)
+            else
             {
-                notes.Add($"{key} = {x.ToString(CultureInfo.InvariantCulture)} {how} is {(pa / 1e9).ToString("0.###", CultureInfo.InvariantCulture)} GPa, not the modulus of a building material (0.1 to 1000 GPa): left out");
+                var (bp, bu) = q.BySize(x);
+                (per, how) = (bp, $"{bu}, by its size (no unit given)");
+            }
+            var pa = x * per;
+            if (pa < q.MinPa || pa > q.MaxPa)
+            {
+                notes.Add($"{key} = {F(x)} {how} is {F(pa / q.ShownPer)} {q.Shown}, not {q.Label} ({F(q.MinPa / q.ShownPer)} to {F(q.MaxPa / q.ShownPer)} {q.Shown}): left out");
                 continue;
             }
-            return new(pa, $"project: material „{material}”, {key} = {x.ToString(CultureInfo.InvariantCulture)} {how} = {(pa / 1e9).ToString("0.###", CultureInfo.InvariantCulture)} GPa");
+            return new(pa, $"project: material „{material}”, {key} = {F(x)} {how} = {F(pa / q.ShownPer)} {q.Shown}");
         }
         return null;
     }

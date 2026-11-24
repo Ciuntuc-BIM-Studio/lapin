@@ -282,6 +282,92 @@ public class AnalysisRunTests
         Assert.Contains("„kg” is not a unit of stress", (string)run["refused"]!.AsArray()[0]!["reason"]!);
     }
 
+    static void Give(Fixture f, string material, params JsonObject[] ps) => f.Run("material.setData", new JsonObject
+    {
+        ["id"] = f.Model.OfClass(IfcClass.Material).Single(m => m.Name == material).Id,
+        ["params"] = new JsonArray(ps),
+    });
+
+    static JsonObject P(string name, object value, string? pset = null)
+    {
+        var o = new JsonObject { ["name"] = name, ["kind"] = value is string ? "text" : "number", ["value"] = value is string text ? JsonValue.Create(text) : JsonValue.Create(Convert.ToDouble(value)) };
+        if (pset != null) { o["pset"] = pset; o.Remove("kind"); }
+        return o;
+    }
+
+    static JsonObject BeamCheck(Frame t) => t.F.Session.Query("analysis.check", new JsonObject { ["id"] = t.Beams[0] })!["members"]!.AsArray()[0]!.AsObject();
+
+    /// <summary>
+    /// Report #189's other half: the Data tab's own Compressive strength (MPa) gives a concrete material that names no class its
+    /// fck, and with it Ecm (EN 1992-1-1 Table 3.1: 22 (fcm/10)^0.3, fcm = fck + 8); its bars are analysed and checked.
+    /// </summary>
+    [Theory]
+    [InlineData("Compressive strength", 30.0, 30e6)]
+    [InlineData("fck", "30 MPa", 30e6)]
+    [InlineData("Rezistență la compresiune", 30.0, 30e6)]
+    [InlineData("Compressive strength (N/mm²)", 30.0, 30e6)]
+    [InlineData("fc", 3e7, 30e6)]
+    public void Concrete_naming_no_class_takes_fck_from_its_data_and_is_checked(string param, object value, double pa)
+    {
+        var t = Frame6x4(beamMaterial: "Concrete");
+        Give(t.F, "Concrete", P(param, value));
+        var mat = StructuralMaterials.Of(t.F.Model, t.F.Model.OfClass(IfcClass.Material).Single(m => m.Name == "Concrete"));
+        Assert.Equal("concrete", mat.Kind);
+        Assert.Equal(pa, mat.Fc!.Value, 1e-3);
+        Assert.Contains("project: material „Concrete”", mat.Fc.Source);
+        Assert.Equal(22e9 * Math.Pow((pa / 1e6 + 8) / 10, 0.3), mat.E!.Value, 1e3);
+        Assert.Contains("EN 1992-1-1", mat.E.Source);
+        Assert.True((bool)Run(t.F)["ok"]!);
+        var beam = BeamCheck(t);
+        Assert.NotEmpty(beam["checks"]!.AsArray());
+        Assert.DoesNotContain(beam["notes"]!.AsArray(), n => ((string)n!).StartsWith("No fck"));
+    }
+
+    [Theory]
+    [InlineData("Yield strength", 355.0, 355e6)]
+    [InlineData("fy", "355 MPa", 355e6)]
+    [InlineData("Limită de curgere", 355.0, 355e6)]
+    [InlineData("Yield stress (ksi)", 51.5, 51.5 * 6894757.293168)]
+    [InlineData("fyk", 3.55e8, 355e6)]
+    public void Steel_naming_no_grade_takes_fy_from_its_data_and_is_checked(string param, object value, double pa)
+    {
+        var t = Frame6x4(beamMaterial: "Steel");
+        Assert.StartsWith("No fy", (string)BeamCheck(t)["notes"]!.AsArray().First(n => ((string)n!).StartsWith("No fy"))!);
+        Give(t.F, "Steel", P(param, value));
+        var mat = StructuralMaterials.Of(t.F.Model, t.F.Model.OfClass(IfcClass.Material).Single(m => m.Name == "Steel"));
+        Assert.Equal(pa, mat.Fy!.Value, 1e-3);
+        Assert.Contains("project: material „Steel”", mat.Fy.Source);
+        Assert.NotEmpty(BeamCheck(t)["checks"]!.AsArray());
+    }
+
+    [Fact]
+    public void A_standard_set_comes_before_the_materials_own_strength()
+    {
+        var t = Frame6x4(beamMaterial: "Steel");
+        Give(t.F, "Steel", P("YieldStress", 235e6, "Pset_MaterialSteel"), P("fy", 355.0));
+        var mat = StructuralMaterials.Of(t.F.Model, t.F.Model.OfClass(IfcClass.Material).Single(m => m.Name == "Steel"));
+        Assert.Equal(235e6, mat.Fy!.Value);
+    }
+
+    [Fact]
+    public void Without_fy_or_fck_the_check_says_where_to_give_them_and_a_strength_out_of_range_is_left_out()
+    {
+        var steel = Frame6x4(beamMaterial: "Steel");
+        var noFy = BeamCheck(steel)["notes"]!.AsArray().Select(n => (string)n!).Single(n => n.StartsWith("No fy"));
+        Assert.Contains("Yield strength fy (MPa)", noFy);
+        Assert.Contains("Manage → Materials → Data", noFy);
+
+        var concrete = Frame6x4(beamMaterial: "Concrete");
+        Give(concrete.F, "Concrete", P("E", "31 GPa"), P("Compressive strength", 3000.0));
+        var mat = StructuralMaterials.Of(concrete.F.Model, concrete.F.Model.OfClass(IfcClass.Material).Single(m => m.Name == "Concrete"));
+        Assert.Null(mat.Fc);
+        Assert.Contains(mat.Sources, x => x.StartsWith("Compressive strength = 3000") && x.EndsWith("left out"));
+        Assert.True((bool)Run(concrete.F)["ok"]!);
+        var noFck = BeamCheck(concrete)["notes"]!.AsArray().Select(n => (string)n!).Single(n => n.StartsWith("No fck"));
+        Assert.Contains("Compressive strength (MPa)", noFck);
+        Assert.Contains("Manage → Materials → Data", noFck);
+    }
+
     [Fact]
     public void Steel_that_names_no_grade_takes_E_by_EN_1993_and_the_bars_run()
     {

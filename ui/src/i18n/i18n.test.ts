@@ -358,6 +358,9 @@ describe('the analysis refusing a bar without E (report #189)', () => {
       expect(translate(msg, id), id).toContain('Mystery');
       expect(translate(msg, id), id).toContain('(MPa)');
       expect(translate("its material „Mystery” has no E", id), id).not.toBeNull();
+      expect(translate("No fy: add Yield strength fy (MPa) in Manage → Materials → Data, or name its grade in the material's name (S235, S355): not checked.", id), id).not.toBeNull();
+      expect(translate("No fck: add Compressive strength (MPa) in Manage → Materials → Data, or name its class in the material's name (C25/30): not checked.", id), id).not.toBeNull();
+      expect(translate('Yield strength fy', id), id).not.toBeNull();
     }
   });
 });

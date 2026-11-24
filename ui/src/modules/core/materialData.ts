@@ -18,6 +18,8 @@ export const PARAM_PRESETS: { label: string; param: MaterialParam; unit: string 
   { label: 'Reaction to fire', unit: '', param: { name: 'Reaction to fire', kind: 'text', value: '' } },
   { label: 'Compressive strength', unit: 'MPa', param: { name: 'Compressive strength', kind: 'number', value: 0 } },
   /** Read by the structural analysis (StructuralMaterials.OwnModulus), in MPa; IFC's export writes it as Pset_MaterialMechanical.YoungModulus in Pa. */
+  /** Read by the steel checks (StructuralMaterials.OwnStress) when no Pset_MaterialSteel.YieldStress or grade in the name gives fy. */
+  { label: 'Yield strength fy', unit: 'MPa', param: { name: 'Yield strength', kind: 'number', value: 0 } },
   { label: "Young's modulus E", unit: 'MPa', param: { name: "Young's modulus", kind: 'number', value: 0 } },
 ];
 
