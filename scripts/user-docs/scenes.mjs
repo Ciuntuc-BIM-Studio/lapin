@@ -9720,6 +9720,50 @@ export const scenes = [
     },
   },
   {
+    // G4 of docs/plan-gaussian-splats.md: the pavilion's capture seen by a saved camera view, a low garden wall of the model in
+    // front of it, placed on an A3 sheet with a note and a dimension on the paper. The engine draws the splats as a picture
+    // (300 dpi on the paper, the 3D view's projection, sort and blending), under the view's lines, hidden behind the wall; the
+    // PDF carries the same picture as an image.
+    id: 'gaussian-splat-sheet',
+    touches: ['core', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      await splatPavilion(t);
+      await t.cmd('architecture.addWall', { storeyId: await t.storey(), x1: -1.5, y1: 6.5, x2: 8, y2: 6.5, height: 0.9 });
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.1, pitch: -0.32, distance: 17, target: { x: 4.5, y: 3, z: 1.6 } }, false));
+      await t.wait(2500);
+      // The camera as the browser's camera button keeps it.
+      const camera = await t.page.evaluate(async () => {
+        const c = (await import('/src/viewport/camera.ts')).useCamera.getState();
+        return { azimuth: c.azimuth, pitch: c.pitch, distance: c.distance, target: [c.target.x, c.target.y, c.target.z], ortho: c.ortho, fov: (c.fov * 180) / Math.PI, aspect: c.aspect };
+      });
+      const view = await t.cmd('view.create', { kind: '3d', name: 'Pavilion', camera });
+      const sheet = await t.cmd('sheet.create', { name: 'Pavilion survey', number: 'A-501', paper: 'A3' });
+      await t.cmd('sheet.addViewport', { id: sheet.id, viewId: view.id, x: 190, y: 140 });
+      // On the paper (metres of paper, y up from the bottom of the A3's 297 mm): a note and a dimension over the view.
+      const paper = `paper:${sheet.id}`;
+      const note = t.lang === 'ro' ? 'Captură Gaussian splat, legată (pavilion.ply)' : 'Gaussian splat capture, linked (pavilion.ply)';
+      await t.cmd('drafting.addText', { viewId: paper, at: [0.06, 0.265], text: note });
+      // The dimension under the garden wall, along the paper: it reads the paper's millimetres, as a dimension on a sheet does.
+      await t.cmd('drafting.addDimension', { viewId: paper, a: [0.177, 0.112], b: [0.264, 0.112], at: [0.177, 0.1] });
+      await t.ui({ view: 'sheet', sheetId: sheet.id });
+      await t.page.waitForSelector('[data-testid=sheet] .paper-sheet', { timeout: 10_000 });
+      await t.wait(2500);
+      const drawn = await t.call('doc.query', { name: 'sheet.drawing', args: { id: sheet.id } });
+      const images = drawn.pens.flatMap((p) => p.images ?? []).filter((i) => String(i.id).includes(':splats:'));
+      t.expect(images.length === 1 && typeof images[0].data === 'string', `the sheet carries the engine's picture of the splats (${images.length})`);
+      const texts = drawn.pens.flatMap((p) => p.texts ?? []).map((x) => x.text);
+      t.expect(texts.includes(note), 'the note is drawn over the view');
+      await t.fit();
+      await t.shot('gaussian-splat-sheet', { of: '[data-testid=sheet]', pad: 0 });
+      // The PDF: the same picture as an image XObject.
+      const pdf = await t.call('export.pdf', { sheets: [sheet.id] });
+      const bytes = Buffer.from(pdf.data, 'base64');
+      t.expect(/\/Subtype \/Image \/Width \d+ \/Height \d+ \/ColorSpace \/DeviceRGB/.test(bytes.toString('latin1')), 'the PDF carries the splats as an image');
+      if (process.env.LAPIN_SCENE_PDF) writeFileSync(join(process.env.LAPIN_SCENE_PDF, `gaussian-splat-sheet-${t.lang}.pdf`), bytes);
+    },
+  },
+  {
     // A tester's report (decision 312): a wall opening edited by its grips as a window is, OFFSET read in the project's
     // millimetres, then a line drafted in the 3D view on the storey's level, standing there in 3D as the plan's drafts do.
     id: 'draft-3d',

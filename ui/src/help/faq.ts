@@ -150,6 +150,16 @@ export const FAQ: Entry[] = [
     source: 'forum topic 237',
   },
   {
+    id: 'gaussian-splats-sheets',
+    q: ['Can I put Gaussian splats on a sheet?', 'Why is my splat capture missing from the PDF?', 'How do I print a splat capture with dimensions and notes?'],
+    qRo: ['Pot pune Gaussian splats pe o planșă?', 'De ce lipsește captura de splats din PDF?', 'Cum tipăresc o captură de splats cu cote și note?'],
+    keywords: ['splat', 'splats', 'gaussian', 'sheet', 'pdf', 'print', 'raster', '3d', 'camera', 'perspective', 'dimension', 'note',
+      'plansa', 'tiparesc', 'cota', 'nota', 'hoja', 'plano', 'feuille', 'tavola', 'blatt', 'arkusz', '图纸'],
+    a: 'Save a 3D view or a camera view that shows the capture (the camera button in the project browser keeps the camera as it is) and place it on a sheet. Where that view draws the capture as splats (Visibility / Graphics → Point clouds, Drawn as, or the link\'s Display), the engine prints them as a picture at 300 dpi on the paper, drawn as the 3D view draws them, in the view\'s Full or Base colour and halftone, inside its section box and the link\'s crop box. It lies under the view\'s lines; the model\'s elements hide what is behind them; the sheet on the screen and the PDF show the same picture. Notes and dimensions go on the sheet\'s paper over it (Annotate on the sheet). A capture drawn as points in that view is not printed in 3D; plans and sections print its slice as dots.',
+    aRo: 'Salvează o vedere 3D sau o vedere de cameră care arată captura (butonul cu cameră din navigatorul proiectului păstrează camera așa cum e) și pune-o pe o planșă. Acolo unde vederea desenează captura ca splat-uri (Visibility / Graphics → Point clouds, Drawn as, sau Display al legăturii), motorul le tipărește ca imagine de 300 dpi pe hârtie, desenate cum le desenează vederea 3D, în Full sau Base colour al vederii și în semiton, în cutia ei de secțiune și în cutia de decupare a legăturii. Imaginea stă sub liniile vederii; elementele modelului ascund ce e în spatele lor; planșa de pe ecran și PDF-ul arată aceeași imagine. Notele și cotele se pun pe hârtia planșei, peste ea (Annotate pe planșă). O captură desenată ca puncte în acea vedere nu se tipărește în 3D; planurile și secțiunile îi tipăresc felia ca puncte.',
+    source: 'forum topic 237',
+  },
+  {
     id: 'point-cloud-views',
     q: ['How do I trace walls over a point cloud in a plan?', 'Why is my point cloud not in the plan?', 'How do I hide the vegetation or the noise of a scan?', 'Can I snap to the points of a scan?'],
     qRo: ['Cum desenez pereți peste un nor de puncte în plan?', 'De ce nu apare norul de puncte în plan?', 'Cum ascund vegetația sau zgomotul unei scanări?', 'Pot face snap pe punctele unei scanări?'],
