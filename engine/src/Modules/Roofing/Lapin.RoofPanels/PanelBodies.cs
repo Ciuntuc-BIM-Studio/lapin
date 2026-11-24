@@ -42,7 +42,9 @@ public sealed class PanelBodies : IGeometryFilter
         var parts = geometry.Parts.Where(p => p != covering).ToList();
         var plan = (geometry.Plan ?? []).ToList();
         var colour = layout.Profile.Colors.FirstOrDefault(c => c.Code == layout.Color)?.Rgb ?? covering.Color;
-        foreach (var part in Parts(layout, below, Math.Max(0.002, thickness), colour, covering.Material))
+        // The panels' own painted material (made by the command); the covering's when a project from before it has none.
+        var material = Materials.Find(model, RoofPanels.MaterialName(layout.Profile, layout.Color))?.Id ?? covering.Material;
+        foreach (var part in Parts(layout, below, Math.Max(0.002, thickness), colour, material))
             parts.Add(part);
         // In plan each panel's outline (what it covers), overhead as the roof's other lines, on plans of 1:200 and larger.
         foreach (var p in layout.Result.Panels)
@@ -116,9 +118,10 @@ public sealed class PanelBodies : IGeometryFilter
         {
             // A tile: its waves across (crest, flank, trough), a step at each module up the slope.
             var pitch = profile.Width / profile.Waves;
-            double[] fr = [0, .2, .5, .8, 1];
-            double[] wh = [1, .32, 0, .32, 1];
-            const double phase = .2;
+            // Rounded enough that no fold between two facets passes 30°: the 3D view draws no crease line along each crest.
+            double[] fr = [0, .15, .35, .5, .65, .85, 1];
+            double[] wh = [1, .85, .25, 0, .25, .85, 1];
+            const double phase = .15;
             var set = new SortedSet<double> { x, x + gross };
             for (var j = -1; j <= profile.Waves + 1; j++)
                 foreach (var f in fr) { var u = x + (j + f - phase) * pitch; if (u > x + 1e-9 && u < x + gross - 1e-9) set.Add(u); }

@@ -45,6 +45,12 @@ export function profilesOf(catalogs: Record<string, unknown> | undefined): Panel
   return Array.isArray(c) ? (c as PanelProfileDto[]) : [];
 }
 
+/** A colour as the Panels section lists it, short enough for its field: „RAL 8017” for „RAL 8017 matt brown” (the full name its tooltip). */
+export function colourLabel(c: PanelColour): string {
+  const ral = /^RAL\s*\d{4}/i.exec(c.name.trim());
+  return ral ? ral[0].replace(/\s+/, ' ') : c.name || c.code;
+}
+
 /** What the roof names (its `panels`), or null. */
 export function choiceOf(node: NodeDto | undefined): PanelChoice | null {
   const p = node?.props.panels as { profile?: unknown; color?: unknown; maxLength?: unknown } | undefined;

@@ -2504,6 +2504,17 @@ export const scenes = [
       // The panels as the covering in 3D: a part each, profiled, the reused ones orange.
       await open3d(t);
       await t.shot('roof-panels-3d', { of: 'canvas', pad: 0 });
+      // In the Diagram display (pastel) the panels take the roofs' colour as any covering does.
+      const profile = (p) => t.page.evaluate(async (x) => (await import('/src/viewport/render3d.ts')).setRenderProfile(x), p);
+      try {
+        await profile('diagram');
+        await t.page.evaluate(async () => (await import('/src/viewport/diagram.ts')).setDiagram({ variant: 'pastel' }));
+        await t.wait(1500);
+        await t.shot('roof-panels-3d-diagram', { of: 'canvas', pad: 0 });
+      } finally {
+        await t.page.evaluate(async () => (await import('/src/viewport/diagram.ts')).setDiagram({ variant: 'white' }));
+        await profile('drawing');
+      }
     },
   },
   {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { NodeDto } from '../../engine/protocol';
 import {
-  choiceOf, edgeRows, faceTotals, laidFlat, lengthColours, purchaseRows, purchaseText, REUSED, reuseLinks, setArgs,
+  choiceOf, colourLabel, edgeRows, faceTotals, laidFlat, lengthColours, purchaseRows, purchaseText, REUSED, reuseLinks, setArgs,
   type LayoutDto, type PanelDto, type PanelProfileDto,
 } from './roofpanels';
 import { roofFor } from './index';
@@ -60,6 +60,12 @@ describe('the roof panels the interface reads', () => {
     // Clasic to Retro: Retro is not made in 8017; Retro at 4000 mm keeps its longest panel.
     expect(setArgs('r1', { profile: 'bilka-retro-panel', color: '8017', maxLength: 4000 }, all)).toEqual({ id: 'r1', profile: 'bilka-retro-panel', maxLength: 4000 });
     expect(setArgs('r1', { profile: 'bilka-clasic-35', maxLength: 4000 }, all)).toEqual({ id: 'r1', profile: 'bilka-clasic-35' });
+  });
+
+  it('names a colour short in its field, the maker\'s full name kept for its tooltip', () => {
+    expect(colourLabel({ code: '8017', name: 'RAL 8017 matt brown' })).toBe('RAL 8017');
+    expect(colourLabel({ code: 'X1', name: 'Graphite' })).toBe('Graphite');
+    expect(colourLabel({ code: 'X2', name: '' })).toBe('X2');
   });
 
   it('lists what to buy by length, the longest first', () => {

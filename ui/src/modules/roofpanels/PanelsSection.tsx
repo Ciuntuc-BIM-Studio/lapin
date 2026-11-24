@@ -10,7 +10,7 @@ import { LayoutGrid } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
-import { choiceOf, isLayout, profilesOf, purchaseRows, setArgs, type LayoutAnswer } from './roofpanels';
+import { choiceOf, colourLabel, isLayout, profilesOf, purchaseRows, setArgs, type LayoutAnswer } from './roofpanels';
 
 /** The roof's layout, asked again whenever the model changes. */
 export function useLayout(roofId: string | null, preview?: Record<string, unknown> | null): LayoutAnswer | null {
@@ -51,8 +51,9 @@ export function PanelsSection({ node }: { node: NodeDto }) {
             <dt>Colour</dt>
             <dd>
               <select className="cell" data-testid="roof-panels-colour" value={choice?.color ?? profile.colors[0].code} disabled={!node.editable || profile.colors.length < 2}
+                title={(profile.colors.find((c) => c.code === (choice?.color ?? profile.colors[0].code)) ?? profile.colors[0]).name} data-no-i18n
                 onChange={(e) => send({ ...choice!, color: e.target.value })}>
-                {profile.colors.map((c) => <option key={c.code} value={c.code} data-no-i18n>{c.name || c.code}</option>)}
+                {profile.colors.map((c) => <option key={c.code} value={c.code} title={c.name} data-no-i18n>{colourLabel(c)}</option>)}
               </select>
             </dd>
           </>

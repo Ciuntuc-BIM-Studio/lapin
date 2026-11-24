@@ -40,6 +40,10 @@ Exportul IFC scrie încă învelitoarea ca o singură placă de acoperiș (panou
 
 ![Panourile ca învelitoarea acoperișului în 3D](shots/roof-panels-3d.webp)
 
+În afișarea **Diagramă** panourile iau culoarea acoperișurilor, ca orice învelitoare.
+
+![Același acoperiș în afișarea Diagramă](shots/roof-panels-3d-diagram.webp)
+
 ## Extrasul panourilor de acoperiș
 
 **Arhitectură → Panouri de acoperiș → Panouri de acoperiș** face extrasul **Panouri de acoperiș**, un extras de câmpuri al panourilor fiecărui acoperiș: acoperiș, profil, culoare, lungime, cumpărat sau tăiat dintr-un rest, bucăți, lungime totală și tablă cumpărată, cu un rând de totaluri. Ca orice extras de câmpuri, se poate schimba, sorta și exporta. Fiecare panou e o piesă a acoperișului lui, deci o etichetă de piesă îi scrie codul și lungimea.

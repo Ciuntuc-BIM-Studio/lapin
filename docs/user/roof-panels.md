@@ -40,6 +40,10 @@ The IFC export still writes the covering as one roof slab (the panels as IfcCove
 
 ![The panels as the roof's covering in 3D](shots/roof-panels-3d.webp)
 
+In the **Diagram** display the panels take the roofs' colour, as any covering does.
+
+![The same roof in the Diagram display](shots/roof-panels-3d-diagram.webp)
+
 ## Roof panels schedule
 
 **Architecture → Roof panels → Roof panels** makes the **Roof panels** schedule, a field schedule of every roof's panels: roof, profile, colour, length, bought or cut from an offcut, pieces, total length and sheet bought, with a totals line. Like any field schedule it can be changed, sorted and exported. Each panel is a part of its roof, so a **part** tag writes its code and length.

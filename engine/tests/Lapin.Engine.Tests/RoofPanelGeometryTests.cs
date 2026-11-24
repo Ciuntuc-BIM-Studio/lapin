@@ -46,6 +46,28 @@ public class RoofPanelGeometryTests
         Assert.All(sides, kv => Assert.True(kv.Value == 1 && sides.GetValueOrDefault((kv.Key.Item2, kv.Key.Item1)) == 1, $"{what}: side {kv.Key} is open or doubled"));
     }
 
+    static double SignedVolume((double[] Xyz, int[] Tris) m)
+    {
+        Vec3 V(int i) => new(m.Xyz[3 * i], m.Xyz[3 * i + 1], m.Xyz[3 * i + 2]);
+        double v = 0;
+        for (var t = 0; t < m.Tris.Length; t += 3) v += Vec3.Dot(V(m.Tris[t]), Vec3.Cross(V(m.Tris[t + 1]), V(m.Tris[t + 2]))) / 6;
+        return v;
+    }
+
+    /// <summary>The share of the sheet's area whose triangles face up (their normal's z over 0.3): its top half and none of its underside.</summary>
+    static double UpFacing((double[] Xyz, int[] Tris) m)
+    {
+        Vec3 V(int i) => new(m.Xyz[3 * i], m.Xyz[3 * i + 1], m.Xyz[3 * i + 2]);
+        double up = 0, all = 0;
+        for (var t = 0; t < m.Tris.Length; t += 3)
+        {
+            var n = Vec3.Cross(V(m.Tris[t + 1]) - V(m.Tris[t]), V(m.Tris[t + 2]) - V(m.Tris[t]));
+            all += n.Length;
+            if (n.Z > 0.3 * n.Length) up += n.Length;
+        }
+        return up / all;
+    }
+
     [Theory]
     [InlineData("bilka-clasic-35", "7016", "#383e42")]
     [InlineData("bilka-balcanic", null, "#45322e")]
@@ -65,11 +87,21 @@ public class RoofPanelGeometryTests
         var parts = g.Parts.Where(p => p.Key?.StartsWith("panel:", StringComparison.Ordinal) == true).ToList();
         Assert.Equal(panels.Select(p => $"panel:{p!["id"]}").Order(), parts.Select(p => p.Key!).Order());
         Assert.Equal(before.Parts.Count - 1 + panels.Count, g.Parts.Count);
-        // In the covering's material and the profile's colour (its neighbours a shade lighter).
-        Assert.All(parts, p => Assert.Equal(covering.Material, p.Material));
+        // In a painted sheet of the profile's colour (decision 855), made by the command: matt, hardly metallic, so the 3D view
+        // shows the colour and not the covering's bare metal (Metal sheet, a dark mirror there); its neighbours a shade lighter.
+        var material = f.Model.Get(parts[0].Material!)!;
+        Assert.Equal(IfcClass.Material, material.Class);
+        Assert.NotEqual(covering.Material, material.Id);
+        Assert.Equal(rgb, material.Str("color"));
+        Assert.True(material.Num("metalness") <= 0.1 && material.Num("roughness") >= 0.5);
+        Assert.StartsWith(PanelProfiles.Find(profile)!.Name + ", RAL ", material.Name);
+        Assert.All(parts, p => Assert.Equal(material.Id, p.Material));
         Assert.Contains(parts, p => p.Color == rgb);
         // Each a closed profiled sheet in 3D; for drawings a plate of the covering's thickness over what the panel covers.
         Assert.All(parts, p => Closed(p.Mesh!.Value, p.Key!));
+        // Wound outwards (its volume positive) and facing up: lit from above, it shows its colour, not its back.
+        Assert.All(parts, p => Assert.True(SignedVolume(p.Mesh!.Value) > 0, $"{p.Key} is inside out"));
+        Assert.All(parts, p => Assert.True(UpFacing(p.Mesh!.Value) > 0.4, $"{p.Key} faces down"));
         var cover = (double)layout["totals"]!["coverage"]!;
         var thickness = Roof.Resolve(f.Model.Get(roof)!, f.Model)!.Covering.Thickness;
         Assert.Equal(cover * thickness, parts.Sum(p => Measure.Volume(p.Solid)), 4);

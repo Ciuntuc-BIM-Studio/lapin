@@ -25,6 +25,29 @@ public static class RoofPanels
             ? new Choice(id, (string?)o["color"], Json.Number(o["maxLength"]) is { } m ? (int)m : null)
             : null;
 
+    /// <summary>
+    /// The project material a profile's panels are made of in a colour (decision 855): „Bilka Balcanic, RAL 8017 matt brown”,
+    /// a painted sheet in the colour's own RGB (matt, hardly metallic), so the 3D view shows the panels in their colour and
+    /// not as the covering's bare metal; sections hatch it, the takeoff lists it. Made by the command that names the profile.
+    /// </summary>
+    public static string MaterialName(PanelProfile p, string? color) =>
+        (p.Colors.FirstOrDefault(c => c.Code == color) ?? p.Colors.FirstOrDefault()) is { } c ? $"{p.Name}, {c.Name}" : $"{p.Name}, painted sheet";
+
+    /// <summary>The panels' material made when the project has none of its name; its id.</summary>
+    public static string EnsureMaterial(IEdit edit, PanelProfile p, string? color)
+    {
+        var name = MaterialName(p, color);
+        if (Materials.Find(edit.Model, name) is { } found) return found.Id;
+        var rgb = (p.Colors.FirstOrDefault(c => c.Code == color) ?? p.Colors.FirstOrDefault())?.Rgb ?? "#6b6f73";
+        var m = new Entity(edit.NewId(), IfcClass.Material, name, new JsonObject
+        {
+            ["color"] = rgb, ["texture"] = "none", ["category"] = "Metal", ["roughness"] = 0.6, ["metalness"] = 0.1,
+            ["description"] = $"{p.Name} roof panels, painted steel sheet. Made by the roof panel layout; the maker's colour, indicative.",
+        });
+        edit.Add(m);
+        return m.Id;
+    }
+
     /// <summary>A roof's panel layout, with its profile, colour and warnings.</summary>
     public sealed record Layout(
         Entity Roof, PanelProfile Profile, string? Color, List<RoofFace> Faces, List<RoofEdge> Edges, PanelLayout.Result Result, List<string> Warnings)
