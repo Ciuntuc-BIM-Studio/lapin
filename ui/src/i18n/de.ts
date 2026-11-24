@@ -6437,6 +6437,7 @@ export const DE: Record<string, string> = {
   "at every scale": "in jedem Maßstab",
   "Drawing language": "Zeichnungssprache",
   "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "Die Sprache der Wörter, die Zeichnungen selbst schreiben (die SH einer Rinne, ein Tiefpunkt); eine Legende behält die Sprache, in der sie platziert wurde",
+  'Open-web joist': 'Fachwerkträger', 'New type from a preset': 'Neuer Typ aus einer Vorlage', 'The preset sizes are indicative: your own norms and sizes decide.': 'Die Maße der Vorlagen sind unverbindlich: Ihre eigenen Normen und Maße entscheiden.', 'Joist depth': 'Trägerhöhe', 'Chords': 'Gurte', 'Webs': 'Streben', 'Angle webs': 'Streben aus Winkelprofilen', 'Lines only': 'Nur Linien', 'Round bar webs': 'Streben aus Rundstäben', 'Edit the type': 'Typ bearbeiten', 'Webs as the imported file drew them': 'Streben, wie die importierte Datei sie zeichnete', 'Regenerate webs': 'Streben neu erzeugen',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

@@ -6433,6 +6433,7 @@ export const RO: Record<string, string> = {
   "at every scale": "la orice scară",
   "Drawing language": "Limba desenelor",
   "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "Limba cuvintelor pe care desenele le scriu singure (CR-ul unei rigole, un punct jos); o legendă își păstrează limba în care a fost pusă",
+  'Open-web joist': 'Grindă cu zăbrele', 'New type from a preset': 'Tip nou dintr-o presetare', 'The preset sizes are indicative: your own norms and sizes decide.': 'Dimensiunile presetărilor sunt orientative: normele și dimensiunile dumneavoastră hotărăsc.', 'Joist depth': 'Înălțimea grinzii', 'Chords': 'Tălpi', 'Webs': 'Zăbrele', 'Angle webs': 'Zăbrele din corniere', 'Lines only': 'Doar linii', 'Round bar webs': 'Zăbrele din bare rotunde', 'Edit the type': 'Editează tipul', 'Webs as the imported file drew them': 'Zăbrele așa cum le-a desenat fișierul importat', 'Regenerate webs': 'Regenerează zăbrelele',
 };
 
 /** Phrases with a number or a name in them. */

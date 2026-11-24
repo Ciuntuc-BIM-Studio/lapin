@@ -48,14 +48,16 @@ public static class MeshRecognition
         var gate = fidelity ?? FidelityOptions.Default;
         var gated = new List<(string Id, string Class, List<MeshBuilder> Body, List<(Entity E, List<(string Class, string Relating)> By)> Saved)>();
         var recognizers = services.All<IIfcRecognizer>();
-        if (recognizers.Count == 0) return MeshRecognitionReport.None;
+        // What no prism reads (an open-web joist), offered whole first to the module that makes it (decision 827).
+        var bodies = services.All<IBodyRecognizer>();
+        if (recognizers.Count == 0 && bodies.Count == 0) return MeshRecognitionReport.None;
         var ctx = new RecognitionContext(services) { OutlineSections = outlineSections };
         var byClass = new Dictionary<string, int>();
         var count = 0;
         // Only what a recogniser takes (a wall, a slab, a column…) and the doors and windows the walls take with them: a federated
         // file's pipes and fittings are no prism a module makes anything of, and reading them was most of the import.
         var refs = ids.Select(edit.Model.Get).OfType<Entity>().Where(e => StoredBodies.Has(e) && e.Str(Links.Key) == null && Spatial.StoreyOf(edit.Model, e.Id) != null
-            && (Fillers.Contains(ClassOf(e)) || recognizers.Any(r => r.Takes(ClassOf(e))))).ToList();
+            && (Fillers.Contains(ClassOf(e)) || recognizers.Any(r => r.Takes(ClassOf(e))) || bodies.Any(r => r.Takes(ClassOf(e))))).ToList();
         // Each body read first, in parallel (its triangles' solid and the shapes of its layers): the model is not written meanwhile, and
         // what is read is kept by the body (StoredBodies), so the session builds the references left from it without reading them again.
         // One at a time, a federated file's 4,820 elements took most of the import here.
@@ -94,20 +96,30 @@ public static class MeshRecognition
                 }
             }
             var all = g.Parts.SelectMany(p => p.Solid.Vertices).ToList();
-            if (prisms.Count == 0) { ctx.Skip("its body is no prism"); continue; }
+            var whole = bodies.Count == 0 ? null : new ForeignBody(current.Id, cls, current.Name, current.Str(TypeNameKey), current.Str("objectType"), storey,
+                [.. g.Parts.Select(p => p.Solid)], BodyLines.Read(current), Properties(current));
+            var bodyRecognizers = whole == null ? [] : bodies.Where(r => r.Takes(cls) && r.Takes(whole)).ToList();
+            if (prisms.Count == 0 && bodyRecognizers.Count == 0) { ctx.Skip("its body is no prism"); continue; }
             var box = (new Vec3(all.Min(p => p.X), all.Min(p => p.Y), all.Min(p => p.Z)), new Vec3(all.Max(p => p.X), all.Max(p => p.Y), all.Max(p => p.Z)));
-            var foreign = new ForeignElement(current.Id, cls, current.PredefinedType, current.Name, current.Str("objectType"), storey, prisms, null, openings,
+            var foreign = prisms.Count == 0 ? null : new ForeignElement(current.Id, cls, current.PredefinedType, current.Name, current.Str("objectType"), storey, prisms, null, openings,
                 current.Str(TypeNameKey), null, null, null, Properties(current), Box: box);
             // The reference and its fills go; a recogniser makes them anew with the same ids, or they come back as they were.
             var saved = new[] { current }.Concat(fills).Select(x => (E: x, By: Related(edit.Model, x.Id))).ToList();
             foreach (var (x, _) in saved) edit.Remove(x.Id);
             string? made = null;
-            foreach (var r in recognizers)
+            foreach (var r in bodyRecognizers)
             {
-                try { made = r.Recognize(edit, foreign, ctx); }
+                try { made = r.Recognize(edit, whole!, ctx); }
                 catch (CommandException ex) { ctx.Skip(ex.Message); made = null; }
                 if (made != null) break;
             }
+            if (made == null && foreign != null)
+                foreach (var r in recognizers)
+                {
+                    try { made = r.Recognize(edit, foreign, ctx); }
+                    catch (CommandException ex) { ctx.Skip(ex.Message); made = null; }
+                    if (made != null) break;
+                }
             // Measured once every wall is joined; what came back native (it and the fills made with it) kept to undo under "enforce".
             if (made != null && gate.On && edit.Model.Get(made) != null) gated.Add((made, cls, RecognitionFidelity.Meshes(g), [.. saved.Where(x => edit.Model.Get(x.E.Id) != null)]));
             foreach (var (x, by) in saved)

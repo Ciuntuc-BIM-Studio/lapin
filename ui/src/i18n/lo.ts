@@ -6533,6 +6533,7 @@ export const LO: Record<string, string> = {
   "at every scale": "ທຸກມາດຕາສ່ວນ",
   "Drawing language": "ພາສາຂອງແບບແຕ້ມ",
   "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "ພາສາຂອງຄຳທີ່ແບບແຕ້ມຂຽນເອງ (ລະດັບກົ້ນຂອງຮ່ອງ, ຈຸດຕ່ຳ); ຄຳອະທິບາຍສັນຍາລັກຮັກສາພາສາທີ່ມັນຖືກວາງ",
+  'Open-web joist': 'ຄານໂຄງຂື່ (ເຫຼັກ)', 'New type from a preset': 'ປະເພດໃໝ່ຈາກຄ່າທີ່ຕັ້ງໄວ້', 'The preset sizes are indicative: your own norms and sizes decide.': 'ຂະໜາດຂອງຄ່າທີ່ຕັ້ງໄວ້ເປັນພຽງຕົວຢ່າງ: ໃຫ້ຖືຕາມມາດຕະຖານ ແລະ ຂະໜາດຂອງທ່ານເອງ.', 'Joist depth': 'ຄວາມສູງຂອງຄານ', 'Chords': 'ເສັ້ນຂອບ', 'Webs': 'ເສັ້ນຍຶດ', 'Angle webs': 'ເສັ້ນຍຶດເຫຼັກສາກ', 'Lines only': 'ເສັ້ນເທົ່ານັ້ນ', 'Round bar webs': 'ເສັ້ນຍຶດເຫຼັກກົມ', 'Edit the type': 'ແກ້ໄຂປະເພດ', 'Webs as the imported file drew them': 'ເສັ້ນຍຶດຕາມທີ່ໄຟລ໌ທີ່ນຳເຂົ້າໄດ້ແຕ້ມ', 'Regenerate webs': 'ສ້າງເສັ້ນຍຶດຄືນໃໝ່',
 };
 
 /** Phrases with a number or a name in them. */

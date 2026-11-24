@@ -1,6 +1,6 @@
 # IDS 1.0 checks (CDE web W6)
 
-Atrium's `docs/plan-cde-web.md`, §5 (the IDS row) and §6 W6: an IDS 1.0 reader and checker in Lapin's engine, run from Manage → IDS… and before a submission to a CDE server. Decision 827.
+Atrium's `docs/plan-cde-web.md`, §5 (the IDS row) and §6 W6: an IDS 1.0 reader and checker in Lapin's engine, run from Manage → IDS… and before a submission to a CDE server. Decision 829.
 
 **Written from the public specification only**: buildingSMART's `ids.xsd` 1.0.0, the IDS user manual (facets, restrictions, cardinality, units, metadata) and the implementers' pages on data types and tolerance. No code or file from other implementations (IfcOpenShell's ifctester, ifc-lite, bimvoice-cde) was read or used. The test suite's *cases* (their names state the behaviour) are written anew as small IFC and IDS texts in `IdsTests.cs`; no test-suite file is copied. No dependency: the XML is read with .NET's `System.Xml` (DTDs prohibited, no resolver), the patterns with .NET's regex after a translation.
 

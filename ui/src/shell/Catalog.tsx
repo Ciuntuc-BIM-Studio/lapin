@@ -47,7 +47,7 @@ export function Catalog() {
 
 function ProjectCatalog() {
   useSession((s) => s.nodes);
-  useUi((s) => [s.wallTypeId, s.doorTypeId, s.windowTypeId, s.slabTypeId, s.stairTypeId, s.rampTypeId, s.ceilingTypeId, s.skirtingTypeId, s.curtainTypeId, s.memberTypeId].join());
+  useUi((s) => [s.wallTypeId, s.doorTypeId, s.windowTypeId, s.slabTypeId, s.stairTypeId, s.rampTypeId, s.ceilingTypeId, s.skirtingTypeId, s.curtainTypeId, s.memberTypeId, s.joistTypeId].join());
   const kinds = catalogKinds();
   const [kindId, setKindId] = useState<string | null>(() => { try { return localStorage.getItem(KIND_KEY); } catch { return null; } });
   const tool = kinds.find((k) => k.id === kindId) ?? kinds[0];

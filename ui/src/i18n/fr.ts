@@ -6441,6 +6441,7 @@ export const FR: Record<string, string> = {
   "at every scale": "à toute échelle",
   "Drawing language": "Langue des dessins",
   "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "La langue des mots que les dessins écrivent d'eux-mêmes (le FE d'un caniveau, un point bas) ; une légende garde la langue dans laquelle elle a été placée",
+  'Open-web joist': 'Poutrelle à treillis', 'New type from a preset': 'Nouveau type à partir d\'un préréglage', 'The preset sizes are indicative: your own norms and sizes decide.': 'Les dimensions des préréglages sont indicatives : vos propres normes et dimensions font foi.', 'Joist depth': 'Hauteur de la poutrelle', 'Chords': 'Membrures', 'Webs': 'Treillis', 'Angle webs': 'Treillis en cornières', 'Lines only': 'Lignes seulement', 'Round bar webs': 'Treillis en barres rondes', 'Edit the type': 'Modifier le type', 'Webs as the imported file drew them': 'Treillis tel que le fichier importé l\'a dessiné', 'Regenerate webs': 'Régénérer le treillis',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

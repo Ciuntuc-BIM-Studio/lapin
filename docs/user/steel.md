@@ -11,6 +11,7 @@ summary: Steel members with configurable ends — extended or set back, cut by a
 - **Portal frame hall…**: a whole steel hall from a few numbers, in the hall configurator (below).
 - **Column**: a column of the structure, placed with one click on the storey, of a steel profile: an **HEB 200** by default, from the built-in EN catalogue (its column type is made the first time and used again). Change its profile in Properties or in **Structure → Structure types**; the Structure tab's own Column tool places the project's current column type as before.
 - **Member** (SM): a steel member along two points, on the storey's top with its section's top on the axis, as a beam. Its type is chosen in Properties before the first click, or from the **Catalog** tab, where each steel type is drawn by its section.
+- **Open-web joist**: a bar joist along two points, of a joist type (below).
 - **Convert to member**: the selected drafted outlines made members (below).
 - **Mitre** and **Fit**: two members joined at their ends (below).
 - **Steel types**: the project's member types, and new ones.
@@ -137,6 +138,29 @@ Each purlin and rail sits on a **cleat** on every rafter, column or post it cros
 
 ![A frame elevation](shots/steel-frame-view.webp)
 
+## Open-web joists
+
+**Steel → Open-web joist** places an open-web (bar) joist between two points: a light truss of two chords joined by webs, as steel-deck roofs and floors are framed. Like the member, it lies on the storey's top, its **axis is the joist's top (bearing) line**, and a click and a second click make one; the tool repeats. Its type is chosen in Properties before the first click.
+
+![An open-web joist in 3D](shots/steel-joists.webp)
+
+![A joist in Properties](shots/steel-joist-props.webp)
+
+A joist's **type** holds its rules, and the properties panel edits them as fields when you select the type (**Edit the type** in the joist's own section, or the **Catalog** tab):
+
+- **Depth**, and the **gap** between the chords' angles;
+- the **top** and **bottom chord**: each a pair of angles (leg, height, thickness), with its flange turned up or down, the top chord's **drop** below the axis and the bottom chord's **setback** from the ends;
+- the **seats** at the ends: **seat depth** and **seat length**;
+- the **webs**: **rod** (round bars), **angle** (angles) or **lines** (the webs drawn only as their axes, with no body, as bar joist families are drawn in Revit), their size and thickness, the **panel** length of the zigzag and whether it has **verticals**.
+
+**New type from a preset** in the tool's properties makes a type from a preset: **OWJ 300**, **OWJ 400** (the default), **OWJ 500** or **OWJ 600**. The presets are Lapin's own round sizes and **indicative**: your own norms and the maker's tables decide the sizes. Select a joist and its section shows its type, its depth, its chords (for example *2L 40×40×4*) and its webs; **Set type** changes the type of what is selected. Drag its two ends in plan to move them; a length change draws the webs again by the type's pattern.
+
+In plan a joist is drawn as a **single line along its axis with its type's name over the middle**, the way joists are drawn on a structural plan; in 3D it has its chords, seats and webs. Its quantities give its length, net volume and net weight (**Qto_BeamBaseQuantities**) and its depth, web count and web length (**Lapin_JoistQuantities**).
+
+### Joists from other programs
+
+A **Speckle** receive, and an **IFC** import of a joist made of triangles, turns a Revit *K-Series* or *LH-Series Bar Joist* (or any beam whose family, type or name says joist, or a type named like *16K2* or *18LH04*) into a native joist when its body is two pairs of straight angle chords. The webs are the lines Revit sent beside it, kept as they came (the joist's section says **Webs as the imported file drew them**; **Regenerate webs** replaces them with the type's own pattern). As for every recognised element, the native joist must match the received body within 1 mm or 0.5 %; a joist that differs more stays a reference. See [Receiving from Speckle](import-export.md#receiving-from-speckle).
+
 ## IFC and quantities
 
 A member exports as an **IfcMember** with its **IfcMemberType**. Its body is written as the other programs write steel (Tekla, Advance Steel, Revit): its section **extruded** (IfcExtrudedAreaSolid), **clipped** by its ends' planes (IfcBooleanClippingResult with IfcHalfSpaceSolid), and each cope an **IfcOpeningElement** voiding it. A steel beam or column with ends is written the same way. Each member's quantities give its length between its cuts, its section's area, its volume and its net weight (7850 kg/m³).
@@ -146,3 +170,5 @@ A hall exports as an **IfcBuildingSystem** (LOADBEARING) its members and connect
 A connection exports as an **IfcElementAssembly** of its plates (**IfcPlate**), bolts (**IfcMechanicalFastener** BOLT), anchors (ANCHORBOLT) and anchor plates (**IfcDiscreteAccessory** ANCHORPLATE), each with its size and grade in `Lapin_SteelPart`; it realizes the connection of the members it joins (**IfcRelConnectsWithRealizingElements**; a base, between the footing and its column). The welds are kept as data, not as bodies.
 
 The bolt grades a connection can take are the **Bolts** rules of the project: see [Rules](rules.md).
+
+A joist exports as an **IfcBeam** with the predefined type **JOIST** and its **IfcBeamType** JOIST, one element as joist makers deliver it (its chords, seats and webs are its one body, not separate members).
