@@ -65,6 +65,8 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
         r.Service<IIfcSystems>(this);
         r.Service<IIfcConnections>(this);
         r.Service<Lapin.Platform.Analysis.IAnalyticalElements>(new SteelAnalytical());
+        // Open-web joists (decision 827): their type's rules, their body derived, recognised from a received bar joist.
+        OpenWebJoists.Register(r);
         HallCommands.Register(r);
         NodeCommands.Register(r);
         SteelDrawings.Register(r);

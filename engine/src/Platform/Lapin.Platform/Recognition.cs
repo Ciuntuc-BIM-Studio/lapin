@@ -104,9 +104,60 @@ public sealed class RecognitionContext(IServices services)
     /// Whether a column or beam whose section is none of the parametric ones (a steel profile, a shaped concrete section) is
     /// made with its body's own section as an outline (or its type's catalogue profile when that is the body's), the fidelity gate
     /// judging it; and a beam keeps the length its body has, through the columns on its axis (it does not stop at their faces).
-    /// Off for an IFC file (its profiles are read as profiles); on for bodies that are only triangles (a Speckle receive).
+    /// Off for an IFC file's own representations (its profiles are read as profiles); on for recognition from triangles (a Speckle
+    /// receive, and an IFC body no profile is read from: a faceted B-rep, a triangulated set, a shaped profile; decision 826).
     /// </summary>
     public bool OutlineSections { get; init; }
+}
+
+/// <summary>
+/// A reference's body offered whole, for what no prism reads (an open-web joist: its chords, its webs drawn as lines): its
+/// triangles' solids (world metres, as the reference draws them), the lines its program draws with it (<see cref="BodyLines"/>),
+/// its class, names (its own, its file type's, its object type) and properties as the file gave them, and the storey it stands on.
+/// </summary>
+public sealed record ForeignBody(string GlobalId, string IfcClass, string? Name, string? TypeName, string? ObjectType, string StoreyId,
+    IReadOnlyList<Solid> Solids, IReadOnlyList<(Vec3 A, Vec3 B)> Lines, JsonObject Properties);
+
+/// <summary>
+/// Offered by a module that makes elements no prism is read as (decision 827: the steel module's open-web joists), from a
+/// reference's body whole (<see cref="ForeignBody"/>). Recognition from triangles asks it before reading prisms, only for a body it
+/// <see cref="Takes(ForeignBody)"/> (by its class and names); what it makes is measured by the fidelity gate as any other.
+/// </summary>
+public interface IBodyRecognizer
+{
+    /// <summary>Whether it may make anything of a reference of this class (what none takes is not read at all).</summary>
+    bool Takes(string ifcClass);
+
+    /// <summary>Whether this body is one it makes (its names say so: a family "K-Series Bar Joist", a type "16K2").</summary>
+    bool Takes(ForeignBody body);
+
+    /// <summary>The native element made (its id, the reference's GlobalId), or null with a reason in <see cref="RecognitionContext.Skip"/>.</summary>
+    string? Recognize(IEdit edit, ForeignBody body, RecognitionContext ctx);
+}
+
+/// <summary>
+/// The lines a reference's program draws with its body (Revit's bar joists draw their webs as model lines beside their chords),
+/// kept on the reference as segments [x1, y1, z1, x2, y2, z2] (world metres) under <see cref="Key"/>: not drawn, read by an
+/// <see cref="IBodyRecognizer"/>.
+/// </summary>
+public static class BodyLines
+{
+    public const string Key = "bodyLines";
+
+    public static JsonArray Write(IEnumerable<(Vec3 A, Vec3 B)> segments) =>
+        new([.. segments.Select(s => (JsonNode)new JsonArray(R(s.A.X), R(s.A.Y), R(s.A.Z), R(s.B.X), R(s.B.Y), R(s.B.Z)))]);
+
+    public static List<(Vec3 A, Vec3 B)> Read(Entity e)
+    {
+        var o = new List<(Vec3, Vec3)>();
+        if (e.Attrs[Key] is not JsonArray arr) return o;
+        foreach (var n in arr)
+            if (n is JsonArray { Count: 6 } s && s.Select(Json.Number).ToArray() is var v && v.All(x => x != null))
+                o.Add((new Vec3(v[0]!.Value, v[1]!.Value, v[2]!.Value), new Vec3(v[3]!.Value, v[4]!.Value, v[5]!.Value)));
+        return o;
+    }
+
+    static double R(double v) => Math.Round(v, 6);
 }
 
 /// <summary>
