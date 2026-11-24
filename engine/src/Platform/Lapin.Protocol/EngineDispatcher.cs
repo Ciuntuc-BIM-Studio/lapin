@@ -919,8 +919,10 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             case "pointcloud.tiles":
                 return (PointCloudLinks.Tiles(session.Model, Links.Require(session.Model, (string?)p["id"]), (p["nodes"] as JsonArray ?? []).Select(x => (string?)x).OfType<string>()), null);
             // A splat link's Gaussians, a page at a time, as raw arrays (docs/plan-gaussian-splats.md): {id, start, budget}.
+            // G3: {sh: the highest degree of harmonics wanted, shBytes: the bytes they may take}; the page says the degree it sends.
             case "pointcloud.splats":
-                return (PointCloudLinks.Splats(session.Model, Links.Require(session.Model, (string?)p["id"]), (long)(Json.Number(p["start"]) ?? 0), (long)(Json.Number(p["budget"]) ?? 3_000_000)), null);
+                return (PointCloudLinks.Splats(session.Model, Links.Require(session.Model, (string?)p["id"]), (long)(Json.Number(p["start"]) ?? 0), (long)(Json.Number(p["budget"]) ?? 3_000_000),
+                    (int)Math.Clamp(Json.Number(p["sh"]) ?? 0, 0, 3), (long)(Json.Number(p["shBytes"]) is { } sb && sb > 0 ? sb : long.MaxValue)), null);
             case "quantities.of": return (session.Quantities((string?)p["id"] ?? throw new CommandException("Which element?")), null);
             // Several elements' quantity sets in one call (the model assistant's lists and sums): id → sets; an id the model lacks is left out.
             // At most MaxQuantityIds a call: more is refused with the number, never cut without a word (audit 22.11.2026).

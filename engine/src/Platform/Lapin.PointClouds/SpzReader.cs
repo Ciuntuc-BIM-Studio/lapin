@@ -11,7 +11,11 @@ namespace Lapin.PointClouds;
 /// scales (three bytes, ln s = b/16 − 10), rotations (versions 1–2: x, y, z as bytes, b/127.5 − 1, w ≥ 0 worked out;
 /// version 3: the smallest three of x, y, z, w in 32 bits, the largest's index in the top two, then 10 bits each, a sign
 /// and a 9-bit magnitude of at most √½), harmonics (a byte each, (b − 128)/128, coefficient by coefficient, colours inner).
-/// Its coordinates are RUB (x right, y up, z back), so its link stands with y up. Version 4 (ZSTD streams) is not read yet.
+/// Version 4 keeps the same attributes, each its own Zstandard frame (decompressed by Lapin's <see cref="Zstd"/>): a 32-byte
+/// header (magic, version, count, degree, fractional bits, flags, the streams' number, the table of contents' offset), the
+/// extensions' records when flag 0x2 says so (stepped over), a table of contents of (compressed, uncompressed) sizes as two
+/// uint64 a stream, then the streams in order: positions, opacities, colours, scales, rotations, harmonics (left out when
+/// empty). Its coordinates are RUB (x right, y up, z back), so its link stands with y up.
 /// </summary>
 public sealed class SpzReader : ISplatReader
 {
@@ -22,6 +26,9 @@ public sealed class SpzReader : ISplatReader
     readonly int _version, _fractional, _fileDegree;
     readonly long _count;
     byte[]? _core;
+    /// <summary>Version 4: the harmonics' stream, decompressed with the rest (the others go into <see cref="_core"/>).</summary>
+    byte[]? _sh4;
+    readonly bool _v4;
 
     public PointCloudHeader Header { get; }
     public int ShDegree { get; }
@@ -30,11 +37,18 @@ public sealed class SpzReader : ISplatReader
     {
         _source = source;
         Span<byte> h = stackalloc byte[16];
-        using (var s = Open())
+        using (var raw = source.Open())
+        {
+            Span<byte> magic = stackalloc byte[4];
+            _v4 = raw.ReadAtLeast(magic, 4, throwOnEndOfStream: false) == 4 && BinaryPrimitives.ReadUInt32LittleEndian(magic) == Magic;
+        }
+        using (var s = _v4 ? source.Open() : Open())
             if (s.ReadAtLeast(h, 16, throwOnEndOfStream: false) < 16) throw new PointCloudException($"{source.Name}: its SPZ header is cut short.");
         if (BinaryPrimitives.ReadUInt32LittleEndian(h) != Magic) throw new PointCloudException($"{source.Name} is not an SPZ file (its header has no NGSP).");
         _version = (int)BinaryPrimitives.ReadUInt32LittleEndian(h[4..]);
-        if (_version is < 1 or > 3) throw new PointCloudException($"{source.Name} is SPZ version {_version}; Lapin reads versions 1 to 3.");
+        if (_v4 ? _version < 4 : _version is < 1 or > 3)
+            throw new PointCloudException($"{source.Name} is SPZ version {_version} {(_v4 ? "without gzip" : "in gzip")}, which SPZ does not have.");
+        if (_version > 4) throw new PointCloudException($"{source.Name} is SPZ version {_version}; Lapin reads versions 1 to 4.");
         _count = BinaryPrimitives.ReadUInt32LittleEndian(h[8..]);
         _fileDegree = h[12];
         if (_fileDegree > 4) throw new PointCloudException($"{source.Name}: its harmonics' degree, {_fileDegree}, is not one SPZ has.");
@@ -42,10 +56,11 @@ public sealed class SpzReader : ISplatReader
         ShDegree = Math.Min(3, _fileDegree);
         var notes = new List<string>();
         if (_fileDegree > 3) notes.Add($"{source.Name} has spherical harmonics of degree {_fileDegree}; Lapin keeps degrees 1–3.");
+        if (_v4 && (h[14] & 0x2) != 0) notes.Add($"{source.Name} carries extensions (a vendor's records), which Lapin leaves aside.");
         Header = new PointCloudHeader
         {
             Format = $"SPZ version {_version} Gaussian splats{(ShDegree > 0 ? $", harmonics of degree {ShDegree}" : "")}", Count = _count, HasColor = true,
-            Up = "y", Splats = true, Notes = notes,
+            Up = "y", Splats = true, ShDegree = ShDegree, Notes = notes,
         };
     }
 
@@ -60,10 +75,53 @@ public sealed class SpzReader : ISplatReader
     {
         if (_core != null) return _core;
         if (CoreBytes > Array.MaxLength) throw new PointCloudException($"{_source.Name} holds {_count:N0} Gaussians: more than Lapin reads from one SPZ file.");
+        if (_v4) return _core = CoreV4();
         var core = new byte[CoreBytes];
         using (var s = Open())
             if (s.ReadAtLeast(core, core.Length, throwOnEndOfStream: false) < core.Length) throw new PointCloudException($"{_source.Name}: its data is cut short.");
         return _core = core;
+    }
+
+    /// <summary>Version 4's streams decompressed one by one into the layout of versions 2–3 (a header's 16 bytes, then the attributes), the harmonics apart.</summary>
+    byte[] CoreV4()
+    {
+        byte[] file;
+        using (var s = _source.Open())
+        {
+            if (_source.Length > Array.MaxLength) throw new PointCloudException($"{_source.Name} is larger than Lapin reads from one SPZ file.");
+            file = new byte[_source.Length];
+            s.ReadExactly(file);
+        }
+        if (file.Length < 32) throw new PointCloudException($"{_source.Name}: its SPZ header is cut short.");
+        var streams = file[15];
+        var toc = (long)BinaryPrimitives.ReadUInt32LittleEndian(file.AsSpan(16));
+        if (toc < 32 || toc + streams * 16L > file.Length) throw new PointCloudException($"{_source.Name}: its table of contents is outside the file.");
+        var n = _count;
+        // The streams in their order, the empty ones left out of the table.
+        long[] sizes = [n * PosBytes, n, 3 * n, 3 * n, n * RotBytes, n * Splat.ShCoeffs(_fileDegree) * 3];
+        var core = new byte[CoreBytes];
+        file.AsSpan(0, 16).CopyTo(core);
+        long at = toc + streams * 16L;
+        long into = 16;
+        var t = 0;
+        for (var k = 0; k < sizes.Length; k++)
+        {
+            if (sizes[k] == 0) continue;
+            if (t >= streams) throw new PointCloudException($"{_source.Name}: {streams} streams, fewer than its attributes need.");
+            var comp = BinaryPrimitives.ReadUInt64LittleEndian(file.AsSpan((int)(toc + 16 * t)));
+            var raw = BinaryPrimitives.ReadUInt64LittleEndian(file.AsSpan((int)(toc + 16 * t + 8)));
+            t++;
+            if (comp > (ulong)(file.Length - at)) throw new PointCloudException($"{_source.Name}: a stream runs past the file's end.");
+            if (raw != (ulong)sizes[k]) throw new PointCloudException($"{_source.Name}: a stream of {raw:N0} bytes where {sizes[k]:N0} were expected.");
+            byte[] data;
+            try { data = Zstd.Decompress(file.AsSpan((int)at, (int)comp), (int)raw); }
+            catch (Zstd.ZstdException e) { throw new PointCloudException($"{_source.Name}: a Zstandard stream cannot be read ({e.Message})."); }
+            if (data.Length != (int)raw) throw new PointCloudException($"{_source.Name}: a stream decompressed to {data.Length:N0} bytes, not {raw:N0}.");
+            if (k < 5) { data.CopyTo(core, into); into += data.Length; }
+            else _sh4 = data;
+            at += (long)comp;
+        }
+        return core;
     }
 
     /// <summary>Each Gaussian's centre, scales, rotation (w, x, y, z), colour and opacity, in the file's order.</summary>
@@ -147,11 +205,13 @@ public sealed class SpzReader : ISplatReader
         var coeffs = sh ? Splat.ShCoeffs(ShDegree) : 0;
         var fileCoeffs = Splat.ShCoeffs(_fileDegree);
         var b = new SplatBatch(batch, coeffs);
-        // The harmonics follow everything else: read from a stream of their own, Gaussian by Gaussian, the left-out ones skipped.
-        using var shStream = coeffs > 0 ? Open() : null;
+        // The harmonics follow everything else: read from a stream of their own, Gaussian by Gaussian, the left-out ones skipped
+        // (version 4: from their own decompressed stream).
+        if (_v4 && coeffs > 0) Core();
+        using var shStream = coeffs > 0 ? (_v4 ? new MemoryStream(_sh4 ?? throw new PointCloudException($"{_source.Name}: its harmonics' stream is missing."), writable: false) : Open()) : null;
         var rec = new byte[fileCoeffs * 3];
         long at = 0;
-        if (shStream != null) Skip(shStream, CoreBytes);
+        if (shStream != null && !_v4) Skip(shStream, CoreBytes);
         foreach (var g in Gaussians(cancel))
         {
             if (b.Full) { yield return b; b.Count = 0; }

@@ -202,11 +202,17 @@ public class SplatTests
     }
 
     [Fact]
-    public void Spz_version_4_and_a_gzip_that_is_no_spz_say_so()
+    public void A_broken_spz_version_4_and_a_gzip_that_is_no_spz_say_so()
     {
+        // Version 4's header with a table of contents outside the file (G3 reads version 4: SplatFormatTests).
         var v4 = new byte[32];
         "NGSP"u8.CopyTo(v4);
-        Assert.Contains("version 4", Assert.Throws<PointCloudException>(() => PointReaders.Open(new BytesSource("a.spz", v4))).Message);
+        BinaryPrimitives.WriteUInt32LittleEndian(v4.AsSpan(4), 4);
+        BinaryPrimitives.WriteUInt32LittleEndian(v4.AsSpan(8), 10);
+        v4[15] = 5;
+        BinaryPrimitives.WriteUInt32LittleEndian(v4.AsSpan(16), 32);
+        var r = PointReaders.Open(new BytesSource("a.spz", v4));
+        Assert.Contains("table of contents", Assert.Throws<PointCloudException>(() => r.Read().ToList()).Message);
         var o = new MemoryStream();
         using (var z = new GZipStream(o, CompressionLevel.Fastest, leaveOpen: true)) z.Write(new byte[20]);
         Assert.Throws<PointCloudException>(() => PointReaders.Open(new BytesSource("b.spz", o.ToArray())));
