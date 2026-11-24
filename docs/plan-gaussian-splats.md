@@ -127,7 +127,44 @@ carries splats with its measuring tools.
 - **G4 — on sheets.** A 3D or camera view with splats placed on a sheet prints them as a raster made by the engine (a CPU
   splatting of the view at the sheet's resolution, the same sort and projection as the screen's), under the view's lines,
   dimensions and notes; the PDF carries it. Dimensions and notes in a 3D view on a sheet as they are today.
-- **G5 — Lapin for the browser.** The `.html` export (`docs/html-export.md`) carries a splat link's Gaussians (SPZ inside
+
+  **Done 24.11.2026 (decision 832, branch `feat/gaussian-splats-g4`).** What existed: a saved 3D view (orthographic or a
+  camera's perspective) already went on a sheet (forum topic 91, decision 574), drawn by `View3dDrawings` with the exact
+  hidden-line removal of an elevation, lines only (no hatches, no annotations, since a perspective's drawing is not in the
+  model's frame), and point clouds were drawn only in plans, sections and elevations (`PointCloudSlices`: a PNG laid under
+  the drawing, carried by its `PenImage`, which `Sheets.ClipToBox` puts on the paper and `PdfWriter` writes as an image
+  XObject, Flate, its alpha a soft mask). G4 adds the 3D view's own picture through that path: `SplatRaster` (the CPU
+  splatter: Σ = (M R) S² (M R)ᵀ placed by the link, Σ' = J W Σ Wᵀ Jᵀ in the picture's pixels plus the screen's 0.3 px²
+  low-pass, weighed to 3σ, nothing under 1/255, blended premultiplied back to front by the centres' distances; the
+  perspective's map is View3dDrawings' own, x·D/d, y·D/d, so the picture lies exactly under the lines) and `SplatSheets`
+  (the view's links drawn as splats by V/G or the link, their Gaussians placed, cropped by the link's box and the view's
+  section box, cut at a perspective's near plane, coloured Full along the eye's ray with `Splat.Colour` at the file's own
+  degree or Base, halftone; the grid round the Gaussians' 3σ reach, inside the camera's window, 300 dpi on the paper at the
+  view's scale, coarser past 24 Mpx or 8192 px a side; at most 4 million Gaussians, the largest and most opaque first as the
+  screen's budget), called by `Views.Render` for a 3D view as a mark under the drawing (`Under`, its id
+  `pointcloud:<link>:splats:<hash>`, so the view's bounds and the viewport's box count it). Decided where the plan was silent:
+  **occlusion by a depth buffer** of the drawn parts' faces (triangulated, in the drawing's depth: the orthographic frame's,
+  or a perspective's mapped D − D²/d, planar, so interpolated exactly), a splat drawn where its centre is in front of the
+  nearest face (2 cm of tolerance, so a capture's wall on the model's wall still shows), as the 3D view's depth test with
+  depthWrite off: the hidden-line drawing has no fills, so without it a capture would show through the model; the picture
+  worked in bands of 32 rows, each band its splats and faces, in parallel (sequential in a browser), so memory is the RGBA
+  picture and a band's floats; **one resolution**, 300 dpi, for the sheet on the screen and the PDF (the same cached
+  picture: the screen shows what prints); **synchronous, cached** rather than drawn in the background with a placeholder:
+  a million Gaussians over a whole A3 take about 2.7 s once, then the picture is kept (8 of them) by link, transform,
+  camera, window, scale, colour, halftone, crop, section box and a hash of the parts' vertices, so a sheet redrawn after an
+  unrelated change takes it again; a cloud drawn as Points in a 3D view is not printed (the 3D views on sheets drew no clouds
+  before). Measured (Release, M-series Mac; `SplatSheetBenchTests`, LAPIN_SPLAT_BENCH=1): a million Gaussians of degree 3 on
+  the walls and floor of a 12 × 8 × 4 m room (scales 3 mm–6 cm) gathered and coloured in 0.25 s, splatted on 4724 × 3272
+  px (an A3's 400 × 277 mm at 300 dpi) in 2.16 s, the PNG (22.5 MB, random colours, the worst case) in 0.27 s; the guide's
+  pavilion (41 407) at once. Tests: `SplatSheetTests` (6: a single Gaussian's footprint and second moments against the
+  analytic ellipse, two overlapping splats blended back to front whatever their order, a face hiding the one behind, the
+  perspective's Jacobian, crop and section box and Full/Base colour against `Splat.Colour`, a 3D view on a sheet: the
+  picture's size at 1:50, the model's wall hiding the capture behind it, under the lines, cached, the PDF's image XObject,
+  Base colour and Points in the view's row; a camera view inside its field of view); the scene `gaussian-splat-sheet` (the
+  pavilion's camera view with a garden wall in front, a note and a dimension on the paper, its PDF), both languages.
+  Left: a capture drawn as points in a 3D view printed as dots; a lighter picture for the screen when a sheet's picture is
+  large (a whole A3's PNG of a random capture is 22 MB in the sheet's drawing message).
+- **G5 — Lapin for the browser.** *Postponed by the user's choice (24.11.2026): not built after G4; taken up when asked.* The `.html` export (`docs/html-export.md`) carries a splat link's Gaussians (SPZ inside
   the page) and draws them with the same renderer; its viewer gets Measure (distance, chain, area). A combined BIM + cloud +
   splat page is that export with splats, not a new format.
 

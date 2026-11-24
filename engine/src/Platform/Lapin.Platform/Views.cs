@@ -1038,6 +1038,11 @@ public static class Views
         if (laid == null && flat && !paper)
             try { marks.AddRange(PointCloudSlices.Marks(ctx, spec, vg)); }
             catch (CommandException) { }
+        // A 3D or camera view's Gaussian splats (docs/plan-gaussian-splats.md, G4): a picture made by the engine as the 3D view
+        // draws them, under the view's lines, hidden behind its faces, for its sheets and their PDF.
+        if (!flat && laid == null)
+            try { marks.AddRange(SplatSheets.Marks(ctx, spec, vg, drawnParts)); }
+            catch (CommandException) { }
         // An annotation category's colour or halftone (decision 394).
         if (vg.Graphics?["annotations"] is JsonObject { Count: > 0 }) foreach (var mk in marks) vg.Recolor(mk);
         // Cropped: the model's marks to the region, annotations to the annotation crop when it is on; the region's frame when it is visible.

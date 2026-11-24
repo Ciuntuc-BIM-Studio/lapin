@@ -189,7 +189,13 @@ In Manage → Links a splat cloud's row has a **Display** list: **Splats** (its 
 
 ![The same capture drawn as points](shots/gaussian-splat-points.webp)
 
-Splats are not exported with the model (nor printed on sheets yet: a sheet draws a capture's slice as dots).
+Splats are not exported with the model. Plans and sections draw a capture's slice as dots; a **3D view or a camera view placed on a sheet** prints its splats as a picture: see below.
+
+#### Splats on sheets
+
+A saved 3D view or camera view that draws a capture as splats (its **Drawn as** in Visibility / Graphics → Point clouds, or the link's Display) prints them on its sheet and in the PDF. Lapin draws them itself, the way the 3D view does (each splat's ellipse from the same projection, back to front, blended the same way), as a picture at 300 dpi on the paper at the view's scale, in the view's colour (Full or Base colour) and halftone, inside its section box and the link's crop box. The picture lies under the view's lines and under the notes and dimensions on the sheet, and the model's own elements hide the part of the capture behind them, as in 3D: a wall built in front of a scanned façade covers it. The sheet on the screen shows the same picture as the PDF. A big capture takes a moment the first time (about two seconds for a million splats over a whole A3 sheet); after that the sheet keeps the picture until the view, its camera, the capture or the model in view changes. A capture drawn as points in that view is not printed in 3D.
+
+![A camera view of the pavilion's capture on an A3 sheet: the splats under the garden wall's lines, a note and a dimension on the paper](shots/gaussian-splat-sheet.webp)
 
 #### Full colour and base colour
 

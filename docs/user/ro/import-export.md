@@ -191,7 +191,13 @@ O captură de Gaussian splats (o scenă antrenată din fotografii sau dintr-un f
 
 ![Aceeași captură desenată ca puncte](shots/gaussian-splat-points.webp)
 
-Splat-urile nu se exportă cu modelul (și nici nu se tipăresc încă pe planșe: o planșă desenează felia capturii ca puncte).
+Splat-urile nu se exportă cu modelul. Planurile și secțiunile desenează felia capturii ca puncte; o **vedere 3D sau o vedere de cameră pusă pe o planșă** îi tipărește splat-urile ca imagine: vezi mai jos.
+
+#### Splat-uri pe planșe
+
+O vedere 3D sau o vedere de cameră salvată care desenează o captură ca splat-uri (**Drawn as** din Visibility / Graphics → Point clouds, sau **Display** al legăturii) le tipărește pe planșa ei și în PDF. Lapin le desenează singur, cum face vederea 3D (elipsa fiecărui splat din aceeași proiecție, din spate în față, amestecate la fel), ca o imagine de 300 dpi pe hârtie la scara vederii, în culoarea vederii (Full sau Base colour) și în semiton, în cutia ei de secțiune și în cutia de decupare a legăturii. Imaginea stă sub liniile vederii și sub notele și cotele de pe planșă, iar elementele modelului ascund partea capturii din spatele lor, ca în 3D: un perete construit în fața unei fațade scanate o acoperă. Planșa de pe ecran arată aceeași imagine ca PDF-ul. O captură mare durează puțin prima dată (cam două secunde pentru un milion de splat-uri pe toată o planșă A3); după aceea planșa păstrează imaginea până se schimbă vederea, camera ei, captura sau modelul din vedere. O captură desenată ca puncte în acea vedere nu se tipărește în 3D.
+
+![O vedere de cameră a capturii foișorului pe o planșă A3: splat-urile sub liniile zidului de grădină, o notă și o cotă pe hârtie](shots/gaussian-splat-sheet.webp)
 
 #### Culoare completă și culoare de bază
 
