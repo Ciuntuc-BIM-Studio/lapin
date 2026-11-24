@@ -269,6 +269,13 @@ public sealed class ForeignMembers : IIfcRecognizer
             if (area < 0.99 * (xMax - xMin) * (zMax - zMin))
             {
                 // Its own section, about its box's centre (a steel profile, a shaped section), when asked for; else a reference.
+                // A beam runs along its longest side: a shape swept less far than it is wide or deep (a beam with a sloped end is a
+                // trapezoid swept across it) is no section of it.
+                if (outline != null && prism.Holes.Count == 0 && prism.Height < Math.Max(xMax - xMin, zMax - zMin))
+                {
+                    ctx?.Skip("a beam whose body runs across its length (a sloped or shaped end)");
+                    return null;
+                }
                 if (outline != null && prism.Holes.Count == 0)
                 {
                     var (uc, vc) = ((xMin + xMax) / 2, (zMin + zMax) / 2);

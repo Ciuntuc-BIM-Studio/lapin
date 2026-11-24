@@ -100,7 +100,10 @@ public static partial class IfcImport
             reader.Apply(edit);
             var brought = edit.Model.Entities.Where(e => !before.Contains(e.Id)).Select(e => e.Id).ToList();
             // Not what the gate has just made a reference again (enforce): its triangles would make the same element.
-            if (o.Mode == "auto") fromTriangles = MeshRecognition.Recognize(edit, session.Catalog, brought.Where(id => !reader.Reverted.Contains(id)), o.Gate);
+            // A column or beam whose body has no profile (tessellated, a faceted B-rep) is made with its body's own outline as its section,
+            // as a Speckle receive's are (decision 826): its type's catalogue profile when that is the outline to 2 mm, a parametric
+            // shape when it is one, else the polygon it is; the gate judges each.
+            if (o.Mode == "auto") fromTriangles = MeshRecognition.Recognize(edit, session.Catalog, brought.Where(id => !reader.Reverted.Contains(id)), o.Gate, outlineSections: true);
             if (o.Editable) editable = EditableReferences.Make(edit, session.Catalog, brought);
             reader.KeepContainmentIds(edit);
         }
@@ -1468,6 +1471,9 @@ public static partial class IfcImport
             attrs["reference"] = true;
             attrs["ifcClass"] = cls;
             attrs["objectType"] = Str(e[4]);
+            // Its file type's name (a steel shape's "HEA200"), which recognition from its triangles names a native type after and
+            // matches a catalogue profile by (decision 826).
+            if (typeOf?.GetValueOrDefault(e.Id) is { } fileType && Str(fileType[2]) is { Length: > 0 } fileTypeName) attrs[MeshRecognition.TypeNameKey] = fileTypeName;
             attrs["properties"] = p.Properties;
             // Its quantity sets in SI, by the file's units: what the takeoff and the estimate measure it by (ReferenceQuantities).
             if (model.QuantitiesSi(e.Id, o.SkipSets == null ? null : name => o.Keeps(name)) is { Count: > 0 } quantities)
