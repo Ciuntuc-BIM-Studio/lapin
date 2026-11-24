@@ -60,9 +60,9 @@ export const LO: Record<string, string> = {
   "Storeys made": "ຊັ້ນທີ່ສ້າງ",
   // Speckle receive, recognition (docs/plan-speckle.md, S3).
   "Recognition": "ການຮັບຮູ້",
-  "Recognise walls and slabs": "ຮັບຮູ້ຝາ ແລະ ພື້ນ",
-  "Walls and floors whose bodies Lapin rebuilds within 1 mm or 0.5 % become native walls and slabs; the rest stay references": "ຝາ ແລະ ພື້ນທີ່ Lapin ສ້າງຮູບຊົງຄືນໄດ້ພາຍໃນ 1 mm ຫຼື 0.5 % ກາຍເປັນຝາ ແລະ ພື້ນແບບເດີມຂອງ Lapin; ສ່ວນທີ່ເຫຼືອຍັງເປັນການອ້າງອີງ",
-  "A wall or a floor becomes a native wall or slab only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body; the rest stay references. Curtain walls stay references.": "ຝາ ຫຼື ພື້ນຈະກາຍເປັນຝາ ຫຼື ພື້ນແບບເດີມຂອງ Lapin ເມື່ອຮູບຊົງຂອງມັນກົງກັບທີ່ໄດ້ຮັບພາຍໃນ 1 mm ຫຼື 0.5 % ແລະ ພາລາມິເຕີຂອງມັນ (ຄວາມກວ້າງ, ຄວາມໜາ, ເສັ້ນຕຳແໜ່ງ) ກົງກັບຮູບຊົງ; ສ່ວນທີ່ເຫຼືອຍັງເປັນການອ້າງອີງ. ຝາຜ້າມ່ານຍັງເປັນການອ້າງອີງ.",
+  "Recognise elements": "ຮັບຮູ້ອົງປະກອບ",
+  "Walls, floors, columns, beams, footings, doors and windows whose bodies Lapin rebuilds within 1 mm or 0.5 % become native elements; the rest stay references": "ຝາ, ພື້ນ, ເສົາ, ຄານ, ຖານຮາກ, ປະຕູ ແລະ ປ່ອງຢ້ຽມ ທີ່ Lapin ສ້າງຮູບຊົງຄືນໄດ້ພາຍໃນ 1 mm ຫຼື 0.5 % ກາຍເປັນອົງປະກອບແບບເດີມ; ສ່ວນທີ່ເຫຼືອຍັງເປັນການອ້າງອີງ",
+  "An element becomes a native one only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body. A column or beam of a section Lapin has no parameters for takes its body's own; a door or window no configurator makes as it is stays a reference in its wall's native opening. Curtain walls stay references.": "ອົງປະກອບຈະກາຍເປັນແບບເດີມເມື່ອຮູບຊົງຂອງມັນກົງກັບທີ່ໄດ້ຮັບພາຍໃນ 1 mm ຫຼື 0.5 % ແລະ ພາລາມິເຕີຂອງມັນ (ຄວາມກວ້າງ, ຄວາມໜາ, ເສັ້ນຕຳແໜ່ງ) ກົງກັບຮູບຊົງ. ເສົາ ຫຼື ຄານທີ່ມີໜ້າຕັດທີ່ Lapin ບໍ່ມີພາລາມິເຕີ ຈະໃຊ້ໜ້າຕັດຂອງຮູບຊົງມັນເອງ; ປະຕູ ຫຼື ປ່ອງຢ້ຽມທີ່ບໍ່ມີຕົວຕັ້ງຄ່າໃດສ້າງໄດ້ຕາມທີ່ມັນເປັນ ຍັງເປັນການອ້າງອີງໃນຊ່ອງເປີດແບບເດີມຂອງຝາ. ຝາຜ້າມ່ານຍັງເປັນການອ້າງອີງ.",
   "Recognised": "ຮັບຮູ້ແລ້ວ",
   "References": "ການອ້າງອີງ",
   "Stayed references:": "ຍັງເປັນການອ້າງອີງ:",
@@ -6469,7 +6469,7 @@ export const LO_PATTERNS: Language['patterns'] = [
   // The Speckle connector's send (docs/plan-speckle.md, S1)
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `ຮັບ ${m[1]} ວັດຖຸຈາກ Speckle.`],
-  [/^Received (\d+) objects from Speckle: (\d+) native walls and slabs, (\d+) references\.$/, (m) => `ຮັບ ${m[1]} ວັດຖຸຈາກ Speckle: ${m[2]} ຝາ ແລະ ພື້ນແບບເດີມ, ${m[3]} ການອ້າງອີງ.`],
+  [/^Received (\d+) objects from Speckle: (\d+) native elements, (\d+) references\.$/, (m) => `ຮັບ ${m[1]} ວັດຖຸຈາກ Speckle: ${m[2]} ອົງປະກອບແບບເດີມ, ${m[3]} ການອ້າງອີງ.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `ລຸ້ນນີ້ຖືກສົ່ງຈາກໂຄງການນີ້: ${m[1]} ວັດຖຸຂອງມັນເປັນອົງປະກອບຂອງໂຄງການເອງ.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `ສົ່ງແລ້ວ: ${m[1]} ອົງປະກອບ, ເປັນເວີຊັນໃໝ່.`],
 ];

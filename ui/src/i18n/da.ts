@@ -60,9 +60,9 @@ export const DA: Record<string, string> = {
   "Storeys made": "Oprettede etager",
   // Speckle receive, recognition (docs/plan-speckle.md, S3).
   "Recognition": "Genkendelse",
-  "Recognise walls and slabs": "Genkend vægge og dæk",
-  "Walls and floors whose bodies Lapin rebuilds within 1 mm or 0.5 % become native walls and slabs; the rest stay references": "Vægge og dæk, hvis legemer Lapin genskaber inden for 1 mm eller 0,5 %, bliver native vægge og dæk; resten forbliver referencer",
-  "A wall or a floor becomes a native wall or slab only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body; the rest stay references. Curtain walls stay references.": "En væg eller et dæk bliver kun en nativ væg eller et nativt dæk, hvor dets native legeme er det modtagne inden for 1 mm eller 0,5 %, og hvor dets egne parametre (bredde, tykkelse, placeringslinje) stemmer med legemet; resten forbliver referencer. Glasfacader forbliver referencer.",
+  "Recognise elements": "Genkend elementerne",
+  "Walls, floors, columns, beams, footings, doors and windows whose bodies Lapin rebuilds within 1 mm or 0.5 % become native elements; the rest stay references": "Vægge, dæk, søjler, bjælker, fundamenter, døre og vinduer, hvis legemer Lapin genskaber inden for 1 mm eller 0,5 %, bliver native elementer; resten forbliver referencer",
+  "An element becomes a native one only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body. A column or beam of a section Lapin has no parameters for takes its body's own; a door or window no configurator makes as it is stays a reference in its wall's native opening. Curtain walls stay references.": "Et element bliver kun nativt, hvor dets native legeme er det modtagne inden for 1 mm eller 0,5 %, og hvor dets egne parametre (bredde, tykkelse, placeringslinje) stemmer med legemet. En søjle eller bjælke med et tværsnit, Lapin ikke har parametre for, tager sit legemes tværsnit; en dør eller et vindue, som ingen konfigurator laver, som det er, forbliver en reference i sin vægs native åbning. Glasfacader forbliver referencer.",
   "Recognised": "Genkendt",
   "References": "Referencer",
   "Stayed references:": "Forblev referencer:",
@@ -6412,7 +6412,7 @@ export const DA_PATTERNS: Language['patterns'] = [
   // The Speckle connector's send (docs/plan-speckle.md, S1)
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `Modtog ${m[1]} objekter fra Speckle.`],
-  [/^Received (\d+) objects from Speckle: (\d+) native walls and slabs, (\d+) references\.$/, (m) => `Modtog ${m[1]} objekter fra Speckle: ${m[2]} native vægge og dæk, ${m[3]} referencer.`],
+  [/^Received (\d+) objects from Speckle: (\d+) native elements, (\d+) references\.$/, (m) => `Modtog ${m[1]} objekter fra Speckle: ${m[2]} native elementer, ${m[3]} referencer.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Denne version blev sendt fra dette projekt: ${m[1]} af dens objekter er projektets egne elementer.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Sendt: ${m[1]} elementer, som en ny version.`],
 ];

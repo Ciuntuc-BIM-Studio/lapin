@@ -27,12 +27,12 @@ describe('the Speckle connector', () => {
     expect(receiveArgs({ projectId: 'p', modelId: 'm', versionId: null, origin: 'base' })).toEqual({ projectId: 'p', modelId: 'm' });
   });
 
-  it('asks for walls and slabs to be recognised when the dialog does, and says how many came in native and how many as references', () => {
+  it('asks for elements to be recognised when the dialog does, and says how many came in native and how many as references', () => {
     expect(receiveArgs({ projectId: 'p', modelId: 'm', recognize: true })).toEqual({ projectId: 'p', modelId: 'm', recognize: true });
     expect(receiveArgs({ projectId: 'p', modelId: 'm', recognize: false })).toEqual({ projectId: 'p', modelId: 'm' });
     const r = { versionId: 'v', elements: 10, added: 10, updated: 0, unchanged: 0, removed: 0, shared: 0, triangles: 0, lines: 0, skipped: {}, storeys: {}, notes: [] };
     expect(receivedSummary(r)).toBe('Received 10 objects from Speckle.');
     expect(receivedSummary({ ...r, native: 7, references: 3, recognition: { recognized: 7, offered: 8, byClass: {}, kept: {}, reverted: 1 } }))
-      .toBe('Received 10 objects from Speckle: 7 native walls and slabs, 3 references.');
+      .toBe('Received 10 objects from Speckle: 7 native elements, 3 references.');
   });
 });

@@ -60,9 +60,9 @@ export const ZH: Record<string, string> = {
   "Storeys made": "已创建楼层",
   // Speckle receive, recognition (docs/plan-speckle.md, S3).
   "Recognition": "识别",
-  "Recognise walls and slabs": "识别墙和楼板",
-  "Walls and floors whose bodies Lapin rebuilds within 1 mm or 0.5 % become native walls and slabs; the rest stay references": "Lapin 能在 1 毫米或 0.5% 以内重建其形体的墙和楼板成为原生墙和楼板；其余保留为参照",
-  "A wall or a floor becomes a native wall or slab only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body; the rest stay references. Curtain walls stay references.": "只有当原生形体与接收的形体相差不超过 1 毫米或 0.5%，且其自身参数（宽度、厚度、定位线）与形体一致时，墙或楼板才成为原生墙或楼板；其余保留为参照。幕墙保留为参照。",
+  "Recognise elements": "识别构件",
+  "Walls, floors, columns, beams, footings, doors and windows whose bodies Lapin rebuilds within 1 mm or 0.5 % become native elements; the rest stay references": "Lapin 能在 1 毫米或 0.5% 以内重建其形体的墙、楼板、柱、梁、基础、门和窗成为原生构件；其余保留为参照",
+  "An element becomes a native one only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body. A column or beam of a section Lapin has no parameters for takes its body's own; a door or window no configurator makes as it is stays a reference in its wall's native opening. Curtain walls stay references.": "只有当原生形体与接收的形体相差不超过 1 毫米或 0.5%，且其自身参数（宽度、厚度、定位线）与形体一致时，构件才成为原生构件。截面没有 Lapin 参数的柱或梁采用其形体自身的截面；没有配置器能按原样生成的门或窗保留为参照，位于其墙的原生洞口中。幕墙保留为参照。",
   "Recognised": "已识别",
   "References": "参照",
   "Stayed references:": "保留为参照：",
@@ -6411,7 +6411,7 @@ export const ZH_PATTERNS: Language['patterns'] = [
   // The Speckle connector's send (docs/plan-speckle.md, S1)
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `已从 Speckle 接收 ${m[1]} 个对象。`],
-  [/^Received (\d+) objects from Speckle: (\d+) native walls and slabs, (\d+) references\.$/, (m) => `已从 Speckle 接收 ${m[1]} 个对象：${m[2]} 个原生墙和楼板，${m[3]} 个参照。`],
+  [/^Received (\d+) objects from Speckle: (\d+) native elements, (\d+) references\.$/, (m) => `已从 Speckle 接收 ${m[1]} 个对象：${m[2]} 个原生构件，${m[3]} 个参照。`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `此版本是从本项目发送的：其中 ${m[1]} 个对象是本项目自己的元素。`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `已发送：${m[1]} 个构件，作为新版本。`],
 ];

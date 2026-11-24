@@ -167,7 +167,7 @@ export interface SpeckleSurvey {
   existing: number; updates: number; adds: number; removes: number; native: number; fromThisProject: boolean; notes: string[];
 }
 
-/** What recognition made of a receive's walls and slabs (S3): how many became native, and why the rest stayed references. */
+/** What recognition made of a receive's elements: how many became native, and why the rest stayed references. */
 export interface SpeckleRecognition { recognized: number; offered: number; byClass: Record<string, number>; kept: Record<string, number>; reverted: number }
 
 /** What a receive did (speckle.receive): with recognition, how many of the model's objects are now native elements and how many references. */
@@ -223,7 +223,7 @@ export async function receive(a: ReceiveArgs): Promise<SpeckleReceived> {
   return r;
 }
 
-/** A receive's report in a line (the notice): with recognition, how many objects are native walls and slabs and how many references. */
+/** A receive's report in a line (the notice): with recognition, how many objects are native elements and how many references. */
 export const receivedSummary = (r: SpeckleReceived) => r.recognition
-  ? `Received ${r.elements} objects from Speckle: ${r.native ?? 0} native walls and slabs, ${r.references ?? 0} references.`
+  ? `Received ${r.elements} objects from Speckle: ${r.native ?? 0} native elements, ${r.references ?? 0} references.`
   : `Received ${r.elements} objects from Speckle.`;

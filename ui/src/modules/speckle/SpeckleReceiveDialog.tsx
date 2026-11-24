@@ -6,8 +6,8 @@
  * undo step; received again, the same model's references are updated in place, keeping their GlobalIds. A version sent from
  * this project (its objects are this project's elements) is offered as a copy, never over the elements themselves.
  * Storeys: by the version's levels, the missing storeys made from them (the default), or only the project's, or all on one.
- * Recognise walls and slabs (S3, on by default, as the IFC import's recognition): the walls and floors whose bodies Lapin
- * rebuilds within 1 mm or 0.5 % come in as native walls and slabs, the rest as references; the report says how many of each.
+ * Recognise elements (on by default, as the IFC import's recognition): the walls, floors, columns, beams, footings, doors and
+ * windows whose bodies Lapin rebuilds within 1 mm or 0.5 % come in as native elements, the rest as references; the report says how many of each.
  */
 
 import { useEffect, useState } from 'react';
@@ -140,11 +140,11 @@ export function SpeckleReceiveDialog() {
                   <option value="base">the project base point</option>
                   <option value="internal">the internal origin</option>
                 </select></dd>
-                <dt title="Walls and floors whose bodies Lapin rebuilds within 1 mm or 0.5 % become native walls and slabs; the rest stay references">Recognition</dt>
-                <dd><label><input type="checkbox" className="speckle-recognize" checked={recognize} onChange={(e) => setRecognize(e.target.checked)} /> <span>Recognise walls and slabs</span></label></dd>
+                <dt title="Walls, floors, columns, beams, footings, doors and windows whose bodies Lapin rebuilds within 1 mm or 0.5 % become native elements; the rest stay references">Recognition</dt>
+                <dd><label><input type="checkbox" className="speckle-recognize" checked={recognize} onChange={(e) => setRecognize(e.target.checked)} /> <span>Recognise elements</span></label></dd>
               </dl>
               <p className="muted small">The objects come in as references, with their surfaces, colours and properties, grouped by the model. Receiving a newer version updates them in place and keeps their GlobalIds; what the version no longer has is removed.</p>
-              {recognize && <p className="muted small">A wall or a floor becomes a native wall or slab only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body; the rest stay references. Curtain walls stay references.</p>}
+              {recognize && <p className="muted small">An element becomes a native one only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body. A column or beam of a section Lapin has no parameters for takes its body's own; a door or window no configurator makes as it is stays a reference in its wall's native opening. Curtain walls stay references.</p>}
               {own && (
                 <div className="speckle-own" data-testid="speckle-own">
                   <p>{`This version was sent from this project: ${own.native} of its objects are its own elements.`}</p>

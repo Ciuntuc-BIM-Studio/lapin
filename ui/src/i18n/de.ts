@@ -60,9 +60,9 @@ export const DE: Record<string, string> = {
   "Storeys made": "Angelegte Geschosse",
   // Speckle receive, recognition (docs/plan-speckle.md, S3).
   "Recognition": "Erkennung",
-  "Recognise walls and slabs": "Wände und Decken erkennen",
-  "Walls and floors whose bodies Lapin rebuilds within 1 mm or 0.5 % become native walls and slabs; the rest stay references": "Wände und Böden, deren Körper Lapin auf 1 mm oder 0,5 % genau nachbildet, werden native Wände und Decken; der Rest bleibt Referenz",
-  "A wall or a floor becomes a native wall or slab only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body; the rest stay references. Curtain walls stay references.": "Eine Wand oder ein Boden wird nur dann eine native Wand oder Decke, wenn ihr nativer Körper auf 1 mm oder 0,5 % genau der empfangene ist und ihre eigenen Parameter (Breite, Dicke, Basislinie) zu ihrem Körper passen; der Rest bleibt Referenz. Vorhangfassaden bleiben Referenzen.",
+  "Recognise elements": "Elemente erkennen",
+  "Walls, floors, columns, beams, footings, doors and windows whose bodies Lapin rebuilds within 1 mm or 0.5 % become native elements; the rest stay references": "Wände, Decken, Stützen, Träger, Fundamente, Türen und Fenster, deren Körper Lapin auf 1 mm oder 0,5 % genau nachbildet, werden native Elemente; der Rest bleibt Referenz",
+  "An element becomes a native one only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body. A column or beam of a section Lapin has no parameters for takes its body's own; a door or window no configurator makes as it is stays a reference in its wall's native opening. Curtain walls stay references.": "Ein Element wird nur dann nativ, wenn sein nativer Körper auf 1 mm oder 0,5 % genau der empfangene ist und seine eigenen Parameter (Breite, Dicke, Basislinie) zu seinem Körper passen. Eine Stütze oder ein Träger mit einem Querschnitt, für den Lapin keine Parameter hat, nimmt den Querschnitt seines Körpers; eine Tür oder ein Fenster, das kein Konfigurator so macht, bleibt eine Referenz in der nativen Öffnung ihrer Wand. Vorhangfassaden bleiben Referenzen.",
   "Recognised": "Erkannt",
   "References": "Referenzen",
   "Stayed references:": "Als Referenzen geblieben:",
@@ -6375,7 +6375,7 @@ export const DE_PATTERNS: Language['patterns'] = [
   // The Speckle connector's send (docs/plan-speckle.md, S1)
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `${m[1]} Objekte von Speckle empfangen.`],
-  [/^Received (\d+) objects from Speckle: (\d+) native walls and slabs, (\d+) references\.$/, (m) => `${m[1]} Objekte von Speckle empfangen: ${m[2]} native Wände und Decken, ${m[3]} Referenzen.`],
+  [/^Received (\d+) objects from Speckle: (\d+) native elements, (\d+) references\.$/, (m) => `${m[1]} Objekte von Speckle empfangen: ${m[2]} native Elemente, ${m[3]} Referenzen.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Diese Version wurde aus diesem Projekt gesendet: ${m[1]} ihrer Objekte sind seine eigenen Elemente.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Gesendet: ${m[1]} Elemente, als neue Version.`],
 ];

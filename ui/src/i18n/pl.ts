@@ -60,9 +60,9 @@ export const PL: Record<string, string> = {
   "Storeys made": "Utworzone kondygnacje",
   // Speckle receive, recognition (docs/plan-speckle.md, S3).
   "Recognition": "Rozpoznawanie",
-  "Recognise walls and slabs": "Rozpoznaj ściany i stropy",
-  "Walls and floors whose bodies Lapin rebuilds within 1 mm or 0.5 % become native walls and slabs; the rest stay references": "Ściany i stropy, których bryły Lapin odtwarza z dokładnością 1 mm lub 0,5 %, stają się natywnymi ścianami i stropami; reszta zostaje odniesieniami",
-  "A wall or a floor becomes a native wall or slab only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body; the rest stay references. Curtain walls stay references.": "Ściana lub strop staje się natywną ścianą lub stropem tylko tam, gdzie jej natywna bryła jest odebraną z dokładnością 1 mm lub 0,5 %, a jej własne parametry (szerokość, grubość, linia położenia) zgadzają się z bryłą; reszta zostaje odniesieniami. Ściany osłonowe zostają odniesieniami.",
+  "Recognise elements": "Rozpoznaj elementy",
+  "Walls, floors, columns, beams, footings, doors and windows whose bodies Lapin rebuilds within 1 mm or 0.5 % become native elements; the rest stay references": "Ściany, stropy, słupy, belki, fundamenty, drzwi i okna, których bryły Lapin odtwarza z dokładnością 1 mm lub 0,5 %, stają się elementami natywnymi; reszta zostaje odniesieniami",
+  "An element becomes a native one only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body. A column or beam of a section Lapin has no parameters for takes its body's own; a door or window no configurator makes as it is stays a reference in its wall's native opening. Curtain walls stay references.": "Element staje się natywny tylko tam, gdzie jego natywna bryła jest odebraną z dokładnością 1 mm lub 0,5 %, a jego własne parametry (szerokość, grubość, linia położenia) zgadzają się z bryłą. Słup lub belka o przekroju, dla którego Lapin nie ma parametrów, bierze przekrój swojej bryły; drzwi lub okno, których żaden konfigurator nie robi takimi, jakie są, zostają odniesieniem w natywnym otworze swojej ściany. Ściany osłonowe zostają odniesieniami.",
   "Recognised": "Rozpoznane",
   "References": "Odniesienia",
   "Stayed references:": "Zostały odniesieniami:",
@@ -6423,7 +6423,7 @@ export const PL_PATTERNS: Language['patterns'] = [
   // The Speckle connector's send (docs/plan-speckle.md, S1)
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `Odebrano ${m[1]} obiektów ze Speckle.`],
-  [/^Received (\d+) objects from Speckle: (\d+) native walls and slabs, (\d+) references\.$/, (m) => `Odebrano ${m[1]} obiektów ze Speckle: ${m[2]} natywnych ścian i stropów, ${m[3]} odniesień.`],
+  [/^Received (\d+) objects from Speckle: (\d+) native elements, (\d+) references\.$/, (m) => `Odebrano ${m[1]} obiektów ze Speckle: ${m[2]} elementów natywnych, ${m[3]} odniesień.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Ta wersja została wysłana z tego projektu: ${m[1]} jej obiektów to jego własne elementy.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Wysłano: ${m[1]} elementów, jako nową wersję.`],
 ];

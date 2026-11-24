@@ -58,9 +58,9 @@ export const RO: Record<string, string> = {
   "Storeys made": "Etaje făcute",
   // Speckle receive, recognition (docs/plan-speckle.md, S3).
   "Recognition": "Recunoaștere",
-  "Recognise walls and slabs": "Recunoaște pereții și plăcile",
-  "Walls and floors whose bodies Lapin rebuilds within 1 mm or 0.5 % become native walls and slabs; the rest stay references": "Pereții și planșeele ale căror corpuri Lapin le reface în 1 mm sau 0,5 % devin pereți și plăci native; restul rămân referințe",
-  "A wall or a floor becomes a native wall or slab only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body; the rest stay references. Curtain walls stay references.": "Un perete sau un planșeu devine perete sau placă nativă doar unde corpul nativ e cel primit cu cel mult 1 mm sau 0,5 % diferență și unde parametrii lui (lățime, grosime, linia de amplasare) se potrivesc cu corpul; restul rămân referințe. Pereții cortină rămân referințe.",
+  "Recognise elements": "Recunoaște elementele",
+  "Walls, floors, columns, beams, footings, doors and windows whose bodies Lapin rebuilds within 1 mm or 0.5 % become native elements; the rest stay references": "Pereții, planșeele, stâlpii, grinzile, fundațiile, ușile și ferestrele ale căror corpuri Lapin le reface în 1 mm sau 0,5 % devin elemente native; restul rămân referințe",
+  "An element becomes a native one only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body. A column or beam of a section Lapin has no parameters for takes its body's own; a door or window no configurator makes as it is stays a reference in its wall's native opening. Curtain walls stay references.": "Un element devine nativ doar unde corpul lui nativ e cel primit cu cel mult 1 mm sau 0,5 % diferență și unde parametrii lui (lățime, grosime, linia de amplasare) se potrivesc cu corpul. Un stâlp sau o grindă cu o secțiune pentru care Lapin nu are parametri își ia secțiunea corpului; o ușă sau o fereastră pe care niciun configurator nu o face cum e rămâne referință în golul nativ al peretelui ei. Pereții cortină rămân referințe.",
   "Recognised": "Recunoscute",
   "References": "Referințe",
   "Stayed references:": "Au rămas referințe:",
@@ -6369,7 +6369,7 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   // The Speckle connector's send (docs/plan-speckle.md, S1)
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `Primite ${m[1]} obiecte din Speckle.`],
-  [/^Received (\d+) objects from Speckle: (\d+) native walls and slabs, (\d+) references\.$/, (m) => `Primite ${m[1]} obiecte din Speckle: ${m[2]} pereți și plăci native, ${m[3]} referințe.`],
+  [/^Received (\d+) objects from Speckle: (\d+) native elements, (\d+) references\.$/, (m) => `Primite ${m[1]} obiecte din Speckle: ${m[2]} elemente native, ${m[3]} referințe.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Această versiune a fost trimisă din acest proiect: ${m[1]} dintre obiectele ei sunt elementele lui.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Trimis: ${m[1]} elemente, ca versiune nouă.`],
 ];

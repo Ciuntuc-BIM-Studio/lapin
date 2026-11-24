@@ -60,9 +60,9 @@ export const ES: Record<string, string> = {
   "Storeys made": "Plantas creadas",
   // Speckle receive, recognition (docs/plan-speckle.md, S3).
   "Recognition": "Reconocimiento",
-  "Recognise walls and slabs": "Reconocer muros y losas",
-  "Walls and floors whose bodies Lapin rebuilds within 1 mm or 0.5 % become native walls and slabs; the rest stay references": "Los muros y forjados cuyo cuerpo Lapin reconstruye con 1 mm o 0,5 % de diferencia se vuelven muros y losas nativos; el resto queda como referencias",
-  "A wall or a floor becomes a native wall or slab only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body; the rest stay references. Curtain walls stay references.": "Un muro o un forjado solo se vuelve muro o losa nativo donde su cuerpo nativo es el recibido con 1 mm o 0,5 % de diferencia y sus propios parámetros (ancho, espesor, línea de ubicación) concuerdan con su cuerpo; el resto queda como referencias. Los muros cortina quedan como referencias.",
+  "Recognise elements": "Reconocer los elementos",
+  "Walls, floors, columns, beams, footings, doors and windows whose bodies Lapin rebuilds within 1 mm or 0.5 % become native elements; the rest stay references": "Los muros, forjados, pilares, vigas, cimentaciones, puertas y ventanas cuyo cuerpo Lapin reconstruye con 1 mm o 0,5 % de diferencia se vuelven elementos nativos; el resto queda como referencias",
+  "An element becomes a native one only where its native body is the received one within 1 mm or 0.5 %, and where its own parameters (width, thickness, location line) agree with its body. A column or beam of a section Lapin has no parameters for takes its body's own; a door or window no configurator makes as it is stays a reference in its wall's native opening. Curtain walls stay references.": "Un elemento solo se vuelve nativo donde su cuerpo nativo es el recibido con 1 mm o 0,5 % de diferencia y sus propios parámetros (ancho, espesor, línea de ubicación) concuerdan con su cuerpo. Un pilar o una viga de una sección para la que Lapin no tiene parámetros toma la sección de su cuerpo; una puerta o ventana que ningún configurador hace tal cual queda como referencia en el hueco nativo de su muro. Los muros cortina quedan como referencias.",
   "Recognised": "Reconocidos",
   "References": "Referencias",
   "Stayed references:": "Quedaron como referencias:",
@@ -6417,7 +6417,7 @@ export const ES_PATTERNS: Language['patterns'] = [
   // The Speckle connector's send (docs/plan-speckle.md, S1)
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `Recibidos ${m[1]} objetos de Speckle.`],
-  [/^Received (\d+) objects from Speckle: (\d+) native walls and slabs, (\d+) references\.$/, (m) => `Recibidos ${m[1]} objetos de Speckle: ${m[2]} muros y losas nativos, ${m[3]} referencias.`],
+  [/^Received (\d+) objects from Speckle: (\d+) native elements, (\d+) references\.$/, (m) => `Recibidos ${m[1]} objetos de Speckle: ${m[2]} elementos nativos, ${m[3]} referencias.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Esta versión se envió desde este proyecto: ${m[1]} de sus objetos son elementos suyos.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Enviado: ${m[1]} elementos, como una versión nueva.`],
 ];
