@@ -52,7 +52,7 @@ export type PanelTab = 'project' | 'levels' | 'ifc' | 'assistant';
 
 const KEY = 'lapin.panels';
 export const MIN_WIDTH = 180, MAX_WIDTH = 640, RAIL = 36;
-const DEFAULTS: PanelsState = { browserSide: 'left', propsSide: 'right', stackRatio: 0.5, browserWidth: 250, propsWidth: 300, browserOpen: true, propsOpen: true };
+const DEFAULTS: PanelsState = { browserSide: 'left', propsSide: 'right', stackRatio: 0.5, browserWidth: 250, propsWidth: 340, browserOpen: true, propsOpen: true };
 
 function load(): PanelsState {
   try {

@@ -22,6 +22,7 @@ import { LANGUAGES, setLang, useLang } from '../i18n';
 import { BunnyIcon } from '../icons';
 import { modules, productInfo, replacements } from '../platform/modules';
 import { lazyPart } from '../platform/lazyPart';
+import { MenuSub } from './MenuSub';
 
 // Ask Lapin and its answers (help/faq.ts), fetched the first time it is opened.
 const AskDialog = lazyPart(() => import('../help/AskDialog').then((m) => m.AskDialog), { title: 'Ask Lapin' });
@@ -146,12 +147,14 @@ export function HelpMenu() {
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('community'); }}>Community (Skool)</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('site'); }}>lapinbim.com</button>
           {isDesktop() && <button type="button" role="menuitem" onClick={() => { setOpen(false); void checkForUpdates(true); }}>Check for updates…</button>}
-          <div className="menu-langs" role="group" aria-label="Language" data-no-i18n>
-            {LANGUAGES.map((l) => (
-              <button key={l.id} type="button" role="menuitemradio" aria-checked={lang === l.id} className={lang === l.id ? 'on' : ''}
-                onClick={() => { setOpen(false); setLang(l.id); }}>{l.name}</button>
-            ))}
-          </div>
+          <MenuSub label="Language" toLeft>
+            <div className="menu-langs" role="group" aria-label="Language" data-no-i18n>
+              {LANGUAGES.map((l) => (
+                <button key={l.id} type="button" role="menuitemradio" aria-checked={lang === l.id} className={lang === l.id ? 'on' : ''}
+                  onClick={() => { setOpen(false); setLang(l.id); }}>{l.name}</button>
+              ))}
+            </div>
+          </MenuSub>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); setAbout(true); }}>About Lapin…</button>
           <span className="muted small menu-note">Lapin {info?.engineVersion ?? ''}</span>
         </div>

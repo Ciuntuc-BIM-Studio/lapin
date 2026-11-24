@@ -113,6 +113,6 @@ Situațiile de lucrări lunare, valoarea câștigată și mai multe linii de baz
 
 ## IFC
 
-**Fișier → Export IFC…** scrie devizul ca **IfcCostSchedule**: capitolele și rândurile ca **IfcCostItem**, cantitatea fiecărui rând și prețurile lui unitare ca patru **IfcCostValue** (Material, Labour, Equipment, Transport), elementele pe care le măsoară fiecare rând atribuite lui (**IfcRelAssignsToControl**), moneda ca **IfcMonetaryUnit** al proiectului. La import, un deviz își păstrează rândurile cum le are fișierul, cu aceleași totaluri. Bifează **Rânduri din model** ca să adaugi rândurile pe care le dă modelul tău.
+**Fișier → Exportă → Exportă IFC, Fragments sau BOS…** scrie devizul ca **IfcCostSchedule**: capitolele și rândurile ca **IfcCostItem**, cantitatea fiecărui rând și prețurile lui unitare ca patru **IfcCostValue** (Material, Labour, Equipment, Transport), elementele pe care le măsoară fiecare rând atribuite lui (**IfcRelAssignsToControl**), moneda ca **IfcMonetaryUnit** al proiectului. La import, un deviz își păstrează rândurile cum le are fișierul, cu aceleași totaluri. Bifează **Rânduri din model** ca să adaugi rândurile pe care le dă modelul tău.
 
 Cu un program al lucrărilor, fiecare rând e atribuit și sarcinilor în care se execută (**IfcRelAssignsToControl** spre **IfcTask**-urile lor). La import, rândurile își păstrează sarcinile, deci curba S revine la fel.

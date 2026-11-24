@@ -6649,6 +6649,15 @@ const S5D_TAILS: Record<string, string> = {
   'those tagged with a key': 'dem, der er mærket med en nøgle',
   'Each row its material\'s key in a circle (as a material key tag writes it), the rows in the keys\' order; the materials listed are numbered for good': 'Hver række med sit materiales nøgle i en cirkel (som materialenøgle-mærkaten skriver den), rækkerne i nøglernes rækkefølge; de viste materialer nummereres for altid',
   'A row\'s text: {key}, {name}, {description} (the first line of the material\'s), {category}, or any parameter of the material ({Finish}); a part between — that comes out empty is left out': 'En rækkes tekst: {key}, {name}, {description} (første linje af materialets), {category} eller enhver parameter for materialet ({Finish}); en del mellem —, der bliver tom, udelades',
+  // The File menu in submenus, the quick-access group and the view settings (forum topic 257, second batch).
+  "Open recent": "Åbn seneste",
+  "No recent projects": "Ingen seneste projekter",
+  "Quick access": "Hurtig adgang",
+  "Floor plan": "Plantegning",
+  "The value comes from the view's style": "Værdien kommer fra visningens stil",
+  "Edit the types of this kind": "Redigér typerne af denne slags",
+  "Speckle: Send…": "Speckle: Send…",
+  "Speckle: Receive…": "Speckle: Modtag…",
 };
 export const DA_PATTERNS: Language['patterns'] = [
   // Publish sets (forum topic 225)

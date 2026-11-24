@@ -12,7 +12,7 @@ There is no sign-up: the server's administrator makes your account and gives you
 
 **In the browser**, open the server's address. The start screen asks for your e-mail address and password. Closing the tab signs you out; a reload keeps you signed in.
 
-**On the desktop**, open **File → Collaborate…**, choose **Server**, type the server's address and sign in. The app keeps the sign-in for next time on this computer, never in the project.
+**On the desktop**, open **File → Collaborate → Collaborate…**, choose **Server**, type the server's address and sign in. The app keeps the sign-in for next time on this computer, never in the project.
 
 Signed in, **Change password…** sets your own password; your other sign-ins end.
 
@@ -26,7 +26,7 @@ In the browser, the start screen lists the projects you are a member of, with yo
 
 A project's page shows the history of its main line (who saved, when, with what note, and the versions and issue tags made from each save), the branches in progress, the **Activity**, the **Members** and the **Rules**.
 
-On the desktop, File → Collaborate… shows the Publishing, the Activity and the Rules of the project the file is connected to.
+On the desktop, File → Collaborate → Collaborate… shows the Publishing, the Activity and the Rules of the project the file is connected to.
 
 An **issue tag** is an issue made with **Manage → Issue…** (its revision, status, container and files) once it is on the server; it never changes.
 
@@ -47,15 +47,15 @@ An **issue tag** is an issue made with **Manage → Issue…** (its revision, st
 
 **Clone to work on** brings the project with its history. In the browser the copy lives in the browser until you save to the server; on the desktop it goes into a new file.
 
-**File → Save to server…** asks for a short note and sends your work. The status bar says **Not saved to the server** while you have work the server has not got; a click opens Save to server.
+**File → Collaborate → Save to server…** asks for a short note and sends your work. The status bar says **Not saved to the server** while you have work the server has not got; a click opens Save to server.
 
-**File → Get latest from server** brings the others' saves into your project, in one undo step.
+**File → Collaborate → Get latest from server** brings the others' saves into your project, in one undo step.
 
 **Open latest, read-only** (in the browser) opens the latest save to look at: nothing goes back to the server. Each save can also be downloaded as a `.lapin` file or as its IFC copy.
 
 ## When two people saved
 
-If someone saved to the server after you last got the latest, your save is refused and **File → Collaborate…** opens on the choices:
+If someone saved to the server after you last got the latest, your save is refused and **File → Collaborate → Collaborate…** opens on the choices:
 
 - **Keep my work as a branch** sends your work to the server as a branch in progress (named after you and the date), then brings your project to the server's latest;
 - **Discard my commits** brings your project to the server's latest; your commits stay in the file as a local branch.
@@ -64,7 +64,7 @@ If someone saved to the server after you last got the latest, your save is refus
 
 On a project whose remote is a CDE server, **Manage → Model remarks…** shows the server's issues. The remarks in the project and the issues on the server are the same topics, kept in step by their GUID; the server is the reference, and the project keeps a copy for working offline.
 
-**Sync issues** (in the remarks dialog, and in File → Collaborate…) brings what changed on the server (in one undo step) and sends what you changed. Save to server and Get latest sync the issues too.
+**Sync issues** (in the remarks dialog, and in File → Collaborate → Collaborate…) brings what changed on the server (in one undo step) and sends what you changed. Save to server and Get latest sync the issues too.
 
 - Two people who change **different fields** of one issue (one its priority, the other its description) both keep their change.
 - When two people change **the same field**, the last one to sync wins. The Activity shows who changed what.
@@ -93,7 +93,7 @@ When the project has IDS files, they are checked before **Submit for approval**,
 
 Issuing the same sheets again makes a **new revision of the same issue** (Issue… proposes it: **Issue as** → *New revision of issue #n*, the revision after its last): the submission and the issue tag carry that issue's number and identity, `#1 P01`, then `#1 P02`. Once the later revision is published, the earlier Published one moves to **Archived**. **New issue** gives the documents a new number instead.
 
-The project's page (in the browser) and **File → Collaborate… → Publishing** (on the desktop) have these tabs:
+The project's page (in the browser) and **File → Collaborate → Collaborate… → Publishing** (on the desktop) have these tabs:
 
 - **Containers**: the ISO 19650 containers. **WIP** lists the branches in progress; **Shared** and **Published** list the issue tags with their revision, status, date and who issued them (**approved** when it came through the queue); a Published revision goes to **Archived** when the same issue is published again at a later revision. **Open** opens a revision read-only; **.lapin** and **IFC** download it; **files** lists the issued files, each to download.
 - **Submissions**: the queue, waiting ones first (**Show** picks the others: approved, rejected, withdrawn, all). Click one for its commit, documents, files and **gate**: the open issues that stop it. An issue is tied to a document by a reference link `lapin-document:<document name>`, which Lapin sets itself: a remark made with a sheet in front is tied to that sheet's document, and the remarks dialog shows, adds and removes a remark's documents (see [Remarks](cde.md)); Sync issues sends the ties to the server. With no documents, every open issue of priority Critical stops it. Click an issue of the gate to open it in Model remarks (in the project open here, after Sync issues).
@@ -136,7 +136,7 @@ A server that offers it (Atrium Server from W6b, such as cde.lapinbim.com) also 
 
 **Publishing → IDS on the server** lists the project's IDS files with their title, version, IFC versions, how many specifications they hold, who uploaded them and when. Owners click **Add an IDS file…** (a file of the same name replaces the one there) and the trash button to delete one; the others read them. The download button keeps a copy; the list button opens the file's specifications: what each applies to and what it requires. A file that is not IDS 1.0 is refused, with every problem the server found and its line.
 
-With a project open (File → Collaborate…), owners also have **Put this project's IDS files on the server**: it lists the IDS files kept in the project (Manage → IDS…), each **New** on the server, **The same** as one there, or **Changed** (a file of that name on the server with other content). Tick the ones to send and click **Copy the ticked files**; replacing a changed one is confirmed first. Each file goes on its own: one the server refuses shows its problems beside it, and the others are still sent. The reverse, **Bring server IDS files into this project**, is in Manage → IDS… (editors and owners).
+With a project open (File → Collaborate → Collaborate…), owners also have **Put this project's IDS files on the server**: it lists the IDS files kept in the project (Manage → IDS…), each **New** on the server, **The same** as one there, or **Changed** (a file of that name on the server with other content). Tick the ones to send and click **Copy the ticked files**; replacing a changed one is confirmed first. Each file goes on its own: one the server refuses shows its problems beside it, and the others are still sent. The reverse, **Bring server IDS files into this project**, is in Manage → IDS… (editors and owners).
 
 **Rules** has two switches (owners change them): **IDS files run on every submission**, and **A failing IDS specification stops the approval** (off, a failing specification is a warning, not an error).
 
@@ -146,7 +146,7 @@ Before submitting, **Manage → Issue… → On the CDE server → Check on the 
 
 ## Administration
 
-A server administrator sees **Administration** (on the start screen in the browser; **File → Collaborate… → Administration…** on the desktop):
+A server administrator sees **Administration** (on the start screen in the browser; **File → Collaborate → Collaborate… → Administration…** on the desktop):
 
 - **Accounts**: every account with its projects. **Create account** makes one from an e-mail address and a name; the server makes its first password and shows it **once**: copy it and give it to the person. **Disable** ends someone's sign-ins and refuses new ones (their projects, saves and issues stay); **Enable** lets them back. The key button sets a new password, shown once. **Administrator** gives or takes the administration (you cannot take your own, nor disable yourself).
 - **New project**: a project made on the server, with you as its owner. Open its page to add the members.

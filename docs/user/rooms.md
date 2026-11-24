@@ -164,7 +164,7 @@ In an IFC export each room is an IfcSpace, with its number, name, function, area
 
 ## Rooms from an IFC file
 
-**File → Import IFC…** brings the file's spaces in as rooms, whichever program wrote them (Revit, ArchiCAD, Allplan, Bonsai…):
+**File → Import → Import IFC…** brings the file's spaces in as rooms, whichever program wrote them (Revit, ArchiCAD, Allplan, Bonsai…):
 
 - each goes on **its own level**, the one the file puts it in;
 - its **outline** comes from its shape (an extrusion, a B-rep or a mesh, or the footprint drawn beside it); it keeps that outline, it does not follow walls;

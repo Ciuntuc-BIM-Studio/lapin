@@ -76,7 +76,7 @@ Ca să folosești alte materiale, deschide **Arhitectură → Uși și ferestre*
 Twinmotion, Lumion, Enscape, Blender și alte programe de randare înlocuiesc materialele după nume. Lapin scrie fiecare material **o singură dată, sub numele lui**, cu culoarea, textura, rugozitatea, metalicitatea și sticla lui, și împarte plasa fiecărui element pe materiale.
 
 1. Numește materialele cum le vrei în programul de randare, de exemplu *Aluminium RAL 7016 anthracite* pentru toate tocurile și *Glass blue tinted* pentru toată sticla.
-2. **Fișier → Export 3D (glTF, USD, DAE)…** și alege **GLB** (recomandat: un fișier cu texturile, numele exacte și sticla), **USDZ** sau **OBJ + MTL** (un .zip cu texturile; spațiile din nume devin liniuțe jos).
+2. **Fișier → Exportă → Export 3D (glTF, USD, DAE)…** și alege **GLB** (recomandat: un fișier cu texturile, numele exacte și sticla), **USDZ** sau **OBJ + MTL** (un .zip cu texturile; spațiile din nume devin liniuțe jos).
 3. Importă fișierul în programul de randare. Toate tocurile au acolo un singur material; îl înlocuiești o dată cu metalul programului și se schimbă toate.
 
 ![O casă cu tocuri gri închis și sticlă albastră](shots/materials-render-3d.webp)

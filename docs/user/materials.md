@@ -76,7 +76,7 @@ To use other materials, open **Architecture → Doors & windows**, choose the **
 Twinmotion, Lumion, Enscape, Blender and other renderers swap materials by name. Lapin writes each material **once, under its own name**, with its colour, texture, roughness, metalness and glass, and splits every element's mesh by material.
 
 1. Name your materials as you want them in the renderer, for example *Aluminium RAL 7016 anthracite* for all frames and *Glass blue tinted* for all glass.
-2. **File → Export 3D (glTF, USD, DAE)…** and choose **GLB** (recommended: one file with the textures, the exact names and the glass), **USDZ**, or **OBJ + MTL** (a .zip with the textures; spaces in names become underscores).
+2. **File → Export → Export 3D (glTF, USD, DAE)…** and choose **GLB** (recommended: one file with the textures, the exact names and the glass), **USDZ**, or **OBJ + MTL** (a .zip with the textures; spaces in names become underscores).
 3. Import the file into the renderer. Every frame shares one material there; replace it once with the renderer's own metal, and all frames change.
 
 ![A house with dark grey frames and blue glass](shots/materials-render-3d.webp)

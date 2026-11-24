@@ -4,7 +4,7 @@ order: 110
 summary: Exchange the model as IFC, bring in DXF drawings, link files, and export 3D models for rendering and AR.
 ---
 
-Everything that goes in or out is in the **File** menu.
+Everything that goes in or out is in the **File** menu, under its **Import**, **Export** and **Collaborate** submenus.
 
 ![The File menu](shots/file-menu.webp)
 
@@ -126,7 +126,7 @@ The copy is written next to the original, or in a folder you choose, under the o
 
 ## DXF and DWG
 
-**Import DXF…** brings a CAD drawing into the view in front, with its layers, hatches, texts and dimensions. It comes in as drafting you can snap to and edit. To use a DWG, first save it as DXF from your CAD program (AutoCAD, BricsCAD or DraftSight: **Save As → DXF**), as text rather than binary. While the dialog reads a big file it counts the seconds; a file it cannot read (a binary DXF, a DWG renamed .dxf, a drawing whose blocks unfold into more than 2,000,000 entities) is named in the dialog with the reason. A PDF or an image comes in to trace over with **File → Import PDF or image…** or **Draft → PDF or image**: a vector PDF's lines as drafting at the scale it was drawn to, its pictures and any PNG or JPEG as see-through images (see [Drafting](drafting.md)). Into a plan, **Placed: by the map's coordinates** lays a drawing in real coordinates (a cadastral plan in Stereo 70) where the map puts it (see [Site](site.md)).
+**Import DXF…** brings a CAD drawing into the view in front, with its layers, hatches, texts and dimensions. It comes in as drafting you can snap to and edit. To use a DWG, first save it as DXF from your CAD program (AutoCAD, BricsCAD or DraftSight: **Save As → DXF**), as text rather than binary. While the dialog reads a big file it counts the seconds; a file it cannot read (a binary DXF, a DWG renamed .dxf, a drawing whose blocks unfold into more than 2,000,000 entities) is named in the dialog with the reason. A PDF or an image comes in to trace over with **File → Import → Import PDF or image…** or **Draft → PDF or image**: a vector PDF's lines as drafting at the scale it was drawn to, its pictures and any PNG or JPEG as see-through images (see [Drafting](drafting.md)). Into a plan, **Placed: by the map's coordinates** lays a drawing in real coordinates (a cadastral plan in Stereo 70) where the map puts it (see [Site](site.md)).
 
 A DXF's blocks can come in as symbols (**Blocks → keep as symbols**) instead of exploded lines, and **convert its layers to elements…** turns its layers into walls, columns or bars straight after the import: see [Drafting](drafting.md#dxf-blocks-as-symbols) and [Converting drafting to elements](drafting.md#converting-drafting-to-elements).
 
@@ -144,7 +144,7 @@ A linked IFC keeps what its file says of its elements' materials. Walls, floors 
 
 ### Linking another Lapin project
 
-**File → Link Lapin project…** places another `.lapin` file in this project as a read-only module, as a hotlink does in ArchiCAD. Say where it goes (**Placed at x**, **Placed at y**, **Turned**) and whether it is **Mirrored**, left and right swapped, as for the apartment on the other side of a staircase. Its walls, doors and floors come in as Lapin elements, with their plan symbols, and you can link the same project as many times as you want, each placement apart: a typical apartment or a repeated block, drawn in one file.
+**File → Import → Link Lapin project…** places another `.lapin` file in this project as a read-only module, as a hotlink does in ArchiCAD. Say where it goes (**Placed at x**, **Placed at y**, **Turned**) and whether it is **Mirrored**, left and right swapped, as for the apartment on the other side of a staircase. Its walls, doors and floors come in as Lapin elements, with their plan symbols, and you can link the same project as many times as you want, each placement apart: a typical apartment or a repeated block, drawn in one file.
 
 To change it, edit its own file: **Open separately** in **Manage → Links** opens it in another window. When that file changes, Lapin tells you as you come back, and **Manage → Links** says **The source changed: read it again**; a click brings in the new version, in the same places. The move button there places a link somewhere else or mirrors it, with no need to link it again. The link's other tools work as for any link: show, halftone, convert to native, unlink. In the browser the page has no path to the file, so reading it again or placing it elsewhere asks you for the file. What the source links itself comes along and moves with it, unless it is hidden there, and so do the references it brought from other files.
 
@@ -154,7 +154,7 @@ To change it, edit its own file: **Open separately** in **Manage → Links** ope
 
 ## Point clouds
 
-**File → Link point cloud…** links a laser scan or a photogrammetry cloud, in the open formats only: **LAS** (1.0–1.4, every point format), **LAZ** (compressed LAS), **E57**, **PLY** (ASCII and binary) and points as text, **XYZ**, **PTS** and **CSV**. Proprietary formats (Autodesk ReCap's RCP and RCS, FARO's FLS, Leica's LGS) are not read: export the scan from its program as E57 or LAS first.
+**File → Import → Link point cloud…** links a laser scan or a photogrammetry cloud, in the open formats only: **LAS** (1.0–1.4, every point format), **LAZ** (compressed LAS), **E57**, **PLY** (ASCII and binary) and points as text, **XYZ**, **PTS** and **CSV**. Proprietary formats (Autodesk ReCap's RCP and RCS, FARO's FLS, Leica's LGS) are not read: export the scan from its program as E57 or LAS first.
 
 Lapin asks where the cloud stands and in what unit:
 
@@ -175,7 +175,7 @@ A cloud is never exported with the model: IFC and Fragments carry the model, not
 
 ### Gaussian splats
 
-A Gaussian splat capture (a scene trained from photos or a video by Postshot, Polycam, Luma, Lichtfeld Studio, Brush or the original 3D Gaussian splatting code) is linked the same way: **File → Link point cloud…** takes a **3DGS PLY** (the layout the trainers write: each splat's centre, colour, opacity, size and rotation), SuperSplat's **compressed PLY** (`.compressed.ply`), Niantic's **SPZ** (versions 1–4) and PlayCanvas's **SOG** (a `.sog` file, as SuperSplat and SplatTransform write it; on the desktop also a SOG folder, by its `meta.json`). Manage → Links names each file's format under its kind (**SOG v3 · SH 3**: the format, then the degree of its colour by direction). A splat file is a point cloud with more to it, and Manage → Links names its kind **Gaussian splats**:
+A Gaussian splat capture (a scene trained from photos or a video by Postshot, Polycam, Luma, Lichtfeld Studio, Brush or the original 3D Gaussian splatting code) is linked the same way: **File → Import → Link point cloud…** takes a **3DGS PLY** (the layout the trainers write: each splat's centre, colour, opacity, size and rotation), SuperSplat's **compressed PLY** (`.compressed.ply`), Niantic's **SPZ** (versions 1–4) and PlayCanvas's **SOG** (a `.sog` file, as SuperSplat and SplatTransform write it; on the desktop also a SOG folder, by its `meta.json`). Manage → Links names each file's format under its kind (**SOG v3 · SH 3**: the format, then the degree of its colour by direction). A splat file is a point cloud with more to it, and Manage → Links names its kind **Gaussian splats**:
 
 - its splats' centres are indexed as the cloud's points, coloured by their base colour, the nearly transparent ones left out. So everything a point cloud does works on it: plans and sections draw its slice as dots, the snaps in 2D and 3D find its points, and **Visibility / Graphics** shows, hides and halftones it;
 - a 3D view draws its splats: each one an ellipse that faces the camera, blended back to front, as the capture looks in its own viewer. Within the budget of **View → Display quality** (1, 2 or 4 million splats at once, half in a browser), the largest and most opaque splats are drawn first;
@@ -255,7 +255,7 @@ You choose what to export, which phase, and the origin. **What** is **everything
 
 ## Speckle
 
-**File → Speckle → Send…** sends the model to a [Speckle](https://speckle.systems) server, from where Revit, Rhino and Grasshopper, Power BI, Blender and Speckle's web viewer take it, with no IFC between them. It is in the desktop app, not in Lapin for the browser.
+**File → Collaborate → Speckle: Send…** sends the model to a [Speckle](https://speckle.systems) server, from where Revit, Rhino and Grasshopper, Power BI, Blender and Speckle's web viewer take it, with no IFC between them. It is in the desktop app, not in Lapin for the browser.
 
 ![Send to Speckle: the account](shots/speckle-sign-in.webp)
 
@@ -283,7 +283,7 @@ The storeys go as Speckle levels, so Revit receives the elements on their levels
 
 ### Receiving from Speckle
 
-**File → Speckle → Receive…** brings a version of a Speckle model into the open project, whichever program sent it (Revit, Rhino, Archicad, another Lapin). It signs in with the same account as **Send…**. You choose the **Project**, the **Model** and the **Version** (**the latest** by default, or one from its list, by its message, date and the program that sent it), then:
+**File → Collaborate → Speckle: Receive…** brings a version of a Speckle model into the open project, whichever program sent it (Revit, Rhino, Archicad, another Lapin). It signs in with the same account as **Send…**. You choose the **Project**, the **Model** and the **Version** (**the latest** by default, or one from its list, by its message, date and the program that sent it), then:
 
 - **Storeys**:
   - **by the version's levels, creating the missing ones** (the default): each level of the version finds the project's storey at its elevation (within 5 cm), else the one with its name; a level no storey matches becomes a new storey, with the level's name and elevation. Each object goes on its level's storey, whether it comes in as a reference or as a recognised wall or slab.
@@ -319,14 +319,14 @@ Not received yet: textures, the objects' edges, sloping or curved beams and curv
 
 ## Lapin for the browser
 
-**File → Lapin for the browser (.html)…** writes the project as one web page, a single .html file you can send to anyone. It opens with a double-click in any browser (Chrome, Edge, Safari, Firefox), on any computer, with no internet and nothing to install:
+**File → Export → Lapin for the browser (.html)…** writes the project as one web page, a single .html file you can send to anyone. It opens with a double-click in any browser (Chrome, Edge, Safari, Firefox), on any computer, with no internet and nothing to install:
 
 - **3D**: the model as the 3D view shows it. Drag to turn it, right-drag to pan, the wheel to zoom; **Fit** shows it all. Pick a storey alone or with those below it; click an element to select it (Shift adds to the selection), then **Isolate** it or **Hide** it; **Show all** brings everything back.
 - **Drawings**: the plans, sections, elevations and sheets you ticked, drawn as Lapin prints them, as sharp at any zoom. Drag to pan, the wheel to zoom, **Print** to print the one shown. Click an element on a drawing to select it: it is the same element in 3D.
 - **Estimate**, when the project has one: its chapters and lines, the totals, marked *indicative* when it uses Lapin's own rough values. Click a column's heading to sort, type in **Filter** to find a line, click a line to select its elements.
 - **Properties**: whatever is selected, with its class, type, storey, material, its properties and quantities.
 
-![File → Lapin for the browser](shots/html-export-dialog.webp)
+![File → Export → Lapin for the browser](shots/html-export-dialog.webp)
 
 In the dialog you choose which drawings go in (by default every one that shows an element of the model; a plan with only grids or marks is listed unticked, marked *(no element)*, and goes in if you tick it), the 3D model, the estimate, and **the project itself**. The page shows its size before it is written. The page speaks the language Lapin speaks when you export it.
 

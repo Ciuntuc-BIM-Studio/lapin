@@ -16,8 +16,11 @@ import { leave } from '../engine/share';
 import { getLatest } from '../engine/remote';
 import { cdeActive, useCde } from '../engine/cdeServer';
 
-/** A section of the menu: its heading (none for the first), its actions by id. */
-export interface FileSection { head?: string; ids: string[] }
+/** A submenu of the File menu (Import ▸, Export ▸): its name and its actions by id; `recent` lists the recent projects instead. */
+export interface FileSub { sub: string; ids?: string[]; recent?: boolean }
+
+/** A section of the menu: its heading (none for the first), its entries: an action's id, or a submenu. */
+export interface FileSection { head?: string; ids: (string | FileSub)[] }
 
 const dialog = (id: string) => () => useUi.setState({ dialog: id });
 
@@ -51,13 +54,15 @@ export function baseFileActions(): FileAction[] {
     { id: 'file.importDxf', label: 'Import DXF…', run: () => importDxf() },
     { id: 'file.importTrace', label: 'Import PDF or image…', run: () => importTrace() },
     { id: 'file.importMesh', label: 'Import mesh (OBJ, STL, glTF, PLY)…', run: () => importMesh() },
+    // Manage → Publish…: the sheets and views printed or sent out (also on the top bar's quick-access group).
+    { id: 'file.publish', label: 'Publish…', run: dialog('publish') },
     { id: 'file.exportMesh', label: 'Export 3D (glTF, USD, DAE)…', run: dialog('exportMesh') },
     // The project as one .html that any browser opens, and that Lapin opens again (decision 482, docs/html-export.md).
     { id: 'file.exportHtml', label: 'Lapin for the browser (.html)…', menu: 'export-html', run: dialog('exportHtml') },
     // Speckle (docs/plan-speckle.md, S1): the model sent to a Speckle server; desktop only, where the product has the module.
-    { id: 'file.speckleSend', label: 'Send…', menu: 'speckle-send', shown: () => hasModule('speckle') && !engineInBrowser, run: dialog('speckleSend') },
+    { id: 'file.speckleSend', label: 'Speckle: Send…', menu: 'speckle-send', shown: () => hasModule('speckle') && !engineInBrowser, run: dialog('speckleSend') },
     // S2: a version of a Speckle model received as references.
-    { id: 'file.speckleReceive', label: 'Receive…', menu: 'speckle-receive', shown: () => hasModule('speckle') && !engineInBrowser, run: dialog('speckleReceive') },
+    { id: 'file.speckleReceive', label: 'Speckle: Receive…', menu: 'speckle-receive', shown: () => hasModule('speckle') && !engineInBrowser, run: dialog('speckleReceive') },
     // Lapin Extensions (docs/plan-extensions.md): content packs from the catalogue, into Lapin's own libraries.
     { id: 'file.extensions', label: 'Extensions…', menu: 'extensions', run: dialog('extensions') },
     // Server and collaboration (docs/remote.md): the project's history and its remote, a server or a folder.
@@ -76,14 +81,21 @@ export function baseFileActions(): FileAction[] {
   ];
 }
 
-/** The menu of the computer's own user. The model exchanged (docs/fragments.md, Exchange): IFC and Fragments, chosen alike both ways. */
+/**
+ * The menu of the computer's own user: the project's files at the top, then Import, Export and Collaborate as submenus
+ * (forum topic 257); Undo and Redo are on the top bar and on their keys. The model exchanged (docs/fragments.md,
+ * Exchange): IFC and Fragments, chosen alike both ways.
+ */
 export const HOST_SECTIONS: FileSection[] = [
-  { ids: ['file.new', 'file.newFromTemplate', 'file.open', 'file.save', 'file.saveAs', 'file.saveVersion', 'file.saveTemplate', 'file.importProjectTypes'] },
-  { head: 'IFC and Fragments', ids: ['file.importIfc', 'file.importFragments', 'file.importBos', 'file.importSdnf', 'file.linkIfc', 'file.linkLapin', 'file.exportExchange', 'file.exportJg', 'file.optimizeIfc'] },
-  { head: 'Other formats', ids: ['file.linkPointCloud', 'file.importDxf', 'file.importTrace', 'file.importMesh', 'file.exportMesh', 'file.exportHtml'] },
-  { head: 'Speckle', ids: ['file.speckleSend', 'file.speckleReceive'] },
-  { ids: ['file.extensions'] },
-  { head: 'Server and collaboration', ids: ['file.cdeProjects', 'file.collaborate', 'file.saveServer', 'file.getLatest', 'file.openServer', 'file.share', 'file.join'] },
+  { ids: ['file.new', 'file.newFromTemplate', 'file.open', { sub: 'Open recent', recent: true }, 'file.save', 'file.saveAs', 'file.saveVersion', 'file.saveTemplate'] },
+  {
+    ids: [
+      { sub: 'Import', ids: ['file.importProjectTypes', 'file.importIfc', 'file.importFragments', 'file.importBos', 'file.importSdnf', 'file.linkIfc', 'file.linkLapin', 'file.linkPointCloud', 'file.importDxf', 'file.importTrace', 'file.importMesh'] },
+      { sub: 'Export', ids: ['file.exportExchange', 'file.exportJg', 'file.exportMesh', 'file.exportHtml', 'file.publish'] },
+      { sub: 'Collaborate', ids: ['file.speckleSend', 'file.speckleReceive', 'file.cdeProjects', 'file.collaborate', 'file.saveServer', 'file.getLatest', 'file.openServer', 'file.share', 'file.join'] },
+    ],
+  },
+  { ids: ['file.optimizeIfc', 'file.extensions'] },
   // Preferences (Developer extras among them) where the guide and the Script panel's hint send people: File → Preferences….
   { ids: ['file.preferences', 'file.startScreen'] },
 ];

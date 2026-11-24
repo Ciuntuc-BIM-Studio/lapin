@@ -18,7 +18,7 @@ import { confirmAction } from '../../shell/prompts';
 import { backdropClose } from '../../shell/Dialog';
 import { setDisplay, useDisplay } from '../../app/display';
 import { Fragment, useEffect, useState } from 'react';
-import { Copy, Plus, RotateCcw, Trash2, X } from 'lucide-react';
+import { Copy, Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { DisciplinePicker } from './DisciplinePicker';
@@ -81,7 +81,9 @@ function ViewSettingsEditor({ view }: { view: NodeDto }) {
   const section = view.props.kind === 'section';
   const Reset = ({ field }: { field: string }) => own(field)
     ? <button type="button" className="icon mini" title="Back to the style's" onClick={() => set({ [field]: null })}><RotateCcw size={11} /></button>
-    : <span className="muted small"> style</span>;
+    : <span className="by-style" title="The value comes from the view's style">by style</span>;
+  /** A pencil beside a dropdown, for the dialog that edits what it lists (Edit styles…, Edit sets…). */
+  const Edit = ({ label, dialog }: { label: string; dialog: string }) => <button type="button" className="icon mini" title={label} aria-label={label} onClick={() => useUi.setState({ dialog })}><Pencil size={12} /></button>;
   return (
     <div className="view-settings">
       <dl className="fields">
@@ -93,7 +95,7 @@ function ViewSettingsEditor({ view }: { view: NodeDto }) {
             <option value="">by the discipline: {state.style.name}</option>
             {styles.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
-          <button type="button" className="link small" onClick={() => useUi.setState({ dialog: 'viewStyles' })}>Edit styles…</button>
+          <Edit label="Edit styles…" dialog="viewStyles" />
         </dd>
         <dt title={LOD_HELP}>Level of development</dt>
         <dd>
@@ -117,7 +119,7 @@ function ViewSettingsEditor({ view }: { view: NodeDto }) {
             <option value="none">none: the materials' own</option>
             {matSets.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select><Reset field="materialGraphicsSet" />
-          <button type="button" className="link small" onClick={() => useUi.setState({ dialog: 'materialGraphicsSets' })}>Edit sets…</button>
+          <Edit label="Edit sets…" dialog="materialGraphicsSets" />
         </dd>
         <dt title={VEGETATION_HELP}>Vegetation</dt>
         <dd>

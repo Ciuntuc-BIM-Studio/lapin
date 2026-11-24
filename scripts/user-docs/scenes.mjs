@@ -7773,6 +7773,7 @@ export const scenes = [
       await t.call('share.stop');
       // The host shares from the File menu: a link for the browser, a code for the desktop.
       await t.button('File', { exact: true });
+      await t.sub('Collaborate');
       await t.page.getByRole('menuitem', { name: 'Share session…' }).click();
       await t.page.locator('.share-dialog input').first().fill('Ionuț');
       await t.page.locator('.share-dialog .btn.primary').click();
@@ -7812,6 +7813,7 @@ export const scenes = [
       }
       // Joining from Lapin: the link or the code, and one's name.
       await t.button('File', { exact: true });
+      await t.sub('Collaborate');
       await t.page.getByRole('menuitem', { name: 'Join session…' }).click();
       await t.shot('join-dialog', { of: '.dialog', pad: 0 });
       await t.ui({ dialog: null });
@@ -11828,6 +11830,7 @@ export const scenes = [
       await t.fresh();
       await t.page.evaluate(() => { delete window.showOpenFilePicker; });
       await t.button('File', { exact: true });
+      await t.sub('Import');
       const chooser = t.page.waitForEvent('filechooser', { timeout: 10_000 });
       await t.page.getByRole('menuitem', { name: 'Import IFC…' }).click();
       await (await chooser).setFiles(file);
@@ -11855,6 +11858,7 @@ export const scenes = [
       await t.fresh();
       await t.page.evaluate(() => { delete window.showOpenFilePicker; });
       await t.button('File', { exact: true });
+      await t.sub('Import');
       const chooser2d = t.page.waitForEvent('filechooser', { timeout: 10_000 });
       await t.page.getByRole('menuitem', { name: 'Import IFC…' }).click();
       await (await chooser2d).setFiles(file2d);
@@ -11889,6 +11893,7 @@ export const scenes = [
       await t.fresh();
       await t.page.evaluate(() => { delete window.showOpenFilePicker; });
       await t.button('File', { exact: true });
+      await t.sub('Import');
       const chooser = t.page.waitForEvent('filechooser', { timeout: 10_000 });
       await t.page.getByRole('menuitem', { name: 'Import Fragments…' }).click();
       await (await chooser).setFiles(file);
@@ -11922,6 +11927,7 @@ export const scenes = [
       await t.fresh();
       await t.page.evaluate(() => { delete window.showOpenFilePicker; });
       await t.button('File', { exact: true });
+      await t.sub('Import');
       const chooser = t.page.waitForEvent('filechooser', { timeout: 10_000 });
       await t.page.getByRole('menuitem', { name: 'Import BIM Open Schema…' }).click();
       await (await chooser).setFiles(file);
@@ -11952,6 +11958,7 @@ export const scenes = [
       await t.cmd('steel.addHall', { storeyId: await t.storey(), attrs: { secondary: false } });
       await t.wait(2000);
       await t.button('File', { exact: true });
+      await t.sub('Export');
       await t.page.getByRole('menuitem', { name: 'Export IFC, Fragments or BOS…' }).click();
       const exchange = t.page.locator('[aria-label="Export IFC, Fragments or BOS"]');
       await exchange.locator('[data-discipline]').first().waitFor({ timeout: 20_000 });
@@ -11972,6 +11979,7 @@ export const scenes = [
       await t.fresh();
       await t.page.evaluate(() => { delete window.showOpenFilePicker; });
       await t.button('File', { exact: true });
+      await t.sub('Import');
       const chooser = t.page.waitForEvent('filechooser', { timeout: 10_000 });
       await t.page.getByRole('menuitem', { name: 'Import SDNF…' }).click();
       await (await chooser).setFiles(file);
@@ -12111,6 +12119,7 @@ export const scenes = [
       await t.page.evaluate(() => { delete window.showOpenFilePicker; });
       for (const [x, turned] of [['0', '0'], ['24000', '90']]) {
         await t.button('File', { exact: true });
+        await t.sub('Import');
         const chooser = t.page.waitForEvent('filechooser', { timeout: 10_000 });
         await t.page.getByRole('menuitem', { name: 'Link Lapin project…' }).click();
         await (await chooser).setFiles(file);
@@ -12163,8 +12172,11 @@ export const scenes = [
       await t.cmd('view.setStoreys', { id: '3d', mode: 'some', ids: [ground], cut: 1.2 });
       await open3d(t);
       await t.button('File', { exact: true });
-      await t.shot('file-menu', { of: '[role=menu]', pad: 6 });
+      // The menu with its Import submenu open (Open recent, Import, Export and Collaborate are submenus).
+      await t.sub('Import');
+      await t.shot('file-menu', { clip: { x: 0, y: 0, width: 760, height: 640 } });
       // IFC and Fragments exported alike, chosen as an import is.
+      await t.sub('Export');
       await t.page.getByRole('menuitem', { name: 'Export IFC, Fragments or BOS…' }).click();
       const exchange = t.page.locator('[aria-label="Export IFC, Fragments or BOS"]');
       await exchange.locator('[data-discipline]').first().waitFor({ timeout: 20_000 });
@@ -12172,6 +12184,7 @@ export const scenes = [
       await exchange.getByRole('button', { name: 'Cancel' }).click();
       await t.wait(300);
       await t.button('File', { exact: true });
+      await t.sub('Export');
       await t.page.getByRole('menuitem', { name: /Export 3D/ }).click();
       await t.wait(500);
       const dialog = t.page.locator('[aria-label="Export 3D"]');
@@ -12184,6 +12197,7 @@ export const scenes = [
       await dialog.getByRole('button', { name: 'Cancel' }).click();
       // Export IFC: face sets, simplified within 2 mm.
       await t.button('File', { exact: true });
+      await t.sub('Export');
       await t.page.getByRole('menuitem', { name: 'Export IFC, Fragments or BOS…' }).click();
       const ifc = t.page.locator('[aria-label="Export IFC, Fragments or BOS"]');
       await ifc.locator('[data-discipline]').first().waitFor({ timeout: 20_000 });
@@ -12207,6 +12221,7 @@ export const scenes = [
       await house(t, { roof: false });
       t.expect((await t.call('doc.query', { name: 'speckle.accounts', args: {} }))?.length === 0, 'no account is held before one signs in');
       await t.button('File', { exact: true });
+      await t.sub('Collaborate');
       await t.page.locator('[data-menu=speckle-send]').click();
       const dialog = t.page.locator('[aria-label="Send to Speckle"]');
       await dialog.locator('input.speckle-token').waitFor({ timeout: 20_000 });
@@ -12240,6 +12255,7 @@ export const scenes = [
 
       // File → Lapin for the browser (.html)…: the drawings ticked, the 3D model, the estimate and the project in it.
       await t.button('File', { exact: true });
+      await t.sub('Export');
       await t.page.locator('[data-menu=export-html]').click();
       const dialog = t.page.locator('[aria-label="Lapin for the browser"]');
       await dialog.locator('[data-testid=html-export-size]').waitFor({ timeout: 60_000 });
@@ -12333,6 +12349,7 @@ export const scenes = [
       const ipe = await t.cmd('structure.createBeamType', { section: 'IPE 300', material: 'Steel' });
       await t.cmd('structure.addBeam', { storeyId: gf, x1: 0, y1: 2.5, x2: 6, y2: 2.5, typeId: ipe.id });
       await t.button('File', { exact: true });
+      await t.sub('Export');
       await t.page.getByRole('menuitem', { name: 'Export JG Structures (JSON)…' }).click();
       const dialog = t.page.locator('[aria-label="Export JG Structures"]');
       await dialog.locator('.jg-counts').waitFor({ timeout: 20_000 });
@@ -12818,7 +12835,7 @@ export const scenes = [
         await t.wait(600);
         await t.shot('python-panel');
         // One Undo takes the whole run away.
-        await t.page.locator('.undo-btn').first().click();
+        await t.page.locator('.qa-btn[aria-label="Undo"]').click();
         await t.until(async () => (await walls()) === 0, 'one Undo takes the four walls away');
         await t.shot('python-undo', { of: '[data-panel=script]', pad: 0 });
         await t.page.evaluate(async () => (await import('/src/app/prefs.ts')).setPrefs({ developerExtras: false }));
@@ -12960,7 +12977,7 @@ export const scenes = [
         await t.wait(600);
         await t.shot('python-tools-walls');
         // One Undo takes the four walls away.
-        await page.locator('.undo-btn').first().click();
+        await page.locator('.qa-btn[aria-label="Undo"]').click();
         await t.until(async () => (await walls()) === 0, 'one Undo takes the four walls away');
 
         // Decision 528: a second script, run once, registers a panel of its own with a menu (a pulldown of two tools) and a
@@ -13043,7 +13060,9 @@ export const scenes = [
       await t.wait(300);
       await t.shot('help-menu', { clip: { x: 1100, y: 0, width: 340, height: 400 } });
       t.expect(await t.page.getByRole('menuitem', { name: 'Forum', exact: true }).count() === 1 && await t.page.getByRole('menuitem', { name: 'Ask on the forum…' }).count() === 1, 'the help menu opens the forum and a new topic on it');
-      t.expect((await t.page.locator('.menu-langs button').allTextContents()).join(' ') === 'English Română Español Deutsch Français Dansk Italiano Polski Português ພາສາລາວ 简体中文', 'the help menu offers the interface in English, Romanian, Spanish, German, French, Danish, Italian, Polish, Portuguese, Lao and Simplified Chinese');
+      await t.page.locator('[data-menu-sub="Language"]').click();
+      await t.wait(200);
+      t.expect((await t.page.locator('.menu-langs button').allTextContents()).join(' ') === 'English Română Español Deutsch Français Dansk Italiano Polski Português ພາສາລາວ 简体中文 Ελληνικά', 'the help menu offers the interface in English, Romanian, Spanish, German, French, Danish, Italian, Polish, Portuguese, Lao and Simplified Chinese');
       await t.page.getByRole('menuitem', { name: 'About Lapin…' }).click();
       await t.wait(200);
       t.expect(await t.page.getByText('Helpware', { exact: true }).count() > 0, 'About Lapin says what helpware means');
@@ -17072,6 +17091,7 @@ export const scenes = [
       await t.ui({ dialog: null });
       await t.wait(300);
       await t.button('File', { exact: true });
+      await t.sub('Export');
       await t.page.getByRole('menuitem', { name: 'Export IFC, Fragments or BOS…' }).click();
       const exchange = t.page.locator('[aria-label="Export IFC, Fragments or BOS"]');
       const option = exchange.locator('[data-testid=export-type-properties]');

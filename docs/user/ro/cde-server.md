@@ -12,7 +12,7 @@ Nu există înregistrare: administratorul serverului îți face contul și îți
 
 **În browser**, deschizi adresa serverului. Ecranul de start îți cere adresa de e-mail și parola. Închiderea filei te deconectează; o reîncărcare te ține autentificat.
 
-**Pe desktop**, deschizi **Fișier → Colaborează…**, alegi **Server**, scrii adresa serverului și te autentifici. Aplicația păstrează autentificarea pentru data viitoare pe acest calculator, niciodată în proiect.
+**Pe desktop**, deschizi **Fișier → Colaborare → Colaborează…**, alegi **Server**, scrii adresa serverului și te autentifici. Aplicația păstrează autentificarea pentru data viitoare pe acest calculator, niciodată în proiect.
 
 După autentificare, **Schimbă parola…** îți setează propria parolă; celelalte autentificări ale tale se încheie.
 
@@ -26,7 +26,7 @@ După autentificare, **Schimbă parola…** îți setează propria parolă; cele
 
 Pagina unui proiect arată istoricul ramurii lui principale (cine a salvat, când, cu ce notă, și versiunile și etichetele de emitere făcute din fiecare salvare), ramurile în lucru, **Activitatea**, **Membrii** și **Regulile**.
 
-Pe desktop, Fișier → Colaborează… arată Publicarea, Activitatea și Regulile proiectului la care e conectat fișierul.
+Pe desktop, Fișier → Colaborare → Colaborează… arată Publicarea, Activitatea și Regulile proiectului la care e conectat fișierul.
 
 O **etichetă de emitere** e o emitere făcută cu **Manage → Issue…** (revizia, starea, containerul și fișierele ei) odată ajunsă pe server; nu se mai schimbă niciodată.
 
@@ -47,15 +47,15 @@ O **etichetă de emitere** e o emitere făcută cu **Manage → Issue…** (revi
 
 **Clonează pentru lucru** aduce proiectul cu istoricul lui. În browser copia stă în browser până salvezi pe server; pe desktop ajunge într-un fișier nou.
 
-**Fișier → Salvează pe server…** cere o notă scurtă și trimite lucrul tău. Bara de stare spune **Nesalvat pe server** cât timp ai lucru pe care serverul nu îl are; un clic deschide Salvează pe server.
+**Fișier → Colaborare → Salvează pe server…** cere o notă scurtă și trimite lucrul tău. Bara de stare spune **Nesalvat pe server** cât timp ai lucru pe care serverul nu îl are; un clic deschide Salvează pe server.
 
-**Fișier → Ia ultima versiune de pe server** aduce salvările celorlalți în proiectul tău, într-un singur pas de anulare.
+**Fișier → Colaborare → Ia ultima versiune de pe server** aduce salvările celorlalți în proiectul tău, într-un singur pas de anulare.
 
 **Deschide ultima versiune, doar pentru citire** (în browser) deschide ultima salvare ca să te uiți la ea: nimic nu se întoarce pe server. Fiecare salvare se poate descărca și ca fișier `.lapin` sau ca copia ei IFC.
 
 ## Când au salvat doi oameni
 
-Dacă cineva a salvat pe server după ce ai luat tu ultima versiune, salvarea ta e refuzată și **Fișier → Colaborează…** se deschide pe alegeri:
+Dacă cineva a salvat pe server după ce ai luat tu ultima versiune, salvarea ta e refuzată și **Fișier → Colaborare → Colaborează…** se deschide pe alegeri:
 
 - **Păstrează lucrul meu ca ramură** trimite lucrul tău pe server ca o ramură în lucru (numită după tine și după dată), apoi aduce proiectul tău la ultima versiune de pe server;
 - **Renunță la commit-urile mele** aduce proiectul tău la ultima versiune de pe server; commit-urile tale rămân în fișier ca ramură locală.
@@ -64,7 +64,7 @@ Dacă cineva a salvat pe server după ce ai luat tu ultima versiune, salvarea ta
 
 Într-un proiect al cărui depozit la distanță e un server CDE, **Gestionare → Observații pe model…** arată problemele serverului. Observațiile din proiect și problemele de pe server sunt aceleași subiecte, ținute la zi după GUID; serverul e referința, iar proiectul păstrează o copie pentru lucrul fără conexiune.
 
-**Sincronizează problemele** (în dialogul de observații și în Fișier → Colaborează…) aduce ce s-a schimbat pe server (într-un singur pas de anulare) și trimite ce ai schimbat tu. Salvează pe server și Ia ultima versiune sincronizează și ele problemele.
+**Sincronizează problemele** (în dialogul de observații și în Fișier → Colaborare → Colaborează…) aduce ce s-a schimbat pe server (într-un singur pas de anulare) și trimite ce ai schimbat tu. Salvează pe server și Ia ultima versiune sincronizează și ele problemele.
 
 - Doi oameni care schimbă **câmpuri diferite** ale aceleiași probleme (unul prioritatea, celălalt descrierea) își păstrează amândoi modificarea.
 - Când doi oameni schimbă **același câmp**, câștigă cel care sincronizează ultimul. Activitatea arată cine ce a schimbat.
@@ -93,7 +93,7 @@ Când proiectul are fișiere IDS, ele se verifică înainte de **Propune spre ap
 
 Emiterea din nou a acelorași planșe face o **revizie nouă a aceleiași emiteri** (Issue… o propune: **Emite ca** → *Revizie nouă a emiterii #n*, revizia de după ultima ei): propunerea și eticheta de emitere poartă numărul și identitatea acelei emiteri, `#1 P01`, apoi `#1 P02`. Odată publicată revizia ulterioară, cea Publicată dinainte trece în **Arhivate**. **Emitere nouă** dă documentelor un număr nou.
 
-Pagina proiectului (în browser) și **Fișier → Colaborează… → Publicare** (pe desktop) au aceste file:
+Pagina proiectului (în browser) și **Fișier → Colaborare → Colaborează… → Publicare** (pe desktop) au aceste file:
 
 - **Containere**: containerele ISO 19650. **WIP** listează ramurile în lucru; **Comune** și **Publicate** listează etichetele de emitere cu revizia, starea, data și cine le-a emis (**aprobată** când a trecut prin coadă); o revizie Publicată trece în **Arhivate** când aceeași emitere e publicată din nou la o revizie ulterioară. **Deschide** deschide o revizie doar pentru citire; **.lapin** și **IFC** o descarcă; **fișiere** listează fișierele emise, fiecare de descărcat.
 - **Propuneri**: coada, întâi cele care așteaptă (**Arată** le alege pe celelalte: aprobate, respinse, retrase, toate). Un clic pe una arată commit-ul, documentele, fișierele și **poarta**: problemele deschise care o opresc. O problemă se leagă de un document printr-o legătură de referință `lapin-document:<numele documentului>`, pe care Lapin o pune singur: o observație făcută cu o planșă în față e legată de documentul planșei, iar dialogul observațiilor arată, adaugă și scoate documentele unei observații (vezi [Observații](cde.md)); Sincronizează problemele trimite legăturile pe server. Fără documente, orice problemă deschisă cu prioritatea Critical o oprește. Un clic pe o problemă a porții o deschide în Observații pe model (în proiectul deschis aici, după Sincronizează problemele).
@@ -136,7 +136,7 @@ Un server care îl oferă (Atrium Server de la W6b, precum cde.lapinbim.com) ver
 
 **Publicare → IDS pe server** listează fișierele IDS ale proiectului cu titlul, versiunea, versiunile IFC, câte specificații au, cine le-a încărcat și când. Proprietarii apasă **Adaugă un fișier IDS…** (un fișier cu același nume îl înlocuiește pe cel de acolo) și butonul coș ca să șteargă unul; ceilalți le citesc. Butonul de descărcare păstrează o copie; butonul listă deschide specificațiile fișierului: la ce se aplică fiecare și ce cere. Un fișier care nu e IDS 1.0 e refuzat, cu fiecare problemă găsită de server și rândul ei.
 
-Cu un proiect deschis (Fișier → Colaborează…), proprietarii au și **Pune fișierele IDS ale acestui proiect pe server**: listează fișierele IDS păstrate în proiect (Gestionare → IDS…), fiecare **Nou** pe server, **La fel** ca unul de acolo sau **Modificate** (un fișier cu același nume pe server, cu alt conținut). Bifează-le pe cele de trimis și apasă **Copiază fișierele bifate**; înlocuirea unuia modificat se confirmă întâi. Fiecare fișier pleacă separat: unul refuzat de server își arată problemele lângă el, iar celelalte se trimit oricum. Invers, **Adu fișierele IDS de pe server în acest proiect** e în Gestionare → IDS… (editori și proprietari).
+Cu un proiect deschis (Fișier → Colaborare → Colaborează…), proprietarii au și **Pune fișierele IDS ale acestui proiect pe server**: listează fișierele IDS păstrate în proiect (Gestionare → IDS…), fiecare **Nou** pe server, **La fel** ca unul de acolo sau **Modificate** (un fișier cu același nume pe server, cu alt conținut). Bifează-le pe cele de trimis și apasă **Copiază fișierele bifate**; înlocuirea unuia modificat se confirmă întâi. Fiecare fișier pleacă separat: unul refuzat de server își arată problemele lângă el, iar celelalte se trimit oricum. Invers, **Adu fișierele IDS de pe server în acest proiect** e în Gestionare → IDS… (editori și proprietari).
 
 **Reguli** are două comutatoare (le schimbă proprietarii): **Fișierele IDS rulează la fiecare propunere** și **O specificație IDS care nu trece oprește aprobarea** (oprit, o specificație care nu trece e un avertisment, nu o eroare).
 
@@ -146,7 +146,7 @@ Verificările unei propuneri arată un grup **IDS** după documente: câte speci
 
 ## Administrare
 
-Un administrator al serverului vede **Administrare** (pe ecranul de start în browser; **Fișier → Colaborează… → Administrare…** pe desktop):
+Un administrator al serverului vede **Administrare** (pe ecranul de start în browser; **Fișier → Colaborare → Colaborează… → Administrare…** pe desktop):
 
 - **Conturi**: fiecare cont cu proiectele lui. **Creează cont** face unul dintr-o adresă de e-mail și un nume; serverul face prima lui parolă și o arată **o singură dată**: copiaz-o și dă-o persoanei. **Dezactivează** încheie autentificările cuiva și le refuză pe cele noi (proiectele, salvările și problemele lui rămân); **Activează** îl lasă să revină. Butonul cu cheie setează o parolă nouă, arătată o singură dată. **Administrator** dă sau retrage administrarea (nu o poți retrage pe a ta și nu te poți dezactiva).
 - **Proiect nou**: un proiect făcut pe server, cu tine proprietar. Deschide-i pagina ca să adaugi membrii.

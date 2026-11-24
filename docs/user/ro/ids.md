@@ -37,7 +37,7 @@ Verificarea citește valorile cum spune IDS: textele exact, numerele în metri, 
 
 Când proiectul are fișiere IDS, **Gestionare → Emite… → Pe serverul CDE** le rulează înainte de **Propune spre aprobare** și arată ce nu trece. Cu setarea proiectului pornită (**O specificație care nu trece oprește trimiterea**, în Gestionare → IDS…), trimiterea așteaptă până se repară erorile, sau până bifezi **Propune în ciuda erorilor IDS** și scrii de ce: nota pleacă cu trimiterea, ca s-o citească cel care aprobă. La fel pentru **Fă acum eticheta de emitere**. **Rulează înainte de Propune spre aprobare** oprește verificarea pentru proiect.
 
-În **Fișier → Colaborează… → Publicare**, tabul **IDS** e același panou.
+În **Fișier → Colaborare → Colaborează… → Publicare**, tabul **IDS** e același panou.
 
 ## Fișiere IDS pe serverul CDE
 

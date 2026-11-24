@@ -111,7 +111,7 @@ Fila **Catalog** din browserul proiectului arată tipurile proiectului pentru fi
 
 - un clic pe o carte pune elemente de acel tip: unealta pornește cu el;
 - trage o carte pe un loc rapid ca să păstrezi acolo unealta cu acel tip;
-- **Editează tipurile…** deschide dialogul în care se fac și se schimbă tipurile.
+- **Editează tipurile…**, la capătul rândului de feluri, deschide dialogul în care se fac și se schimbă tipurile; clic dreapta pe o carte dă **Editează tipul…** (dialogul deschis pe acel tip) și **Duplică**.
 
 ![Catalogul: tipurile de pereți](shots/catalog.webp)
 

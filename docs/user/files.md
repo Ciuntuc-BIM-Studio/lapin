@@ -22,7 +22,7 @@ A `.lapin` file holds the whole project: the model, the views, the sheets, the m
 
 A template is a project's set-up without its model, so the types and settings you make once start every new project. **File → Save as template…** keeps the project open under a name: its wall, floor, door, window, stair, ceiling and structure types, its materials and profiles, its units and drafting standards (text, dimension and tag styles, layers), its view styles, storeys, views, sheets and title blocks, and of its information what belongs to the office (the designer, who signs). It keeps no element (no wall, no drawing, no room), no issue or remark, no estimate or schedule, and not the job's own information (its number, client, site and permit).
 
-For a project already started, **File → Import types from a project…** brings only the types you choose from another `.lapin`, with their materials, and leaves that file as it was: see [Types from another project](extensions.md#types-from-another-project).
+For a project already started, **File → Import → Import types from a project…** brings only the types you choose from another `.lapin`, with their materials, and leaves that file as it was: see [Types from another project](extensions.md#types-from-another-project).
 
 **File → New from template…** (also on the start screen) lists the templates, **Lapin default** first. **New project** on a row starts a project from it: it has no file yet and GlobalIds of its own. Choose a template on the left of its row, or in **File → Preferences… → General → New projects**, and **File → New project** starts from it every time; **Lapin default** goes back to Lapin's own start.
 
@@ -54,4 +54,4 @@ Versions live inside the project's file, and the parts a version shares with the
 
 ## Undo
 
-<kbd>Ctrl</kbd> <kbd>Z</kbd> undoes, and <kbd>Ctrl</kbd> <kbd>Y</kbd> or <kbd>Ctrl</kbd> <kbd>⇧</kbd> <kbd>Z</kbd> redoes. The **Undo** and **Redo** buttons in the top bar, right of **Commands…**, do the same in every interface mode, and their tooltip says what they undo; **File → Undo** and **File → Redo**, and the command palette (<kbd>Ctrl</kbd> <kbd>K</kbd>, type "undo"), too.
+<kbd>Ctrl</kbd> <kbd>Z</kbd> undoes, and <kbd>Ctrl</kbd> <kbd>Y</kbd> or <kbd>Ctrl</kbd> <kbd>⇧</kbd> <kbd>Z</kbd> redoes. The **Undo** and **Redo** icons in the top bar, beside the Lapin name, do the same in every interface mode, and their tooltip says what they undo; and the command palette (<kbd>Ctrl</kbd> <kbd>K</kbd>, type "undo"), too.

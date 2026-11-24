@@ -6606,6 +6606,15 @@ const S5D_TAILS: Record<string, string> = {
   'those tagged with a key': 'cele etichetate cu o cheie',
   'Each row its material\'s key in a circle (as a material key tag writes it), the rows in the keys\' order; the materials listed are numbered for good': 'Fiecare rând cu cheia materialului său într-un cerc (cum o scrie eticheta de cheie de material), rândurile în ordinea cheilor; materialele listate primesc numere definitive',
   'A row\'s text: {key}, {name}, {description} (the first line of the material\'s), {category}, or any parameter of the material ({Finish}); a part between — that comes out empty is left out': 'Textul unui rând: {key}, {name}, {description} (primul rând al descrierii materialului), {category}, sau orice parametru al materialului ({Finish}); o parte dintre — care iese goală e lăsată afară',
+  // The File menu in submenus, the quick-access group and the view settings (forum topic 257, second batch).
+  "Open recent": "Deschide recente",
+  "No recent projects": "Niciun proiect recent",
+  "Quick access": "Acces rapid",
+  "Floor plan": "Plan de nivel",
+  "The value comes from the view's style": "Valoarea vine din stilul vederii",
+  "Edit the types of this kind": "Editează tipurile acestui fel",
+  "Speckle: Send…": "Speckle: Trimite…",
+  "Speckle: Receive…": "Speckle: Primește…",
 };
 export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   // Publish sets (forum topic 225)

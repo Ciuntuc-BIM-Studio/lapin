@@ -6648,6 +6648,15 @@ const S5D_TAILS: Record<string, string> = {
   'those tagged with a key': '已加编号标注的',
   'Each row its material\'s key in a circle (as a material key tag writes it), the rows in the keys\' order; the materials listed are numbered for good': '每行在圆圈中写出其材料的编号（与材料编号标签一致），各行按编号排序；所列材料获得固定序号',
   'A row\'s text: {key}, {name}, {description} (the first line of the material\'s), {category}, or any parameter of the material ({Finish}); a part between — that comes out empty is left out': '行的文字：{key}、{name}、{description}（材料说明的第一行）、{category}，或材料的任意参数（{Finish}）；— 之间结果为空的部分会省略',
+  // The File menu in submenus, the quick-access group and the view settings (forum topic 257, second batch).
+  "Open recent": "打开最近的",
+  "No recent projects": "没有最近的项目",
+  "Quick access": "快速访问",
+  "Floor plan": "平面图",
+  "The value comes from the view's style": "该值来自视图的样式",
+  "Edit the types of this kind": "编辑此类的类型",
+  "Speckle: Send…": "Speckle: 发送…",
+  "Speckle: Receive…": "Speckle: 接收…",
 };
 export const ZH_PATTERNS: Language['patterns'] = [
   // Publish sets (forum topic 225)

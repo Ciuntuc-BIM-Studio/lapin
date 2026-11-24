@@ -1126,7 +1126,6 @@ export function PlanView() {
   return (
     <div className="view-pane">
       <div className="view-toolbar">
-        <span className="view-title">{siteView ? <>Site · <span data-no-i18n>{siteView.name}</span></> : <>Plan · {storey?.name ?? '—'}</>}</span>
 {(drawing?.lineworkOrphans?.length ?? 0) > 0 && ownPlan && (
           <button type="button" className="chip warn" title="The edges they were on are gone: remove them" onClick={() => void execute('view.lineworkReset', { id: ownPlan, orphans: true })}>
             {drawing!.lineworkOrphans!.length} line edit(s) lost their edge · clean

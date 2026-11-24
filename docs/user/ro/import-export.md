@@ -4,7 +4,7 @@ order: 110
 summary: Schimbi modelul ca IFC, aduci desene DXF, legi fișiere și exporți modele 3D pentru randare și AR.
 ---
 
-Tot ce intră sau iese e în meniul **Fișier**.
+Tot ce intră sau iese e în meniul **Fișier**, în submeniurile lui **Importă**, **Exportă** și **Colaborare**.
 
 ![Meniul Fișier](shots/file-menu.webp)
 
@@ -124,7 +124,7 @@ Copia se scrie lângă original, sau într-un folder ales de tine, cu numele ori
 
 ## DXF și DWG
 
-**Importă DXF…** aduce un desen CAD în vederea din față, cu layerele, hașurile, textele și cotele lui. Intră ca desen de care te poți prinde și pe care îl poți edita. Ca să folosești un DWG, salvează-l întâi ca DXF din programul tău CAD (AutoCAD, BricsCAD sau DraftSight: **Save As → DXF**), ca text, nu binar. Cât citește un fișier mare, dialogul numără secundele; un fișier pe care nu îl poate citi (un DXF binar, un DWG redenumit .dxf, un desen ale cărui blocuri se desfac în peste 2.000.000 de entități) e arătat în dialog cu motivul. Un PDF sau o imagine intră pentru calchiat cu **Fișier → Importă PDF sau imagine…** sau **Desen → PDF sau imagine**: liniile unui PDF vectorial ca desen, la scara la care a fost desenat, iar pozele lui și orice PNG sau JPEG ca imagini translucide (vezi [Desen](drafting.md)). Într-un plan, **Așezat: după coordonatele hărții** pune un desen în coordonate reale (un plan cadastral în Stereo 70) unde îl pune harta (vezi [Amplasamentul și datele lui](site.md)).
+**Importă DXF…** aduce un desen CAD în vederea din față, cu layerele, hașurile, textele și cotele lui. Intră ca desen de care te poți prinde și pe care îl poți edita. Ca să folosești un DWG, salvează-l întâi ca DXF din programul tău CAD (AutoCAD, BricsCAD sau DraftSight: **Save As → DXF**), ca text, nu binar. Cât citește un fișier mare, dialogul numără secundele; un fișier pe care nu îl poate citi (un DXF binar, un DWG redenumit .dxf, un desen ale cărui blocuri se desfac în peste 2.000.000 de entități) e arătat în dialog cu motivul. Un PDF sau o imagine intră pentru calchiat cu **Fișier → Importă → Importă PDF sau imagine…** sau **Desen → PDF sau imagine**: liniile unui PDF vectorial ca desen, la scara la care a fost desenat, iar pozele lui și orice PNG sau JPEG ca imagini translucide (vezi [Desen](drafting.md)). Într-un plan, **Așezat: după coordonatele hărții** pune un desen în coordonate reale (un plan cadastral în Stereo 70) unde îl pune harta (vezi [Amplasamentul și datele lui](site.md)).
 
 Blocurile unui DXF pot intra ca simboluri (**Blocuri → păstrează ca simboluri**) în loc de linii descompuse, iar **convertește layerele în elemente…** transformă layerele lui în pereți, stâlpi sau bare imediat după import: vezi [Desen](drafting.md#blocurile-dxf-ca-simboluri) și [Conversia desenului în elemente](drafting.md#conversia-desenului-in-elemente).
 
@@ -146,7 +146,7 @@ Un IFC legat păstrează ce spune fișierul despre materialele elementelor lui. 
 
 ### Legarea altui proiect Lapin
 
-**Fișier → Leagă proiect Lapin…** pune alt fișier `.lapin` în acest proiect ca modul doar pentru citire, cum face un hotlink în ArchiCAD. Spui unde stă (**Plasat la x**, **Plasat la y**, **Rotit**) și dacă e **Oglindit**, cu stânga și dreapta schimbate, ca apartamentul de pe cealaltă parte a casei scării. Pereții, ușile și plăcile lui vin ca elemente Lapin, cu simbolurile lor în plan, iar același proiect se poate lega de câte ori vrei, fiecare așezare separat: un apartament tip sau un bloc repetat, desenat într-un singur fișier.
+**Fișier → Importă → Leagă proiect Lapin…** pune alt fișier `.lapin` în acest proiect ca modul doar pentru citire, cum face un hotlink în ArchiCAD. Spui unde stă (**Plasat la x**, **Plasat la y**, **Rotit**) și dacă e **Oglindit**, cu stânga și dreapta schimbate, ca apartamentul de pe cealaltă parte a casei scării. Pereții, ușile și plăcile lui vin ca elemente Lapin, cu simbolurile lor în plan, iar același proiect se poate lega de câte ori vrei, fiecare așezare separat: un apartament tip sau un bloc repetat, desenat într-un singur fișier.
 
 Ca să-l schimbi, editezi fișierul lui: **Deschide separat** din **Gestionare → Legături** îl deschide în altă fereastră. Când fișierul se schimbă, Lapin îți spune la întoarcere, iar **Gestionare → Legături** arată **Sursa s-a schimbat: citește din nou**; un clic aduce versiunea nouă, în aceleași locuri. Butonul de mutare de acolo așază legătura în altă parte sau o oglindește, fără s-o refaci. Restul uneltelor merg ca la orice legătură: afișare, halftone, conversie la nativ, dezlegare. În browser pagina nu are calea fișierului, așa că recitirea sau reașezarea îți cer fișierul. Ce leagă sursa la rândul ei vine și se mută împreună cu ea, în afară de ce e ascuns acolo, la fel și referințele aduse din alte fișiere.
 
@@ -257,7 +257,7 @@ Alegi ce exporți, ce fază și originea. **Ce** este **tot**, sau modelul **cum
 
 ## Speckle
 
-**Fișier → Speckle → Trimite…** trimite modelul la un server [Speckle](https://speckle.systems), de unde îl iau Revit, Rhino și Grasshopper, Power BI, Blender și vizualizatorul web al Speckle, fără IFC între ele. E în aplicația desktop, nu în Lapin pentru browser.
+**Fișier → Colaborare → Speckle: Trimite…** trimite modelul la un server [Speckle](https://speckle.systems), de unde îl iau Revit, Rhino și Grasshopper, Power BI, Blender și vizualizatorul web al Speckle, fără IFC între ele. E în aplicația desktop, nu în Lapin pentru browser.
 
 ![Trimite în Speckle: contul](shots/speckle-sign-in.webp)
 
@@ -285,7 +285,7 @@ Etajele pleacă drept niveluri Speckle, așa că Revit primește elementele pe n
 
 ### Primirea din Speckle
 
-**Fișier → Speckle → Primește…** aduce o versiune a unui model Speckle în proiectul deschis, oricare program a trimis-o (Revit, Rhino, Archicad, alt Lapin). Se conectează cu același cont ca **Trimite…**. Alegi **Proiectul**, **Modelul** și **Versiunea** (implicit **cea mai nouă**, sau una din listă, după mesajul ei, dată și programul care a trimis-o), apoi:
+**Fișier → Colaborare → Speckle: Primește…** aduce o versiune a unui model Speckle în proiectul deschis, oricare program a trimis-o (Revit, Rhino, Archicad, alt Lapin). Se conectează cu același cont ca **Trimite…**. Alegi **Proiectul**, **Modelul** și **Versiunea** (implicit **cea mai nouă**, sau una din listă, după mesajul ei, dată și programul care a trimis-o), apoi:
 
 - **Etaje**:
   - **după nivelurile versiunii, cu etajele care lipsesc făcute** (implicit): fiecare nivel al versiunii își găsește etajul proiectului de la cota lui (în 5 cm), altfel pe cel cu numele lui; un nivel pe care nu-l potrivește niciun etaj devine un etaj nou, cu numele și cota nivelului. Fiecare obiect merge pe etajul nivelului lui, fie că intră ca referință, fie ca perete sau placă recunoscută.
@@ -321,14 +321,14 @@ Nu se primesc încă: texturile, muchiile obiectelor, grinzile înclinate sau cu
 
 ## Lapin pentru browser
 
-**Fișier → Lapin pentru browser (.html)…** scrie proiectul ca o pagină web, un singur fișier .html pe care îl poți trimite oricui. Se deschide cu dublu clic în orice browser (Chrome, Edge, Safari, Firefox), pe orice calculator, fără internet și fără nimic de instalat:
+**Fișier → Exportă → Lapin pentru browser (.html)…** scrie proiectul ca o pagină web, un singur fișier .html pe care îl poți trimite oricui. Se deschide cu dublu clic în orice browser (Chrome, Edge, Safari, Firefox), pe orice calculator, fără internet și fără nimic de instalat:
 
 - **3D**: modelul așa cum îl arată vederea 3D. Trage ca să-l rotești, trage cu butonul din dreapta ca să-l deplasezi, rotița ca să mărești; **Încadrează** îl arată întreg. Alege un etaj singur sau împreună cu cele de dedesubt; fă clic pe un element ca să-l selectezi (Shift adaugă la selecție), apoi **Izolează**-l sau **Ascunde**-l; **Arată tot** aduce totul înapoi.
 - **Desene**: planurile, secțiunile, fațadele și planșele pe care le-ai bifat, desenate cum le tipărește Lapin, clare la orice mărire. Trage ca să deplasezi, rotița ca să mărești, **Tipărește** ca să tipărești desenul afișat. Fă clic pe un element dintr-un desen ca să-l selectezi: e același element și în 3D.
 - **Deviz**, când proiectul are unul: capitolele și liniile lui, totalurile, marcate *orientativ* când folosește valorile aproximative ale Lapin. Fă clic pe titlul unei coloane ca să sortezi, scrie în **Filtru** ca să găsești o linie, fă clic pe o linie ca să-i selectezi elementele.
 - **Proprietăți**: ce e selectat, cu clasa, tipul, nivelul, materialul, proprietățile și cantitățile lui.
 
-![Fișier → Lapin pentru browser](shots/html-export-dialog.webp)
+![Fișier → Exportă → Lapin pentru browser](shots/html-export-dialog.webp)
 
 În dialog alegi ce desene intră (implicit fiecare desen care arată un element al modelului; un plan doar cu axe sau marcaje e în listă nebifat, cu *(niciun element)*, și intră dacă îl bifezi), modelul 3D, devizul și **proiectul însuși**. Pagina arată mărimea ei înainte de a fi scrisă. Pagina vorbește limba pe care o vorbește Lapin când o exporți.
 

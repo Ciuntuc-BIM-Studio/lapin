@@ -189,7 +189,7 @@ The SubD card lists the cage's points and faces and whether it is open or closed
 
 ## Meshes from other programs
 
-**File → Import mesh (OBJ, STL, glTF, PLY)…** brings in a mesh as references you can see and snap to. An OBJ, STL or PLY file does not say its unit or which way is up, so Lapin asks. A reference moves, turns, mirrors and is copied as it is, like any element. To change its shape, select it and click **Make Studio solid**. It then takes push/pull, fillets, booleans and the other steps. The same tool works on walls, slabs and elements from IFC files.
+**File → Import → Import mesh (OBJ, STL, glTF, PLY)…** brings in a mesh as references you can see and snap to. An OBJ, STL or PLY file does not say its unit or which way is up, so Lapin asks. A reference moves, turns, mirrors and is copied as it is, like any element. To change its shape, select it and click **Make Studio solid**. It then takes push/pull, fillets, booleans and the other steps. The same tool works on walls, slabs and elements from IFC files.
 
 ## Booleans
 

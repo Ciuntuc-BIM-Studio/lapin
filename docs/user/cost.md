@@ -113,6 +113,6 @@ Monthly progress billing (*situații de lucrări*), earned value and several bas
 
 ## IFC
 
-**File → Export IFC…** writes the estimate as an **IfcCostSchedule**: its chapters and lines as **IfcCostItem**s, each line's quantity and its unit prices as four **IfcCostValue**s (Material, Labour, Equipment, Transport), the elements each line measures assigned to it (**IfcRelAssignsToControl**), the currency as the project's **IfcMonetaryUnit**. Imported, an estimate keeps the lines as the file has them, with the same totals. Tick **Lines from the model** to add the lines your model gives.
+**File → Export → Export IFC, Fragments or BOS…** writes the estimate as an **IfcCostSchedule**: its chapters and lines as **IfcCostItem**s, each line's quantity and its unit prices as four **IfcCostValue**s (Material, Labour, Equipment, Transport), the elements each line measures assigned to it (**IfcRelAssignsToControl**), the currency as the project's **IfcMonetaryUnit**. Imported, an estimate keeps the lines as the file has them, with the same totals. Tick **Lines from the model** to add the lines your model gives.
 
 With a work schedule, each line is also assigned to the tasks it is done in (**IfcRelAssignsToControl** to their **IfcTask**s). Imported, the lines keep their tasks, so the S-curve comes back the same.

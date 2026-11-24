@@ -6706,6 +6706,15 @@ const S5D_TAILS: Record<string, string> = {
   'those tagged with a key': 'ທີ່ມີປ້າຍລະຫັດ',
   'Each row its material\'s key in a circle (as a material key tag writes it), the rows in the keys\' order; the materials listed are numbered for good': 'ແຕ່ລະແຖວມີລະຫັດຂອງວັດສະດຸຢູ່ໃນວົງມົນ (ຄືທີ່ປ້າຍລະຫັດວັດສະດຸຂຽນ), ແຖວລຽງຕາມລະຫັດ; ວັດສະດຸທີ່ລາຍການໄດ້ເລກຖາວອນ',
   'A row\'s text: {key}, {name}, {description} (the first line of the material\'s), {category}, or any parameter of the material ({Finish}); a part between — that comes out empty is left out': 'ຂໍ້ຄວາມຂອງແຖວ: {key}, {name}, {description} (ແຖວທຳອິດຂອງຄຳອະທິບາຍວັດສະດຸ), {category}, ຫຼື ພາລາມິເຕີໃດໜຶ່ງຂອງວັດສະດຸ ({Finish}); ສ່ວນລະຫວ່າງ — ທີ່ອອກມາວ່າງຈະຖືກຕັດອອກ',
+  // The File menu in submenus, the quick-access group and the view settings (forum topic 257, second batch).
+  "Open recent": "ເປີດຫຼ້າສຸດ",
+  "No recent projects": "ບໍ່ມີໂຄງການຫຼ້າສຸດ",
+  "Quick access": "ເຂົ້າເຖິງດ່ວນ",
+  "Floor plan": "ແຜນຜັງພື້ນ",
+  "The value comes from the view's style": "ຄ່ານີ້ມາຈາກຮູບແບບຂອງມຸມມອງ",
+  "Edit the types of this kind": "ແກ້ໄຂປະເພດຂອງຊະນິດນີ້",
+  "Speckle: Send…": "Speckle: ສົ່ງ…",
+  "Speckle: Receive…": "Speckle: ຮັບ…",
 };
 export const LO_PATTERNS: Language['patterns'] = [
   // Publish sets (forum topic 225)

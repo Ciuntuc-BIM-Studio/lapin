@@ -164,7 +164,7 @@ La exportul IFC fiecare încăpere e un IfcSpace, cu numărul, numele, funcțiun
 
 ## Încăperi dintr-un fișier IFC
 
-**Fișier → Importă IFC…** aduce spațiile fișierului ca încăperi, oricare ar fi programul care le-a scris (Revit, ArchiCAD, Allplan, Bonsai…):
+**Fișier → Importă → Importă IFC…** aduce spațiile fișierului ca încăperi, oricare ar fi programul care le-a scris (Revit, ArchiCAD, Allplan, Bonsai…):
 
 - fiecare ajunge pe **nivelul ei**, cel în care o pune fișierul;
 - **conturul** ei vine din forma ei (o extrudare, un B-rep sau o rețea de fețe, ori amprenta desenată lângă ea); îl păstrează, nu urmează pereții;

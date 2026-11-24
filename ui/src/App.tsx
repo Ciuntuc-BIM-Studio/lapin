@@ -19,7 +19,9 @@ import { PaneContext } from './app/pane';
 import { openViewWindow } from './app/windows';
 import { beginTabDrag, DROP_LABELS, tabToWindow, useTabDrag } from './app/tabDrag';
 import { openContextMenu, type MenuItem } from './shell/ContextMenu';
-import { t as tr } from './i18n';
+import { t as tr, useLang } from './i18n';
+import { brand } from './platform/brand';
+import { installTruncationTitles } from './shell/truncTitles';
 import { resolveTheme, setPrefs, usePrefs } from './app/prefs';
 import { CursorCoords } from './shell/CursorCoords';
 import { NavStyleMenu } from './shell/NavStyleMenu';
@@ -516,7 +518,7 @@ export function App() {
   const theme = useUi((s) => s.theme);
   useShortcuts();
   useDialogLayer();
-  useEffect(() => { watchLocation(); }, []);
+  useEffect(() => { watchLocation(); installTruncationTitles(); }, []);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   // The theme chosen is kept for the next start (a tester's report: dark came back light every time); a system choice follows the system.
   useEffect(() => { const p = usePrefs.getState(); if (p.theme !== 'system' && p.theme !== theme) setPrefs({ theme }); }, [theme]);
@@ -530,6 +532,14 @@ export function App() {
     return () => mq?.removeEventListener?.('change', apply);
   }, [themeChoice]);
   const role = useUi((s) => s.windowRole);
+  // The window's title names the project, with a dot while it holds unsaved changes (forum topic 257): "Name • — Lapin".
+  const doc = useSession((s) => s.doc);
+  const lang = useLang((s) => s.lang);
+  useEffect(() => {
+    const title = screen === 'start' || !doc ? brand.name : `${doc.path ? projectTitle(doc.path) : tr('New project')}${doc.dirty ? ' •' : ''} — ${brand.name}`;
+    document.title = title;
+    if (isDesktop()) void import('@tauri-apps/api/window').then((w) => w.getCurrentWindow().setTitle(title)).catch(() => undefined);
+  }, [screen, doc, doc?.path, doc?.dirty, lang]);
   if (screen === 'join') return <JoinGate onJoin={() => void connect()} />;
   return <>{screen === 'start' ? <StartScreen /> : role === 'view' ? <ViewWindow /> : <Workspace />}<EngineNotice /><BusyOverlay /><ContextMenuHost /></>;
 }

@@ -274,7 +274,7 @@ Barele arată partea realizată mai închisă. Proprietățile spun de unde vine
 
 ![Marcajele unui perete în proprietățile lui](shots/planning-element-marks.webp)
 
-Pe șantier, de pe telefon: intră în sesiunea partajată a proiectului din browser (**Fișier → Partajează sesiunea…** pe calculatorul care îl are deschis). Un invitat care a intrat doar ca să se uite poate totuși marca elemente și scrie progresul unei sarcini: marcarea e singura modificare deschisă oricărui invitat. Fotografiile și rapoartele pe sarcini sunt pentru ediția premium.
+Pe șantier, de pe telefon: intră în sesiunea partajată a proiectului din browser (**Fișier → Colaborare → Partajează sesiunea…** pe calculatorul care îl are deschis). Un invitat care a intrat doar ca să se uite poate totuși marca elemente și scrie progresul unei sarcini: marcarea e singura modificare deschisă oricărui invitat. Fotografiile și rapoartele pe sarcini sunt pentru ediția premium.
 
 ### Linia de bază
 
@@ -341,7 +341,7 @@ Duratele și decalajele numără zilele lucrătoare ale acestui calendar.
 ## Schimbul programului
 
 - **Exportă MS Project…** scrie un fișier MS Project XML. Îl deschid MS Project, ProjectLibre și GanttProject, iar Primavera P6 îl importă. Conține sarcinile cu WBS-ul, duratele, datele, constrângerile și rezervele lor, legăturile cu tipurile și decalajele lor și calendarul, cu fiecare sărbătoare ca excepție. **Importă MS Project…** citește un astfel de fișier în locul programului proiectului. Un program scris de Lapin și citit din nou își păstrează id-urile sarcinilor și datele.
-- **Exportă IFC…** (și din **Fișier**) scrie programul în fișierul IFC, împreună cu modelul: un IfcWorkSchedule, IfcTask-urile cu timpii lor, legăturile IfcRelSequence și IfcWorkCalendar. Importul unui fișier IFC care are un program îl aduce și pe acesta.
+- **Exportă IFC…** (și din **Fișier → Exportă**) scrie programul în fișierul IFC, împreună cu modelul: un IfcWorkSchedule, IfcTask-urile cu timpii lor, legăturile IfcRelSequence și IfcWorkCalendar. Importul unui fișier IFC care are un program îl aduce și pe acesta.
 - **Export XLSX** scrie un registru de calcul: tabelul Gantt-ului și zilele libere ale calendarului.
 
 Câmpurile proprii ale lui Lapin pentru care alte programe n-au loc (constrângerea unei sarcini, dacă e umedă, pauza de iarnă) merg în IFC ca seturile de proprietăți `Lapin_Task` și `Lapin_Calendar`. MS Project nu are sarcini umede, deci pauza de iarnă rămâne în Lapin.

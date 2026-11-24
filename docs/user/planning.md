@@ -274,7 +274,7 @@ The bars show the part done darker. Properties says where a percentage came from
 
 ![A wall's marks in its properties](shots/planning-element-marks.webp)
 
-On site, from a phone: join the project's shared session from the browser (**File → Share session…** on the computer that has it open). A guest who joined only to look may still mark elements and set a task's progress: marking is the only edit open to every guest. Photos and reports on tasks are for the premium edition.
+On site, from a phone: join the project's shared session from the browser (**File → Collaborate → Share session…** on the computer that has it open). A guest who joined only to look may still mark elements and set a task's progress: marking is the only edit open to every guest. Photos and reports on tasks are for the premium edition.
 
 ### The baseline
 
@@ -341,7 +341,7 @@ Durations and lags count working days of this calendar.
 ## Exchanging the schedule
 
 - **Export MS Project…** writes an MS Project XML file. MS Project, ProjectLibre and GanttProject open it, and Primavera P6 imports it. It holds the tasks with their WBS, durations, dates, constraints and floats, the links with their types and lags, and the calendar with every holiday as an exception. **Import MS Project…** reads such a file in place of the project's schedule. A schedule written by Lapin and read again keeps its tasks' ids and dates.
-- **Export IFC…** (also under **File**) writes the schedule into the IFC file with the model: an IfcWorkSchedule, its IfcTasks with their times, the IfcRelSequence links and the IfcWorkCalendar. Importing an IFC file that has a schedule brings it in too.
+- **Export IFC…** (also under **File → Export**) writes the schedule into the IFC file with the model: an IfcWorkSchedule, its IfcTasks with their times, the IfcRelSequence links and the IfcWorkCalendar. Importing an IFC file that has a schedule brings it in too.
 - **Export XLSX** writes a workbook: the Gantt's table and the calendar's days off.
 
 Lapin's own fields that other programs have no place for (a task's constraint, whether it is wet, the winter break) travel in IFC as the property sets `Lapin_Task` and `Lapin_Calendar`. MS Project has no wet tasks, so the winter break stays in Lapin.

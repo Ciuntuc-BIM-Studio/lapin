@@ -144,7 +144,7 @@ Every length the command line asks for is in the project's unit, and the prompt 
 
 ### Tracing over a PDF or an image
 
-**File → Import PDF or image…**, or **Draft → PDF or image**, brings a drawing in to trace over: a scanned plan, a photo of a facade, a PDF from another office. It goes into the plan, section or elevation in front, under its drawing.
+**File → Import → Import PDF or image…**, or **Draft → PDF or image**, brings a drawing in to trace over: a scanned plan, a photo of a facade, a PDF from another office. It goes into the plan, section or elevation in front, under its drawing.
 
 - **A PDF**: choose the **Page** and the scale its drawing was made to (**Drawn at 1:**). A paper millimetre then measures that many millimetres here, so a 1:100 plan comes in at its true size. The page's lines come in as drafting you can snap to, edit and trace, and its pictures (a scan inside the PDF) as images under them. Either can be left out. The page comes in as one group named after the file, so **Move**, **Rotate** and **Scale** take it whole; double-click it to work on its parts.
 - **An image** (PNG or JPEG): give its **Width**; its height follows its pixels. It need not be right: the next step sets it exactly.

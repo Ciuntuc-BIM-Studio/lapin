@@ -144,7 +144,7 @@ Orice lungime cerută de linia de comandă e în unitatea proiectului, iar mesaj
 
 ### Calchiat peste un PDF sau o imagine
 
-**Fișier → Importă PDF sau imagine…** sau **Desen → PDF sau imagine** aduce un desen peste care să calchiezi: un plan scanat, o fotografie a unei fațade, un PDF de la alt birou. Intră în planul, secțiunea sau fațada din față, sub desenul ei.
+**Fișier → Importă → Importă PDF sau imagine…** sau **Desen → PDF sau imagine** aduce un desen peste care să calchiezi: un plan scanat, o fotografie a unei fațade, un PDF de la alt birou. Intră în planul, secțiunea sau fațada din față, sub desenul ei.
 
 - **Un PDF**: alege **Pagina** și scara la care a fost făcut desenul lui (**Desenat la 1:**). Un milimetru de hârtie măsoară atunci atâția milimetri aici, așa că un plan la 1:100 intră la mărimea lui reală. Liniile paginii intră ca desen de care te poți prinde, pe care îl poți modifica și calchia, iar imaginile ei (o scanare din PDF) ca imagini sub ele. Oricare poate fi lăsată deoparte. Pagina intră ca un singur grup numit după fișier, așa că **Mută**, **Rotire** și **Scalează** o iau întreagă; dublu clic pe ea ca să lucrezi pe părțile ei.
 - **O imagine** (PNG sau JPEG): dă-i **Lățimea**; înălțimea urmează pixelii ei. Nu trebuie să fie exactă: pasul următor o fixează.

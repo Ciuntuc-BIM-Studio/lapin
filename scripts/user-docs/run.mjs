@@ -343,6 +343,11 @@ function tools(page, url, folder, lang) {
       await page.getByRole('button', { name, exact }).first().click({ timeout: 10_000 });
       await t.wait(opts.wait ?? 400);
     },
+    /** Opens a submenu of the File menu (Import, Export, Collaborate), which the menu was opened on. */
+    async sub(name) {
+      await page.locator(`[data-menu-sub="${name}"]`).click();
+      await t.wait(200);
+    },
     /** A ribbon tool by its id (architecture.wall, manage.materials…), as its button starts it. */
     async tool(id) {
       const ok = await page.evaluate(async (id) => { const m = await import('/src/platform/modules.ts'); const tool = m.findTool(id); if (tool) m.activate(tool); return Boolean(tool); }, id);

@@ -12,7 +12,7 @@ Proiectul rămâne pe calculatorul gazdei, iar Lapin-ul gazdei hotărăște fiec
 
 ## Partajezi proiectul
 
-**Fișier → Partajează sesiunea…**, îți dai numele, alegi cum intră oaspeții, apoi apeși **Partajează**:
+**Fișier → Colaborare → Partajează sesiunea…**, îți dai numele, alegi cum intră oaspeții, apoi apeși **Partajează**:
 
 - **editorii** modelează ca tine;
 - **vizitatorii** se uită și se plimbă prin model, fără să schimbe nimic.
@@ -28,7 +28,7 @@ Cât proiectul e partajat și are fișier, Lapin îl salvează la fiecare 5 minu
 ## Intri într-o sesiune
 
 - **Din browser**: deschizi link-ul, îți dai numele și apeși **Intră**. Nu instalezi nimic.
-- **Din Lapin**: pe ecranul de start sau în **Fișier** alegi **Intră într-o sesiune…**, lipești link-ul sau codul și îți dai numele.
+- **Din Lapin**: pe ecranul de start sau în **Fișier → Colaborare** alegi **Intră într-o sesiune…**, lipești link-ul sau codul și îți dai numele.
 
 ![Intrarea din Lapin](shots/join-dialog.webp)
 

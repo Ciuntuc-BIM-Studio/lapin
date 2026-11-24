@@ -12737,6 +12737,15 @@ const S5D_TAILS_EL: Record<string, string> = {
   'the seismic effects × 1/(1 − θ) there (or second order).': "οι σεισμικές επιρροές × 1/(1 − θ) εκεί (ή δεύτερη τάξη).",
   'a second-order analysis is needed there.': "εκεί απαιτείται ανάλυση δεύτερης τάξης.",
   'above 0.3, not allowed: stiffen the structure.': "πάνω από 0.3, δεν επιτρέπεται: ενίσχυσε τον φορέα.",
+  // The File menu in submenus, the quick-access group and the view settings (forum topic 257, second batch).
+  "Open recent": "Πρόσφατα",
+  "No recent projects": "Κανένα πρόσφατο έργο",
+  "Quick access": "Γρήγορη πρόσβαση",
+  "Floor plan": "Κάτοψη",
+  "The value comes from the view's style": "Η τιμή προέρχεται από το στυλ της προβολής",
+  "Edit the types of this kind": "Επεξεργασία των τύπων αυτού του είδους",
+  "Speckle: Send…": "Speckle: Αποστολή…",
+  "Speckle: Receive…": "Speckle: Λήψη…",
 };
 
 export const EL_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [

@@ -7,9 +7,11 @@
  */
 
 import { useState } from 'react';
-import { Settings2 } from 'lucide-react';
+import { Copy, Settings2 } from 'lucide-react';
 import { useUi } from '../app/store';
-import { useSession } from '../engine/session';
+import { execute, useSession } from '../engine/session';
+import { openContextMenu } from './ContextMenu';
+import { openTypeDialog } from './typeToEdit';
 import { slotOf, TOOL_DRAG } from '../app/hotbar';
 import { activate, allTools, typesOf } from '../platform/modules';
 import type { ToolDef } from '../platform/module';
@@ -36,7 +38,7 @@ export function Catalog() {
   const pick = (m: 'project' | 'libraries') => { setMode(m); try { localStorage.setItem(MODE_KEY, m); } catch { /* a convenience only */ } };
   return (
     <>
-      <div className="catalog-kinds" role="tablist" aria-label="Catalog source">
+      <div className="catalog-kinds mode" role="tablist" aria-label="Catalog source">
         <button type="button" role="tab" aria-selected={mode === 'project'} className={`kind-chip${mode === 'project' ? ' on' : ''}`} data-mode="project" onClick={() => pick('project')}>In the project</button>
         <button type="button" role="tab" aria-selected={mode === 'libraries'} className={`kind-chip${mode === 'libraries' ? ' on' : ''}`} data-mode="libraries" onClick={() => pick('libraries')}>From the libraries</button>
       </div>
@@ -58,12 +60,18 @@ function ProjectCatalog() {
   const current = typed.get() ?? types[0]?.id ?? null;
   const nodes = useSession.getState().nodes;
   const Thumb = typed.thumb;
+  // A card's right-click: its type in the type editor, or a copy of it (the same copy as the editor's Duplicate).
+  const cardMenu = (e: React.MouseEvent, id: string) => openContextMenu(e.clientX, e.clientY, [
+    ...(typed.dialog ? [{ label: 'Edit type…', icon: <Settings2 size={13} />, onSelect: () => openTypeDialog(typed.dialog!, id) }] : []),
+    { label: 'Duplicate', icon: <Copy size={13} />, onSelect: () => void execute('types.duplicate', { id }) },
+  ]);
   return (
     <div className="catalog" data-testid="catalog">
       <div className="catalog-kinds" role="tablist" aria-label="Catalog">
         {kinds.map((k) => (
           <button type="button" key={k.id} role="tab" aria-selected={k.id === tool.id} className={`kind-chip${k.id === tool.id ? ' on' : ''}`} data-kind={k.id} onClick={() => pick(k.id)}>{k.label}</button>
         ))}
+        {typed.dialog && <button type="button" className="kind-chip catalog-edit" data-testid="catalog-edit-types" title="Edit the types of this kind" onClick={() => useUi.setState({ dialog: typed.dialog! })}><Settings2 size={12} /> Edit types…</button>}
       </div>
       {types.length === 0 && <p className="muted small pad">No types yet: the first is made as you place one.</p>}
       <div className="catalog-cards">
@@ -74,7 +82,8 @@ function ProjectCatalog() {
             <button type="button" key={x.id} className={`catalog-card${x.id === current ? ' on' : ''}`} data-type={x.name}
               title={`${tool.label} · ${x.name}`} draggable
               onDragStart={(e) => { e.dataTransfer.setData(TOOL_DRAG, slotOf(tool.id, x.name)); e.dataTransfer.effectAllowed = 'copy'; }}
-              onClick={() => { typed.set(x.id); activate(tool); }}>
+              onClick={() => { typed.set(x.id); activate(tool); }}
+              onContextMenu={(e) => { e.preventDefault(); cardMenu(e, x.id); }}>
               <span className="catalog-thumb">{Thumb ? <Thumb type={node} /> : <tool.icon size={26} strokeWidth={1.3} />}</span>
               <span className="catalog-text">
                 <span className="catalog-name" data-no-i18n>{x.name}</span>
@@ -85,7 +94,6 @@ function ProjectCatalog() {
         })}
       </div>
       <p className="muted small pad">A click places it; drag a card onto a quick slot to keep it there.</p>
-      {typed.dialog && <button type="button" className="btn small catalog-edit" onClick={() => useUi.setState({ dialog: typed.dialog! })}><Settings2 size={13} /> Edit types…</button>}
     </div>
   );
 }

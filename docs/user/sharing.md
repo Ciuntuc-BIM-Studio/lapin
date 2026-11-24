@@ -12,7 +12,7 @@ The project stays on the host's computer, and the host's Lapin decides every edi
 
 ## Share the project
 
-**File → Share session…**, give your name, choose how guests join, then press **Share**:
+**File → Collaborate → Share session…**, give your name, choose how guests join, then press **Share**:
 
 - **editors** model as you do;
 - **viewers** look and move around, and change nothing.
@@ -28,7 +28,7 @@ While the project is shared and has a file, Lapin saves it every 5 minutes. Only
 ## Join a session
 
 - **From a browser**: open the link, give your name and press **Join**. Nothing to install.
-- **From Lapin**: on the start screen, or in **File**, choose **Join session…**, paste the link or the code and give your name.
+- **From Lapin**: on the start screen, or in **File → Collaborate**, choose **Join session…**, paste the link or the code and give your name.
 
 ![Joining from Lapin](shots/join-dialog.webp)
 

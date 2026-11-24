@@ -37,7 +37,7 @@ The check reads values as IDS says: texts exactly, numbers in metres, square met
 
 When the project has IDS files, **Manage → Issue… → On the CDE server** runs them before **Submit for approval** and lists what fails. With the project's setting on (**A failing specification stops the submission**, in Manage → IDS…), the submission waits until the failures are fixed, or until you tick **Submit despite the IDS failures** and write why: the note goes with the submission, so the approver reads it. The same applies to **Make the issue tag now**. **Run before Submit for approval** turns the check off for the project.
 
-In **File → Collaborate… → Publishing**, the **IDS** tab is the same panel.
+In **File → Collaborate → Collaborate… → Publishing**, the **IDS** tab is the same panel.
 
 ## IDS files on the CDE server
 

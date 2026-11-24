@@ -66,7 +66,7 @@
 [data-theme="classic"] .topbar, [data-theme="classic"] .tabs-row { background: var(--panel); }
 [data-theme="classic"] .tab.on { background: #ffffff; border-bottom-color: var(--accent); }
 [data-theme="classic"] :is(.eyebrow, .btn, .menu-head, .group-label, .rail-label, .ifc-kind, .tree-set .set-name, .chip, .status .mods, .view-title, .layer-edit th, .scope-bar .scope-what, .loc h4, .schedule-settings h4, .mode-chip > span:first-child, .fold-bar, .studio-steps-title, .profile-picker-list li.profile-group-head, .profile-list li.profile-group-head, .doc-atom-tag, .doc-picker-list h5, .schedule-editor-head, .tb-fields h5, .sy-category, .my-cat-title, .script-palette-heading, .part-tree .part-title, .graphs-inspector .graphs-section-title, .part-params .part-param-group td, .finish-painter .part-title) { text-transform: none; letter-spacing: 0; }
-[data-theme="classic"] :is(button, input, select, textarea, .btn, .dialog, .menu, .menu-pop, .search, .recent, .template, .workspace-switch, .undo-redo, .icon, .panel-overlay, .kbd, kbd) { border-radius: 2px; }
+[data-theme="classic"] :is(button, input, select, textarea, .btn, .dialog, .menu, .menu-pop, .search, .recent, .template, .workspace-switch, .quick-access, .icon, .panel-overlay, .kbd, kbd) { border-radius: 2px; }
 [data-theme="classic"] .btn { font-weight: 500; padding: 7px 12px; }
 [data-theme="classic"] .start-brand { letter-spacing: 0; }
 /* High contrast: strong focus, no faded states, grid quiet but seen, selection heavy. */
@@ -74,8 +74,8 @@
 [data-theme="contrast"] body { font-size: 13.5px; }
 [data-theme="contrast"] .muted, [data-theme="contrast"] .small.muted { color: var(--ink-muted); }
 [data-theme="contrast"] :is(.btn, button:not([class])):disabled { opacity: 1; color: #595959; background: var(--wash); border-color: #595959; }
-[data-theme="contrast"] .icon:disabled, [data-theme="contrast"] .undo-btn:disabled { opacity: 0.6; }
-[data-theme="contrast"] :is(.btn, .recent, .template, .search, .undo-redo, .workspace-switch, .dialog, .menu, .menu-pop) { border-color: var(--rule-strong); }
+[data-theme="contrast"] .icon:disabled, [data-theme="contrast"] .qa-btn:disabled { opacity: 0.6; }
+[data-theme="contrast"] :is(.btn, .recent, .template, .search, .workspace-switch, .dialog, .menu, .menu-pop) { border-color: var(--rule-strong); }
 [data-theme="contrast"] :is(.btn:hover, .recent:hover, .template:hover:not(:disabled)) { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 [data-theme="contrast"] .tab.on { border-bottom-width: 3px; font-weight: 700; }
 .view-area[data-theme="contrast"] .plan-grid path { stroke: #b3b3b3; stroke-width: 0.6; }
@@ -194,7 +194,7 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 /* The workspace: which discipline's tabs show, switched in one click. */
 .workspace-switch { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; margin: 0 6px 4px 2px; padding: 3px 8px; border: 1px solid var(--rule); border-radius: 3px; background: var(--bg); color: var(--ink); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .workspace-switch:hover { border-color: var(--accent); }
-.tabs-row > :is(.brand, .undo-redo, .icon, .help-menu) { flex-shrink: 0; }
+.tabs-row > :is(.brand, .quick-access, .icon, .help-menu) { flex-shrink: 0; }
 .tab:hover { color: var(--ink); }
 .tab.on { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
 .search { display: flex; align-items: center; gap: 8px; margin: 0 8px 4px; padding: 4px 10px; flex: 0 1 240px; min-width: 34px; overflow: hidden; white-space: nowrap; border: 1px solid var(--rule); border-radius: 3px; background: var(--bg); color: var(--ink-muted); cursor: pointer; }
@@ -202,16 +202,13 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .icon { display: grid; place-items: center; width: 28px; height: 28px; margin-bottom: 4px; border: 0; border-radius: 3px; background: none; cursor: pointer; }
 .icon:hover:not(:disabled) { background: var(--wash); }
 .icon:disabled { opacity: 0.35; }
-/* Undo and Redo in the top bar: one framed pair, the icons at full ink; their names beside them in Comfortable. */
-.undo-redo { display: flex; margin: 0 6px 4px; border: 1px solid var(--rule); border-radius: 3px; background: var(--bg); overflow: hidden; }
-.undo-btn { display: flex; align-items: center; gap: 5px; height: 26px; padding: 0 8px; border: 0; background: none; color: var(--ink); cursor: pointer; font-size: 12px; }
-.undo-btn + .undo-btn { border-left: 1px solid var(--rule); }
-.undo-btn:hover:not(:disabled) { background: var(--wash); }
-.undo-btn:disabled { color: var(--ink-muted); opacity: 0.5; cursor: default; }
-.topbar.ribbon-icons .undo-redo, .topbar.ribbon-dropdown .undo-redo { margin: 0 4px; }
-.topbar.ribbon-icons .undo-btn, .topbar.ribbon-dropdown .undo-btn { height: 22px; padding: 0 6px; }
-.topbar.ribbon-icons .undo-text, .topbar.ribbon-dropdown .undo-text { display: none; }
-@media (max-width: 900px) { .undo-text { display: none; } }
+/* The quick-access group beside the brand: Open, Save, Undo, Redo and Publish as icons (forum topic 257). */
+.quick-access { display: flex; align-items: center; gap: 1px; margin: 0 6px 4px 0; flex-shrink: 0; }
+.qa-btn { display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 3px; background: none; color: var(--ink); cursor: pointer; }
+.qa-btn:hover:not(:disabled) { background: var(--wash); }
+.qa-btn:disabled { color: var(--ink-muted); opacity: 0.45; cursor: default; }
+.topbar.ribbon-icons .quick-access, .topbar.ribbon-dropdown .quick-access { margin-bottom: 0; }
+.topbar.ribbon-icons .qa-btn, .topbar.ribbon-dropdown .qa-btn { width: 24px; height: 24px; }
 .menu-sep { height: 1px; margin: 4px 0; background: var(--rule); }
 .menu-head { padding: 4px 12px 2px; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted, #888); }
 .exchange-options { border-top: 1px solid var(--rule); padding-top: 10px; }
@@ -244,6 +241,10 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .panel.rail .icon.mini { margin: 0; }
 .rail-label { writing-mode: vertical-rl; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
 .browser-tabs { display: flex; gap: 2px; margin-top: 8px; border-bottom: 1px solid var(--rule); }
+/* The browser's head is its tab row (the project's name is in the window's title); the fold button sits at its end. */
+.panel-head.browser-head { flex-direction: row; align-items: flex-end; gap: 4px; padding: 6px 34px 0 10px; }
+.panel-head.browser-head .browser-tabs { flex: 1; margin-top: 0; border-bottom: 0; }
+.panel-head.browser-head .icon.mini { margin: 0 0 4px; flex: none; }
 .browser-tab { padding: 4px 10px 5px; border: 0; border-bottom: 2px solid transparent; background: none; cursor: pointer; color: var(--ink-muted); font-weight: 500; font-size: 12px; }
 .browser-tab.on { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
 /* The catalog (decision 263): the kinds as chips, the types as cards with their drawing. */
@@ -259,7 +260,8 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .thumb-svg { display: block; width: 96px; height: 64px; }
 .catalog-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .catalog-name { font-weight: 600; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; }
-.catalog-edit { align-self: flex-start; }
+.catalog-edit { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+.catalog-kinds.mode { padding: 8px 10px 0; }
 .ifc-tree { padding-bottom: 12px; }
 .ifc-tree .filter { width: calc(100% - 24px); }
 .ifc-row { display: flex; align-items: center; gap: 4px; min-height: 24px; padding-right: 10px; }
@@ -287,6 +289,8 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .tree-label .count { margin-left: auto; font-size: 11px; color: var(--ink-muted); }
 .tree-item { display: block; width: 100%; padding: 4px 12px 4px 44px; border: 0; background: none; text-align: left; cursor: pointer; }
 .tree-item:hover { background: var(--wash); }
+/* Over a row's own icons (duplicate, delete) the whole row lights, so it is clear which row they act on. */
+.tree-row:hover .tree-item:not(.on) { background: var(--wash); }
 .tree-item.on { background: var(--accent-wash); color: var(--accent); font-weight: 600; box-shadow: inset 2px 0 var(--accent); }
 /* A set of the browser: its drawings' kinds inside it, one step in. */
 .tree-set { padding: 2px 0; border-top: 1px solid var(--line); }
@@ -301,7 +305,7 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .sets-editor .field-line input, .sets-editor .field-line textarea { width: 100%; box-sizing: border-box; }
 .views { display: flex; flex-direction: column; min-width: 0; }
 .view-tabs { display: flex; align-items: flex-end; gap: 2px; padding: 4px 6px 0; background: var(--bg); border-bottom: 1px solid var(--rule); }
-.quick-views { display: flex; align-items: center; gap: 1px; flex: none; margin: 0 6px 4px 4px; padding-right: 6px; border-right: 1px solid var(--rule); }
+.quick-views { display: flex; align-items: center; align-self: center; gap: 1px; flex: none; margin: 0 6px 0 4px; padding-right: 6px; border-right: 1px solid var(--rule); }
 .quick-views .icon.mini { margin: 0; }
 .quick-views .icon.mini.on { background: var(--rule); color: var(--ink); }
 @media (max-width: 700px) { .quick-views { margin-left: 0; padding-right: 3px; margin-right: 3px; } }
@@ -311,7 +315,7 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .view-tab .close { display: inline-flex; border-radius: 3px; padding: 1px; color: var(--ink-muted); opacity: 0.6; }
 .view-tab:hover .close, .view-tab.on .close { opacity: 1; }
 .view-tab .close:hover { background: var(--rule); color: var(--ink); }
-.view-tabs .icon.mini { margin: 0 0 4px; color: var(--ink-muted); }
+.view-tabs .icon.mini { margin: 0; align-self: center; color: var(--ink-muted); }
 .view-tabs .icon.mini:hover { color: var(--ink); }
 /* Panes: one, or two split by a separator; the active one carries the accent on its tab. */
 .panes { flex: 1; min-height: 0; display: flex; flex-direction: row; align-items: stretch; }
@@ -323,7 +327,7 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .panes.split-column > .pane-sep { cursor: row-resize; }
 .pane.on .view-tab.on { box-shadow: inset 0 2px var(--accent); }
 .view-window .views { height: 100%; }
-.view-tab { display: flex; align-items: center; gap: 8px; padding: 5px 12px; border: 1px solid var(--rule); border-bottom: 0; border-radius: 3px 3px 0 0; background: var(--wash); cursor: pointer; color: var(--ink-muted); }
+.view-tab { display: flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; border: 1px solid var(--rule); border-bottom: 0; border-radius: 3px 3px 0 0; background: var(--wash); cursor: pointer; color: var(--ink-muted); }
 .view-tab.on { background: var(--panel); color: var(--ink); font-weight: 600; }
 .view-area { position: relative; flex: 1; min-height: 0; }
 /* The drawing areas wear the viewport theme (Preferences → Viewport), which may differ from the panels': its tokens are set again here, so the canvas, the HUD and the grips follow it. */
@@ -469,6 +473,13 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .menu { position: absolute; top: 100%; left: 0; z-index: 20; min-width: 220px; padding: 6px 0; background: var(--raised); border: 1px solid var(--rule-strong); border-radius: 3px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12); max-height: calc(100vh - 90px); overflow-y: auto; overscroll-behavior: contain; }
 .menu button { display: flex; width: 100%; justify-content: space-between; gap: 16px; padding: 7px 14px; border: 0; background: none; cursor: pointer; text-align: left; }
 .menu button:hover { background: var(--wash); }
+/* Submenus (Import, Export, Collaborate, Open recent): placed by the item's box, so the menu's scrolling does not clip them. */
+.menu-sub { position: relative; }
+.menu-sub > button { align-items: center; }
+.menu-sub > button.open { background: var(--wash); }
+.menu.sub { position: fixed; z-index: 30; min-width: 240px; max-width: 420px; }
+.menu-empty { padding: 7px 14px; }
+.menu button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
 /* Inputs that commit on Enter or blur; small icon buttons; rows. */
 .commit { display: inline-flex; align-items: center; }
@@ -738,6 +749,10 @@ label.check { display: inline-flex; gap: 6px; align-items: center; margin-right:
 .tree-row .tree-item { flex: 1; }
 .tree-row .icon.mini { opacity: 0; }
 .tree-row:hover .icon.mini { opacity: 1; }
+/* The icons at a row's end are larger, and kept clear of the panel's scrollbar (an overlay one lies over the last 14 px). */
+.browser .icon.mini { width: 22px; height: 22px; }
+.browser .tree-row, .browser .tree-label { padding-right: 18px; }
+.browser { scrollbar-gutter: stable; }
 /*
  * A view placed on a sheet (forum topic 207): Revit's small blue square before its name, in the row's left padding so the
  * names stay aligned; its own blue in each theme (a deep one, 7:1 on white, in high contrast, with a black edge).
@@ -807,15 +822,17 @@ html.no-preselect .sheet-viewport:not(.active):hover rect:first-child { stroke: 
 .mini-select { margin-left: auto; font-size: 11px; padding: 0 2px; }
 .chip.warn { color: #c2410c; border-color: #c2410c; }
 .help-menu { position: relative; }
-.ask-me { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; padding: 2px 8px; margin-right: 2px; background: none; border: 1px solid var(--rule); border-radius: 12px; color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; }
+.ask-me { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; padding: 2px 8px; margin: 0 2px 4px 0; height: 26px; box-sizing: border-box; background: none; border: 1px solid var(--rule); border-radius: 12px; color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; }
 .ask-me:hover { background: var(--accent-wash); border-color: var(--rule-strong); }
 .menu-pop { position: absolute; right: 0; top: 100%; z-index: 40; min-width: 210px; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 3px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); padding: 4px 0; max-height: calc(100vh - 90px); overflow-y: auto; overscroll-behavior: contain; }
 .menu-pop button { text-align: left; padding: 6px 12px; background: none; border: none; cursor: pointer; color: var(--ink); }
 .menu-pop button:hover { background: var(--accent-wash); }
 .menu-note { padding: 6px 12px; border-top: 1px solid var(--rule); }
-.menu-langs { display: flex; flex-wrap: wrap; gap: 2px; padding: 2px 8px; max-width: 220px; }
-.menu-pop .menu-langs button { padding: 4px 6px; border-radius: 3px; color: var(--ink-muted); }
-.menu-pop .menu-langs button.on { color: var(--ink); font-weight: 600; background: var(--accent-wash); }
+.menu-langs { display: flex; flex-direction: column; gap: 0; padding: 2px 0; min-width: 160px; }
+.menu-pop .menu-sub > button { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 6px 12px; background: none; border: none; cursor: pointer; color: var(--ink); text-align: left; }
+.menu-pop .menu-sub > button:hover, .menu-pop .menu-sub > button.open { background: var(--accent-wash); }
+.menu-pop .menu-langs button, .menu.sub .menu-langs button { padding: 6px 14px; border-radius: 0; color: var(--ink-muted); }
+.menu-pop .menu-langs button.on, .menu.sub .menu-langs button.on { color: var(--ink); font-weight: 600; background: var(--accent-wash); }
 .dialog-body.report textarea { width: 100%; box-sizing: border-box; font: inherit; }
 button.link { background: none; border: none; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
 .dialog.about { max-width: min(520px, calc(100vw - 32px)); }
@@ -1017,7 +1034,7 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .sect-body { padding: 0 12px 12px; }
 .props .fields { display: grid; grid-template-columns: minmax(92px, 44%) 1fr; gap: 0; margin: 0; border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; background: var(--raised); align-items: stretch; }
 .props .fields dt, .props .fields dd { display: flex; align-items: center; min-height: 27px; margin: 0; border-bottom: 1px solid var(--rule); }
-.props .fields dt { position: relative; padding: 0 8px; background: var(--wash); border-right: 1px solid var(--rule); color: var(--ink-muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.props .fields dt { position: relative; display: block; padding: 0 8px; line-height: 26px; background: var(--wash); border-right: 1px solid var(--rule); color: var(--ink-muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .props .fields dd { padding: 0 6px; gap: 4px; min-width: 0; flex-wrap: wrap; }
 .along-field { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; width: 100%; padding: 2px 0; }
 .along-field select { flex: 1 1 90px; min-width: 0; }
@@ -1027,9 +1044,11 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .fields .contents { display: contents; }
 .props .fields dd.ro, .props .fields dd.num { justify-content: flex-end; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
 .props .fields > dt:nth-last-of-type(1), .props .fields > dd:last-child, .props .fields .qrow:last-child > * { border-bottom: 0; }
-.props .fields input:not([type=checkbox]):not([type=color]):not([type=radio]), .props .fields select { width: 100%; min-width: 0; height: 26px; margin: 0; padding: 0 4px; border: 0; border-radius: 0; background: transparent; color: var(--ink); }
+/* Controls in a field cell: one look for the dropdowns and the inputs, a hairline box a pixel or two in from the cell's border, so they read as editable (forum topic 257). */
+.props .fields input:not([type=checkbox]):not([type=color]):not([type=radio]), .props .fields select { width: 100%; min-width: 0; height: 22px; margin: 2px 0; padding: 0 4px; border: 1px solid var(--rule); border-radius: 3px; background: var(--bg); color: var(--ink); text-overflow: ellipsis; }
+.props .fields input:not([type=checkbox]):not([type=color]):not([type=radio]):hover:not(:focus), .props .fields select:hover:not(:focus) { border-color: var(--rule-strong); }
 .props .fields input.num, .props .fields .cell.num { text-align: right; font-variant-numeric: tabular-nums; }
-.props .fields input:focus, .props .fields select:focus { outline: 2px solid var(--accent); outline-offset: -1px; background: var(--accent-wash); }
+.props .fields input:focus, .props .fields select:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; background: var(--accent-wash); }
 .props .fields input[type=checkbox] { width: auto; margin: 0 4px; }
 .props .fields input[type=checkbox]:focus { outline-offset: 1px; background: none; }
 .props .fields input::placeholder { color: var(--ink-muted); font-style: italic; }
@@ -1249,6 +1268,12 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .remarks-scan tr.unread td { font-weight: 500; }
 .count.remarks { color: var(--remark); font-weight: 600; }
 .view-toolbar .icon.on { color: var(--remark); }
+/* The bar's dropdowns (underlay, scale, partial structure) and chips: the height and padding of the buttons beside them, as wide as what they show. */
+.view-toolbar > select.chip, .view-toolbar > .chip.scale, .view-toolbar .icon { height: 28px; box-sizing: border-box; margin: 0; }
+.view-toolbar > select.chip { width: auto; field-sizing: content; padding: 0 4px 0 8px; font-size: 12px; text-transform: none; letter-spacing: 0; }
+.view-toolbar > .chip.scale { display: inline-flex; align-items: center; padding: 0 8px; font-size: 12px; }
+/* The key plan's close: a hit area to aim at. */
+.hud-map .row .icon.mini { width: 28px; height: 28px; margin: -6px -8px -6px 0; }
 input.invalid { outline: 1px solid var(--err); }
 
 /* A plan's underlay: another level's drawing beneath, faded and grey, never picked (it is still snapped to). */
@@ -1257,15 +1282,27 @@ input.invalid { outline: 1px solid var(--err); }
 .underlay-pick.on { border-color: var(--accent); color: var(--accent); }
 
 /* A plan's storeys shown (View → Storeys shown, the plan view's properties) */
-.plan-storeys-list { list-style: none; margin: 8px 0 4px; padding: 0; }
-.plan-storeys-list li { padding: 2px 0; }
+.plan-storeys-list { list-style: none; margin: 6px 0 4px; padding: 0; border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; background: var(--raised); }
+.plan-storeys-list li { padding: 0; border-bottom: 1px solid var(--rule); }
+.plan-storeys-list li:last-child { border-bottom: 0; }
+.plan-storeys-list li > label { display: flex; align-items: center; gap: 6px; min-height: 27px; padding: 0 8px; cursor: pointer; }
+.plan-storeys-list li > label:hover { background: var(--wash); }
 .plan-storeys-list li.own { font-weight: 500; }
 /* A 3D view's (report #29): the cut's height beside its tick */
 .storeys-3d-cut { display: flex; align-items: center; gap: 6px; }
 .storeys-3d-cut input[type="number"] { width: 64px; }
 
 /* View settings and view styles (docs/view-styles.md) */
-.view-settings .fields dd { display: flex; align-items: center; gap: 6px; }
+.view-settings .eyebrow ~ .plan-storeys, .view-settings .plan-storeys .fields { margin-top: 0; }
+.view-settings .fields dd { display: flex; align-items: center; gap: 4px; flex-wrap: nowrap; }
+/* The control takes what is left of the row; "by style" (or the revert icon) and the edit pencil follow on the same row. */
+.view-settings .fields dd > select, .view-settings .fields dd > input.num, .view-settings .fields dd > .small-scale-cut { flex: 1 1 0; width: auto; min-width: 0; }
+.view-settings .fields dd > .small-scale-cut { display: flex; align-items: center; gap: 4px; }
+.view-settings .fields dd > .small-scale-cut select { flex: 1 1 0; min-width: 0; }
+.view-settings .fields dd .by-style { flex: none; font-size: 10.5px; color: var(--ink-muted); white-space: nowrap; }
+.view-settings .fields dd .icon.mini { flex: none; width: 22px; height: 22px; color: var(--ink-muted); }
+.view-settings .fields dd .icon.mini:hover { color: var(--ink); }
+.view-settings .fields dd .small-scale-cut .num { width: 44px; }
 .view-settings .eyebrow { margin: 12px 0 2px; }
 .view-styles td input:not([type]) { width: 100%; }
 
@@ -1384,6 +1421,7 @@ button.mode-chip:hover { color: var(--accent); }
 .topbar.ribbon-icons .brand, .topbar.ribbon-dropdown .brand { padding: 2px 12px 3px 6px; font-size: 14px; }
 .topbar.ribbon-icons .search, .topbar.ribbon-dropdown .search { margin: 0 6px; padding: 2px 8px; flex-basis: 180px; }
 .topbar.ribbon-icons .icon, .topbar.ribbon-dropdown .icon { width: 24px; height: 24px; margin-bottom: 0; }
+.topbar.ribbon-icons .ask-me, .topbar.ribbon-dropdown .ask-me { margin-bottom: 0; height: 24px; }
 .topbar.ribbon-dropdown { position: relative; z-index: 12; }
 .tab.open { color: var(--accent); }
 .band.icons { height: 34px; padding: 2px 6px; align-items: center; gap: 0; }

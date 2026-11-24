@@ -6614,6 +6614,15 @@ const S5D_TAILS: Record<string, string> = {
   'those tagged with a key': 'quelli etichettati con una chiave',
   'Each row its material\'s key in a circle (as a material key tag writes it), the rows in the keys\' order; the materials listed are numbered for good': 'Ogni riga con la chiave del suo materiale in un cerchio (come la scrive l\'etichetta di chiave materiale), le righe nell\'ordine delle chiavi; i materiali elencati ricevono un numero definitivo',
   'A row\'s text: {key}, {name}, {description} (the first line of the material\'s), {category}, or any parameter of the material ({Finish}); a part between — that comes out empty is left out': 'Il testo di una riga: {key}, {name}, {description} (la prima riga di quella del materiale), {category}, o qualsiasi parametro del materiale ({Finish}); una parte tra — che resta vuota viene omessa',
+  // The File menu in submenus, the quick-access group and the view settings (forum topic 257, second batch).
+  "Open recent": "Apri recente",
+  "No recent projects": "Nessun progetto recente",
+  "Quick access": "Accesso rapido",
+  "Floor plan": "Pianta",
+  "The value comes from the view's style": "Il valore viene dallo stile della vista",
+  "Edit the types of this kind": "Modifica i tipi di questo genere",
+  "Speckle: Send…": "Speckle: Invia…",
+  "Speckle: Receive…": "Speckle: Ricevi…",
 };
 export const IT_PATTERNS: Language['patterns'] = [
   // Publish sets (forum topic 225)

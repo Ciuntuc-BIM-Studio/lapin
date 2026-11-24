@@ -22,7 +22,7 @@ A new project already has three levels: **Foundations** (−1.50), **Ground floo
 
 ![The parts of Lapin's window](shots/workspace.webp)
 
-1. **The ribbon tabs.** Draft, Architecture, Interior, Structure, Site, Studio, Annotate, Manage, Construction and View each group their tools. **File** opens, saves, imports and exports. **Undo** and **Redo** are at the right end of the same bar (<kbd>Ctrl</kbd> <kbd>Z</kbd>, <kbd>Ctrl</kbd> <kbd>Y</kbd>).
+1. **The ribbon tabs.** Draft, Architecture, Interior, Structure, Site, Studio, Annotate, Manage, Construction and View each group their tools. **File** opens, saves, imports and exports. Beside the Lapin name are **Open**, **Save**, **Undo**, **Redo** and **Publish…** as icons (**Undo** and **Redo** with <kbd>Ctrl</kbd> <kbd>Z</kbd>, <kbd>Ctrl</kbd> <kbd>Y</kbd>).
 2. **The ribbon.** It holds the current tab's tools. Hover over a tool to see its name and its keyboard letters; hold <kbd>Alt</kbd> to see the letters of every large tool at once. When a band is wider than the window, the small tools show their icons only; make the window wider and their names come back.
 3. **The project browser.** It lists the levels, plans, sections, elevations, 3D views, sheets and schedules. Double-click one to open it in a tab. A project opens on the ground floor's plan, with the 3D view in a tab beside it.
 4. **The view.** This is where you draw: a plan, a section, a 3D view or a sheet. You can open several views side by side with the two buttons at the top right of the view.

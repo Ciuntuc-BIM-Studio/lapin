@@ -113,7 +113,7 @@ The project browser's **Catalog** tab shows the project's types for each tool th
 
 - click a card to place elements of that type: the tool starts with it;
 - drag a card onto a quick slot to keep the tool with that type there;
-- **Edit types…** opens the dialog where those types are made and changed.
+- **Edit types…**, at the end of the row of kinds, opens the dialog where those types are made and changed; right-click a card for **Edit type…** (the dialog opened on that type) and **Duplicate**.
 
 ![The catalog: the wall types](shots/catalog.webp)
 

@@ -406,7 +406,7 @@ In 3D they are simple figures: people with their limbs, clothes, hair and shoes,
 
 How people, cars and plants draw in 2D is a setting of the view style, **Entourage in 2D** (in the view's properties or **View → View settings**; for a whole style, **Manage → View styles**): **outlines** (the default), **abstract** (a person a circle in plan and a head over a body in an elevation, a car a rounded box, a tree a circle with its trunk), **detailed** (the plants' landscape symbols and every line of the bodies, with the view's sun shadows, as Lapin drew them before) or **not drawn**. **Silhouette fill** fills the silhouettes of elevations and sections light grey or pale green. They draw with pen 2 (0.13 mm at 1:100) unless **Manage → Object styles** gives the **Entourage** category another, and **Visibility / Graphics** hides that category in a view. Sheets, the PDF and DXF print them as the view draws them; this setting never changes their 3D bodies (the plants' are the view's **Vegetation**, above). Projects made before draw them as outlines too.
 
-They give drawings and pictures their scale but are no part of the building. An IFC or Fragments export (File → Export…) leaves them out unless you tick **Entourage** in its list of kinds; IFC writes them as IfcBuildingElementProxy "Entourage". The 3D exports (glTF, USD, COLLADA) take them. Clash tests leave them out.
+They give drawings and pictures their scale but are no part of the building. An IFC or Fragments export (File → Export → Export IFC, Fragments or BOS…) leaves them out unless you tick **Entourage** in its list of kinds; IFC writes them as IfcBuildingElementProxy "Entourage". The 3D exports (glTF, USD, COLLADA) take them. Clash tests leave them out.
 
 ### Your own pictures
 

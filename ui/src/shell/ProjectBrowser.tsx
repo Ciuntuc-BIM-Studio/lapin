@@ -16,7 +16,6 @@ import { execute, activeStorey, useSession } from '../engine/session';
 import { newSchedule } from '../modules/cost/schedules';
 import { ownPlanOf, storeyPlanView } from '../viewport/storeyPlan';
 import { num, storeys } from '../engine/model';
-import { projectTitle } from '../engine/files';
 import { useCamera } from '../viewport/camera';
 import { disciplineOf, groupItems, implicitPlan, itemOf, setsOf, SHEETABLE, THREE_D, VIEW_DRAG, type BrowserItem, type BrowserSet } from './browserSets';
 import { IfcTree } from './IfcTree';
@@ -59,7 +58,6 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
   useUi((s) => s.storeyId);
   const nodes = useSession((s) => s.nodes);
   const relations = useSession((s) => s.relations);
-  const doc = useSession((s) => s.doc);
   const ui = useUi();
   const levels = storeys({ nodes, relations }).slice().reverse();
   const active = activeStorey();
@@ -209,13 +207,13 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
       </button>
       {item.kind === 'sheet' && countOpen(nodes, item.id) > 0 && <span className="count remarks" title="Remarks read from PDFs, still open" data-testid="sheet-remark-count">{countOpen(nodes, item.id)}</span>}
       {children}
-      {item.node && <button type="button" className="icon mini" title={item.kind === 'sheet' ? 'Delete the sheet' : item.kind === 'schedule' ? 'Delete the schedule' : 'Delete the view'} onClick={() => remove(item.id)}><Trash2 size={11} /></button>}
+      {item.node && <button type="button" className="icon mini" title={item.kind === 'sheet' ? 'Delete the sheet' : item.kind === 'schedule' ? 'Delete the schedule' : 'Delete the view'} onClick={() => remove(item.id)}><Trash2 size={13} /></button>}
     </span>
   );
   const Dup = ({ item }: { item: BrowserItem }) => (
     <>
-      <button type="button" className="icon mini" title="Duplicate the view (its settings)" onClick={() => duplicateView(item, false)}><Copy size={11} /></button>
-      {item.kind !== '3d' && <button type="button" className="icon mini" title="Duplicate with detailing (dimensions, texts, line edits)" onClick={() => duplicateView(item, true)}><CopyPlus size={11} /></button>}
+      <button type="button" className="icon mini" title="Duplicate the view (its settings)" onClick={() => duplicateView(item, false)}><Copy size={13} /></button>
+      {item.kind !== '3d' && <button type="button" className="icon mini" title="Duplicate with detailing (dimensions, texts, line edits)" onClick={() => duplicateView(item, true)}><CopyPlus size={13} /></button>}
     </>
   );
 
@@ -257,15 +255,15 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
                   icon: <Square size={13} />,
                   onSelect: () => void execute('view.create', { kind: 'plan', storeyId: s.id, foundation: true, name: `${s.name} – foundations`, discipline }).then((res) => { const n = made(res); if (n) showPlan(s.id, n); }),
                 })));
-              }}><Plus size={12} /></button>}>
+              }}><Plus size={14} /></button>}>
             {(item) => <Row item={item} on={isPlanOn(item)} open={() => showPlan(item.storeyId ?? '', item.node ? item.id : null)}><Dup item={item} /></Row>}
           </Kind>
           <Kind id={`${id}:sections`} icon={<Scissors size={13} />} label="Sections" list={of('section')}
-            plus={set && <button type="button" className="icon mini" title="Draw a section line in the plan" onClick={() => useUi.setState({ view: 'plan', tool: 'view.section' })}><Plus size={12} /></button>}>
+            plus={set && <button type="button" className="icon mini" title="Draw a section line in the plan" onClick={() => useUi.setState({ view: 'plan', tool: 'view.section' })}><Plus size={14} /></button>}>
             {(item) => <Row item={item} on={view === 'drawing' && ui.drawingViewId === item.id} open={() => showDrawing(item.id)}><Dup item={item} /></Row>}
           </Kind>
           <Kind id={`${id}:elevations`} icon={<SquareStack size={13} />} label="Elevations" list={of('elevation')}
-            plus={set && of('elevation').length === 0 && <button type="button" className="icon mini" title="The four elevations" onClick={() => void addElevations(discipline)}><Plus size={12} /></button>}>
+            plus={set && of('elevation').length === 0 && <button type="button" className="icon mini" title="The four elevations" onClick={() => void addElevations(discipline)}><Plus size={14} /></button>}>
             {(item) => <Row item={item} on={view === 'drawing' && ui.drawingViewId === item.id} open={() => showDrawing(item.id)}><Dup item={item} /></Row>}
           </Kind>
           {details.length > 0 && (
@@ -283,16 +281,16 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
           <Kind id={`${id}:3d`} icon={<Box size={13} />} label="3D views" list={of('3d')}>
             {(item) => (
               <Row item={item} on={view === '3d' && (ui.view3dId ?? '3d') === item.id} open={() => show3d(item.node ? item.id : null)}>
-                <button type="button" className="icon mini" title="Save the camera as a 3D view" onClick={() => save3d(item.id)}><Copy size={11} /></button>
-                {item.node && <button type="button" className="icon mini" title="Keep the camera as it is now" onClick={() => updateCamera(item.id)}><Camera size={11} /></button>}
+                <button type="button" className="icon mini" title="Save the camera as a 3D view" onClick={() => save3d(item.id)}><Copy size={13} /></button>
+                {item.node && <button type="button" className="icon mini" title="Keep the camera as it is now" onClick={() => updateCamera(item.id)}><Camera size={13} /></button>}
               </Row>
             )}
           </Kind>
           <Kind id={`${id}:sheets`} icon={<FileText size={13} />} label="Sheets" list={of('sheet')}
-            plus={set && <button type="button" className="icon mini" title="New sheet" onClick={() => void execute('sheet.create', { name: 'Sheet', paper: 'A3', discipline }).then((r) => { const n = made(r); if (n) showSheet(n); })}><Plus size={12} /></button>}>
+            plus={set && <button type="button" className="icon mini" title="New sheet" onClick={() => void execute('sheet.create', { name: 'Sheet', paper: 'A3', discipline }).then((r) => { const n = made(r); if (n) showSheet(n); })}><Plus size={14} /></button>}>
             {(item) => (
               <Row item={item} on={view === 'sheet' && ui.sheetId === item.id} open={() => showSheet(item.id)}>
-                <button type="button" className="icon mini" title="Duplicate the sheet (paper, title block and what is drawn on it, without its views)" onClick={() => duplicateSheet(item.id)}><Copy size={11} /></button>
+                <button type="button" className="icon mini" title="Duplicate the sheet (paper, title block and what is drawn on it, without its views)" onClick={() => duplicateSheet(item.id)}><Copy size={13} /></button>
               </Row>
             )}
           </Kind>
@@ -316,29 +314,28 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
 
   return (
     <nav ref={navRef} className="panel browser" aria-label="Project browser">
-      <div className="panel-head">
-        <span className="eyebrow">Project</span>
-        <span className="panel-title">{projectTitle(doc?.path)}{doc?.dirty ? ' •' : ''}</span>
-        <button type="button" className="icon mini" title="Organize the browser (sets)" onClick={() => useUi.setState({ dialog: 'browserSets' })}><Settings2 size={13} /></button>
+      {/* The project's name is in the window's title (forum topic 257); the head is the tab row, with the sets' settings at its end. */}
+      <div className="panel-head browser-head">
         <div className="browser-tabs" role="tablist">
           <button type="button" role="tab" className={`browser-tab${tab === 'project' ? ' on' : ''}`} aria-selected={tab === 'project'} onClick={() => pickTab('project')}>Project</button>
           <button type="button" role="tab" className={`browser-tab${tab === 'ifc' ? ' on' : ''}`} aria-selected={tab === 'ifc'} onClick={() => pickTab('ifc')}>IFC</button>
           <button type="button" role="tab" className={`browser-tab${tab === 'catalog' ? ' on' : ''}`} aria-selected={tab === 'catalog'} data-tab="catalog" onClick={() => pickTab('catalog')}>Catalog</button>
         </div>
+        <button type="button" className="icon mini" title="Organize the browser (sets)" onClick={() => useUi.setState({ dialog: 'browserSets' })}><Settings2 size={14} /></button>
       </div>
       {tab === 'ifc' && <IfcTree />}
       {tab === 'catalog' && <Catalog />}
       {tab === 'project' && <div className="tree-group">
         <div className="tree-label"><ChevronDown size={12} /><Layers size={13} />Levels<span className="count">{levels.length}</span>
-          <button type="button" className="icon mini" title="New level above" onClick={() => void execute('storey.create', {})}><Plus size={12} /></button>
-          <button type="button" className="icon mini" title="New levels… (several at once, from their heights)" data-new-levels-open onClick={() => useUi.setState({ dialog: 'newLevels' })}><ListPlus size={12} /></button>
+          <button type="button" className="icon mini" title="New level above" onClick={() => void execute('storey.create', {})}><Plus size={14} /></button>
+          <button type="button" className="icon mini" title="New levels… (several at once, from their heights)" data-new-levels-open onClick={() => useUi.setState({ dialog: 'newLevels' })}><ListPlus size={14} /></button>
         </div>
         {levels.map((s) => (
           <span key={s.id} className="tree-row">
             <button type="button" className={`tree-item${active?.id === s.id ? ' on' : ''}`} onClick={() => useUi.setState({ storeyId: s.id, selection: s.id })} onContextMenu={levelMenu(s.id)}>
               {s.name} · {level(num(s, 'elevation'))}
             </button>
-            <button type="button" className="icon mini" title="Duplicate the level with everything on it (Alt: an empty level)" onClick={(e) => duplicateLevel(s.id, !e.altKey)}><Copy size={11} /></button>
+            <button type="button" className="icon mini" title="Duplicate the level with everything on it (Alt: an empty level)" onClick={(e) => duplicateLevel(s.id, !e.altKey)}><Copy size={13} /></button>
           </span>
         ))}
       </div>}
@@ -366,7 +363,7 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
           <div className="tree-label">
             <button type="button" className="icon mini fold" title={collapsed.has('documents') ? 'Expand' : 'Collapse'} onClick={() => toggle('documents')}>{collapsed.has('documents') ? <ChevronRight size={12} /> : <ChevronDown size={12} />}</button>
             <FileText size={13} />Documents<span className="count">{documents.length}</span>
-            <button type="button" className="icon mini" title="New document from a template" onClick={() => openDocuments(null)}><Plus size={12} /></button>
+            <button type="button" className="icon mini" title="New document from a template" onClick={() => openDocuments(null)}><Plus size={14} /></button>
           </div>
           {!collapsed.has('documents') && documents.map((d) => (
             <span key={d.id} className="tree-row">

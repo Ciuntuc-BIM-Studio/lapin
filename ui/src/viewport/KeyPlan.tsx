@@ -173,8 +173,8 @@ function KeyPlanMap({ mode, frame, onLookAt, viewId, onFold }: Props) {
         <span className="eyebrow">{title} · {storey?.name ?? '—'}</span>
         <span className="grow" />
         {onFold
-          ? <button type="button" className="icon mini" title="Fold the key plan to its button" onClick={onFold}><X size={11} /></button>
-          : <button type="button" className="icon mini" title="Hide the key plan (View › Key plan brings it back)" onClick={() => useUi.setState({ keyPlan: false })}><X size={11} /></button>}
+          ? <button type="button" className="icon mini" title="Fold the key plan to its button" onClick={onFold}><X size={15} /></button>
+          : <button type="button" className="icon mini" title="Hide the key plan (View › Key plan brings it back)" onClick={() => useUi.setState({ keyPlan: false })}><X size={15} /></button>}
       </div>
       <svg ref={svg} viewBox={`0 0 160 ${H}`} data-wheel-zoom onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
         onWheel={mode === '3d' ? (e) => api?.orbitTo({ distance: Math.max(0.5, cam.distance * Math.exp(wheelPixels(e, H) * 0.002)) }, false) : undefined}
