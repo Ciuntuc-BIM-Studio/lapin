@@ -13,6 +13,7 @@ import { execute, useSession } from '../../engine/session';
 import { cadHost, cadLog, registerCommand, startCommand, useCad, withSelection, type Step } from '../../viewport/cad/session';
 import { importDxf, importTrace } from '../../engine/files';
 import { DimensionSection } from './DimensionSection';
+import { stackedAt, stackSpacingMm } from './dimStack';
 import { DimensionOptions, isSamePoint, pickDirection, segmentLabels, setStringMode, stringMode, useDimTool, type StringMode } from './dimensionTool';
 import { DIM_KINDS, SmartDimensionOptions, setDimensionExtras, startDimension, useSmartDim, type DimKind } from './smartDimension';
 import { DraftSection } from './DraftSection';
@@ -823,6 +824,15 @@ function dimensionGrips(node: NodeDto, view?: GripView): Grip[] {
   const line = data?.line && list(data.line).length === pts.length ? list(data.line)
     : pts.map((p) => { const o = (at.x - p.x) * n.x + (at.y - p.y) * n.y; return { x: p.x + n.x * o, y: p.y + n.y * o }; });
   const id = node.id;
+  // Its line dragged near a parallel dimension's snaps at the stacking distance from it (forum topic 236); Shift: free.
+  const stack = {
+    constrain: (to: Vec2, free: boolean): Vec2 => (free ? to : stackedAt(useSession.getState().nodes, id, to)?.at ?? to),
+    guide: (at: Vec2) => {
+      const nodes = useSession.getState().nodes;
+      const s = stackedAt(nodes, id, at);
+      return s && Math.hypot(s.at.x - at.x, s.at.y - at.y) < 1e-9 ? { ...s.guide, label: `${stackSpacingMm(nodes)} mm` } : null;
+    },
+  };
   const grips: Grip[] = pts.map((p, i) => ({
     key: `p${i}`, kind: 'vertex' as const, at: p, title: 'Drag: the point moves (and holds on what it lands on); Alt-click or Ctrl/⌘-click: take it out',
     altRemove: true,
@@ -834,6 +844,7 @@ function dimensionGrips(node: NodeDto, view?: GripView): Grip[] {
     const half = { x: (pts[i].x + pts[i + 1].x) / 2, y: (pts[i].y + pts[i + 1].y) / 2 };
     grips.push({
       key: `e${i}`, kind: 'edgeMid', at: m, title: 'Drag: the dimension line goes through the point · Ctrl/⌘-drag: a new point where it is dropped · Ctrl/⌘-click: one halfway',
+      ...stack,
       step: (to: Vec2) => ({ command: 'drafting.moveDimension', args: { id, at: [to.x, to.y] } }),
       insertAt: (to: Vec2) => ({ command: 'drafting.insertDimensionPoint', args: { id, point: [to.x, to.y] } }),
       insert: () => ({ command: 'drafting.insertDimensionPoint', args: { id, index: i + 1, point: [half.x, half.y] } }),
@@ -858,6 +869,7 @@ function dimensionGrips(node: NodeDto, view?: GripView): Grip[] {
   for (const [key, s] of [['l0', Math.min(...t)], ['l1', Math.max(...t)]] as const) {
     grips.push({
       key, kind: 'end', at: { x: line[0].x + u.x * s, y: line[0].y + u.y * s }, title: 'Drag: the dimension line goes through the point · Ctrl/⌘-click: go on, the next clicks add points beyond it',
+      ...stack,
       step: (to: Vec2) => ({ command: 'drafting.moveDimension', args: { id, at: [to.x, to.y] } }),
       extend: () => { select(id); void startCommand('DIMADD'); },
     });
