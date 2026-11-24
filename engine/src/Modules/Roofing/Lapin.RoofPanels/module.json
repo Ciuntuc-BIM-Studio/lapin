@@ -1,0 +1,1 @@
+{ "id": "roofpanels", "name": "Roof panel layout", "assembly": "Lapin.RoofPanels.dll", "requires": ["core", "architecture"] }

@@ -40,7 +40,7 @@ describe('products', () => {
       expect(p.modules[0]).toBe('core');
       expect(p.engine).toContain('core');
     }
-    expect(resolveProduct(repo, 'lapin-architecture').modules).toEqual(['core', 'architecture', 'drafting']);
+    expect(resolveProduct(repo, 'lapin-architecture').modules).toEqual(['core', 'architecture', 'roofpanels', 'drafting']);
   });
 
   it('brings what a module requires, transitively, and says so', () => {
