@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
 using Lapin.Drafting;
+using Lapin.Geometry;
 using Lapin.Host;
 using Lapin.Model;
 using Lapin.Platform;
@@ -219,5 +220,207 @@ public class ComponentDetailTests : IDisposable
         var copy = Details(g, twin).Single(e => e.PredefinedType == "DRAFT").Id;
         Assert.Contains(Drawn(g, "plan:" + g.Storey, copy), p => Math.Abs(p.X - 21) < 1e-6 && Math.Abs(p.Y - 2) < 1e-6);
         Assert.NotNull(group);
+    }
+
+    // Details in sections and elevations (docs/components.md, "Detail sets"): kept on a side of the component (front, back,
+    // left, right: the way a view looks at it in its own frame), drawn in every section and elevation that looks at that side
+    // of an instance and sees it, turned and mirrored with it.
+
+    static ViewFrame FrameOf(Fixture f, string view) => Views.Generate(f.Session.Reader, Views.Find(f.Model, view)!).Spec!.Frame;
+    static JsonObject FrameArg(ViewFrame fr) => new()
+    {
+        ["origin"] = new JsonArray(fr.Origin.X, fr.Origin.Y, fr.Origin.Z),
+        ["right"] = new JsonArray(fr.Right.X, fr.Right.Y, fr.Right.Z),
+        ["up"] = new JsonArray(fr.Up.X, fr.Up.Y, fr.Up.Z),
+    };
+    static bool At(List<(double X, double Y)> pts, Vec2 p) => pts.Any(q => Math.Abs(q.X - p.X) < 1e-6 && Math.Abs(q.Y - p.Y) < 1e-6);
+    static JsonArray P(Vec2 p) => new(p.X, p.Y);
+
+    /// <summary>
+    /// The 5 × 4 box (its instance standing at its middle, (2.5, 2)) with a line drawn on the south elevation along its front,
+    /// 1 m up, from x = 1 to 2, put in the set "Elevations"; a second instance 20 m along, turned 180° about its middle.
+    /// </summary>
+    static (Fixture F, string Group, string Twin, string Line, string South, string North) Sides(bool turned = true)
+    {
+        var f = new Fixture(new ArchitectureModule(), new DraftingModule());
+        var walls = new[] { f.Wall(0, 0, 5, 0), f.Wall(5, 0, 5, 4), f.Wall(5, 4, 0, 4), f.Wall(0, 4, 0, 0) };
+        f.Run("architecture.addDoor", new JsonObject { ["wallId"] = walls[0], ["along"] = 1 });
+        var group = (string)f.Run("component.make", new JsonObject { ["ids"] = Ids(walls), ["name"] = "A1" })!["id"]!;
+        var south = (string)f.Run("view.create", new JsonObject { ["kind"] = "elevation", ["direction"] = "south" })!["id"]!;
+        var north = (string)f.Run("view.create", new JsonObject { ["kind"] = "elevation", ["direction"] = "north" })!["id"]!;
+        var fr = FrameOf(f, south);
+        var line = (string)f.Run("drafting.draw", new JsonObject { ["viewId"] = south, ["shape"] = new JsonObject { ["type"] = "line", ["a"] = P(fr.Map(new Vec3(1, 0, 1))), ["b"] = P(fr.Map(new Vec3(2, 0, 1))) } })!["ids"]![0]!;
+        f.Run("component.addDetail", new JsonObject { ["id"] = group, ["ids"] = Ids(line), ["set"] = "Elevations" });
+        var twin = TwinOf(f, f.Run("element.transform", new JsonObject { ["ids"] = Ids(group), ["op"] = "copy", ["by"] = P(20, 0) })!);
+        if (turned) f.Run("element.transform", new JsonObject { ["ids"] = Ids(twin), ["op"] = "rotate", ["center"] = P(22.5, 2), ["angle"] = 180 });
+        return (f, group, twin, line, south, north);
+    }
+
+    static string DraftOf(Fixture f, string group) => Details(f, group).Single(e => e.PredefinedType == "DRAFT").Id;
+
+    [Fact]
+    public void A_detail_drawn_on_an_elevation_shows_on_that_side_of_every_instance_turned_with_it()
+    {
+        var (f, group, twin, line, south, north) = Sides();
+        Assert.Equal(group, Groups.Of(f.Model, line)!.Id);
+        Assert.Equal(Components.DetailView, f.Model.Get(line)!.Str("viewId"));
+        Assert.Equal("front", f.Model.Get(line)!.Str(Components.DetailSideKey));
+        var copy = DraftOf(f, twin);
+        Assert.NotEqual(line, copy);
+        // The south elevation sees the first instance's front where it was drawn; the turned one shows it its back.
+        var s = FrameOf(f, south);
+        var drawn = Drawn(f, south, line);
+        Assert.True(At(drawn, s.Map(new Vec3(1, 0, 1))) && At(drawn, s.Map(new Vec3(2, 0, 1))));
+        Assert.False(Shows(f, south, copy));
+        // The north elevation sees the turned instance's front: its line from x = 24 to 23, and not the first one's.
+        var n = FrameOf(f, north);
+        var there = Drawn(f, north, copy);
+        Assert.True(At(there, n.Map(new Vec3(24, 4, 1))) && At(there, n.Map(new Vec3(23, 4, 1))));
+        Assert.False(Shows(f, north, line));
+        // Seen from the east or the west, neither: no detail was drawn on those sides.
+        var east = (string)f.Run("view.create", new JsonObject { ["kind"] = "elevation", ["direction"] = "east" })!["id"]!;
+        Assert.False(Shows(f, east, line) || Shows(f, east, copy));
+        // The plans draw only what was drawn on a plan.
+        Assert.False(Shows(f, Plan(f), line) || Shows(f, Plan(f), copy));
+        // Turned back, the copy is seen from the south again.
+        f.Run("element.transform", new JsonObject { ["ids"] = Ids(twin), ["op"] = "rotate", ["center"] = P(22.5, 2), ["angle"] = 180 });
+        s = FrameOf(f, south);
+        var back = Drawn(f, south, DraftOf(f, twin));
+        Assert.True(At(back, s.Map(new Vec3(21, 0, 1))) && At(back, s.Map(new Vec3(22, 0, 1))));
+        Assert.False(Shows(f, north, DraftOf(f, twin)));
+    }
+
+    [Fact]
+    public void A_mirrored_instance_shows_its_side_detail_mirrored()
+    {
+        var (f, group, _, _, south, _) = Sides(turned: false);
+        var mirrored = TwinOf(f, f.Run("element.transform", new JsonObject { ["ids"] = Ids(group), ["op"] = "mirror", ["a"] = P(-1, 0), ["b"] = P(-1, 1), ["copy"] = true })!);
+        // About x = -1: from x = 1 and 2 to -3 and -4, still on the front, the side the south elevation sees.
+        var s = FrameOf(f, south);
+        var drawn = Drawn(f, south, DraftOf(f, mirrored));
+        Assert.True(At(drawn, s.Map(new Vec3(-3, 0, 1))) && At(drawn, s.Map(new Vec3(-4, 0, 1))));
+    }
+
+    [Fact]
+    public void A_section_through_instances_shows_the_side_it_looks_at_of_those_it_sees()
+    {
+        var (f, group, twin, line, south, north) = Sides();
+        var copy = DraftOf(f, twin);
+        // Along y = 1, looking north (+y): the first instance's front; the turned one shows its back.
+        var ahead = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = P(-2, 1), ["end"] = P(30, 1) })!["id"]!;
+        var a = FrameOf(f, ahead);
+        var drawn = Drawn(f, ahead, line);
+        Assert.True(At(drawn, a.Map(new Vec3(1, 1, 1))) && At(drawn, a.Map(new Vec3(2, 1, 1))));
+        Assert.False(Shows(f, ahead, copy));
+        // Drawn the other way, looking south: the turned instance's front only.
+        var backwards = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = P(30, 3), ["end"] = P(-2, 3) })!["id"]!;
+        var b = FrameOf(f, backwards);
+        var there = Drawn(f, backwards, copy);
+        Assert.True(At(there, b.Map(new Vec3(24, 3, 1))) && At(there, b.Map(new Vec3(23, 3, 1))));
+        Assert.False(Shows(f, backwards, line));
+        // A section past both, looking on: it sees neither instance, so neither detail.
+        var past = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = P(-2, 10), ["end"] = P(30, 10) })!["id"]!;
+        Assert.False(Shows(f, past, line) || Shows(f, past, copy));
+        // A text drawn in the section, put in the set: it shows on the south elevation, and on the turned instance's north one.
+        var text = (string)f.Run("drafting.addText", new JsonObject { ["viewId"] = ahead, ["at"] = P(a.Map(new Vec3(3, 1, 2))), ["text"] = "Plinth" })!["id"]!;
+        f.Run("component.addDetail", new JsonObject { ["id"] = group, ["ids"] = Ids(text), ["set"] = "Elevations" });
+        Assert.True(Shows(f, south, text));
+        Assert.True(Shows(f, north, Details(f, twin).Single(e => e.PredefinedType == "TEXT").Id));
+        Assert.False(Shows(f, north, text));
+    }
+
+    [Fact]
+    public void Moved_in_an_elevation_the_side_detail_follows_in_every_instance()
+    {
+        var (f, _, twin, line, south, north) = Sides();
+        var copy = DraftOf(f, twin);
+        // One metre right on the north elevation, seen on the turned instance: one metre towards its own right, the first one's too.
+        f.Run("element.transform", new JsonObject { ["ids"] = Ids(copy), ["op"] = "move", ["by"] = P(1, 0), ["frame"] = FrameArg(FrameOf(f, north)) });
+        Assert.Equal(copy, DraftOf(f, twin));
+        var n = FrameOf(f, north);
+        var there = Drawn(f, north, copy);
+        Assert.True(At(there, n.Map(new Vec3(23, 4, 1))) && At(there, n.Map(new Vec3(22, 4, 1))));
+        var s = FrameOf(f, south);
+        var drawn = Drawn(f, south, line);
+        Assert.True(At(drawn, s.Map(new Vec3(2, 0, 1))) && At(drawn, s.Map(new Vec3(3, 0, 1))));
+        // Mirrored on the south elevation about the vertical through x = 2: from 2–3 back to 1–2, in both instances.
+        f.Run("element.transform", new JsonObject { ["ids"] = Ids(line), ["op"] = "mirror", ["a"] = P(s.Map(new Vec3(2, 0, 0))), ["b"] = P(s.Map(new Vec3(2, 0, 3))), ["frame"] = FrameArg(s) });
+        drawn = Drawn(f, south, line);
+        Assert.True(At(drawn, s.Map(new Vec3(1, 0, 1))) && At(drawn, s.Map(new Vec3(2, 0, 1))));
+        there = Drawn(f, north, copy);
+        Assert.True(At(there, n.Map(new Vec3(24, 4, 1))) && At(there, n.Map(new Vec3(23, 4, 1))));
+    }
+
+    [Fact]
+    public void Adding_a_side_detail_is_one_undo_step()
+    {
+        var f = new Fixture(new ArchitectureModule(), new DraftingModule());
+        var walls = new[] { f.Wall(0, 0, 5, 0), f.Wall(5, 0, 5, 4), f.Wall(5, 4, 0, 4), f.Wall(0, 4, 0, 0) };
+        var group = (string)f.Run("component.make", new JsonObject { ["ids"] = Ids(walls) })!["id"]!;
+        var south = (string)f.Run("view.create", new JsonObject { ["kind"] = "elevation", ["direction"] = "south" })!["id"]!;
+        var line = (string)f.Run("drafting.draw", new JsonObject { ["viewId"] = south, ["shape"] = new JsonObject { ["type"] = "line", ["a"] = P(0, 1), ["b"] = P(1, 1) } })!["ids"]![0]!;
+        var before = f.Model.Get(line)!.Attrs.ToJsonString();
+        f.Run("component.addDetail", new JsonObject { ["id"] = group, ["ids"] = Ids(line), ["set"] = "Elevations" });
+        Assert.Equal("front", f.Model.Get(line)!.Str(Components.DetailSideKey));
+        f.Session.Undo();
+        Assert.Equal(before, f.Model.Get(line)!.Attrs.ToJsonString());
+        Assert.Null(Groups.Of(f.Model, line));
+        Assert.True(Shows(f, south, line));
+    }
+
+    [Fact]
+    public void A_view_not_square_to_the_instance_takes_no_side_detail()
+    {
+        var f = new Fixture(new ArchitectureModule(), new DraftingModule());
+        var walls = new[] { f.Wall(0, 0, 5, 0), f.Wall(5, 0, 5, 4), f.Wall(5, 4, 0, 4), f.Wall(0, 4, 0, 0) };
+        var group = (string)f.Run("component.make", new JsonObject { ["ids"] = Ids(walls) })!["id"]!;
+        var skew = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = P(-1, -1), ["end"] = P(6, 5) })!["id"]!;
+        var line = (string)f.Run("drafting.draw", new JsonObject { ["viewId"] = skew, ["shape"] = new JsonObject { ["type"] = "line", ["a"] = P(1, 1), ["b"] = P(2, 1) } })!["ids"]![0]!;
+        var ex = Assert.Throws<CommandException>(() => f.Run("component.addDetail", new JsonObject { ["id"] = group, ["ids"] = Ids(line), ["set"] = "Elevations" }));
+        Assert.Contains("square", ex.Message);
+    }
+
+    [Fact]
+    public void Hidden_per_view_saved_and_opened_again_the_side_details_stay()
+    {
+        var (f, _, twin, line, south, north) = Sides();
+        f.Run("view.graphics", new JsonObject { ["id"] = south, ["detailSet"] = "Elevations", ["value"] = new JsonObject { ["hidden"] = true } });
+        Assert.False(Shows(f, south, line));
+        Assert.True(Shows(f, north, DraftOf(f, twin)));
+        var path = Path.Combine(_dir, "sides.lapin");
+        PackageFiles.Save(f.Session, path);
+        var g = new Fixture(new ArchitectureModule(), new DraftingModule());
+        PackageFiles.Open(g.Session, path);
+        Assert.False(Shows(g, south, line));
+        var n = FrameOf(g, north);
+        var there = Drawn(g, north, DraftOf(g, twin));
+        Assert.True(At(there, n.Map(new Vec3(24, 4, 1))) && At(there, n.Map(new Vec3(23, 4, 1))));
+        g.Run("view.graphics", new JsonObject { ["id"] = south, ["detailSet"] = "Elevations", ["value"] = null });
+        Assert.True(Shows(g, south, line));
+    }
+
+    [Fact]
+    public void A_plan_detail_stays_out_of_sections_and_elevations()
+    {
+        var (f, _, twin, line, _, _) = Two();
+        var south = (string)f.Run("view.create", new JsonObject { ["kind"] = "elevation", ["direction"] = "south" })!["id"]!;
+        var cut = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = P(-2, 1), ["end"] = P(30, 1) })!["id"]!;
+        Assert.False(Shows(f, south, line) || Shows(f, cut, line));
+        Assert.False(Shows(f, south, DraftOf(f, twin)));
+        Assert.True(Shows(f, Plan(f), line));
+    }
+
+    [Fact]
+    public void Taken_out_of_its_instance_a_side_detail_goes_to_a_view_that_sees_it_where_it_was()
+    {
+        var (f, _, twin, _, _, north) = Sides();
+        var copy = DraftOf(f, twin);
+        var n = FrameOf(f, north);
+        f.Run("group.ungroup", new JsonObject { ["ids"] = Ids(twin) });
+        var plain = f.Model.Get(copy)!;
+        Assert.Equal(north, plain.Str("viewId"));
+        Assert.Null(plain.Str(Components.DetailSideKey));
+        var there = Drawn(f, north, copy);
+        Assert.True(At(there, n.Map(new Vec3(24, 4, 1))) && At(there, n.Map(new Vec3(23, 4, 1))));
     }
 }

@@ -743,6 +743,9 @@ public static class Views
             }
     }
 
+    /// <summary>How a view draws (its frame, its depth), without drawing it; null when it cannot.</summary>
+    public static ViewSpec? SpecOf(IQueryContext q, Entity view) => Spec(q.Model, view, Gather(q, view).Parts, q.Services).Spec;
+
     /// <summary>The view's generated drawing (cut areas and lines, before materials and pens), or why there is none.</summary>
     public static (ViewDrawing? Drawing, ViewSpec? Spec, string? Problem) Generate(IQueryContext q, Entity view)
     {
@@ -996,7 +999,7 @@ public static class Views
 
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
         // Each component instance's details (forum #224) drawn as this view's own when it is a plan of their storey that shows their set.
-        var marked = Components.DetailsIn(m, view, graphics);
+        var marked = Components.DetailsIn(m, view, graphics, spec, q.Services);
         var ctx = new ViewContext(marked, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry) { Services = q.Services, Query = ReferenceEquals(marked, m) ? q : new OverlayQuery(q, marked) };
         // A sheet's paper (decision 620): only what is drawn on it, none of the views' own marks.
         var paper = spec.Kind == PaperViews.Kind;
