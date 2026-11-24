@@ -349,3 +349,15 @@ describe('the Script panel’s messages (decision 489, stage 3)', () => {
     expect(translate('Done in 0.12 s: one undo step.', 'ro')).toContain('0.12');
   });
 });
+
+describe('the analysis refusing a bar without E (report #189)', () => {
+  it('says where to give E in every language, the old message still translated', () => {
+    const msg = "its material „Mystery” has no E (Young's modulus): add Young's modulus E (MPa) to „Mystery” in Manage → Materials → Data, or name its class in the material's name (C25/30, S355, C24); E = \"30000 kg\": left out";
+    expect(translate(msg, 'ro')).toBe("materialul lui „Mystery” nu are E: adaugă Modul de elasticitate E (MPa) în Gestionare → Materiale → Date, sau scrie clasa lui în numele materialului (C25/30, S355, C24); E = \"30000 kg\": left out");
+    for (const { id } of LANGUAGES.filter((l) => l.id !== 'en')) {
+      expect(translate(msg, id), id).toContain('Mystery');
+      expect(translate(msg, id), id).toContain('(MPa)');
+      expect(translate("its material „Mystery” has no E", id), id).not.toBeNull();
+    }
+  });
+});

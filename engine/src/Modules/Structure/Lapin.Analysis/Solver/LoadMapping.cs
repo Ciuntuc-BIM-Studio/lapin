@@ -87,6 +87,19 @@ public sealed partial class StructuralProblem
         public bool Supported;
     }
 
+    /// <summary>
+    /// Why a material gives no E, and where to give it: Manage → Materials → the material → Data, Young's modulus E (MPa; E, a
+    /// unit after the value or the name taken too), or a class in its name the tables know (C25/30, S355, C24); with what of
+    /// the material's own was left out (a value in another unit).
+    /// </summary>
+    internal static string NoE(StructuralMaterial? mat, string id)
+    {
+        var name = mat?.Name ?? id;
+        var left = mat?.Sources.Where(s => s.EndsWith("left out", StringComparison.Ordinal)).ToList() ?? [];
+        return $"its material „{name}” has no E (Young's modulus): add Young's modulus E (MPa) to „{name}” in Manage → Materials → Data, " +
+            "or name its class in the material's name (C25/30, S355, C24)" + (left.Count > 0 ? $"; {string.Join("; ", left)}" : "");
+    }
+
     public static StructuralProblem Build(IModelView m, LoadsReport rep)
     {
         var am = rep.Model;
@@ -127,7 +140,7 @@ public sealed partial class StructuralProblem
             var props = SectionProperties.Of(f.Source.Section.Shape);
             if (props is not { Area: > 0 }) { refused.Add(new(f, $"its section „{f.Source.Section.Name}” gives no properties")); continue; }
             var mat = MaterialOf(f.Source.MaterialId);
-            if (mat?.E is not { } e) { refused.Add(new(f, f.Source.MaterialId == null ? "its type names no material" : $"its material „{mat?.Name ?? f.Source.MaterialId}” has no E")); continue; }
+            if (mat?.E is not { } e) { refused.Add(new(f, f.Source.MaterialId == null ? "its type names no material" : NoE(mat, f.Source.MaterialId))); continue; }
             var g = StructuralMaterials.ShearModulus(mat, e.Value, out var basis);
             if (basis == "timber") timberG.Add(mat.Name);
             else if (basis == "assumed") assumedNu.Add(mat.Name);

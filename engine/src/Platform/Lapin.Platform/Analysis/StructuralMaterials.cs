@@ -82,8 +82,8 @@ public static partial class StructuralMaterials
             }
             return new(v, $"project: material „{name}”, {key} ({unit})");
         }
-        var e = Own("Pset_MaterialMechanical.YoungModulus", 1e6, 1e12, "Pa");
-        var nu = Own("Pset_MaterialMechanical.PoissonRatio", 0, 0.5, "a ratio");
+        var e = Own("Pset_MaterialMechanical.YoungModulus", 1e6, 1e12, "Pa") ?? OwnModulus(fields, name, sources);
+        var nu = Own("Pset_MaterialMechanical.PoissonRatio", 0, 0.5, "a ratio") ?? OwnRatio(fields, name, sources);
         var fy = Own("Pset_MaterialSteel.YieldStress", 1e6, 5e9, "Pa");
         var fc = Own("Pset_MaterialConcrete.CompressiveStrength", 1e6, 5e8, "Pa");
         MaterialValue? density = MaterialMeasure.DensityOf(material) is { } rho && rho is > 1 and < 25000
@@ -131,7 +131,18 @@ public static partial class StructuralMaterials
             density ??= m0.Density;
         }
         else if (lower.Contains("concrete") || lower.Contains("beton")) kind = "concrete";
-        else if (lower.Contains("steel") || lower.Contains("oțel") || lower.Contains("otel")) kind = "steel";
+        else if (lower.Contains("steel") || lower.Contains("oțel") || lower.Contains("otel"))
+        {
+            // Steel's E does not depend on its grade: a material that names none still has it (fy stays null without a grade).
+            kind = "steel";
+            if (lower.Contains("rebar") || lower.Contains("b500") || lower.Contains("reinforc") || lower.Contains("armătur") || lower.Contains("armatur"))
+                e ??= new(200e9, "EN 1992-1-1:2004 §3.2.7(4): Es = 200 GPa for reinforcing steel (no grade named)");
+            else
+            {
+                e ??= new(210e9, "EN 1993-1-1:2005 §3.2.6: E = 210 000 MPa for every structural steel (no grade named, so no fy)");
+                nu ??= new(0.3, "EN 1993-1-1:2005 §3.2.6: ν = 0.3");
+            }
+        }
         else if (lower.Contains("timber") || lower.Contains("wood") || lower.Contains("lemn") || lower.Contains("glulam") || lower.Contains("clt")) kind = "timber";
 
         if (density == null && kind == "steel")
@@ -140,6 +151,99 @@ public static partial class StructuralMaterials
             density = new(25000 / Units.G, "EN 1991-1-1:2002 Table A.1: reinforced normal-weight concrete 25 kN/m³");
         return new(material.Id, name, kind, e, nu, fy, fc, density, grade, standard, sources);
     }
+
+    /// <summary>The names a user gives Young's modulus in a material's own parameters (Manage → Materials → Data), squashed as <see cref="TagText.Squash"/> does.</summary>
+    static readonly HashSet<string> ModulusNames =
+    [
+        "e", "youngmodulus", "youngsmodulus", "youngsmoduluse", "youngmoduluse", "modulusofelasticity", "modulusofelasticitye", "elasticmodulus",
+        "elasticitymodulus", "emodulus", "elasticity", "moduluse", "ecm", "e0mean", "moduldeelasticitate", "modululdeelasticitate", "modululdeelasticitatee",
+    ];
+
+    static readonly HashSet<string> PoissonNames = ["ν", "nu", "poisson", "poissonratio", "poissonsratio", "poissonratioν", "poissonsratioν", "coeficientpoisson", "coeficientuldepoisson", "coeficientpoissonν"];
+
+    [GeneratedRegex(@"^(.*?)[\s,]*[\(\[]\s*([^\)\]]+?)\s*[\)\]]\s*$")] private static partial Regex NameWithUnit();
+    [GeneratedRegex(@"^\s*([-+]?(?:\d[\d\s]*(?:[.,]\d+)?|[.,]\d+)(?:[eE][-+]?\d+)?)\s*(.*?)\s*$")] private static partial Regex NumberWithUnit();
+
+    /// <summary>A stress unit as written ("MPa", "N/mm²", "GPa", "psi"), Pa per unit; null when it is not one.</summary>
+    internal static double? PascalPer(string unit)
+    {
+        var u = unit.Trim().ToLowerInvariant().Replace(" ", "").Replace("²", "2");
+        return u switch
+        {
+            "pa" or "n/m2" => 1, "kpa" or "kn/m2" => 1e3, "mpa" or "n/mm2" or "mn/m2" => 1e6, "gpa" or "kn/mm2" => 1e9,
+            "kgf/cm2" or "kg/cm2" => Units.G * 1e4, "psi" => 6894.757293168, "ksi" => 6894757.293168, _ => null,
+        };
+    }
+
+    /// <summary>
+    /// Young's modulus from the material's own parameters, as a user adds it in Manage → Materials → Data: named E, Young's
+    /// modulus, Modulus of elasticity (any case, spaces, a unit in brackets after the name), a number or a text ("31 GPa",
+    /// "30000"). Its unit is the one written after the value, else after the name, else read from its size, every building
+    /// material's E lying from 0.5 to 1000 GPa: 1e6 and above in Pa, 500 and above in MPa (N/mm²), smaller in GPa. A value
+    /// that is not a modulus is left out with a note.
+    /// </summary>
+    static MaterialValue? OwnModulus(MaterialFieldSet fields, string material, List<string> notes)
+    {
+        foreach (var p in fields.Params)
+        {
+            if (p.Pset is "Pset_MaterialMechanical") continue;
+            var (bare, nameUnit) = SplitUnit(p.Name);
+            if (!ModulusNames.Contains(TagText.Squash(bare))) continue;
+            string? text = p.Value is JsonValue jv && jv.TryGetValue<string>(out var t) ? t : null;
+            double? number = text == null ? Json.Number(p.Value) : null;
+            string? valueUnit = null;
+            if (text != null && NumberWithUnit().Match(text) is { Success: true } nm)
+            {
+                var digits = nm.Groups[1].Value.Replace(" ", "");
+                if (!digits.Contains('.')) digits = digits.Replace(',', '.'); else digits = digits.Replace(",", "");
+                number = double.TryParse(digits, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : null;
+                valueUnit = nm.Groups[2].Value is { Length: > 0 } vu ? vu : null;
+            }
+            var key = p.Pset == null ? p.Name : $"{p.Pset}.{p.Name}";
+            if (number is not { } x || !double.IsFinite(x) || x <= 0)
+            {
+                notes.Add($"{key} = {p.Value?.ToJsonString() ?? "(empty)"} is not a modulus above zero: left out");
+                continue;
+            }
+            var unit = valueUnit ?? nameUnit;
+            double per;
+            string how;
+            if (unit != null)
+            {
+                if (PascalPer(unit) is not { } k) { notes.Add($"{key}: „{unit}” is not a unit of stress (Pa, MPa, N/mm², GPa, psi, ksi): left out"); continue; }
+                (per, how) = (k, unit);
+            }
+            else if (x >= 1e6) (per, how) = (1, "Pa, by its size (no unit given)");
+            else if (x >= 500) (per, how) = (1e6, "MPa, by its size (no unit given)");
+            else (per, how) = (1e9, "GPa, by its size (no unit given)");
+            var pa = x * per;
+            if (pa is < 1e8 or > 1e12)
+            {
+                notes.Add($"{key} = {x.ToString(CultureInfo.InvariantCulture)} {how} is {(pa / 1e9).ToString("0.###", CultureInfo.InvariantCulture)} GPa, not the modulus of a building material (0.1 to 1000 GPa): left out");
+                continue;
+            }
+            return new(pa, $"project: material „{material}”, {key} = {x.ToString(CultureInfo.InvariantCulture)} {how} = {(pa / 1e9).ToString("0.###", CultureInfo.InvariantCulture)} GPa");
+        }
+        return null;
+    }
+
+    /// <summary>Poisson's ratio from the material's own parameters (Poisson ratio, ν, nu), from 0 to 0.5.</summary>
+    static MaterialValue? OwnRatio(MaterialFieldSet fields, string material, List<string> notes)
+    {
+        foreach (var p in fields.Params)
+        {
+            if (p.Pset is "Pset_MaterialMechanical" || !PoissonNames.Contains(TagText.Squash(SplitUnit(p.Name).Name))) continue;
+            var key = p.Pset == null ? p.Name : $"{p.Pset}.{p.Name}";
+            var v = Json.Number(p.Value) ?? (p.Value is JsonValue jv && jv.TryGetValue<string>(out var t)
+                && double.TryParse(t.Trim().Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : null);
+            if (v is { } r && r is >= 0 and <= 0.5) return new(r, $"project: material „{material}”, {key}");
+            notes.Add($"{key} is not a ratio from 0 to 0.5: left out");
+        }
+        return null;
+    }
+
+    static (string Name, string? Unit) SplitUnit(string name) =>
+        NameWithUnit().Match(name) is { Success: true } m && m.Groups[1].Value.Trim().Length > 0 ? (m.Groups[1].Value.Trim(), m.Groups[2].Value) : (name, null);
 }
 
 /// <summary>

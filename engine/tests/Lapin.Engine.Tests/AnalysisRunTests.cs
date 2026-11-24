@@ -233,6 +233,67 @@ public class AnalysisRunTests
         Assert.Throws<CommandException>(() => Results(t.F, new JsonObject { ["case"] = "G1" }));
     }
 
+    /// <summary>
+    /// Report #189: a bar refused for no E, its user giving E in Manage → Materials → Data (material.setData, an own parameter as
+    /// the tab adds it: a text by default, or the Young's modulus E preset in MPa) and the analysis then running. The refusal says
+    /// where to give E; a value in no unit of stress is left out, said.
+    /// </summary>
+    [Theory]
+    [InlineData("E", "text", "30000", 30e9)]
+    [InlineData("Young's modulus", "number", 30000.0, 30e9)]
+    [InlineData("E", "text", "31 GPa", 31e9)]
+    [InlineData("E (GPa)", "number", 31.0, 31e9)]
+    [InlineData("Modulus of elasticity", "number", 3.1e10, 31e9)]
+    [InlineData("E", "text", "4350 ksi", 4350 * 6894757.293168)]
+    public void A_bar_without_E_runs_once_its_user_gives_E_in_the_materials_data(string param, string kind, object value, double pa)
+    {
+        var t = Frame6x4(beamMaterial: "Mystery");
+        var first = Run(t.F);
+        Assert.False((bool)first["ok"]!);
+        var reason = (string)first["refused"]!.AsArray()[0]!["reason"]!;
+        Assert.Contains("„Mystery” has no E", reason);
+        Assert.Contains("Manage → Materials → Data", reason);
+
+        var mystery = t.F.Model.OfClass(IfcClass.Material).Single(m => m.Name == "Mystery");
+        t.F.Run("material.setData", new JsonObject
+        {
+            ["id"] = mystery.Id,
+            ["params"] = new JsonArray(new JsonObject { ["name"] = param, ["kind"] = kind, ["value"] = value is string text ? JsonValue.Create(text) : JsonValue.Create((double)value) }),
+        });
+        var e = StructuralMaterials.Of(t.F.Model, t.F.Model.Get(mystery.Id)!).E;
+        Assert.NotNull(e);
+        Assert.Equal(pa, e.Value, pa * 1e-9);
+        Assert.Contains("project: material „Mystery”", e.Source);
+        Assert.True((bool)Run(t.F)["ok"]!);
+    }
+
+    [Fact]
+    public void A_modulus_in_no_unit_of_stress_is_left_out_and_the_refusal_says_so()
+    {
+        var t = Frame6x4(beamMaterial: "Mystery");
+        var mystery = t.F.Model.OfClass(IfcClass.Material).Single(m => m.Name == "Mystery");
+        t.F.Run("material.setData", new JsonObject
+        {
+            ["id"] = mystery.Id,
+            ["params"] = new JsonArray(new JsonObject { ["name"] = "E", ["kind"] = "text", ["value"] = "30000 kg" }),
+        });
+        var run = Run(t.F);
+        Assert.False((bool)run["ok"]!);
+        Assert.Contains("„kg” is not a unit of stress", (string)run["refused"]!.AsArray()[0]!["reason"]!);
+    }
+
+    [Fact]
+    public void Steel_that_names_no_grade_takes_E_by_EN_1993_and_the_bars_run()
+    {
+        var t = Frame6x4(beamMaterial: "Steel");
+        var steel = StructuralMaterials.Of(t.F.Model, t.F.Model.OfClass(IfcClass.Material).Single(m => m.Name == "Steel"));
+        Assert.Equal(210e9, steel.E!.Value);
+        Assert.Equal(0.3, steel.Poisson!.Value);
+        Assert.Null(steel.Fy);
+        Assert.Contains("EN 1993-1-1", steel.E.Source);
+        Assert.True((bool)Run(t.F)["ok"]!);
+    }
+
     [Fact]
     public void A_frame_standing_on_nothing_is_a_mechanism_said_with_its_node()
     {
