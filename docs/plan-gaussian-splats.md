@@ -128,7 +128,7 @@ carries splats with its measuring tools.
   splatting of the view at the sheet's resolution, the same sort and projection as the screen's), under the view's lines,
   dimensions and notes; the PDF carries it. Dimensions and notes in a 3D view on a sheet as they are today.
 
-  **Done 24.11.2026 (decision 831, branch `feat/gaussian-splats-g4`).** What existed: a saved 3D view (orthographic or a
+  **Done 24.11.2026 (decision 832, branch `feat/gaussian-splats-g4`).** What existed: a saved 3D view (orthographic or a
   camera's perspective) already went on a sheet (forum topic 91, decision 574), drawn by `View3dDrawings` with the exact
   hidden-line removal of an elevation, lines only (no hatches, no annotations, since a perspective's drawing is not in the
   model's frame), and point clouds were drawn only in plans, sections and elevations (`PointCloudSlices`: a PNG laid under
