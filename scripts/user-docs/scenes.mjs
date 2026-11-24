@@ -7847,6 +7847,45 @@ export const scenes = [
     },
   },
   {
+    // Forum topic 247: a section takes three clicks, its start, its end and the side it looks to, arrows showing that side as
+    // the pointer moves; Flip direction (its settings, or its arrow in plan) turns it round, one undo step.
+    id: 'section-direction',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.ui({ view: 'plan' });
+      await t.fit();
+      const sections = async () => (await t.nodes()).filter((n) => n.type === 'LapinView' && n.props.kind === 'section');
+      const before = (await sections()).length;
+      await t.tool('view.section');
+      // Inside the house, so every click lands on the plan as it is fitted.
+      const [x1, y1] = await t.planPoint(6.2, 0.8);
+      const [x2, y2] = await t.planPoint(6.2, 7.2);
+      const [x3, y3] = await t.planPoint(8.5, 4);
+      await t.page.mouse.move(x1, y1, { steps: 4 });
+      await t.page.mouse.click(x1, y1);
+      await t.wait(200);
+      await t.page.mouse.move(x2, y2, { steps: 4 });
+      await t.page.mouse.click(x2, y2);
+      await t.wait(200);
+      t.expect((await sections()).length === before, 'two clicks make no section yet: the third says where it looks');
+      await t.page.mouse.move(x3, y3, { steps: 6 });
+      await t.wait(400);
+      await t.shot('section-direction', { of: '[data-testid=plan]', pad: 0 });
+      await t.page.mouse.click(x3, y3);
+      await t.until(async () => (await sections()).length === before + 1, 'the third click makes the section');
+      const made = (await sections()).at(-1);
+      // Drawn north, looking east: its line runs south (a section looks left of its line).
+      t.expect(made.props.start[1] > made.props.end[1], `a third click east of the line makes the section look east (${JSON.stringify([made.props.start, made.props.end])})`);
+      await t.cmd('view.flipSection', { id: made.id });
+      await t.wait(500);
+      const flipped = (await t.nodes()).find((n) => n.id === made.id);
+      t.expect(flipped.props.start[1] < flipped.props.end[1], 'Flip direction turns it to look west');
+      await t.keys('Escape');
+    },
+  },
+  {
     id: 'views',
     async run(t) {
       await t.fresh();

@@ -6520,6 +6520,15 @@ export const ES: Record<string, string> = {
   "Drawing language": "Idioma de los dibujos",
   "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "El idioma de las palabras que los dibujos escriben por sí mismos (la CF de una canaleta, un punto bajo); una leyenda conserva el idioma en que se colocó",
   'Open-web joist': 'Viga de celosía', 'New type from a preset': 'Nuevo tipo a partir de un ajuste preestablecido', 'The preset sizes are indicative: your own norms and sizes decide.': 'Las medidas de los ajustes son orientativas: deciden sus propias normas y medidas.', 'Joist depth': 'Canto de la viga', 'Chords': 'Cordones', 'Webs': 'Montantes y diagonales', 'Angle webs': 'Diagonales de ángulos', 'Lines only': 'Solo líneas', 'Round bar webs': 'Diagonales de barras redondas', 'Edit the type': 'Editar el tipo', 'Webs as the imported file drew them': 'Diagonales tal como las dibujó el archivo importado', 'Regenerate webs': 'Regenerar las diagonales',
+  // Forum topics 238 and 247: Space mirrors a wall on its core centre; a section's third click and Flip direction.
+  "Flip direction": "Invertir dirección",
+  "The side the section looks to: flipped, it looks the other way (its line runs the other way round, its heads stay at their ends)": "El lado hacia el que mira la sección: invertida, mira hacia el otro lado (su línea va al revés, sus cabezas quedan en sus extremos)",
+  "Flip: the section looks the other way": "Invertir: la sección mira hacia el otro lado",
+  "click its start, its end, then the side it looks to · Esc cancels": "haga clic en su inicio, su final y luego en el lado hacia el que mira · Esc cancela",
+  "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); on the core centre, the wall mirrored across it (its exterior to the left). The wall's ghost shows where it will be built": "Espacio: la misma línea al otro lado del muro (las caras exterior e interior se intercambian, un desfase cambia de signo); en el centro del núcleo, el muro reflejado respecto a él (su exterior a la izquierda). La silueta del muro muestra dónde se construirá",
+  "flip the wall (exterior on the left)": "invertir el muro (exterior a la izquierda)",
+  "flip the wall back (exterior on the right)": "devolver el muro (exterior a la derecha)",
+  "the other side": "el otro lado",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

@@ -227,7 +227,7 @@ export function Place3D({ camera, canvas, scene }: ViewRefs) {
         <span>{tool.label}</span>
         {info && <span className="mode-hint mode-info" data-place3d="info">{info}</span>}
         {storey && !space && <><span>Placing on</span><span data-no-i18n>{storey.name}</span></>}
-        <span className="mode-hint">{HINT[g.kind]}</span>
+        <span className="mode-hint">{g.kind === 'threePoints' && !g.arc && g.hint ? g.hint : HINT[g.kind]}</span>
         {pts.length > 0 && <span className="mode-hint">{lock ? 'Locked: the arrow again lets go' : '→ red · ← green'}</span>}
         <button type="button" className="mode-close" title="Done (Esc)" aria-label="Done" onClick={() => setTool(null)}><X size={12} /></button>
       </div>

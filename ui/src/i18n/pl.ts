@@ -6521,6 +6521,15 @@ export const PL: Record<string, string> = {
   "Drawing language": "Język rysunków",
   "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "Język słów, które rysunki piszą same (RD ścieku, punkt najniższy); legenda zachowuje język, w którym ją umieszczono",
   'Open-web joist': 'Kratownica (dźwigar kratowy)', 'New type from a preset': 'Nowy typ z ustawienia wstępnego', 'The preset sizes are indicative: your own norms and sizes decide.': 'Wymiary ustawień wstępnych są orientacyjne: decydują Twoje własne normy i wymiary.', 'Joist depth': 'Wysokość dźwigara', 'Chords': 'Pasy', 'Webs': 'Krzyżulce', 'Angle webs': 'Krzyżulce z kątowników', 'Lines only': 'Tylko linie', 'Round bar webs': 'Krzyżulce z prętów okrągłych', 'Edit the type': 'Edytuj typ', 'Webs as the imported file drew them': 'Krzyżulce tak, jak narysował je zaimportowany plik', 'Regenerate webs': 'Wygeneruj krzyżulce ponownie',
+  // Forum topics 238 and 247: Space mirrors a wall on its core centre; a section's third click and Flip direction.
+  "Flip direction": "Odwróć kierunek",
+  "The side the section looks to: flipped, it looks the other way (its line runs the other way round, its heads stay at their ends)": "Strona, w którą patrzy przekrój: odwrócony patrzy w drugą stronę (jego linia biegnie odwrotnie, jego głowice zostają na swoich końcach)",
+  "Flip: the section looks the other way": "Odwróć: przekrój patrzy w drugą stronę",
+  "click its start, its end, then the side it looks to · Esc cancels": "kliknij jego początek, koniec, a potem stronę, w którą patrzy · Esc anuluje",
+  "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); on the core centre, the wall mirrored across it (its exterior to the left). The wall's ghost shows where it will be built": "Spacja: ta sama linia po drugiej stronie ściany (lico zewnętrzne i wewnętrzne zamieniają się, odsunięcie zmienia znak); na środku rdzenia ściana odbita względem niego (zewnętrze po lewej). Podgląd ściany pokazuje, gdzie powstanie",
+  "flip the wall (exterior on the left)": "odwróć ścianę (zewnętrze po lewej)",
+  "flip the wall back (exterior on the right)": "odwróć ścianę z powrotem (zewnętrze po prawej)",
+  "the other side": "druga strona",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

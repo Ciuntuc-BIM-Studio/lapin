@@ -6478,6 +6478,15 @@ export const DE: Record<string, string> = {
   "Drawing language": "Zeichnungssprache",
   "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "Die Sprache der Wörter, die Zeichnungen selbst schreiben (die SH einer Rinne, ein Tiefpunkt); eine Legende behält die Sprache, in der sie platziert wurde",
   'Open-web joist': 'Fachwerkträger', 'New type from a preset': 'Neuer Typ aus einer Vorlage', 'The preset sizes are indicative: your own norms and sizes decide.': 'Die Maße der Vorlagen sind unverbindlich: Ihre eigenen Normen und Maße entscheiden.', 'Joist depth': 'Trägerhöhe', 'Chords': 'Gurte', 'Webs': 'Streben', 'Angle webs': 'Streben aus Winkelprofilen', 'Lines only': 'Nur Linien', 'Round bar webs': 'Streben aus Rundstäben', 'Edit the type': 'Typ bearbeiten', 'Webs as the imported file drew them': 'Streben, wie die importierte Datei sie zeichnete', 'Regenerate webs': 'Streben neu erzeugen',
+  // Forum topics 238 and 247: Space mirrors a wall on its core centre; a section's third click and Flip direction.
+  "Flip direction": "Richtung umkehren",
+  "The side the section looks to: flipped, it looks the other way (its line runs the other way round, its heads stay at their ends)": "Die Seite, zu der der Schnitt blickt: umgekehrt blickt er zur anderen Seite (seine Linie läuft andersherum, seine Köpfe bleiben an ihren Enden)",
+  "Flip: the section looks the other way": "Umkehren: der Schnitt blickt zur anderen Seite",
+  "click its start, its end, then the side it looks to · Esc cancels": "klicke seinen Anfang, sein Ende, dann die Seite, zu der er blickt · Esc bricht ab",
+  "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); on the core centre, the wall mirrored across it (its exterior to the left). The wall's ghost shows where it will be built": "Leertaste: dieselbe Linie auf der anderen Seite der Wand (Außen- und Innenseite tauschen, ein Versatz wechselt das Vorzeichen); auf der Kernmitte wird die Wand daran gespiegelt (ihre Außenseite links). Die Vorschau der Wand zeigt, wo sie gebaut wird",
+  "flip the wall (exterior on the left)": "Wand spiegeln (Außenseite links)",
+  "flip the wall back (exterior on the right)": "Wand zurückspiegeln (Außenseite rechts)",
+  "the other side": "die andere Seite",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

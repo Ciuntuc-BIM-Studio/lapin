@@ -6517,6 +6517,15 @@ export const ZH: Record<string, string> = {
   "Drawing language": "图纸语言",
   "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "图纸自行书写的文字的语言（排水沟的管底、低点）；图例保留其放置时的语言",
   'Open-web joist': '空腹桁架梁', 'New type from a preset': '从预设新建类型', 'The preset sizes are indicative: your own norms and sizes decide.': '预设尺寸仅供参考：以您自己的规范和尺寸为准。', 'Joist depth': '桁架梁高度', 'Chords': '弦杆', 'Webs': '腹杆', 'Angle webs': '角钢腹杆', 'Lines only': '仅线条', 'Round bar webs': '圆钢腹杆', 'Edit the type': '编辑类型', 'Webs as the imported file drew them': '腹杆与导入文件所绘一致', 'Regenerate webs': '重新生成腹杆',
+  // Forum topics 238 and 247: Space mirrors a wall on its core centre; a section's third click and Flip direction.
+  "Flip direction": "翻转方向",
+  "The side the section looks to: flipped, it looks the other way (its line runs the other way round, its heads stay at their ends)": "剖面朝向的一侧：翻转后朝向另一侧（其线反向，剖面标头留在各自的端点）",
+  "Flip: the section looks the other way": "翻转：剖面朝向另一侧",
+  "click its start, its end, then the side it looks to · Esc cancels": "点击起点、终点，再点击它朝向的一侧 · Esc 取消",
+  "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); on the core centre, the wall mirrored across it (its exterior to the left). The wall's ghost shows where it will be built": "空格：墙另一侧的同一条线（外表面与内表面互换，偏移量改变符号）；在核心中心上，墙沿其镜像（外侧在左）。墙的预览显示它将建在何处",
+  "flip the wall (exterior on the left)": "翻转墙（外侧在左）",
+  "flip the wall back (exterior on the right)": "将墙翻转回来（外侧在右）",
+  "the other side": "另一侧",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

@@ -36,6 +36,8 @@ export type Gesture =
     preview?: (placed: Vec2[], aimed: Vec2) => Vec2[] | null;
     /** With `arc`: what the arc drawn would build, as `twoPoints`' `body`. */
     body?: (path: { a: Vec2; b: Vec2; rise: number }) => Vec2[][];
+    /** What the hint over the view says the tool asks for, after its name (a section: its start, its end, the side it looks to). */
+    hint?: string;
   }
   /** `shapes` (forum topic 97): in a plan, its bar's shape (viewport/outlineShape: polygon with arcs, rectangle, circle, inside walls) is drawn. */
   | { kind: 'polygon'; shapes?: boolean }

@@ -6482,6 +6482,15 @@ export const FR: Record<string, string> = {
   "Drawing language": "Langue des dessins",
   "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "La langue des mots que les dessins écrivent d'eux-mêmes (le FE d'un caniveau, un point bas) ; une légende garde la langue dans laquelle elle a été placée",
   'Open-web joist': 'Poutrelle à treillis', 'New type from a preset': 'Nouveau type à partir d\'un préréglage', 'The preset sizes are indicative: your own norms and sizes decide.': 'Les dimensions des préréglages sont indicatives : vos propres normes et dimensions font foi.', 'Joist depth': 'Hauteur de la poutrelle', 'Chords': 'Membrures', 'Webs': 'Treillis', 'Angle webs': 'Treillis en cornières', 'Lines only': 'Lignes seulement', 'Round bar webs': 'Treillis en barres rondes', 'Edit the type': 'Modifier le type', 'Webs as the imported file drew them': 'Treillis tel que le fichier importé l\'a dessiné', 'Regenerate webs': 'Régénérer le treillis',
+  // Forum topics 238 and 247: Space mirrors a wall on its core centre; a section's third click and Flip direction.
+  "Flip direction": "Inverser la direction",
+  "The side the section looks to: flipped, it looks the other way (its line runs the other way round, its heads stay at their ends)": "Le côté vers lequel regarde la coupe : inversée, elle regarde de l’autre côté (sa ligne va dans l’autre sens, ses têtes restent à leurs extrémités)",
+  "Flip: the section looks the other way": "Inverser : la coupe regarde de l’autre côté",
+  "click its start, its end, then the side it looks to · Esc cancels": "cliquez son début, sa fin, puis le côté vers lequel elle regarde · Échap annule",
+  "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); on the core centre, the wall mirrored across it (its exterior to the left). The wall's ghost shows where it will be built": "Espace : la même ligne de l’autre côté du mur (les faces extérieure et intérieure s’échangent, un décalage change de signe) ; sur le centre du noyau, le mur en miroir par rapport à lui (son extérieur à gauche). L’aperçu du mur montre où il sera construit",
+  "flip the wall (exterior on the left)": "retourner le mur (extérieur à gauche)",
+  "flip the wall back (exterior on the right)": "remettre le mur (extérieur à droite)",
+  "the other side": "l’autre côté",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

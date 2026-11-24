@@ -6481,6 +6481,15 @@ export const IT: Record<string, string> = {
   "Drawing language": "Lingua dei disegni",
   "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "La lingua delle parole che i disegni scrivono da sé (la QS di una canaletta, un punto basso); una legenda mantiene la lingua in cui è stata posata",
   'Open-web joist': 'Travetto reticolare', 'New type from a preset': 'Nuovo tipo da una preimpostazione', 'The preset sizes are indicative: your own norms and sizes decide.': 'Le dimensioni delle preimpostazioni sono indicative: decidono le vostre norme e misure.', 'Joist depth': 'Altezza del travetto', 'Chords': 'Correnti', 'Webs': 'Diagonali', 'Angle webs': 'Diagonali in angolari', 'Lines only': 'Solo linee', 'Round bar webs': 'Diagonali in tondi', 'Edit the type': 'Modifica il tipo', 'Webs as the imported file drew them': 'Diagonali come le ha disegnate il file importato', 'Regenerate webs': 'Rigenera le diagonali',
+  // Forum topics 238 and 247: Space mirrors a wall on its core centre; a section's third click and Flip direction.
+  "Flip direction": "Inverti direzione",
+  "The side the section looks to: flipped, it looks the other way (its line runs the other way round, its heads stay at their ends)": "Il lato verso cui guarda la sezione: invertita, guarda dall’altro lato (la sua linea va al contrario, le sue teste restano ai loro estremi)",
+  "Flip: the section looks the other way": "Inverti: la sezione guarda dall’altro lato",
+  "click its start, its end, then the side it looks to · Esc cancels": "fai clic sull’inizio, sulla fine, poi sul lato verso cui guarda · Esc annulla",
+  "Space: the same line on the other side of the wall (the exterior and interior faces swap, an offset changes sign); on the core centre, the wall mirrored across it (its exterior to the left). The wall's ghost shows where it will be built": "Spazio: la stessa linea dall’altro lato del muro (le facce esterna e interna si scambiano, uno scostamento cambia segno); sul centro del nucleo, il muro specchiato rispetto a esso (l’esterno a sinistra). L’anteprima del muro mostra dove sarà costruito",
+  "flip the wall (exterior on the left)": "inverti il muro (esterno a sinistra)",
+  "flip the wall back (exterior on the right)": "rimetti il muro (esterno a destra)",
+  "the other side": "l’altro lato",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

@@ -41,6 +41,7 @@ export function toolHint(tool: string | null): string | null {
   // A tool of its own words (a contour dragged): its hint, translated as a phrase.
   if (g.kind === 'twoPoints' && g.hint) return `${t(active.label)}: ${t(g.hint)}`;
   if (g.kind === 'twoPoints') return `${active.label}: click its start, then its end · Shift squares it${space ? ` · Space: ${space}` : ''} · ${g.repeat ? 'Enter ends the chain, Esc cancels' : 'Esc cancels'}`;
+  if (g.kind === 'threePoints' && g.hint) return `${t(active.label)}: ${t(g.hint)}`;
   if (g.kind === 'threePoints' && g.arc && space) return `${active.label}: click its start, its end, then a point it passes through · Space: ${space} · Esc cancels`;
   if (g.kind === 'pickThenPoint') return `${active.label}: ${g.hint ?? 'click the element, then a point · Enter takes the first click alone, Esc cancels'}`;
   return null;
