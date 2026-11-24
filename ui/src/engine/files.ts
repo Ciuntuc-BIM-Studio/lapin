@@ -701,8 +701,11 @@ export async function importIfc(mode: 'auto' | 'editable' | 'reference' | 'link'
   await surveyIfc(source, mode, 'ifc', asProject);
 }
 
-/** The point cloud formats Lapin reads (docs/point-clouds.md): the open ones only; Gaussian splats as 3DGS PLY or SPZ (docs/plan-gaussian-splats.md). */
-export const POINT_CLOUD_EXTENSIONS = ['las', 'laz', 'e57', 'ply', 'spz', 'xyz', 'pts', 'csv', 'txt'];
+/**
+ * The point cloud formats Lapin reads (docs/point-clouds.md): the open ones only; Gaussian splats as 3DGS PLY, SuperSplat's
+ * compressed PLY (.compressed.ply), SPZ or SOG (docs/plan-gaussian-splats.md). On the desktop a SOG folder's meta.json too.
+ */
+export const POINT_CLOUD_EXTENSIONS = ['las', 'laz', 'e57', 'ply', 'spz', 'sog', 'xyz', 'pts', 'csv', 'txt'];
 
 /** The largest cloud a browser links (its bytes are held in the page's engine): larger ones need the desktop app. */
 export const BROWSER_CLOUD_MAX = 160 * 1024 * 1024;
@@ -725,12 +728,17 @@ export const CLOUD_UNITS = [
 ];
 
 /**
- * A point cloud linked (LAS, LAZ, E57, PLY, XYZ, PTS, CSV), or Gaussian splats (3DGS PLY, SPZ): kept outside the project, indexed in the background,
+ * A point cloud linked (LAS, LAZ, E57, PLY, XYZ, PTS, CSV), or Gaussian splats (3DGS PLY, compressed PLY, SPZ, SOG): kept outside the project, indexed in the background,
  * listed in Manage → Links. Where it stands and its unit asked first; the engine says what it found.
  */
 export async function linkPointCloud(): Promise<void> {
   const picked = isDesktop() ? null : await pickFile('Point cloud', POINT_CLOUD_EXTENSIONS);
-  const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'Point cloud or splats (LAS, LAZ, E57, PLY, SPZ, XYZ, PTS, CSV)', extensions: POINT_CLOUD_EXTENSIONS }]) : picked?.name ?? null;
+  const path = isDesktop()
+    ? await pickPath('open', undefined, [
+      { name: 'Point cloud or splats (LAS, LAZ, E57, PLY, SPZ, SOG, XYZ, PTS, CSV)', extensions: POINT_CLOUD_EXTENSIONS },
+      { name: 'A SOG folder (its meta.json)', extensions: ['json'] },
+    ])
+    : picked?.name ?? null;
   if (!path) return;
   if (picked && picked.bytes.length > BROWSER_CLOUD_MAX) { notify(`${picked.name} is ${Math.round(picked.bytes.length / 1048576)} MB: in a browser a point cloud is at most ${BROWSER_CLOUD_MAX / 1048576} MB. Link it in the desktop app.`); return; }
   const name = path.split(/[\\/]/).pop() ?? path;

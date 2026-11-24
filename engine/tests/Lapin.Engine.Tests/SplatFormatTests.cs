@@ -278,6 +278,10 @@ public class SplatFormatTests
             foreach (var (name, bytes) in files) File.WriteAllBytes(Path.Combine(dir.FullName, name), bytes);
             var fr = Assert.IsType<SogReader>(PointReaders.Open(new FileSource(Path.Combine(dir.FullName, "meta.json"))));
             Same(want, All(fr), pos: 3e-3, size: 0.03, turn: version >= 3 ? 3e-4 : 1e-3, colour: 1, alpha: version >= 3 ? 2 : 1, sh: 1, "SOG folder");
+            // Linked by its meta.json, the link takes the folder's name.
+            var f = new Fixture(new ArchitectureModule());
+            var id = (string)((JsonObject)f.Run("pointcloud.link", new JsonObject { ["path"] = Path.Combine(dir.FullName, "meta.json") })!)["id"]!;
+            Assert.Equal(dir.Name, Links.Require(f.Model, id).Name);
         }
         finally { dir.Delete(true); }
     }

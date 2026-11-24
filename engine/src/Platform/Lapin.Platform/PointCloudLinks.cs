@@ -638,6 +638,8 @@ public static class PointCloudLinks
             ["bounds"] = header.Bounds is { } hb ? new JsonArray(hb.Select(v => (JsonNode)Math.Round(v, 4)).ToArray()) : null,
         };
         var named = ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? Path.GetFileNameWithoutExtension(nm) : link.Name;
+        // A SOG folder's meta.json: the link takes the folder's name.
+        if (path != null && Path.GetFileName(path).Equals("meta.json", StringComparison.OrdinalIgnoreCase) && Path.GetFileName(Path.GetDirectoryName(path)) is { Length: > 0 } folder) named = folder;
         ctx.Replace(link.With(name: named, attrs: attrs));
         ForgetFailed(key);
         var status = Status(ctx.Model.Get(link.Id)!, ctx.Deliveries);

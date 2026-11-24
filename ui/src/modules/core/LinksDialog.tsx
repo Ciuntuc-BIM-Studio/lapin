@@ -21,7 +21,7 @@ import { Cell, LabeledLength, LabeledNumber, NumberField } from '../../shell/cel
 import { fitCrop, startCalibrate, useCloudTools } from './cloudCalibrate';
 import { CLOUD_MODES, CLOUD_UNITS, CLOUD_UPS } from '../../engine/files';
 import { query } from '../../engine/session';
-import { isCloudLink, isSplatLink, setCloudStatus, statusText, usePointClouds } from '../../viewport/pointClouds';
+import { cloudFormat, isCloudLink, isSplatLink, setCloudStatus, statusText, usePointClouds } from '../../viewport/pointClouds';
 
 const COLOR_MODES = [
   { value: 'rgb', label: 'RGB' }, { value: 'intensity', label: 'Intensity' }, { value: 'elevation', label: 'Elevation' }, { value: 'classification', label: 'Classification' },
@@ -180,7 +180,8 @@ export function LinksDialog() {
                   return (
                     <tr key={l.id} className={busy === l.id ? 'muted' : undefined}>
                       <td><Cell value={l.name} onCommit={(t) => { const v = t.trim(); if (!v) return false; if (v !== l.name) void execute('link.update', { id: l.id, name: v }); }} /></td>
-                      <td>{cloud ? <span title={info.format}>{isSplatLink(l) ? 'Gaussian splats' : 'Point cloud'}</span> : String(l.props.kind ?? '').toUpperCase()}</td>
+                      <td>{cloud ? <span title={info.format}>{isSplatLink(l) ? 'Gaussian splats' : 'Point cloud'}</span> : String(l.props.kind ?? '').toUpperCase()}
+                        {cloud && info.format && <div className="muted small" data-link="format">{cloudFormat(info.format)}</div>}</td>
                       <td title={path ?? 'linked from the browser: its bytes were read once'}>{file}{!path && <span className="muted small"> (no path)</span>}
                         {cloud && <div className="muted small" data-cloud-status={status[l.id]?.state ?? 'waiting'}>{statusText(status[l.id])}</div>}
                         {cloud && cropOpen === l.id && <CropPanel link={l} />}
@@ -193,6 +194,11 @@ export function LinksDialog() {
                             {isSplatLink(l) && (
                               <select aria-label="Display" data-link="display" style={{ marginLeft: 8 }} title="How it is drawn in 3D: its Gaussians, or their centres as points" value={l.props.display === 'points' ? 'points' : 'splats'} onChange={(e) => void execute('pointcloud.update', { id: l.id, display: e.target.value })}>
                                 <option value="splats">Splats</option><option value="points">Points</option>
+                              </select>
+                            )}
+                            {isSplatLink(l) && (
+                              <select aria-label="Splat colour" data-link="splat-color" style={{ marginLeft: 8 }} title="Its colour in 3D: full, changing with the side it is seen from (its spherical harmonics), or its base colour alone" value={l.props.splatColor === 'base' ? 'base' : 'full'} onChange={(e) => void execute('pointcloud.update', { id: l.id, splatColor: e.target.value })}>
+                                <option value="full">Full colour</option><option value="base">Base colour</option>
                               </select>
                             )}
                           </div>
