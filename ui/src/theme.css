@@ -3276,3 +3276,13 @@ body.panel-dragging, body.panel-dragging * { cursor: grabbing !important; user-s
 .remark-documents .remark-document { display: inline-flex; align-items: center; gap: 3px; text-transform: none; letter-spacing: 0; font-size: 11px; }
 .remark-documents .remark-document .icon { padding: 0 2px; }
 .remark-documents select { max-width: 280px; }
+
+/* A point cloud's crop on its row in Manage → Links (G2 of docs/plan-gaussian-splats.md). */
+.cloud-crop { margin: 6px 0; padding: 6px 8px; border: 1px solid var(--border, #d8d2c6); border-radius: 6px; }
+.cloud-crop .row-tools { display: flex; gap: 6px; margin-bottom: 6px; }
+.cloud-crop-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 10px; }
+.cloud-crop-fields label { display: flex; flex-direction: column; font-size: 11px; }
+.cloud-crop-fields input { width: 100%; }
+
+/* A tool's live measure in the 3D placing chip (Measure's running total, its area): never cut short. */
+.mode-chip .mode-info { flex: none; font-weight: 600; overflow: visible; }

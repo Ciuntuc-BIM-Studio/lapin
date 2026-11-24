@@ -146,7 +146,7 @@ Atrium's `docs/plan-cde-web.md`, stage W3, with W2's administration screens. The
 | One refresh at a time: the start screen's refreshes and the engine's calls (which refresh by themselves) take turns (`withTokens`), and a refresh first looks whether another one already replaced the token, so a single-use refresh token is never spent twice; the desktop's calls on one server go one after another | `ui/src/engine/cdeServer.ts`, `remote.ts` |
 | Tests: a fake Atrium Server (BCF, journal, ETags, merge patch, the issue rules) for the round trip, both users' fields kept, the last writer of one field, the 412, status_only, comment_required, close_forbidden, deletions both ways, one undo step, the state through save and reopen, remarks out of "uncommitted"; the token race, the rights and the Atrium client in the interface | `engine/tests/Lapin.Engine.Tests/IssueSyncTests.cs`; `ui/src/engine/cdeServer.test.ts`, `atrium.test.ts`, `ui/src/modules/core/remarks/issues.test.ts` |
 
-Limits: comments are not edited from Lapin (only made and deleted); the BCF fields Lapin does not hold (index, BIM snippet) stay the server's (reference links are synced since decision 818); the merge of one field is "last to sync wins" (the server's PATCH semantics), not by clock. A user's guide page: `docs/user/cde-server.md` (no scene: it needs a live server).
+Limits: comments are not edited from Lapin (only made and deleted); the BCF fields Lapin does not hold (index, BIM snippet) stay the server's (reference links are synced since decision 824); the merge of one field is "last to sync wins" (the server's PATCH semantics), not by clock. A user's guide page: `docs/user/cde-server.md` (no scene: it needs a live server).
 
 ## Publishing (W4)
 
@@ -163,11 +163,11 @@ Atrium's `docs/plan-cde-web.md`, stage W4, against Atrium Server's publishing AP
 
 Limits:
 
-- The gate links an open issue to a document by a BCF reference link `lapin-document:<document>` (labels must be in the project's list, which no API edits). Lapin sets it itself since decision 818 (below).
+- The gate links an open issue to a document by a BCF reference link `lapin-document:<document>` (labels must be in the project's list, which no API edits). Lapin sets it itself since decision 824 (below).
 - The handover diff is the server's: the two tags' issued files by name (status and revision stripped) and SHA-256, and the model's parts by path (whole Arrow tables, not per sheet). A per-sheet diff of the model, made by the engine opening both commits, is not done.
-- Archived, on the server, is "the same issue number published again at a later revision": Lapin reuses the number for a re-issue since decision 818 (below).
+- Archived, on the server, is "the same issue number published again at a later revision": Lapin reuses the number for a re-issue since decision 824 (below).
 
-## Remarks tied to documents, re-issues as revisions (decision 818)
+## Remarks tied to documents, re-issues as revisions (decision 824)
 
 The user's two decisions after W4 (23.11.2026), so that the publish gate and Archived work with what Lapin makes.
 

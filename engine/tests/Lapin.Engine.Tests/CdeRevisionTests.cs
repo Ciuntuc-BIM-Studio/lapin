@@ -7,7 +7,7 @@ using Lapin.Protocol;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// Remarks tied to documents and issues re-issued as revisions (decision 818): a remark made on a sheet (or on a view placed on one)
+/// Remarks tied to documents and issues re-issued as revisions (decision 824): a remark made on a sheet (or on a view placed on one)
 /// carries <c>lapin-document:&lt;document&gt;</c>, the very name <c>remote.submitIssue</c> sends in <c>documents</c>, so the server's
 /// publish gate finds it; the same documents issued again are a new revision of their issue (its number and GlobalId kept, the revision
 /// after its last), on a CDE server, a folder remote and in Lapin's own register.

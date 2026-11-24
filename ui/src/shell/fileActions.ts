@@ -50,7 +50,7 @@ export function baseFileActions(): FileAction[] {
     { id: 'file.linkPointCloud', label: 'Link point cloud…', run: () => linkPointCloud() },
     { id: 'file.importDxf', label: 'Import DXF…', run: () => importDxf() },
     { id: 'file.importTrace', label: 'Import PDF or image…', run: () => importTrace() },
-    { id: 'file.importMesh', label: 'Import mesh (OBJ, STL, glTF)…', run: () => importMesh() },
+    { id: 'file.importMesh', label: 'Import mesh (OBJ, STL, glTF, PLY)…', run: () => importMesh() },
     { id: 'file.exportMesh', label: 'Export 3D (glTF, USD, DAE)…', run: dialog('exportMesh') },
     // The project as one .html that any browser opens, and that Lapin opens again (decision 482, docs/html-export.md).
     { id: 'file.exportHtml', label: 'Lapin for the browser (.html)…', menu: 'export-html', run: dialog('exportHtml') },

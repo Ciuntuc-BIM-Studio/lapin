@@ -34,7 +34,7 @@ Every tool shows its letters in its tooltip; you can change them in **View → K
 
 ## Measuring
 
-**Measure** (<kbd>ME</kbd>, the second quick tool, or **MEASURE** or **DIST** on the command line) measures without drawing anything: click points in a plan, a section or an elevation, snapping as you go, and press <kbd>Enter</kbd>. While you click, the live input shows each leg's length and angle; at the end the notice gives the total length, each leg (for one leg, its Δx, Δy and angle) and, from three points on, the area they enclose. In the 3D view the points snap to the model's corners, edges and faces; when they are at different heights the notice gives the true length in space, with Δz.
+**Measure** (<kbd>ME</kbd>, the second quick tool, or **MEASURE** or **DIST** on the command line) measures without drawing anything: click points in a plan, a section or an elevation, snapping as you go, and press <kbd>Enter</kbd>. While you click, the live input shows each leg's length and angle; at the end the notice gives the total length, each leg (for one leg, its Δx, Δy and angle) and, from three points on, the area they enclose. In the 3D view the points snap to the model's corners, edges and faces, and to a point cloud's points; when they are at different heights the notice gives the true length in space, with Δz. Its bar has two modes: **Distance** (the chain, its running total shown in the 3D view's chip) and **Area** (a closed outline: its area and perimeter in the plane that best fits its points, the plane's tilt from level said at the end).
 
 ## Snaps and helpers
 

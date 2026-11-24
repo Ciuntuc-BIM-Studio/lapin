@@ -307,6 +307,87 @@ function scanLas() {
   });
   return buf;
 }
+/**
+ * A Gaussian splat capture of a garden pavilion (docs/plan-gaussian-splats.md), as a 3D Gaussian splatting trainer writes it:
+ * a binary PLY in INRIA's layout (x y z, normals, f_dc, opacity as a logit, log scales, a quaternion w x y z), in the
+ * reconstruction's axes (y down, z forward: the project's (X, Y, Z) is the file's (X, −Z, Y)). A lawn of flat Gaussians, the
+ * pavilion's four timber posts, its rendered back wall and roof, a tree's soft crown. Written here, some forty thousand.
+ */
+function splatPly() {
+  const g = [];
+  let seed = 11;
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+  const C0 = 0.28209479177387814;
+  // A Gaussian in the project's axes: centre, its three sizes (m) along x, y, z, its colour (0–1), its opacity.
+  const add = (x, y, z, sx, sy, sz, r, gr, b, a = 0.92) => g.push([x, -z, y, sx, sz, sy, r, gr, b, a]);
+  for (let i = 0; i < 22000; i++) {
+    const a = rnd() * Math.PI * 2, d = 7 * Math.sqrt(rnd());
+    const x = 3 + d * Math.cos(a), y = 2 + d * Math.sin(a);
+    const path = Math.abs(x - 3) < 0.6 && y < 0;
+    const k = 0.8 + rnd() * 0.4;
+    if (path) add(x, y, 0, 0.08, 0.08, 0.008, 0.72 * k, 0.68 * k, 0.6 * k);
+    else add(x, y, 0.01 * Math.sin(x * 2), 0.09, 0.09, 0.01, 0.3 * k, 0.5 * k, 0.2 * k);
+  }
+  // Four posts and two beams, timber.
+  for (const [px, py] of [[0, 0], [6, 0], [6, 4], [0, 4]]) for (let i = 0; i < 700; i++) add(px + (rnd() - 0.5) * 0.14, py + (rnd() - 0.5) * 0.14, rnd() * 2.6, 0.03, 0.03, 0.06, 0.45, 0.3, 0.18);
+  // The back wall, rendered white; a doorway in it.
+  for (let i = 0; i < 6000; i++) {
+    const x = rnd() * 6, z = rnd() * 2.6;
+    if (x > 2.5 && x < 3.5 && z < 2.1) continue;
+    const k = 0.9 + rnd() * 0.1;
+    add(x, 4, z, 0.06, 0.006, 0.06, 0.93 * k, 0.9 * k, 0.84 * k);
+  }
+  // The roof, two planes of red tiles from the eaves at 2.6 m to the ridge at 3.6 m.
+  for (let i = 0; i < 7000; i++) {
+    const x = -0.3 + rnd() * 6.6, v = rnd(), side = rnd() < 0.5 ? -1 : 1;
+    const y = 2 + side * (2.3 - 2.3 * v), z = 2.6 + 1.0 * v;
+    const k = 0.85 + rnd() * 0.25;
+    add(x, y, z, 0.07, 0.07, 0.02, 0.66 * k, 0.24 * k, 0.16 * k);
+  }
+  // A tree: a trunk and a soft crown of large, less opaque Gaussians.
+  for (let i = 0; i < 400; i++) add(10 + (rnd() - 0.5) * 0.25, 5 + (rnd() - 0.5) * 0.25, rnd() * 2.4, 0.06, 0.06, 0.12, 0.35, 0.25, 0.16);
+  for (let i = 0; i < 4000; i++) {
+    const a = rnd() * Math.PI * 2, e = Math.acos(2 * rnd() - 1), r = 1.8 * Math.cbrt(rnd());
+    const k = 0.7 + rnd() * 0.5;
+    add(10 + r * Math.sin(e) * Math.cos(a), 5 + r * Math.sin(e) * Math.sin(a), 3.6 + r * Math.cos(e), 0.18, 0.18, 0.18, 0.2 * k, 0.45 * k, 0.15 * k, 0.6);
+  }
+  const props = ['x', 'y', 'z', 'nx', 'ny', 'nz', 'f_dc_0', 'f_dc_1', 'f_dc_2', 'opacity', 'scale_0', 'scale_1', 'scale_2', 'rot_0', 'rot_1', 'rot_2', 'rot_3'];
+  const head = Buffer.from(`ply\nformat binary_little_endian 1.0\nelement vertex ${g.length}\n${props.map((p) => `property float ${p}\n`).join('')}end_header\n`, 'ascii');
+  const body = Buffer.alloc(g.length * props.length * 4);
+  g.forEach(([x, y, z, sx, sy, sz, r, gr, b, a], i) => {
+    const v = [x, y, z, 0, 0, 0, (r - 0.5) / C0, (gr - 0.5) / C0, (b - 0.5) / C0, Math.log(a / (1 - a)), Math.log(sx), Math.log(sy), Math.log(sz), 1, 0, 0, 0];
+    v.forEach((f, k) => body.writeFloatLE(f, (i * props.length + k) * 4));
+  });
+  return Buffer.concat([head, body]);
+}
+/**
+ * The 3D view's snaps under a grid of cursor positions while a point tool is on (Place3D's inference: its kind and the point
+ * snapped, `data-at`), over a part of the view given as fractions of it; the guide's scenes find a point cloud's points
+ * (a splat's centre) this way, as a user does by moving the cursor.
+ */
+async function snapsOver(t, { x0 = 0.1, x1 = 0.9, y0 = 0.15, y1 = 0.9, nx = 28, ny = 18 } = {}) {
+  const box = await t.page.locator('[data-testid=view3d]').boundingBox();
+  const out = [];
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const sx = box.x + box.width * (x0 + (x1 - x0) * (i + 0.5) / nx), sy = box.y + box.height * (y0 + (y1 - y0) * (j + 0.5) / ny);
+    await t.page.mouse.move(sx, sy);
+    await t.wait(25);
+    const r = await t.page.evaluate(() => { const e = document.querySelector('[data-place3d=inference]'); return e ? { kind: e.textContent, at: e.getAttribute('data-at') } : null; });
+    if (r?.kind === 'Endpoint' && r.at) out.push({ sx, sy, at: r.at.split(',').map(Number) });
+  }
+  return out;
+}
+
+/** The splat capture linked, indexed, and the 3D view turned onto it. */
+async function splatPavilion(t, placement) {
+  const r = await t.cmd('pointcloud.link', { name: 'pavilion.ply', data: splatPly().toString('base64'), ...(placement ? { placement } : {}) });
+  let st = null;
+  for (let k = 0; k < 120 && st?.state !== 'ready'; k++) { st = await t.call('doc.query', { name: 'pointcloud.status', args: { id: r.id } }); await t.wait(250); }
+  t.expect(st?.state === 'ready', `the splats are indexed (${st?.state})`);
+  await open3d(t);
+  return r.id;
+}
+
 function surveyDxf() {
   let body = '';
   for (let i = 0; i <= 8; i++) for (let j = 0; j <= 8; j++) {
@@ -9274,6 +9355,139 @@ export const scenes = [
     },
   },
   {
+    // Gaussian splats (docs/plan-gaussian-splats.md, G1, forum topic 237): a capture of a garden pavilion as a 3DGS PLY,
+    // linked as a point cloud, stood up from its y-down axes, its Gaussians drawn in 3D by Lapin's own renderer; Manage → Links
+    // lists it as Gaussian splats with its Display (Splats or Points).
+    id: 'gaussian-splat',
+    async run(t) {
+      await t.fresh();
+      const r = await t.cmd('pointcloud.link', { name: 'pavilion.ply', data: splatPly().toString('base64') });
+      t.expect(typeof r?.id === 'string' && r.placement?.up === '-y', `the splats are linked, stood up from y down (${r?.placement?.up})`);
+      let st = null;
+      for (let k = 0; k < 120 && st?.state !== 'ready'; k++) { st = await t.call('doc.query', { name: 'pointcloud.status', args: { id: r.id } }); await t.wait(250); }
+      t.expect(st?.state === 'ready', `the splats are indexed (${st?.state})`);
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.1, pitch: -0.32, distance: 17, target: { x: 4.5, y: 3, z: 1.6 } }, false));
+      await t.wait(3000);
+      const drawn = async () => Number(await t.page.locator('[data-testid=view3d]').getAttribute('data-splats') ?? 0);
+      t.expect(await drawn() > 30000, `its Gaussians are drawn in 3D (${await drawn()})`);
+      await t.shot('gaussian-splat-3d', { of: '[data-testid=view3d]', pad: 0 });
+      await t.ui({ dialog: 'links' });
+      await t.page.waitForSelector('[data-cloud-status=ready]', { timeout: 20_000 });
+      await t.page.waitForSelector('select[data-link=display]', { timeout: 10_000 });
+      await t.shot('gaussian-splat-links', { of: '.dialog', pad: 0 });
+      // Drawn as points: the same centres, the splats gone.
+      await t.page.locator('select[data-link=display]').selectOption('points');
+      await t.ui({ dialog: null });
+      await t.wait(1500);
+      t.expect(await drawn() === 0, `drawn as points, no Gaussian is drawn (${await drawn()})`);
+      const points = Number(await t.page.locator('[data-testid=view3d]').getAttribute('data-cloud-points') ?? 0);
+      t.expect(points > 30000, `its centres are drawn as points (${points})`);
+      await t.shot('gaussian-splat-points', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
+    // Calibrate scale (G2 of docs/plan-gaussian-splats.md): a capture trained from photos has no true size; linked at half of it,
+    // two points snapped on its splats' centres in 3D (a post's foot and the far post's), their true distance typed, and the
+    // link's factor is right, the first point kept where it was.
+    id: 'gaussian-splat-calibrate',
+    async run(t) {
+      await t.fresh();
+      const id = await splatPavilion(t, { scale: 0.5 });
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.1, pitch: -0.32, distance: 9, target: { x: 2.2, y: 1.5, z: 0.8 } }, false));
+      await t.wait(2500);
+      await t.ui({ dialog: 'links' });
+      await t.page.waitForSelector('button[data-link=calibrate]', { timeout: 20_000 });
+      await t.page.locator('button[data-link=calibrate]').click();
+      await t.wait(600);
+      const all = await snapsOver(t, { y0: 0.2, y1: 0.85 });
+      t.expect(all.length > 10, `the cursor snaps to the splats' centres in 3D (${all.length})`);
+      // On the pavilion, not in the tree's crown (at half size the tree stands at x = 5).
+      const snaps = all.filter((p) => p.at[0] < 3.6);
+      // The two snapped points farthest apart.
+      let best = null;
+      for (const a of snaps) for (const b of snaps) { const d = Math.hypot(a.at[0] - b.at[0], a.at[1] - b.at[1], a.at[2] - b.at[2]); if (!best || d > best.d) best = { a, b, d }; }
+      await t.page.mouse.click(best.a.sx, best.a.sy);
+      await t.page.mouse.move(best.b.sx, best.b.sy);
+      await t.wait(400);
+      await t.shot('gaussian-splat-calibrate', { of: '[data-testid=view3d]', pad: 0 });
+      await t.page.mouse.click(best.b.sx, best.b.sy);
+      const box = t.page.locator('.ask-box');
+      await box.waitFor({ timeout: 10_000 });
+      await box.locator('input').first().fill(`${(best.d * 2).toFixed(4)}m`);
+      // Enter answers it, as a user does (the box stands by the cursor, where it may be partly off the window).
+      await box.locator('input').first().press('Enter');
+      await t.wait(1500);
+      const link = (await t.nodes()).find((n) => n.id === id);
+      const scale = link?.props.placement?.scale ?? 1;
+      t.expect(Math.abs(scale - 1) < 0.02, `the capture is its true size again (its factor ${scale})`);
+      await t.ui({ dialog: 'links' });
+      await t.page.waitForSelector('[data-cloud-status=ready]', { timeout: 20_000 });
+      await t.page.locator('button[data-link=place]').click();
+      await t.page.locator('.ask-box').waitFor({ timeout: 10_000 });
+      await t.shot('gaussian-splat-place', { of: '.ask-box', pad: 6 });
+      await t.page.keyboard.press('Escape');
+      await t.ui({ dialog: null });
+    },
+  },
+  {
+    // A crop box (G2): a capture's floaters and its neighbours kept out; the box made round the cloud (Fit to cloud), then its
+    // length shortened so that the tree is left out, in 3D, in the splats and their points alike.
+    id: 'gaussian-splat-crop',
+    async run(t) {
+      await t.fresh();
+      const id = await splatPavilion(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.1, pitch: -0.32, distance: 17, target: { x: 4.5, y: 3, z: 1.6 } }, false));
+      await t.wait(2500);
+      const before = Number(await t.page.locator('[data-testid=view3d]').getAttribute('data-splats') ?? 0);
+      await t.ui({ dialog: 'links' });
+      await t.page.waitForSelector('button[data-link=crop]', { timeout: 20_000 });
+      await t.page.locator('button[data-link=crop]').click();
+      await t.page.locator('button[data-crop=fit]').click();
+      await t.wait(800);
+      const fit = (await t.nodes()).find((n) => n.id === id)?.props.crop;
+      t.expect(fit && fit.size[0] > 10, `Fit to cloud makes a box round all of it (${JSON.stringify(fit?.size)})`);
+      // Shortened in x to the pavilion and its lawn: the tree (at x = 10) left out.
+      await t.cmd('pointcloud.crop', { id, crop: { center: [3, 2, 2], size: [12, 13, 6], rotation: 0 } });
+      await t.wait(800);
+      await t.shot('gaussian-splat-crop-links', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      await t.wait(3000);
+      const after = Number(await t.page.locator('[data-testid=view3d]').getAttribute('data-splats') ?? 0);
+      t.expect(after > 0 && after < before, `the crop leaves out what is outside (${before} → ${after})`);
+      await t.shot('gaussian-splat-crop', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
+    // Measure in 3D (G2): Area, four points snapped on the splats of the pavilion's back wall: its area and perimeter in the
+    // plane that fits them, said as they are picked.
+    id: 'gaussian-splat-area',
+    async run(t) {
+      await t.fresh();
+      await splatPavilion(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -1.57, pitch: -0.1, distance: 9, target: { x: 3, y: 4, z: 1.3 } }, false));
+      await t.wait(2500);
+      await t.page.evaluate(async () => (await import('/src/modules/core/measure.ts')).setMeasureMode('area'));
+      await t.tool('measure');
+      const snaps = (await snapsOver(t, { x0: 0.15, x1: 0.85, y0: 0.2, y1: 0.9 })).filter((p) => Math.abs(p.at[1] - 4) < 0.1);
+      t.expect(snaps.length >= 4, `the back wall's splats are snapped to (${snaps.length})`);
+      // Its four corners as far as the snaps go: the extremes of x + z and x − z.
+      const pick = (f) => snaps.reduce((a, b) => (f(b) > f(a) ? b : a));
+      const corners = [pick((p) => -p.at[0] - p.at[2]), pick((p) => p.at[0] - p.at[2]), pick((p) => p.at[0] + p.at[2]), pick((p) => -p.at[0] + p.at[2])];
+      for (const c of corners.slice(0, 3)) { await t.page.mouse.click(c.sx, c.sy); await t.wait(250); }
+      await t.page.mouse.move(corners[3].sx, corners[3].sy);
+      await t.wait(400);
+      const info = await t.page.locator('[data-place3d=info]').textContent();
+      t.expect(/^Area [\d.]+ m² · perimeter/.test(info ?? ''), `the area is said as the points are picked (${info})`);
+      await t.shot('gaussian-splat-area', { of: '[data-testid=view3d]', pad: 0 });
+      await t.page.mouse.click(corners[3].sx, corners[3].sy);
+      await t.keys('Enter');
+      await t.wait(400);
+      await t.page.evaluate(async () => (await import('/src/modules/core/measure.ts')).setMeasureMode('distance'));
+      await t.keys('Escape');
+    },
+  },
+  {
     // A tester's report (decision 312): a wall opening edited by its grips as a window is, OFFSET read in the project's
     // millimetres, then a line drafted in the 3D view on the storey's level, standing there in 3D as the plan's drafts do.
     id: 'draft-3d',
@@ -12706,7 +12920,7 @@ export const scenes = [
       t.expect((await t.page.locator('[data-testid=cde-storage]').innerText()).match(/\d/) != null, 'the size the issues take in the project file is shown');
       await t.shot('cde-issues', { of: '.dialog', pad: 0 });
       await t.button('Done', { exact: true });
-      // The same sheet again: Issue… proposes a new revision of issue 1 (decision 818), P02, "New issue" still a choice.
+      // The same sheet again: Issue… proposes a new revision of issue 1 (decision 824), P02, "New issue" still a choice.
       await t.wait(300);
       await t.tool('manage.issue');
       await t.page.waitForSelector('[data-field=issue-target]', { timeout: 15_000 });
