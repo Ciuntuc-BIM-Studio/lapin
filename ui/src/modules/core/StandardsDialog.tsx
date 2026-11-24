@@ -33,10 +33,11 @@ import { FieldPicker } from '../../shell/FieldPicker';
 import { parseDecimal } from '../../shell/parseDecimal';
 import { openingFormat } from './openingFormat';
 import { DEFAULT_FLOOR_SLOPE_MARKS, drawingLangArg, floorSlopeMarkChoices, floorSlopeMarksArg } from './drawingOptions';
+import { DEFAULT_KEY_FORMAT, isKeyFormat, keyFormatArg, writeKey } from './materialKeys';
 import { LANGUAGES } from '../../i18n';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
-type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; suppressZeros?: boolean; levelDecimals?: number; levelZeros?: string; floorSlopeMarks?: number | null; drawingLang?: string | null; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number; tagRules?: TagRuleDto[]; tableStyles?: { id: string; name: string; cells?: boolean; table?: { rows?: unknown[]; cols?: unknown[] } }[] };
+type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; suppressZeros?: boolean; levelDecimals?: number; levelZeros?: string; floorSlopeMarks?: number | null; drawingLang?: string | null; materialKeyFormat?: string | null; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number; tagRules?: TagRuleDto[]; tableStyles?: { id: string; name: string; cells?: boolean; table?: { rows?: unknown[]; cols?: unknown[] } }[] };
 type Col = { key: string; label: string; title?: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[]; lineType?: boolean; labels?: Record<string, string> };
 type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
@@ -288,6 +289,9 @@ export function StandardsDialog() {
       <dd><select data-field="drawingLang" value={book.drawingLang ?? 'en'} onChange={(e) => void execute('standards.options', { drawingLang: drawingLangArg(e.target.value) })}>
         {LANGUAGES.map((l) => <option key={l.id} value={l.id} data-no-i18n>{l.name}</option>)}
       </select></dd>
+      {/* Forum topic 255: how a material's key is written from its number, where the material has no code of its own. */}
+      <dt title="How a material key tag and a keyed legend write a material's number, where the material has no code of its own (Manage → Materials → Data): {n} the number, {n:00} with two digits">Material key format</dt>
+      <dd className="pair"><MaterialKeyFormat value={book.materialKeyFormat ?? DEFAULT_KEY_FORMAT} /></dd>
       {/* Forum topic 192, decision 749: what a new door's, window's or opening's sill is measured from (the architecture module's own project setting). */}
       {openingSillFrom != null && <>
         <dt title="What the sill of a new door, window or wall opening is measured from: the wall's structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take">Door and window sills measured from</dt>
@@ -461,6 +465,20 @@ function TableStylesTab({ styles }: { styles: { id: string; name: string; cells?
       </table>
       {styles.length === 0 && <p className="muted small">No table styles yet.</p>}
       <p className="muted small">Save a table as a style from its editor (Save as style…): its look, its columns' widths and rows' heights, its header rows and, if asked, its cells. The built-in presets stay as they are.</p>
+    </>
+  );
+}
+
+/** The material keys' format typed in the Project tab: checked as the engine checks it, its keys 1 and 2 shown beside it. */
+function MaterialKeyFormat({ value }: { value: string }) {
+  const [text, setText] = useState(value);
+  useEffect(() => setText(value), [value]);
+  const ok = isKeyFormat(text) || text.trim() === '';
+  return (
+    <>
+      <input data-field="materialKeyFormat" value={text} size={10} placeholder="{n}" aria-invalid={!ok} onChange={(e) => setText(e.target.value)}
+        onBlur={() => { if (!ok) { setText(value); return; } if (text.trim() !== value) void execute('standards.options', { materialKeyFormat: keyFormatArg(text) }); }} />
+      <span className="muted small" data-no-i18n>{ok ? `${writeKey(text.trim() || DEFAULT_KEY_FORMAT, 1)}, ${writeKey(text.trim() || DEFAULT_KEY_FORMAT, 2)}…` : ''}</span>
     </>
   );
 }

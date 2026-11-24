@@ -812,9 +812,10 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     /// <c>scripting.delete</c>), its graphs (<c>graphs.*</c>, decision 527: the host's, like scripts) and renumbering the part marks
     /// (<c>marks.renumber</c>, decision 583: it renames marks other people's sheets show), as renumbering a category's marks does
     /// (<c>markRules.renumber</c>, decision 737), and receiving from Speckle (<c>speckle.receive</c>, docs/plan-speckle.md, S2:
-    /// it downloads with the host's account).
+    /// it downloads with the host's account), and renumbering the material keys (<c>material.renumberKeys</c>, forum topic 255: it
+    /// changes the keys other people's sheets show).
     /// </summary>
-    public static readonly string[] HostOnlyCommands = ["scripting.", "graphs.", "marks.renumber", "markRules.renumber", "speckle."];
+    public static readonly string[] HostOnlyCommands = ["scripting.", "graphs.", "marks.renumber", "markRules.renumber", "speckle.", "material.renumberKeys"];
 
     /// <summary>
     /// The namespaces of queries no guest asks: a project's graphs (their evaluation runs the host's commands on a copy of the

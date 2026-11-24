@@ -250,6 +250,11 @@ public sealed record StyleBook(
     /// null: English, as drawings were written before.
     /// </summary>
     public string? DrawingLang { get; init; }
+    /// <summary>
+    /// How a material's key is written from its number (forum topic 255: <c>F{n}</c> writes F1, F2; <c>{n:00}</c> 01, 02), unless
+    /// the material has a code of its own (<c>Lapin.Platform.MaterialKeys</c>); null: <c>{n}</c>, the number alone.
+    /// </summary>
+    public string? MaterialKeyFormat { get; init; }
 
     /// <summary>Whether floors' slope marks are drawn at a view's scale (its denominator).</summary>
     public bool ShowsFloorSlopeMarks(double scale) => scale <= (FloorSlopeMarks ?? Standards.DefaultFloorSlopeMarks) + 1e-9;
@@ -555,6 +560,7 @@ public static class Standards
         DateFormat = DrawingDates.Of(raw?["dateFormat"]),
         FloorSlopeMarks = FloorSlopeMarksOf(raw?["floorSlopeMarks"]),
         DrawingLang = DrawingLanguage.Known((string?)(raw?["drawingLang"] as JsonValue)),
+        MaterialKeyFormat = raw?["materialKeyFormat"] is JsonValue kf && kf.TryGetValue<string>(out var kfs) && kfs.Trim() is { Length: > 0 and <= 24 } kft && kft.Contains("{n", StringComparison.Ordinal) ? kft : null,
     };
 
     /// <summary>Floors' slope marks drawn at 1:50 and larger unless the standards say otherwise.</summary>

@@ -10,7 +10,12 @@ public sealed record DrawPart(Solid Solid, string Element, string Class, string?
 {
     /// <summary>A part an elevation or a section draws by its element's silhouettes (<see cref="Silhouette"/>) instead of its edges: it still sizes the view, never drawn.</summary>
     public bool BySilhouette { get; init; }
-    /// <summary>A curve made of flats (a member's fillets at LOD 400): no line between two flats that both face the eye and turn gently, as the 3D's edges (<see cref="Tessellator.CreaseDeg"/>).</summary>
+    /// <summary>
+    /// A curve made of flats (a member's fillets at LOD 400): no line between two flats that both face the eye and turn gently, as the
+    /// 3D's edges (<see cref="Tessellator.CreaseDeg"/>), whatever drew the fold. Every other part is drawn so only on the seams between a
+    /// curve's chords (<see cref="HiddenLines.ChordSeams"/>): a curved wall, an arch, a barrel roof or a round column shows its outline
+    /// and real edges, a low ridge or a slab's fall keeps its line.
+    /// </summary>
     public bool Smooth { get; init; }
 }
 
@@ -202,7 +207,7 @@ public static class Generator
             var (z0, z1) = Z(p.Solid);
             return z0 < cutZ - 1e-9 && z1 > cutZ - v.Below - 1e-9;
         }).ToList();
-        var (seen, areas, behind) = HiddenLines.Draw(primary.Select((p, i) => (p.Solid, i)).ToList(), v.Frame, v.Cut, v.Below, v.Hidden, primary.Select(seamKey).ToList(), v.Span, v.Rise, primary.Select(p => p.Smooth).ToList());
+        var (seen, areas, behind) = HiddenLines.Draw(primary.Select((p, i) => (p.Solid, i)).ToList(), v.Frame, v.Cut, v.Below, v.Hidden, primary.Select(seamKey).ToList(), v.Span, v.Rise, primary.Select(p => p.Smooth).ToList(), chords: true);
         foreach (var a in areas)
         {
             var p = primary[a.Owner];
@@ -244,7 +249,7 @@ public static class Generator
             if (over.Count > 0)
             {
                 var up = new ViewFrame(new Vec3(0, 0, cutZ), new Vec3(1, 0, 0), new Vec3(0, -1, 0), Vec3.UnitZ);
-                var (oLines, _, _) = HiddenLines.Draw(over.Select((p, i) => (p.Solid, i)).ToList(), up, false, v.Above, keys: over.Select(seamKey).ToList(), smooth: over.Select(p => p.Smooth).ToList());
+                var (oLines, _, _) = HiddenLines.Draw(over.Select((p, i) => (p.Solid, i)).ToList(), up, false, v.Above, keys: over.Select(seamKey).ToList(), smooth: over.Select(p => p.Smooth).ToList(), chords: true);
                 foreach (var s in oLines)
                 {
                     var p = over[s.Owner];
@@ -263,7 +268,7 @@ public static class Generator
             var low = parts.Where(p => HiddenBelowInPlan.Contains(p.Class) && Z(p.Solid).Max <= cutZ - v.Below + 1e-9).ToList();
             if (low.Count > 0)
             {
-                var (edges, _, _) = HiddenLines.Draw(low.Select((p, i) => (p.Solid, i)).ToList(), v.Frame, false, ViewRanges.Unlimited, keys: low.Select(seamKey).ToList(), smooth: low.Select(p => p.Smooth).ToList());
+                var (edges, _, _) = HiddenLines.Draw(low.Select((p, i) => (p.Solid, i)).ToList(), v.Frame, false, ViewRanges.Unlimited, keys: low.Select(seamKey).ToList(), smooth: low.Select(p => p.Smooth).ToList(), chords: true);
                 foreach (var e in edges) { var p = low[e.Owner]; lines.Add(new DLine(e.A, e.B, LineRole.Hidden, p.Element, p.Class)); }
             }
         }
@@ -376,7 +381,7 @@ public static class Generator
             return hi > cutZ + 1e-9 && lo < cutZ + reach - 1e-9;
         }).ToList();
         var up = new ViewFrame(new Vec3(0, 0, cutZ), new Vec3(1, 0, 0), new Vec3(0, -1, 0), Vec3.UnitZ);
-        var (seen, areas, behind) = HiddenLines.Draw(primary.Select((p, i) => (p.Solid, i)).ToList(), up, true, reach, v.Hidden, primary.Select(seamKey).ToList(), smooth: primary.Select(p => p.Smooth).ToList());
+        var (seen, areas, behind) = HiddenLines.Draw(primary.Select((p, i) => (p.Solid, i)).ToList(), up, true, reach, v.Hidden, primary.Select(seamKey).ToList(), smooth: primary.Select(p => p.Smooth).ToList(), chords: true);
         static Vec2 F(Vec2 p) => new(p.X, -p.Y);
         var cuts = new List<DPolygon>();
         var lines = new List<DLine>();

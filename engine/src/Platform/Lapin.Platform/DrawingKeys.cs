@@ -69,8 +69,41 @@ public static class DrawingKeys
     /// <summary>One row of a legend: its name, and what its swatch shows (a fill, a hatch, or a line).</summary>
     /// <param name="Look">A material's graphics, which its swatch is drawn with (decision 678: its hatch colour and weight, background hatch, fill opacity).</param>
     /// <param name="Glyph">A symbol drawn in its swatch (a module's legend: an MEP device's symbol), in paper mm round its insertion point, in <paramref name="Stroke"/>.</param>
+    /// <param name="Key">A keyed legend's row (forum topic 255): its material's key, drawn in a circle before the swatch.</param>
+    /// <param name="Material">The material the row is of, when it is one.</param>
+    /// <param name="SwatchScale">The scale its swatch is hatched at (a surface look's: the view's, so a brick's courses read as the elevation draws them); 0: the swatch's own.</param>
     public sealed record Entry(string Name, string? Fill = null, string? Hatch = null, double HatchScale = 1, double HatchAngle = 0, string? Stroke = null, double Width = 0, double[]? Dash = null,
-        ResolvedMaterial? Look = null, IReadOnlyList<LegendGlyph>? Glyph = null);
+        ResolvedMaterial? Look = null, IReadOnlyList<LegendGlyph>? Glyph = null, string? Key = null, string? Material = null, double SwatchScale = 0);
+
+    /// <summary>What a material legend lists (forum topic 255): its views' cut areas (as before), or what they show (cuts and seen faces), or the materials their material key tags read.</summary>
+    public static readonly string[] MaterialSources = ["cut", "seen", "tagged"];
+
+    /// <summary>
+    /// How a material legend lists its rows: <paramref name="Of"/> one of <see cref="MaterialSources"/>; <paramref name="Keys"/>: each
+    /// row its material's key (<see cref="MaterialKeys"/>) in a circle, the rows in the keys' order; <paramref name="Row"/>: its
+    /// row's text, {key}, {name}, {description} (the first line of the material's), {category} and the material's parameters
+    /// ({Finish}), " — " between parts left out when one comes out empty (null: the name; keyed, "{name} — {description}").
+    /// </summary>
+    public sealed record MaterialRows(string Of = "cut", bool Keys = false, string? Row = null)
+    {
+        public const string KeyedRow = "{name} — {description}";
+
+        /// <summary>A legend's own: <c>of</c>, <c>keys</c> (by default on when it lists what its views show or their tags read), <c>row</c>.</summary>
+        public static MaterialRows Of_(Entity legend)
+        {
+            var of = legend.Str("of") is { } o && MaterialSources.Contains(o) ? o : "cut";
+            var keys = legend.Attrs["keys"] is JsonValue kv && kv.TryGetValue<bool>(out var k) ? k : of != "cut";
+            return new MaterialRows(of, keys, legend.Str("row") is { Length: > 0 } r ? r : null);
+        }
+    }
+
+    /// <summary>A row's text from its template: its fields filled from the material, the parts between " — " that came out empty left out.</summary>
+    public static string RowText(IModelView m, Entity mat, string key, string template)
+    {
+        var filled = TagText.Fill(template, m, mat, MaterialKeys.Fields(m, mat, key));
+        var parts = filled.Split('—').Select(x => x.Trim()).Where(x => x.Length > 0).ToList();
+        return parts.Count == 0 ? mat.Name : string.Join(" — ", parts);
+    }
 
     /// <summary>The kinds a legend may list: Lapin's (materials, lines) and the modules' (<see cref="ILegendKind"/>).</summary>
     public static IReadOnlyList<string> KindsOf(IServices services) => [.. LegendKinds, .. services.All<ILegendKind>().Select(k => k.Kind)];
@@ -87,9 +120,14 @@ public static class DrawingKeys
         return PaperViews.Is(view) ? [] : [view];
     }
 
-    /// <summary>What a legend lists: the materials the sheet's views cut, by name; or the lines they draw (role, type and width).</summary>
-    public static List<Entry> Entries(IQueryContext q, Entity view, string kind, string? lang = null)
+    /// <summary>
+    /// What a legend lists: the materials the sheet's views cut, by name; or the lines they draw (role, type and width). A
+    /// material legend may list what the views show, their seen faces too, or the materials their material key tags read, and
+    /// key its rows (<see cref="MaterialRows"/>).
+    /// </summary>
+    public static List<Entry> Entries(IQueryContext q, Entity view, string kind, string? lang = null, MaterialRows? how = null)
     {
+        how ??= new MaterialRows();
         var m = q.Model;
         if (PaperViews.SheetOf(m, view) is not { } sheet) return [];
         var placed = PaperViews.Placements(q, sheet).Where(p => !p.Content).ToList();
@@ -111,6 +149,12 @@ public static class DrawingKeys
         foreach (var pl in placed)
         {
             if (pl.Drawing.Generated is not { } drawing) continue;
+            if (how.Of != "cut")
+            {
+                // What the view shows (its cuts and the faces it sees), or what its material key tags read.
+                SeenRows(m, pl, how.Of == "tagged", o);
+                continue;
+            }
             var look = pl.Drawing.Kind == "plan" ? "plan" : "section";
             // At the placed view's scale (decision 680): a material's step for it, as the view draws it, with the view's material
             // graphics set (decision 682), without the small-scale cut; and its filters' hatches and fills (stage 5) as rows of their own.
@@ -132,11 +176,45 @@ public static class DrawingKeys
                 {
                     var r = viewMaterials.Material(id);
                     if (r == null || r.Membrane || o.ContainsKey(r.Name)) continue;
-                    o[r.Name] = new Entry(r.Name, r.Fill, r.Hatch, r.HatchScale <= 0 ? 1 : r.HatchScale, r.HatchAngle, Look: r);
+                    o[r.Name] = new Entry(r.Name, r.Fill, r.Hatch, r.HatchScale <= 0 ? 1 : r.HatchScale, r.HatchAngle, Look: r, Material: id);
                 }
             }
         }
-        return [.. o.Values.OrderBy(x => x.Name, StringComparer.CurrentCultureIgnoreCase).Take(40)];
+        if (!how.Keys) return [.. o.Values.OrderBy(x => x.Name, StringComparer.CurrentCultureIgnoreCase).Take(40)];
+        // Keyed (forum topic 255): a row per material, its key before it, in the keys' order; a filter's own rows after them.
+        var keys = MaterialKeys.Keys(m);
+        var template = how.Row ?? MaterialRows.KeyedRow;
+        var keyed = o.Values.Select(r => r.Material is { } mid && m.Get(mid) is { } mat && keys.TryGetValue(mid, out var key)
+            ? r with { Key = key, Name = RowText(m, mat, key, template) } : r).ToList();
+        return [.. keyed.OrderBy(r => r.Key == null ? 1 : 0).ThenBy(r => r.Key, Comparer<string?>.Create(MaterialKeys.Compare)).ThenBy(r => r.Name, StringComparer.CurrentCultureIgnoreCase).Take(40)];
+    }
+
+    /// <summary>
+    /// A placed view's rows of what it shows: the materials of its cut areas and of the faces it sees, or, <paramref name="tagged"/>,
+    /// those its material key tags read; each swatch drawn as the view draws the material: a seen face's surface look at the view's
+    /// scale, a cut area's cut look.
+    /// </summary>
+    static void SeenRows(IModelView m, Sheets.Placement pl, bool tagged, Dictionary<string, Entry> o)
+    {
+        var vg = VisibilityGraphics.Of(m, pl.View);
+        var styles = ViewStyles.Of(m, pl.View);
+        var cutLook = new ViewMaterialGraphics(m, pl.Drawing.Kind == "plan" ? "plan" : "section", pl.Drawing.Scale, styles, vg, smallScale: false);
+        var seenLook = new ViewMaterialGraphics(m, "elevation", pl.Drawing.Scale, styles, vg, smallScale: false);
+        var cut = (pl.Drawing.Seen?.Cut() ?? []).ToHashSet();
+        IEnumerable<string> ids = tagged
+            ? pl.Drawing.Marks.Select(mk => (string?)mk.Data?["material"]).OfType<string>()
+            : [.. cut, .. pl.Drawing.Seen?.Seen() ?? []];
+        foreach (var id in ids.Distinct())
+        {
+            if (m.Get(id) is not { Class: IfcClass.Material } mat || o.Values.Any(e => e.Material == id)) continue;
+            // Its swatch as the view draws it: a face seen with its surface look (plain render plain, brick in courses) at the view's
+            // scale; a material only cut with its cut look; the cut look when it has no surface look.
+            var surface = !cut.Contains(id) || tagged ? seenLook.Material(id) : null;
+            var r = surface ?? cutLook.Material(id);
+            if (r is { Membrane: true } && !tagged) continue;
+            var name = r?.Name ?? mat.Name;
+            o[name] = r != null ? new Entry(name, r.Fill, r.Hatch, r.HatchScale <= 0 ? 1 : r.HatchScale, r.HatchAngle, Look: r, Material: id, SwatchScale: surface != null ? pl.Drawing.Scale : 0) : new Entry(name, Material: id);
+        }
     }
 
     static readonly Dictionary<string, string> Roles = new()
@@ -162,7 +240,11 @@ public static class DrawingKeys
         var kind = module?.Kind ?? (e.Str("kind") == "lines" ? "lines" : "materials");
         // Its words in its own language (audit §16 leftovers), set from the interface's when it was placed.
         var lang = DrawingWords.Known(e.Str("lang"));
-        var rows = module != null ? module.Entries(c.Query, SourceViews(c.Query, c.View, e), lang) : Entries(c.Query, c.View, kind, lang);
+        var how = kind == "materials" ? MaterialRows.Of_(e) : null;
+        var rows = module != null ? module.Entries(c.Query, SourceViews(c.Query, c.View, e), lang) : Entries(c.Query, c.View, kind, lang, how);
+        // A keyed legend's rows start with their key in a circle (forum topic 255), the swatch after it.
+        var keyed = rows.Any(r => r.Key != null);
+        var shift = keyed ? KeyW : 0;
         var mm = c.Mm;
         var text = Standards.ResolveText(c.Book, []);
         var mk = new ViewMark(e.Id);
@@ -170,7 +252,7 @@ public static class DrawingKeys
         mk.Text(new PenText(at - new Vec2(0, TitleH * mm), title, TitleH, 0, "start", "bottom", true, text.Font));
         var patterns = DraftingResources.Patterns(c.Model);
         var y = at.Y - (TitleH + 4) * mm;
-        var width = Swatch + 4 + Label * 0.6 * Math.Max(12, rows.Count == 0 ? 0 : rows.Max(r => r.Name.Length));
+        var width = shift + Swatch + 4 + Label * 0.6 * Math.Max(12, rows.Count == 0 ? 0 : rows.Max(r => r.Name.Length));
         if (rows.Count == 0)
         {
             mk.Text(new PenText(new Vec2(at.X, y - SwatchH * mm), DrawingWords.Of(module != null && !PaperViews.Is(c.View) ? "(none in this view)" : "(none on this sheet's views)", lang), Label, 0, "start", "bottom", false, text.Font), "#808080");
@@ -183,7 +265,8 @@ public static class DrawingKeys
                 y = GlyphRow(mk, r, at.X, y, mm, text.Font);
                 continue;
             }
-            var (x0, x1, y1, y0) = (at.X, at.X + Swatch * mm, y, y - SwatchH * mm);
+            if (r.Key != null) KeyCircle(mk, r.Key, new Vec2(at.X + KeyW / 2 * mm - 1 * mm, y - SwatchH / 2 * mm), mm, text.Font);
+            var (x0, x1, y1, y0) = (at.X + shift * mm, at.X + (shift + Swatch) * mm, y, y - SwatchH * mm);
             IReadOnlyList<Vec2> box = [new(x0, y0), new(x1, y0), new(x1, y1), new(x0, y1)];
             if (kind == "lines" || (module != null && r.Stroke != null && r.Look == null && r.Fill == null && r.Hatch == null))
             {
@@ -194,7 +277,7 @@ public static class DrawingKeys
             {
                 // The swatch drawn as the drawings draw the material (MaterialSample): its fill, background hatch and hatch.
                 var look = r.Look ?? new ResolvedMaterial(r.Name, r.Hatch, r.HatchScale, r.Fill, null, false, false, null, "own", r.HatchAngle);
-                foreach (var pen in MaterialSample.Swatch(look, box, mm, patterns))
+                foreach (var pen in MaterialSample.Swatch(look, box, mm, patterns, viewScale: r.SwatchScale))
                 {
                     if (pen.Fill != null && pen.Loops.Count > 0) mk.Fills.Add((pen.Loops, pen.Fill));
                     if (pen.Stroke != null) foreach (var (a, b) in pen.Segments) mk.Line(a, b, "LEGEND", pen.Width, pen.Stroke, pen.Dash);
@@ -211,7 +294,25 @@ public static class DrawingKeys
         for (var i = 0; i < 4; i++) mk.Edges.Add((all[i], all[(i + 1) % 4]));
         mk.Snaps.Add(at);
         mk.Data = new JsonObject { ["legend"] = kind, ["rows"] = rows.Count };
+        if (keyed) mk.Data["keys"] = new JsonArray([.. rows.Where(r => r.Key != null).Select(r => (JsonNode)r.Key!)]);
         return mk;
+    }
+
+    /// <summary>The width a keyed row's key takes before its swatch (paper mm).</summary>
+    const double KeyW = 8;
+
+    /// <summary>
+    /// A material's key in its circle, as a material key tag draws it (forum topic 255): about 6 mm across, the text made
+    /// smaller when a long code would not fit.
+    /// </summary>
+    public static void KeyCircle(ViewMark mk, string key, Vec2 centre, double mm, string font, string layer = "LEGEND", string color = "#000000")
+    {
+        var h = Label;
+        var w = h * 0.6 * key.Length;
+        const double r = 3.2;
+        if (w > 2 * r - 1.2) h *= (2 * r - 1.2) / w;
+        mk.Polyline(ViewMark.Circle(centre, r * mm, 32), true, layer, 0.18, color);
+        mk.Text(new PenText(centre, key, h, 0, "middle", "middle", false, font), color);
     }
 
     /// <summary>
@@ -440,6 +541,23 @@ public static class DrawingKeys
         // The view a module's legend lists (none: the sheet's views, or the view it is on).
         if (a.ContainsKey("sourceViewId")) { if ((string?)a["sourceViewId"] is { Length: > 0 } sv) attrs["sourceViewId"] = sv; else attrs.Remove("sourceViewId"); }
         if (a.ContainsKey("title")) { if ((string?)a["title"] is { Length: > 0 } t) attrs["title"] = t.Trim(); else attrs.Remove("title"); }
+        // A material legend's rows (forum topic 255): of what (cut, seen: its views' cuts and the faces they see, tagged: what their
+        // material key tags read), keyed (null: by its source, on unless it lists cuts), their text ({key}, {name}, {description}…).
+        if (a.ContainsKey("of"))
+        {
+            if ((string?)a["of"] is { Length: > 0 } of && of != "cut") attrs["of"] = MaterialSources.Contains(of) ? of : throw new CommandException($"A material legend lists {string.Join(", ", MaterialSources)}.");
+            else attrs.Remove("of");
+        }
+        if (a.ContainsKey("keys"))
+        {
+            if (a["keys"] is null) attrs.Remove("keys");
+            else attrs["keys"] = a["keys"] is JsonValue kv && kv.TryGetValue<bool>(out var keys) ? keys : throw new CommandException("Keys are on or off (true or false).");
+        }
+        if (a.ContainsKey("row"))
+        {
+            if (((string?)a["row"])?.Trim() is { Length: > 0 } row) attrs["row"] = row.Length <= 200 ? row : throw new CommandException("A legend's row is at most 200 characters.");
+            else attrs.Remove("row");
+        }
         // The language its own words are written in (DrawingWords); null: English.
         if (a.ContainsKey("lang"))
         {
@@ -488,9 +606,17 @@ public static class DrawingKeys
     public static IEnumerable<Entity> On(IModelView m, string viewId, string predefined) =>
         m.OfClass(IfcClass.Annotation).Where(x => x.PredefinedType == predefined && x.Str("viewId") == viewId);
 
+    /// <summary>A keyed material legend placed or changed: the materials it lists numbered for good, in its rows' order (<see cref="MaterialKeys"/>).</summary>
+    static void FreezeKeys(ICommandContext ctx, Entity view, Entity legend)
+    {
+        if ((legend.Str("kind") ?? "materials") != "materials" || MaterialRows.Of_(legend) is not { Keys: true } how) return;
+        MaterialKeys.Freeze(ctx, Entries(ctx.Query, view, "materials", null, how).Select(r => r.Material));
+    }
+
     public static void Register(IModuleRegistry r)
     {
-        // A legend on a sheet's paper: {viewId: paper:<sheet>, at (its top-left corner), kind: materials | lines, title, lang (its own words' language)}.
+        // A legend on a sheet's paper: {viewId: paper:<sheet>, at (its top-left corner), kind: materials | lines, title, lang (its own words' language);
+        // a material legend's of (cut | seen | tagged), keys (its rows keyed, the materials numbered), row (its rows' text)}.
         r.Command("sheet.addLegend", "Legend", (ctx, a) =>
         {
             var view = ViewOf(ctx, a);
@@ -502,6 +628,7 @@ public static class DrawingKeys
             if ((string?)attrs["sourceViewId"] is { } src && (Views.Find(ctx.Model, src) is not { } sv || PaperViews.Is(sv))) throw new CommandException("The legend lists a view: a plan, a section or an elevation.");
             var e = new Entity(ctx.NewId(), IfcClass.Annotation, module?.Name ?? ((string?)attrs["kind"] == "lines" ? "Line legend" : "Material legend"), attrs, Legend);
             ctx.Add(e);
+            FreezeKeys(ctx, view, e);
             return new JsonObject { ["id"] = e.Id };
         });
 
@@ -550,7 +677,9 @@ public static class DrawingKeys
                     attrs.Remove("at");
                 }
                 Apply(attrs, a, KindsOf(ctx.Services));
-                ctx.Replace(e.With(attrs: attrs));
+                var changed = e.With(attrs: attrs);
+                ctx.Replace(changed);
+                if (changed.PredefinedType == Legend && Views.Find(ctx.Model, changed.Str("viewId") ?? "") is { } lv) FreezeKeys(ctx, lv, changed);
             }
             return null;
         });

@@ -18,6 +18,9 @@ public sealed record ViewContext(IModelView Model, Entity View, string Kind, Vie
     /// <summary>The query the view is drawn in (a text on a sheet's paper reads the sheet's tokens through it); null when a caller has none.</summary>
     public IQueryContext? Query { get; init; }
 
+    /// <summary>What the drawing shows of its materials (the one seen at a point: a material key tag's); null when a caller has none.</summary>
+    public SeenSurfaces? Seen { get; init; }
+
     /// <summary>
     /// Whether something stands between the eye and <paramref name="point"/>: a face of
     /// another element, turned to the eye, nearer, with the point inside its outline.

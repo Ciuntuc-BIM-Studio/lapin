@@ -7,7 +7,8 @@
 
 import { useEffect, useState } from 'react';
 import { Plus, X } from 'lucide-react';
-import { execute } from '../../engine/session';
+import { execute, query, useSession } from '../../engine/session';
+import type { MaterialKeyRow } from './materialKeys';
 import type { NodeDto } from '../../engine/protocol';
 import { Cell, LengthField } from '../../shell/cells';
 import { parseNumber } from '../../shell/cellKeys';
@@ -43,6 +44,7 @@ export function MaterialDataTab({ node }: { node: NodeDto }) {
 
   return (
     <div className="material-data" data-testid="material-data">
+      <MaterialKeyField id={id} />
       <label className="field-line"><span className="eyebrow">Description</span>
         <textarea data-field="mat-description" rows={3} value={text} placeholder="What the specification says of it (a build-up tag writes it in place of the name)"
           onChange={(e) => setText(e.target.value)} onBlur={() => { if (text !== description) save({ description: text.trim() ? text : null }); }} /></label>
@@ -119,6 +121,32 @@ export function MaterialDataTab({ node }: { node: NodeDto }) {
         <p className="muted small">Mass needs a density: add Density (kg/m³).</p>
       )}
       <p className="muted small">Written once here, read by every type the material is in: the build-up tag, the takeoff, the estimate. IFC carries the parameters, λ, μ and density in IFC's own sets.</p>
+    </div>
+  );
+}
+
+/**
+ * A material's key (forum topic 255): what material key tags and keyed legends write for it, its number by the project's format
+ * (numbered for good the first time it is keyed on a drawing) or a code of its own typed here (F1, RF-02; empty: the number's).
+ */
+function MaterialKeyField({ id }: { id: string }) {
+  const nodes = useSession((s) => s.nodes);
+  const [row, setRow] = useState<MaterialKeyRow | null>(null);
+  useEffect(() => {
+    let live = true;
+    void query<{ rows?: MaterialKeyRow[] }>('material.keys').then((r) => { if (live) setRow(r?.rows?.find((x) => x.id === id) ?? null); });
+    return () => { live = false; };
+  }, [id, nodes]);
+  const own = row?.own ?? '';
+  const [text, setText] = useState(own);
+  useEffect(() => setText(own), [id, own]);
+  return (
+    <div className="row" data-testid="material-key">
+      <label className="field-line" title="What a material key tag and a keyed legend write for it: a code of its own (F1, RF-02), or empty for its number written by the project's format (Drafting standards → Project)"><span className="eyebrow">Key</span>
+        <input data-field="mat-key" style={{ width: 90 }} value={text} placeholder={row?.key ?? ''}
+          onChange={(e) => setText(e.target.value)} onBlur={() => { if (text.trim() !== own) void execute('material.setKey', { id, key: text.trim() || null }); }} /></label>
+      {row && <span className="muted small" data-mat-key-number><span>Number</span> <span data-no-i18n>{row.number}</span>{!row.stored && <> <span>(not keyed yet)</span></>}</span>}
+      {row && !row.stored && <button type="button" className="btn mini" data-field="mat-key-number" title="Give it its number for good now (it gets it by itself the first time it is keyed on a drawing)" onClick={() => void execute('material.numberKeys', { ids: [id] })}>Number it</button>}
     </div>
   );
 }

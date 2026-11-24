@@ -130,6 +130,7 @@ public class GeometryPinTests(ITestOutputHelper output)
     // Taken on origin/main fab28778, before the consolidation (the lintels' ids, made afresh each run, as #). The stair's and
     // what follows it (under-stair, skirtings, the lines it hides) retaken 22.11.2026: a new stair type's tread aims at its
     // target (0.28, audit G10), where the step rule's middle gave 0.285.
+    // The roof's lines retaken 24.11.2026 (decision 844): its gutters, downpipes and snow bars, round, draw no line per flat.
     static readonly Dictionary<string, double> Before = new()
     {
         ["00.IfcWall.parts"] = 4,
@@ -487,8 +488,8 @@ public class GeometryPinTests(ITestOutputHelper output)
         ["view1.lines.IfcDoor.hidden.length"] = 27.991166942762355,
         ["view1.lines.IfcDoor.projection.length"] = 4.085000000000001,
         ["view1.lines.IfcRoof.cut.length"] = 28.52831014974269,
-        ["view1.lines.IfcRoof.hidden.length"] = 237.52401864304215,
-        ["view1.lines.IfcRoof.projection.length"] = 146.77897574697346,
+        ["view1.lines.IfcRoof.hidden.length"] = 63.381197783354835,
+        ["view1.lines.IfcRoof.projection.length"] = 107.34893886331433,
         ["view1.lines.IfcSlab.cut.length"] = 42.44,
         ["view1.lines.IfcStair.cut.length"] = 4.796509788165997,
         ["view1.lines.IfcStair.hidden.length"] = 16.34372199304775,
@@ -507,14 +508,14 @@ public class GeometryPinTests(ITestOutputHelper output)
         ["view1.lines.LapinUnderStair.cut.length"] = 3.326590016861429,
         ["view1.lines.LapinUnderStair.hidden.length"] = 0.7705455454220744,
         ["view1.lines.LapinUnderStair.projection.length"] = 0.7945455454220753,
-        ["view1.lines.length"] = 896.9721255499084,
+        ["view1.lines.length"] = 683.3992678065572,
         ["view1.outlines.length"] = 0,
         ["view2.cuts"] = 29,
         ["view2.cuts.area"] = 5.025542344454435,
         ["view2.fills.area"] = 0,
         ["view2.lines.IfcRoof.cut.length"] = 17.926104665707655,
-        ["view2.lines.IfcRoof.hidden.length"] = 191.64367205860637,
-        ["view2.lines.IfcRoof.projection.length"] = 90.83644951133022,
+        ["view2.lines.IfcRoof.hidden.length"] = 49.61122781527493,
+        ["view2.lines.IfcRoof.projection.length"] = 61.296036011315394,
         ["view2.lines.IfcSlab.cut.length"] = 30.439999999999998,
         ["view2.lines.IfcStair.cut.length"] = 24.132645871775786,
         ["view2.lines.IfcWall.cut.length"] = 37.12,
@@ -527,17 +528,17 @@ public class GeometryPinTests(ITestOutputHelper output)
         ["view2.lines.LapinSkirting.hidden.length"] = 1.444860457457816,
         ["view2.lines.LapinSkirting.projection.length"] = 12.823462842490807,
         ["view2.lines.LapinUnderStair.cut.length"] = 38.45236505470302,
-        ["view2.lines.length"] = 571.5706837620183,
+        ["view2.lines.length"] = 399.99782601867224,
         ["view2.outlines.length"] = 0,
         ["view3.cuts"] = 0,
         ["view3.cuts.area"] = 0,
         ["view3.fills.area"] = 0,
         ["view3.lines.IfcDoor.projection.length"] = 17.095154695341037,
-        ["view3.lines.IfcRoof.projection.length"] = 279.3629554058632,
+        ["view3.lines.IfcRoof.projection.length"] = 124.47088758545324,
         ["view3.lines.IfcSlab.projection.length"] = 40.44,
         ["view3.lines.IfcStair.projection.length"] = 0.1658204456096523,
         ["view3.lines.IfcWall.projection.length"] = 38.25924214881713,
-        ["view3.lines.length"] = 375.32317269563106,
+        ["view3.lines.length"] = 220.43110487522003,
         ["view3.outlines.length"] = 0,
     };
 }

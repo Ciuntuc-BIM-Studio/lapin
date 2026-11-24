@@ -134,6 +134,8 @@ public sealed class CoreModule : ILapinModule
         // What is drawn on a sheet itself, in paper coordinates: its paper as a view, legends and scale bars (decision 620).
         PaperViews.Register(r);
         DrawingKeys.Register(r);
+        // Material keys (forum topic 255): each material's number or code, for material key tags and keyed legends.
+        MaterialKeys.Register(r);
         TitleBlocks.Register(r);
         // 2D symbols of the user's own (docs/plan-user-extensibility.md §3).
         Symbols.Register(r);
