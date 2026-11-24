@@ -11429,6 +11429,69 @@ export const scenes = [
     },
   },
   {
+    // Material keys (forum topic 255): a facade of two finishes (a lime render, a brick cladding) seen in the south elevation, a
+    // material key tag on each face (the Tag tool's Material key source, the key in a circle), and the sheet's legend listing
+    // what its elevation shows, keyed, each row its key, its name and its description, in the keys' order.
+    id: 'material-key-tag',
+    touches: ['drafting', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const rendered = await t.cmd('architecture.createWallType', { name: 'Rendered masonry 30', layers: [
+        { material: 'Lime render', thickness: 0.02 }, { material: 'Clay block', thickness: 0.25, core: true }, { material: 'Lime render', thickness: 0.02 }] });
+      const clad = await t.cmd('architecture.createWallType', { name: 'Brick-clad masonry 37', layers: [
+        { material: 'Facing brick', thickness: 0.1 }, { material: 'Clay block', thickness: 0.25, core: true }, { material: 'Gypsum plaster', thickness: 0.015 }] });
+      const mat = async (name) => (await t.nodes()).find((n) => n.type === 'IfcMaterial' && n.name === name)?.id;
+      await t.cmd('material.setData', { id: await mat('Lime render'), description: 'Lime render, white, fine grain, 2 cm' });
+      await t.cmd('material.setData', { id: await mat('Facing brick'), description: 'Facing brick, red, stretcher bond' });
+      const a = (await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 0, x2: 6, y2: 0, typeId: rendered.id })).id;
+      const b = (await t.cmd('architecture.addWall', { storeyId: s, x1: 6, y1: 0, x2: 9, y2: 0, typeId: clad.id })).id;
+      await t.cmd('standards.options', { materialKeyFormat: 'F{n}' });
+      const view = (await t.cmd('view.create', { kind: 'elevation', direction: 'south', name: 'South elevation' })).id;
+      // Each wall's face in the elevation, from what it draws there (the marks a click picks it by).
+      const faceOf = async (id) => {
+        const d = await t.call('doc.query', { name: 'view.drawing', args: { id: view } });
+        const segs = d.marks.filter((m) => m.id === id).flatMap((m) => m.segments ?? []);
+        const xs = segs.filter((_, i) => i % 2 === 0), ys = segs.filter((_, i) => i % 2 === 1);
+        return [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2, Math.max(...ys)];
+      };
+      await t.ui({ view: 'drawing', drawingViewId: view, selection: null, selected: [], keyPlan: false });
+      await t.wait(1500);
+      // The Tag tool's Material key source, in its bar.
+      await t.button('Annotate', { exact: true });
+      await t.tool('cad.tag');
+      await t.page.locator('[data-tag-source]').selectOption('materialKey');
+      await t.wait(300);
+      t.expect(await t.page.locator('[data-tag-material-keys]').count() === 1, 'the Tag tool has its Material key source, with the key format beside it');
+      await t.keys('Escape', 'Escape');
+      for (const [id, dx] of [[a, -1.2], [b, 1.2]]) {
+        const [x, y, top] = await faceOf(id);
+        await t.cmd('drafting.addTag', { viewId: view, element: id, field: 'materialKey', pick: [x, y], at: [x + dx, top + 1.2] });
+      }
+      const drawn = await t.call('doc.query', { name: 'view.drawing', args: { id: view } });
+      const keys = drawn.marks.filter((m) => m.data?.materialKey).map((m) => m.data.materialKey);
+      t.expect(keys.length === 2 && keys.includes('F1') && keys.includes('F2'), `each tag writes its face's key, the render's and the brick's, not the core's (${keys.join(', ')})`);
+      await t.ui({ selection: null, selected: [] });
+      await t.wait(1200);
+      await t.fit();
+      await t.shot('material-key-tag', { of: '[data-testid=drawing]', pad: 0 });
+      // The sheet: the elevation, and a legend of what it shows, keyed.
+      const sheet = await t.cmd('sheet.create', { name: 'Facades', number: 'A-301', paper: 'A3' });
+      await t.cmd('sheet.addViewport', { id: sheet.id, viewId: view, x: 170, y: 150 });
+      await t.cmd('sheet.addLegend', { viewId: `paper:${sheet.id}`, at: [0.3, 0.27], of: 'seen', lang: t.lang });
+      const paper = await t.call('doc.query', { name: 'sheet.drawing', args: { id: sheet.id } });
+      const texts = paper.pens.flatMap((p) => p.texts ?? []).map((x) => x.text);
+      t.expect(texts.includes('Lime render — Lime render, white, fine grain, 2 cm') && texts.includes('F1') && texts.includes('F2'),
+        'the legend lists each key with its material\'s name and description');
+      t.expect(!texts.some((x) => x.startsWith('Clay block')), 'the core, which the elevation does not show, is not listed');
+      await t.ui({ view: 'sheet', sheetId: sheet.id });
+      await t.page.waitForSelector('[data-testid=sheet] .paper-sheet', { timeout: 10_000 });
+      await t.wait(1500);
+      await t.fit();
+      await t.shot('material-key-legend', { of: '[data-testid=sheet]', pad: 0 });
+    },
+  },
+  {
     // Drafting tables (issue #71, docs/plan-drafting-tables.md): Annotate → Table on a sheet's paper, its cells typed in the
     // editor (a header, numbers, a total by a formula), two cells merged; the engine draws it on the sheet.
     id: 'drafting-table',

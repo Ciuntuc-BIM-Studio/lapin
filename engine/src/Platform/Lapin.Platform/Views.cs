@@ -834,6 +834,8 @@ public static class Views
         public (Vec2 Min, Vec2 Max)? Window { get; init; }
         /// <summary>The drawing as generated, its line edits made: each cut area with its element and part key (a type's preview lights a layer up by it).</summary>
         public ViewDrawing? Generated { get; init; }
+        /// <summary>What the drawing shows of its materials: the one seen at a point, those its cuts and seen faces show (forum topic 255).</summary>
+        public SeenSurfaces? Seen { get; init; }
     }
 
     /// <summary>
@@ -997,7 +999,9 @@ public static class Views
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
         // Each component instance's details (forum #224) drawn as this view's own when it is a plan of their storey that shows their set.
         var marked = Components.DetailsIn(m, view, graphics);
-        var ctx = new ViewContext(marked, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry) { Services = q.Services, Query = ReferenceEquals(marked, m) ? q : new OverlayQuery(q, marked) };
+        // What the drawing shows of its materials (forum topic 255): its cuts', and on a section or an elevation the faces it sees.
+        var seenSurfaces = faced && spec.Kind != "plan" ? new SeenSurfaces(drawing, scenes, drawnParts, view.Id) : SeenSurfaces.CutsOnly(drawing, view.Id);
+        var ctx = new ViewContext(marked, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry) { Services = q.Services, Query = ReferenceEquals(marked, m) ? q : new OverlayQuery(q, marked), Seen = seenSurfaces };
         // A sheet's paper (decision 620): only what is drawn on it, none of the views' own marks.
         var paper = spec.Kind == PaperViews.Kind;
         // A 3D view's drawing has no annotations: its drawing's frame need not be the model's (a perspective).
@@ -1165,6 +1169,7 @@ public static class Views
         {
             Window = spec.Span is { } sp && spec.Rise is { } rs ? (new Vec2(sp.Min, rs.Min), new Vec2(sp.Max, rs.Max)) : null,
             Generated = drawing,
+            Seen = seenSurfaces,
         };
     }
 

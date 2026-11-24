@@ -282,12 +282,13 @@ Cotele încăperilor au doar **Detalii** (latura, cu ancadramentele golurilor) �
 - **Încăpere**: dă clic în interiorul unei încăperi pentru numele, numărul, aria, funcțiunea, înălțimea sau finisajul pardoselii. **ȘTAMPILELE ÎNCĂPERILOR…** deschide ce arată ștampila fiecărei încăperi (la fel ca **Eticheta încăperii…**).
 - **Parametru**: scrie numele parametrului în bară (**Rezistență la foc**, `Pset_WallCommon.FireRating`). **Adnotări → Etichetează un parametru**, plecat acum de pe panglică, pornește în continuare unealta aici.
 - **Material / straturi**: un tip de [etichetă de stratificație](#eticheta-de-stratificatie); **TIPURI DE ETICHETE…** deschide editorul lor.
+- **Cheie material**: dă clic pe o față într-o fațadă, o secțiune sau un plan, iar eticheta scrie într-un cerc cheia materialului văzut acolo (tencuiala peretelui, nu miezul lui), cu o linie de indicație până la punctul ales; vezi [Eticheta de cheie de material](#eticheta-de-cheie-de-material). **FORMAT CHEI…** deschide formatul cheilor.
 - **Notă de cod**: codul clasificării elementului (sau titlul ei), vezi [Clasificări](classifications.md).
 - **Text liber**: cuvintele tale. Dă clic pe element, apoi unde merge eticheta; o casetă cere textul (mai multe rânduri: Enter e rând nou, Ctrl/⌘+Enter sau **OK** încheie). Câmpurile **{…}** ale elementului sunt în direct: `{mark}`, `{FireRating}`, `{storey.name}`, `{= formule}`. Are aceeași linie de indicație, casetă sau umăr și aceleași stiluri ca orice etichetă (un tip de etichetă ales în bară îi dă aspectul) și își urmează elementul. **Etichetă de text** din proprietățile ei editează cuvintele; dublu clic pe etichetă în vedere le cere din nou.
 
 **Glaful sau solbancul unei ferestre.** La sursele **Element**, **Parametru** și **Text liber**, ultima listă din bară alege ce se etichetează la o ușă sau fereastră: **Elementul**, **Glaful unei ferestre** sau **Solbancul unei ferestre**. Cu **Elementul**, un clic pe un glaf sau solbanc într-un plan sau o secțiune îl etichetează oricum pe el. Eticheta lui îl spune în câteva cuvinte și îi citește câmpurile (`{sillMaterial}`, `{sillLength}`, `{sillSide}`); vezi [Uși și ferestre](doors-windows.md#poziția-tocului-și-solbancurile).
 
-**INDICAȚIE** pornește sau oprește linia de indicație. Dă clic pe element, apoi unde merge eticheta (tastează întâi **E** ca să frângi linia într-un cot). Scrise la cererea elementului, **ELEMENT**, **ROOM**, **PARAMETER**, **MATERIAL** și **KEYNOTE** aleg și ele sursa.
+**INDICAȚIE** pornește sau oprește linia de indicație. Dă clic pe element, apoi unde merge eticheta (tastează întâi **E** ca să frângi linia într-un cot). Scrise la cererea elementului, **ELEMENT**, **ROOM**, **PARAMETER**, **MATERIAL**, **MATERIALKEY** și **KEYNOTE** aleg și ele sursa.
 
 ![Unealta Etichetă la sursa Încăpere: aria încăperii](shots/tag-sources.webp)
 
@@ -357,6 +358,24 @@ Forma ei se stabilește în **Gestionare → Standarde de desen → Etichete**: 
 ![Editorul unui tip de etichetă de stratificație, lângă previzualizarea lui](shots/buildup-tag-type.webp)
 
 Ca orice etichetă, eticheta de stratificație își urmează elementul, iar planșele și PDF-urile o tipăresc cum o vezi, cu λ, μ și ρ cu tot. Un **Text** propriu în proprietățile ei înlocuiește rândul fiecărui strat doar pentru eticheta aceea.
+
+#### Eticheta de cheie de material
+
+Eticheta de cheie de material numerotează finisajele unei fațade, ca notele de cod: 1, 2, 3 sau F1, F2, F3, cu o legendă pe planșă care spune ce e fiecare număr.
+
+1. Deschide o fațadă (sau o secțiune, sau un plan) și alege **Adnotări → Etichetă**, apoi **Cheie material** în prima listă din bară.
+2. Dă clic pe fața de cheiat: tencuiala unui perete, soclul lui de cărămidă, placajul unui fronton. Eticheta citește materialul văzut în acel punct, stratul de finisaj pe care îl arată desenul acolo, nu miezul peretelui.
+3. Dă clic unde merge eticheta. Cheia se desenează într-un cerc, cu o linie de indicație dreaptă până la punctul ales.
+
+Eticheta e în direct: dă-i peretelui alt finisaj sau materialului altă cheie, iar eticheta urmează. Își urmează peretele când se mută, ca orice etichetă. În proprietățile ei, **Arată** poate citi și **Nume material** sau **Descriere material**, un **Text** propriu le poate amesteca cu alte câmpuri (`{materialKey} · {materialName}`), **În jurul textului** desenează un cerc sau un chenar, iar **Pe element** îndreaptă din nou linia de indicație spre mijlocul peretelui.
+
+**Cheile.** Fiecare material are o singură cheie în tot proiectul. Implicit e un număr: primul material cheiat pe un desen e 1, următorul 2 și tot așa, în ordinea în care primesc prima dată o cheie. Un număr se dă o dată și se păstrează: un material adăugat mai târziu îl ia pe următorul, un material șters își lasă numărul nefolosit, așa că o planșă deja emisă nu își schimbă niciodată cheile. **Gestionare → Materiale → Date** arată cheia și numărul unui material; scrie un cod propriu la **Cheia** (`F1`, `RF-02`) ca să fie folosit în locul lui, sau lasă-l gol pentru număr. **Numerotează-l** îi dă unui material numărul înainte să primească o cheie pe un desen. **Gestionare → Standarde de desen → Proiect → Formatul cheilor de material** scrie numerele: `{n}` pentru numărul singur (implicit), `F{n}` pentru F1, F2, `M-{n:00}` pentru M-01, M-02. Codul propriu al unui material are întâietate față de format. Două materiale nu au niciodată aceeași cheie: un cod pe care îl are alt material e refuzat.
+
+Pe o planșă, o [legendă](sheets.md#desenul-pe-plansa) setată pe **ce arată vederile** sau **cele etichetate cu o cheie** listează fiecare cheie cu numele și descrierea materialului ei, în ordinea cheilor.
+
+![Etichete de cheie de material pe o fațadă: tencuiala și soclul, fiecare cu cheia lui](shots/material-key-tag.webp)
+
+Planșele, PDF-ul și DXF-ul tipăresc etichetele cum le arată vederea. O etichetă e o IfcAnnotation în IFC, ca orice etichetă; cheia unui material rămâne a lui Lapin și nu intră în niciun set de proprietăți.
 
 ### Tabele
 

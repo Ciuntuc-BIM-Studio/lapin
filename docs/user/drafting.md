@@ -282,12 +282,13 @@ Room dimensions have only **Details** (the side, with the openings' jambs) and *
 - **Room**: click inside a room for its name, number, area, function, height or floor finish. **ROOM STAMPS…** opens what every room's stamp shows (the same as **Room tag…**).
 - **Parameter**: type the parameter's name in the bar (**Fire rating**, `Pset_WallCommon.FireRating`). **Annotate → Tag a parameter**, off the ribbon now, still starts the tool here.
 - **Material / layers**: a [build-up tag](#build-up-tag) type; **TAG TYPES…** opens their editor.
+- **Material key**: click a face in an elevation, a section or a plan, and the tag writes the key of the material seen there in a circle (the wall's render, not its core), with a leader to the point clicked; see [Material key tag](#material-key-tag). **KEY FORMAT…** opens the keys' format.
 - **Keynote**: the element's classification code (or its title), see [Classifications](classifications.md).
 - **Free text**: your own words. Click the element, then where the tag goes; a box asks for the text (several lines: Enter is a new line, Ctrl/⌘+Enter or **OK** is done). **{…}** fields of the element are live: `{mark}`, `{FireRating}`, `{storey.name}`, `{= formulas}`. It has the same leader, box or shoulder and styles as any tag (a tag type chosen in the bar gives its look) and follows its element. **Text tag** in its properties edits the words; double-click the tag in the view to be asked again.
 
 **A window's sill.** For the **Element**, **Parameter** and **Free text** sources, the last list of the bar chooses what of a door or window is tagged: **The element**, **A window's interior sill** or **A window's exterior sill**. With **The element**, a click on a sill in a plan or a section tags the sill all the same. A sill's tag says it in a few words and reads its fields (`{sillMaterial}`, `{sillLength}`, `{sillSide}`); see [Doors and windows](doors-windows.md#frame-position-and-sills).
 
-**LEADER** turns the leader on or off. Click the element, then where the tag goes (type **E** first to bend the leader at an elbow). Typed at the element's prompt, **ELEMENT**, **ROOM**, **PARAMETER**, **MATERIAL** and **KEYNOTE** choose the source too.
+**LEADER** turns the leader on or off. Click the element, then where the tag goes (type **E** first to bend the leader at an elbow). Typed at the element's prompt, **ELEMENT**, **ROOM**, **PARAMETER**, **MATERIAL**, **MATERIALKEY** and **KEYNOTE** choose the source too.
 
 ![The Tag tool at its Room source: the room's area](shots/tag-sources.webp)
 
@@ -357,6 +358,24 @@ Its form is set in **Manage → Drafting standards → Tags**: make a tag type's
 ![A build-up tag type's editor beside its preview](shots/buildup-tag-type.webp)
 
 Like any tag, a build-up tag follows its element, and sheets and PDFs print it as you see it, λ, μ and ρ included. A **Text** of its own in its properties replaces the line per layer for that tag alone.
+
+#### Material key tag
+
+A material key tag numbers the finishes of a facade, as keynotes do: 1, 2, 3, or F1, F2, F3, with a legend on the sheet saying what each number is.
+
+1. Open an elevation (or a section, or a plan) and choose **Annotate → Tag**, then **Material key** in the first list of the bar.
+2. Click the face to key: the render of a wall, its brick plinth, the cladding of a gable. The tag reads the material seen at that point, the finish layer the drawing shows there, not the wall's core.
+3. Click where the tag goes. The key is drawn in a circle, with a straight leader to the point clicked.
+
+The tag is live: give the wall another finish, or the material another key, and the tag follows. It follows its wall when it moves, as any tag does. In its properties, **Shows** can also read **Material name** or **Material description**, a **Text** of its own may mix them with other fields (`{materialKey} · {materialName}`), **Around the text** draws a circle or a box, and **On the element** points the leader at the wall's middle again.
+
+**The keys.** Each material has one key in the whole project. By default it is a number: the first material keyed on a drawing is 1, the next 2, and so on, in the order they are first keyed. A number is given once and kept: a material added later takes the next one, a material deleted leaves its number unused, so a sheet already issued never changes its keys. **Manage → Materials → Data** shows a material's key and its number; type a code of its own in **Key** (`F1`, `RF-02`) to use it instead, or leave it empty for the number. **Number it** gives a material its number before it is keyed. **Manage → Drafting standards → Project → Material key format** writes the numbers: `{n}` for the number alone (the default), `F{n}` for F1, F2, `M-{n:00}` for M-01, M-02. A material's own code goes before the format. Two materials never share a key: a code another material has is refused.
+
+On a sheet, a [legend](sheets.md#drawing-on-the-sheet) set to **what the views show** or **those tagged with a key** lists each key with its material's name and description, in the keys' order.
+
+![Material key tags on a facade: the render and the plinth, each with its key](shots/material-key-tag.webp)
+
+Sheets, the PDF and the DXF print the tags as the view shows them. A tag is an IfcAnnotation in IFC, as any tag; a material's key stays Lapin's own and goes into no property set.
 
 ### Tables
 

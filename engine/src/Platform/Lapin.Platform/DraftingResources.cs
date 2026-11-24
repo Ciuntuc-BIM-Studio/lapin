@@ -899,7 +899,7 @@ public static class DraftingResources
             return null;
         });
 
-        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in), the step areas are shown to (areaRounding), how lines end on screen and paper (round, square), whether dimensions drop their trailing zeros (suppressZeros), whether values that do not fit are moved clear of their neighbours (dimAutoText) and past how many paper mm they take a leader (dimTextLeader), the decimals and trailing zeros levels are written with (levelDecimals 0–4, levelZeros project, keep or suppress), the section and elevation markers' sizes (sectionMarkSize, sectionMarkText, elevationMarkSize, elevationMarkText; markSize and markText both), how dates are written (dateFormat), the smallest scale floors' slope marks are drawn at (floorSlopeMarks, its denominator; 50), the language the engine's own words on drawings are in (drawingLang).
+        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in), the step areas are shown to (areaRounding), how lines end on screen and paper (round, square), whether dimensions drop their trailing zeros (suppressZeros), whether values that do not fit are moved clear of their neighbours (dimAutoText) and past how many paper mm they take a leader (dimTextLeader), the decimals and trailing zeros levels are written with (levelDecimals 0–4, levelZeros project, keep or suppress), the section and elevation markers' sizes (sectionMarkSize, sectionMarkText, elevationMarkSize, elevationMarkText; markSize and markText both), how dates are written (dateFormat), the smallest scale floors' slope marks are drawn at (floorSlopeMarks, its denominator; 50), the language the engine's own words on drawings are in (drawingLang), how a material's key is written from its number (materialKeyFormat, F{n}).
         r.Command("standards.options", "Change drafting standards", (ctx, a) =>
         {
             var raw = Standards.ToJson(Book(ctx.Model));
@@ -952,6 +952,12 @@ public static class DraftingResources
             {
                 if (a["drawingLang"] is null || (string?)a["drawingLang"] == "en") raw.Remove("drawingLang");
                 else raw["drawingLang"] = DrawingLanguage.Known((string?)a["drawingLang"]) ?? throw new CommandException($"Drawings are written in {string.Join(", ", DrawingLanguage.Languages)}.");
+            }
+            // How a material's key is written from its number (forum topic 255): F{n}, {n:00}; null: {n}, the number alone.
+            if (a.ContainsKey("materialKeyFormat"))
+            {
+                if (a["materialKeyFormat"] is null || (string?)a["materialKeyFormat"] is { } kf0 && (kf0.Trim().Length == 0 || kf0.Trim() == MaterialKeys.DefaultFormat)) raw.Remove("materialKeyFormat");
+                else raw["materialKeyFormat"] = MaterialKeys.FormatOf(a["materialKeyFormat"]) ?? throw new CommandException($"A material key's format holds its number once, {{n}} or {{n:00}}, in up to {MaterialKeys.MaxFormat} characters (F{{n}}).");
             }
             // The section and elevation markers' symbol size and text height (paper mm, decision 455); null: the defaults.
             void Mark(string key, double min, double max, string what)

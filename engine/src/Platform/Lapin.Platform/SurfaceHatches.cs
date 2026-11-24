@@ -39,7 +39,7 @@ public static class SurfaceHatches
     // Each view's visible faces kept between its drawings (by its id): unchanged elements hatch again without the sweep.
     static readonly Dictionary<string, ViewFaces.VisibilityCache> Caches = [];
 
-    static ViewFaces.VisibilityCache CacheOf(string viewId)
+    internal static ViewFaces.VisibilityCache CacheOf(string viewId)
     {
         lock (Caches)
         {

@@ -140,6 +140,7 @@ export function KeyFields({ node }: { node: NodeDto }) {
           {(onSheet || !mep) && <option value="lines">line styles</option>}
           {hasMep && <option value="mep">MEP symbols and lines</option>}
         </select></dd>
+        {!mep && node.props.kind !== 'lines' && <LegendMaterialRows node={node} set={set} />}
         {mep && (
           <>
             <dt title="The view whose symbols and lines it lists; by itself: the sheet's views, or the view it is on">Of the view</dt>
@@ -196,6 +197,40 @@ export function KeyFields({ node }: { node: NodeDto }) {
     </dl>
   );
 }
+
+/**
+ * A material legend's rows (forum topic 255): what it lists (its views' cut areas, what they show with the faces they see, or what
+ * their material key tags read), keyed or not (each row its material's key in a circle, in the keys' order), and its rows' text.
+ */
+function LegendMaterialRows({ node, set }: { node: NodeDto; set: (args: Record<string, unknown>) => void }) {
+  const of = typeof node.props.of === 'string' ? node.props.of : 'cut';
+  const keys = typeof node.props.keys === 'boolean' ? node.props.keys : legendKeyedByDefault(of);
+  const own = typeof node.props.row === 'string' ? node.props.row : '';
+  const [row, setRow] = useState(own);
+  useEffect(() => setRow(own), [own]);
+  return (
+    <>
+      <dt title="Cut areas: the materials the views' cuts are hatched with. What the views show: their seen faces too (an elevation's render, brick, cladding). Tagged: only the materials their material key tags read">Materials</dt>
+      <dd><select data-testid="legend-of" value={of} onChange={(e) => set({ of: e.target.value === 'cut' ? null : e.target.value })}>
+        <option value="cut">of the cut areas</option>
+        <option value="seen">what the views show</option>
+        <option value="tagged">those tagged with a key</option>
+      </select></dd>
+      <dt title="Each row its material's key in a circle (as a material key tag writes it), the rows in the keys' order; the materials listed are numbered for good">Keys</dt>
+      <dd><input type="checkbox" data-testid="legend-keys" checked={keys} onChange={(e) => set({ keys: e.target.checked === legendKeyedByDefault(of) ? null : e.target.checked })} /></dd>
+      {keys && <>
+        <dt title="A row's text: {key}, {name}, {description} (the first line of the material's), {category}, or any parameter of the material ({Finish}); a part between — that comes out empty is left out">Row</dt>
+        <dd><input data-testid="legend-row" value={row} placeholder={LEGEND_KEYED_ROW} onChange={(e) => setRow(e.target.value)} onBlur={() => { if (row.trim() !== own) set({ row: row.trim() || null }); }} /></dd>
+      </>}
+    </>
+  );
+}
+
+/** A keyed legend's row when it says none: the material's name, then its description's first line. */
+export const LEGEND_KEYED_ROW = '{name} — {description}';
+
+/** Whether a material legend keys its rows when it says nothing: when it lists what its views show or what their tags read. */
+export const legendKeyedByDefault = (of: string): boolean => of !== 'cut';
 
 /** A closed shape's revision cloud: on or off, and its scallop on paper. */
 export function CloudFields({ node, ids }: { node: NodeDto; ids: string[] }) {

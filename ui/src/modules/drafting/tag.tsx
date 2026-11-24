@@ -30,10 +30,13 @@ import { leaderShapeOf, rotationFor, snapKnee, snapTurn, tagLeaderShape, turnAng
  * a room (one of its fields), a parameter by its name, a material or layer (a build-up tag type), a keynote (its classification's
  * code or title). Each is the same TAG command and the same engine command (`drafting.addTag`).
  */
-export type TagSource = 'element' | 'room' | 'parameter' | 'material' | 'keynote' | 'text';
+export type TagSource = 'element' | 'room' | 'parameter' | 'material' | 'materialKey' | 'keynote' | 'text';
 export const TAG_SOURCES: readonly { source: TagSource; label: string }[] = [
   { source: 'element', label: 'Element' }, { source: 'room', label: 'Room' }, { source: 'parameter', label: 'Parameter' },
-  { source: 'material', label: 'Material / layers' }, { source: 'keynote', label: 'Keynote' },
+  { source: 'material', label: 'Material / layers' },
+  // A material key (forum topic 255): the key of the material seen where the face is clicked (an elevation's render, not the core), in a circle.
+  { source: 'materialKey', label: 'Material key' },
+  { source: 'keynote', label: 'Keynote' },
   // A text tag (issue #92): the words typed in a box, on a tag's leader to the element it follows.
   { source: 'text', label: 'Free text' },
 ];
@@ -68,6 +71,7 @@ export function tagContent(p: Pick<TagPrefs, 'source' | 'field' | 'tagType' | 'r
     case 'parameter': return { field: p.parameter.trim().replace(/^\{|\}$/g, '').trim() || 'mark' };
     case 'material': return p.buildup ? { tagType: p.buildup } : { field: 'mark' };
     case 'keynote': return { field: `classification.${p.keynote}` };
+    case 'materialKey': return { field: 'materialKey' };
     // A text tag: its words are asked for once it is placed; its type (when chosen) gives its box or shoulder and its text style.
     case 'text': return p.tagType ? { tagType: p.tagType } : { field: 'mark' };
     default: return p.tagType ? { tagType: p.tagType } : { field: p.field };
@@ -76,6 +80,12 @@ export function tagContent(p: Pick<TagPrefs, 'source' | 'field' | 'tagType' | 'r
 
 /** The source the tool tags next (Tag a parameter: the parameter source). */
 export function setTagSource(source: TagSource): void { useTagPrefs.setState({ source }); }
+
+/** What a material key tag reads (forum topic 255): the material seen where its leader points, its key, name or description. */
+export const MATERIAL_FIELDS: [string, string][] = [['materialKey', 'Material key'], ['materialName', 'Material name'], ['materialDescription', 'Material description']];
+
+/** Whether a tag's field reads the material seen where its leader points. */
+export function isMaterialField(field: string): boolean { return MATERIAL_FIELDS.some(([k]) => k.toLowerCase() === field.toLowerCase()); }
 
 /** The fields offered first: every element's, then the parameters most tagged (each found in the user's own or a standard set). */
 export const QUICK_FIELDS: [string, string][] = [
@@ -174,6 +184,9 @@ export function TagOptions() {
           <button type="button" className="cad-toggle" data-tag-types title="The tag types: a build-up type's header, lines and leaders" onClick={() => openStandards('tag')}>TAG TYPES…</button>
         </>
       )}
+      {p.source === 'materialKey' && (
+        <button type="button" className="cad-toggle" data-tag-material-keys title="The materials' keys: their numbers and own codes (Manage → Materials → Data); the format in Drafting standards → Project" onClick={() => openStandards('project')}>KEY FORMAT…</button>
+      )}
       {p.source === 'keynote' && (
         <select className="cad-layer on" value={p.keynote} data-tag-keynote title="The element's classification (Manage → Classifications…): its code, or its title" onChange={(e) => useTagPrefs.setState({ keynote: e.target.value as 'code' | 'title' })}>
           <option value="code">Code</option>
@@ -270,12 +283,14 @@ export function tagCommand(): Step {
       ...(text ? { text } : {}),
       // A window's sill (decision 736): the one chosen, else the one the click landed on.
       ...(p.source === 'element' || p.source === 'parameter' || p.source === 'text' ? tagPartArgs(p.part, cls, click) : {}),
+      // A material key: the face clicked, whose material it reads (its leader points there).
+      ...(p.source === 'materialKey' && click ? { pick: [click.x, click.y] } : {}),
       ...(p.leader ? {} : { leader: false }),
       ...(elbow ? { elbow: [elbow.x, elbow.y] } : {}),
     });
   };
   const pick = (): Step => ({
-    prompt: `Click the ${useTagPrefs.getState().source === 'room' ? 'room' : 'element'} to tag [${useTagPrefs.getState().source === 'text' ? 'free text' : shows()}: ELEMENT/ROOM/PARAMETER/MATERIAL/KEYNOTE/TEXT · MARK/NAME/CLASS/TYPE/FIELD/LEADER ${useTagPrefs.getState().leader ? 'on' : 'off'}]`, want: 'select',
+    prompt: `Click the ${useTagPrefs.getState().source === 'room' ? 'room' : useTagPrefs.getState().source === 'materialKey' ? 'face whose material' : 'element'} to tag [${useTagPrefs.getState().source === 'text' ? 'free text' : shows()}: ELEMENT/ROOM/PARAMETER/MATERIAL/MATERIALKEY/KEYNOTE/TEXT · MARK/NAME/CLASS/TYPE/FIELD/LEADER ${useTagPrefs.getState().leader ? 'on' : 'off'}]`, want: 'select',
     keywords: words(),
     point: async (p) => {
       const id = cadHost()?.pickAny(p);
@@ -547,7 +562,10 @@ export function TagFields({ node }: { node: NodeDto }) {
           if (e.target.value) set({ field: e.target.value });
         }}>
           {(template || tagType) && <option value="">{template ? 'its own text' : 'its tag type'}</option>}
-          {!known && !template && !tagType && <option value={field} data-no-i18n={QUICK_FIELDS.some(([k]) => k === field) ? undefined : true}>{QUICK_FIELDS.find(([k]) => k === field)?.[1] ?? field}</option>}
+          {!known && !template && !tagType && <option value={field} data-no-i18n={[...QUICK_FIELDS, ...MATERIAL_FIELDS].some(([k]) => k === field) ? undefined : true}>{[...QUICK_FIELDS, ...MATERIAL_FIELDS].find(([k]) => k === field)?.[1] ?? field}</option>}
+          <optgroup label="Material seen where the leader points">
+            {MATERIAL_FIELDS.filter(([k]) => k !== field || known).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+          </optgroup>
           {GROUPS.map(([g, label]) => {
             const list = fields.filter((f) => f.group === g);
             return list.length ? (
@@ -562,6 +580,13 @@ export function TagFields({ node }: { node: NodeDto }) {
         <dd><Cell value={template} placeholder="{mark}|{FireRating}" onCommit={(t) => set({ template: t })} testId="tag-template" /></dd>
       </>}
       {!marker && <>
+        {(isMaterialField(field) || typeof node.props.frame === 'string') && <>
+          <dt title="Round its text: a circle, as a keynote's, or a box">Around the text</dt>
+          <dd><select className="cell" data-tag-frame value={node.props.frame === 'circle' ? 'circle' : 'box'} onChange={(e) => set({ frame: e.target.value })}>
+            <option value="circle">circle</option>
+            <option value="box">box</option>
+          </select></dd>
+        </>}
         <dt title="A tag type of the drafting standards (Manage → Drafting standards → Tags): its template and text style">Tag type</dt>
         <dd style={{ display: 'flex', gap: 6, alignItems: 'center' }}><select className="cell" value={tagType} onChange={(e) => set({ tagType: e.target.value || null })}>
           <option value="">—</option>

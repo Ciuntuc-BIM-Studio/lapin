@@ -150,7 +150,7 @@ public static class Tags
     /// <paramref name="end"/> (none: no leader) through a free <paramref name="elbow"/>; a leader not pointed or bent by
     /// hand is left out while the box stands on its end.
     /// </summary>
-    internal static ViewMark Box(string? id, IReadOnlyList<string> lines, TextStyle style, double mm, Vec2 at, Vec2? end, Vec2? elbow, bool shaped, string color, double angle = 0)
+    internal static ViewMark Box(string? id, IReadOnlyList<string> lines, TextStyle style, double mm, Vec2 at, Vec2? end, Vec2? elbow, bool shaped, string color, double angle = 0, bool circle = false)
     {
         var turn = new Turn(at, angle);
         var h = style.Height * mm;
@@ -158,14 +158,26 @@ public static class Tags
         var halfH = (lines.Count * 1.5 * h + 0.5 * h) / 2;
         var halfW = (Math.Max(TextMeasure.Width("x", style, h), TextMeasure.Widest(lines, h, style.Font, style.Bold, style.Italic)) + h) / 2;
         var mk = new ViewMark(id);
-        Vec2[] box = [at + new Vec2(-halfW, -halfH), at + new Vec2(halfW, -halfH), at + new Vec2(halfW, halfH), at + new Vec2(-halfW, halfH)];
-        mk.Polyline(box.Select(turn.P).ToArray(), true, "TAG", Pens.Default.Hatch, color);
+        if (circle)
+        {
+            // A key's circle (forum topic 255): round the text, as a keynote's; its leader leaves from the circle.
+            var r = Math.Max(halfH, Math.Sqrt(halfW * halfW * 0.8 + halfH * halfH * 0.5));
+            mk.Polyline(ViewMark.Circle(at, r, 40), true, "TAG", Pens.Default.Hatch, color);
+            (halfW, halfH) = (r, r);
+        }
+        else
+        {
+            Vec2[] box = [at + new Vec2(-halfW, -halfH), at + new Vec2(halfW, -halfH), at + new Vec2(halfW, halfH), at + new Vec2(-halfW, halfH)];
+            mk.Polyline(box.Select(turn.P).ToArray(), true, "TAG", Pens.Default.Hatch, color);
+        }
+        var textH = (lines.Count * 1.5 * h + 0.5 * h) / 2;
         for (var i = 0; i < lines.Count; i++)
-            mk.Text(turn.Text(new Vec2(at.X, at.Y + halfH - 0.25 * h - 1.5 * h * (i + 0.5)), lines[i], style, "middle", "middle"), color);
+            mk.Text(turn.Text(new Vec2(at.X, at.Y + textH - 0.25 * h - 1.5 * h * (i + 0.5)), lines[i], style, "middle", "middle"), color);
         var data = new JsonObject { ["at"] = J(at), ["leader"] = end != null, ["shape"] = TagLeaders.Straight };
         if (end is { } target && (shaped || (target - at).Length > halfH * 1.5))
         {
-            var from = turn.P(Leaves(at, halfW, halfH, turn.Inv(elbow ?? target)));
+            var toward = elbow ?? target;
+            var from = circle && (toward - at).Length > 1e-12 ? at + (toward - at) * (halfW / (toward - at).Length) : turn.P(Leaves(at, halfW, halfH, turn.Inv(toward)));
             Vec2[] path = elbow is { } k ? [from, k, target] : [from, target];
             mk.Polyline(path, false, "TAG", Pens.Default.Hatch, color);
             mk.Polyline(ViewMark.Circle(target, h / 5, 8), true, "TAG", Pens.Default.Seen, color);
@@ -277,7 +289,15 @@ public static class Tags
         // A tag of a part (decision 736): its fields read first, its leader to the part; a part gone leaves it red as an element gone does.
         var partKey = t.Str("part");
         var part = PartOf(c.Query, e, partKey);
-        var lines = partKey != null && part == null && FreeText(t) == null ? ["?"] : LinesOf(c.Model, t, e, type, c.Book.Units, FieldsOf(part));
+        // A material key tag (forum topic 255): the material seen where its leader points (its key, name, description), read each time.
+        var fields = FieldsOf(part);
+        var seen = e != null && MaterialKeys.Reads(t.Str("field"), t.Str("template") ?? FreeText(t) ?? type?.Written) ? SeenMaterial(c, t, e, Followed) : null;
+        if (seen is { } sm && c.Model.Get(sm) is { } mat && MaterialKeys.KeyOf(c.Model, sm) is { } key)
+        {
+            fields ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (k, v) in MaterialKeys.Fields(c.Model, mat, key)) if (k.StartsWith("material", StringComparison.OrdinalIgnoreCase)) fields[k] = v;
+        }
+        var lines = partKey != null && part == null && FreeText(t) == null ? ["?"] : LinesOf(c.Model, t, e, type, c.Book.Units, fields);
         var color = e == null || (partKey != null && part == null) ? "#c0392b" : style.Color ?? "#000000";
         Vec2? Aim(Entity el) => PartAnchor(c, part) ?? Anchor(c.Drawing, el.Id);
         var leaderOn = t.Attrs["leader"] is not JsonValue lv || !lv.TryGetValue<bool>(out var on) || on;
@@ -292,6 +312,7 @@ public static class Tags
             var to = Followed(Pt(t.Attrs["end"])) ?? (e != null ? Aim(e) : null);
             var (em, head, side) = TagLeaders.Plain(t.Id, lines, style, type, c.Mm, at, to, leaderOn, color, rad);
             em.Data = ElbowData(at, head, side, leaderOn, e, to);
+            if (seen != null) { em.Data["material"] = seen; em.Data["materialKey"] = MaterialKeys.KeyOf(c.Model, seen); }
             AngleData(em.Data, t, e, c, head, (lines.Count * TagLeaders.Pitch * style.Height * c.Mm + 2 * style.Height * c.Mm) / 2 + 1.5 * style.Height * c.Mm);
             if (leaderOn && to is { } p0) em.Snaps.Add(p0);
             em.Snaps.Add(at);
@@ -300,12 +321,29 @@ public static class Tags
         // The leader: to the spot it was pointed at, else the middle of what the element draws here; through its elbow.
         var end = Followed(Pt(t.Attrs["end"])) ?? (e != null ? Aim(e) : null);
         var elbow = Followed(Pt(t.Attrs["elbow"]));
-        var mk = Box(t.Id, lines, style, c.Mm, at, leaderOn ? end : null, elbow, t.Attrs["end"] is JsonArray || elbow != null, color, rad);
+        var mk = Box(t.Id, lines, style, c.Mm, at, leaderOn ? end : null, elbow, t.Attrs["end"] is JsonArray || elbow != null, color, rad, t.Str("frame") == "circle");
         mk.Data!["of"] = e?.Id;
+        if (seen != null) { mk.Data["material"] = seen; mk.Data["materialKey"] = MaterialKeys.KeyOf(c.Model, seen); }
         AngleData(mk.Data, t, e, c, at, (lines.Count * 1.5 * style.Height * c.Mm + 0.5 * style.Height * c.Mm) / 2 + 1.5 * style.Height * c.Mm);
         mk.Data["leader"] = leaderOn;
         return mk;
     }
+
+    /// <summary>
+    /// The material a material key tag reads (forum topic 255): the one seen where its leader points (its end, else the middle of
+    /// what its element draws) on its element, a finish layer's where the drawing sees it; else the element's material when its
+    /// body is of one only; null: none (the tag writes a question mark).
+    /// </summary>
+    internal static string? SeenMaterial(ViewContext c, Entity t, Entity e, Func<Vec2?, Vec2?> followed)
+    {
+        var point = followed(Pt(t.Attrs["end"])) ?? Anchor(c.Drawing, e.Id);
+        if (point is { } p && c.Seen?.At(p, e.Id) is { } hit) return hit.Material;
+        return OneMaterial(c.Geometry?.Invoke(e.Id));
+    }
+
+    /// <summary>The material an element's body is made of when it is of one only.</summary>
+    static string? OneMaterial(ElementGeometry? g) =>
+        g?.Parts.Select(p => p.Material).Where(x => !string.IsNullOrEmpty(x)).Distinct().ToList() is [var only] ? only : null;
 
     /// <summary>
     /// A tag of an element on a view, as <c>drafting.addTag</c> makes it (its arguments: viewId, element, at, field, tagType,
@@ -338,6 +376,16 @@ public static class Tags
         // A part's tag shows the part's few words unless another field or a tag type was asked for (the element's mark is the element's).
         if (part != null && typeId == null && field is null or "mark") (type, field) = (null, "partLabel");
         var attrs = new JsonObject { ["viewId"] = viewId, ["element"] = e.Id, ["field"] = field ?? "mark", ["at"] = at };
+        // A material key tag (forum topic 255): its leader points where it was clicked, the face whose material it reads; a straight
+        // leader from a circle round the key, unless it is given its own; the material numbered for good (MaterialKeys).
+        var readsMaterial = MaterialKeys.Reads(field, (string?)a["text"]);
+        if (readsMaterial)
+        {
+            if (Pt(a["pick"]) is { } spot && a["end"] == null) attrs["end"] = J(spot);
+            else if (Pt(a["end"]) is { } own) attrs["end"] = J(own);
+            if (typeId == null) { type = null; attrs["frame"] = (string?)a["frame"] == "box" ? "box" : "circle"; }
+            if (a["leaderShape"] is null) attrs["leaderShape"] = TagLeaders.Straight;
+        }
         if (part != null) attrs["part"] = part;
         // A text tag (issue #92): what it says, typed; its {…} read from the element.
         var free = a["text"] is null ? null : ((string?)a["text"])?.Trim('\n', '\r', ' ') is { Length: > 0 } ft ? ft : throw new CommandException("Write what the text tag says.");
@@ -351,9 +399,20 @@ public static class Tags
         attrs[TagLeaders.RevKey] = TagLeaders.Rev;
         // Where the element stands now: the tag follows it from there (report #93).
         TagHold.Hold(ctx.Model, attrs, e, Views.Find(ctx.Model, viewId) is { } v && TagHold.Axes(ctx.Model, v) is { Plan: true }, ctx.Query.Geometry);
-        var tag = new Entity(ctx.NewId(), IfcClass.Annotation, free != null ? "Text tag" : part != null ? $"Tag {TagText.Mark(ctx.Model, e)} {part}" : $"Tag {TagText.Mark(ctx.Model, e)}", attrs, "TAG");
+        var tag = new Entity(ctx.NewId(), IfcClass.Annotation, free != null ? "Text tag" : part != null ? $"Tag {TagText.Mark(ctx.Model, e)} {part}" : readsMaterial ? "Material key" : $"Tag {TagText.Mark(ctx.Model, e)}", attrs, "TAG");
         ctx.Add(tag);
+        if (readsMaterial) FreezeMaterial(ctx, tag);
         return tag;
+    }
+
+    /// <summary>The material a material key tag reads now numbered for good (<see cref="MaterialKeys.Freeze"/>), in the command's step.</summary>
+    static void FreezeMaterial(ICommandContext ctx, Entity tag)
+    {
+        if (Views.Find(ctx.Model, tag.Str("viewId") ?? "") is not { } view || ctx.Model.Get(tag.Str("element") ?? "") is not { } e) return;
+        var drawn = Views.Render(ctx.Query, view);
+        if (drawn.Generated == null || drawn.Frame == null) return;
+        var c = new ViewContext(ctx.Model, view, drawn.Kind, drawn.Frame, drawn.Scale, DraftingResources.Book(ctx.Model), drawn.Generated, ctx.Query.Geometry) { Seen = drawn.Seen, Query = ctx.Query, Services = ctx.Services };
+        if (SeenMaterial(c, tag, e, p => p) is { } mat) MaterialKeys.Freeze(ctx, [mat]);
     }
 
     public static void Register(IModuleRegistry r)
@@ -404,6 +463,12 @@ public static class Tags
                     if (a["rotation"] is null) attrs.Remove("rotation");
                     else if (Json.Number(a["rotation"]) is { } deg && double.IsFinite(deg)) { if (Math.Abs(deg) < 1e-9) attrs.Remove("rotation"); else attrs["rotation"] = Math.Round(deg, 4); }
                     else throw new CommandException("A rotation is an angle in degrees.");
+                }
+                // A key's frame (forum topic 255): a circle round its text, or a box; null: its look as any tag's.
+                if (a.ContainsKey("frame"))
+                {
+                    if (a["frame"] is null || (string?)a["frame"] == "") attrs.Remove("frame");
+                    else attrs["frame"] = (string?)a["frame"] is "circle" or "box" ? (string?)a["frame"] : throw new CommandException("A tag's frame is a circle or a box.");
                 }
                 if (a.ContainsKey("align"))
                 {
