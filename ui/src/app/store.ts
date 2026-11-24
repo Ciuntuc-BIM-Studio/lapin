@@ -107,6 +107,7 @@ export interface UiState extends Pane {
   rampTypeId: string | null;
   /** The member type the Steel tab's Member tool places (decision 268). */
   memberTypeId: string | null;
+  joistTypeId: string | null;
   /** The ceiling type the ceiling tools place; null: the project's first. */
   ceilingTypeId: string | null;
   /** The skirting type the skirting tools lay; null: the project's first. */
@@ -153,7 +154,7 @@ export interface UiState extends Pane {
 
 const first = emptyPane('plan');
 export const useUi = create<UiState>(() => ({
-  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, openingVoids: false, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, rampTypeId: null, memberTypeId: null, ceilingTypeId: null, skirtingTypeId: null, roomFinishTypeId: null, insetAt: null, curtainTypeId: null, openingSize: { width: 0.9, height: 2.1, sill: 0, shape: 'rect', rise: null }, roofId: null, roofDialogTab: null, slabTypeId: null, roofStyle: null, balconyId: null, balconyStyle: null, dialog: null, materialFocus: null, returnTo: null, notice: null, noticeStays: false, theme: startTheme(), visualStyle: 'edges', fog: false, keyPlan: true,
+  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, openingVoids: false, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, rampTypeId: null, memberTypeId: null, joistTypeId: null, ceilingTypeId: null, skirtingTypeId: null, roomFinishTypeId: null, insetAt: null, curtainTypeId: null, openingSize: { width: 0.9, height: 2.1, sill: 0, shape: 'rect', rise: null }, roofId: null, roofDialogTab: null, slabTypeId: null, roofStyle: null, balconyId: null, balconyStyle: null, dialog: null, materialFocus: null, returnTo: null, notice: null, noticeStays: false, theme: startTheme(), visualStyle: 'edges', fog: false, keyPlan: true,
 }));
 
 /**

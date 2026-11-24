@@ -268,7 +268,7 @@ public static class SpeckleReceive
             befores[i] = b;
         }
         bool Same(Entity before, ReceivedElement el) => before.Attrs[Key] is JsonObject was && (string?)was["objectId"] == el.ObjectId && el.ObjectId != null && (string?)was["at"] == At
-            && before.Class == el.IfcClass;
+            && SpeckleHints.ClassOf(before) == el.IfcClass; // a native joist is an IfcBeam written so (exportAs)
         var removed = 0;
         foreach (var e in existing.Where(e => e.Class != StoredBodies.SharedClass && !matched.Contains(e.Id)))
             if (m.Get(e.Id) != null) { edit.Remove(e.Id); removed++; }
@@ -346,6 +346,8 @@ public static class SpeckleReceive
                 lines++;
             }
             else { seen.Remove(id); continue; }
+            // The lines it shows beside its body (a bar joist's webs), for recognition (decision 827).
+            if (el.BodyLines is { Count: > 0 } beside) attrs[BodyLines.Key] = BodyLines.Write(beside.Select(l => (l.A + shift, l.B + shift)));
             attrs["properties"] = el.Properties.DeepClone();
             // Its program's type (Revit's "W18x55", a Lapin type's name): what recognition names a native type after, keys the types it
             // makes by (one per type and section), and finds a catalogue profile by.

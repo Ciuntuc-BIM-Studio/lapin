@@ -79,7 +79,7 @@ export function ViewportHud() {
   const shown = ids.slice(0, Math.min(ids.length, reach(ids) + 1));
   const [over, setOver] = useState<number | null>(null);
   // The tools' current types and the project's types: a typed slot is lit only while its type is the tool's.
-  useUi((s) => [s.wallTypeId, s.doorTypeId, s.windowTypeId, s.slabTypeId, s.stairTypeId, s.rampTypeId, s.ceilingTypeId, s.skirtingTypeId, s.curtainTypeId, s.memberTypeId].join());
+  useUi((s) => [s.wallTypeId, s.doorTypeId, s.windowTypeId, s.slabTypeId, s.stairTypeId, s.rampTypeId, s.ceilingTypeId, s.skirtingTypeId, s.curtainTypeId, s.memberTypeId, s.joistTypeId].join());
   useSession((s) => s.nodes);
   const docked = parts.quickTools === 'docked';
   // Hidden by its own button, apart in the model's views and in the documents (app/bars.ts).

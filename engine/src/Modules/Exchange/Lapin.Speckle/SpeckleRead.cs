@@ -35,9 +35,12 @@ public sealed record ReceivedLevel(string Name, double? Elevation, string? Globa
 /// stands in, its properties (as sets), and its geometry: its own triangles in the version's frame (metres), or an instance of
 /// a definition (<see cref="Instance"/>: the definition's id and its twelve numbers), or lines only (curves, drawn in plan).
 /// <see cref="Hints"/>: what its program says of its shape (its location line, thickness, height), which recognition checks its body against.
+/// <see cref="BodyLines"/>: the lines it shows beside its body (a Revit bar joist's webs), in the version's frame, metres: not
+/// drawn, kept for recognition (decision 827).
 /// </summary>
 public sealed record ReceivedElement(string? ApplicationId, string? ObjectId, string Name, string? SpeckleType, string IfcClass, string Path, JsonObject Properties,
-    List<ReceivedPart> Parts, (string Definition, double[] Xf)? Instance, List<Plan2dItem>? Lines, ReceivedLevel? Level, ReceivedHints? Hints = null);
+    List<ReceivedPart> Parts, (string Definition, double[] Xf)? Instance, List<Plan2dItem>? Lines, ReceivedLevel? Level, ReceivedHints? Hints = null,
+    List<(Vec3 A, Vec3 B)>? BodyLines = null);
 
 /// <summary>A definition several instances share (an <c>InstanceDefinitionProxy</c>): its triangles once, in its own frame, metres.</summary>
 public sealed record ReceivedDefinition(string Id, string Name, List<ReceivedPart> Parts);
@@ -336,8 +339,11 @@ public static class SpeckleRead
             var cls = ClassOf(b, props, path);
             var sets = Sets(b, props, path);
 
+            // The lines beside a body, as segments (a Revit bar joist's webs): kept for recognition, not drawn.
+            List<(Vec3, Vec3)>? Beside() => g.Curves.Count == 0 ? null : [.. g.Curves.Where(x => x.Count >= 2).SelectMany(x => x.Zip(x.Skip(1)))];
             ReceivedElement Make(List<ReceivedPart> parts, (string, double[])? instance, List<Plan2dItem>? lines) =>
-                new(b.applicationId, b.id, name, b.speckle_type, cls, string.Join(" / ", path), sets, parts, instance, lines, LevelOf(b), SpeckleHints.Read(b, props, cls, notes));
+                new(b.applicationId, b.id, name, b.speckle_type, cls, string.Join(" / ", path), sets, parts, instance, lines, LevelOf(b), SpeckleHints.Read(b, props, cls, notes),
+                    lines == null ? Beside() : null);
 
             foreach (var l in g.Left) Skip(l);
             if (g.Parts.Count == 0 && g.Instances.Count == 1)

@@ -20,9 +20,15 @@ import {
 } from '../../engine/atrium';
 import { pollChecks, type GateChecks } from '../../engine/checks';
 import { ChecksLine, ChecksReportView, RegisterPanel } from './CdeChecks';
+import { query } from '../../engine/session';
+import { lazyPart } from '../../platform/lazyPart';
+import type { IdsGate } from './ids/IdsOnSubmit';
 import { CONTAINERS, atLeast, comparable, containerRows, issueLabel, mayTagDirectly, proposedPair, purposeOf, submissionRights, SUBMISSION_STATUS, tagShort, type ContainerId, type Me } from '../../engine/publishing';
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
+// The IDS parts (docs/ids.md): fetched when first shown, so a session that never checks an IDS carries none of them.
+const IdsOnSubmit = lazyPart(() => import('./ids/IdsOnSubmit').then((m) => m.IdsOnSubmit), { inline: true });
+const IdsPanel = lazyPart(() => import('./ids/IdsPanel').then((m) => m.IdsPanel), { inline: true });
 const short = (id: string) => id.slice(0, 8);
 const P = (project: string) => `lapin-remote/1.0/projects/${encodeURIComponent(project)}`;
 
@@ -100,7 +106,7 @@ function useMe(server: string, project: string): { me: Me | null; rules: Rules |
 
 // ------------------------------------------------------------ the panel
 
-type Tab = 'containers' | 'submissions' | 'diff' | 'register';
+type Tab = 'containers' | 'submissions' | 'diff' | 'register' | 'ids';
 
 /**
  * A submission read whole (with its checks report) and kept up to date while its checks run (W5): polled until they are done or
@@ -130,15 +136,16 @@ export function useLiveSubmission(server: string, project: string, first: Submis
 }
 
 /** Containers, the publish queue and the handover diff of a server project, with the handover report; the register from W5. */
-export function PublishingPanel({ server, project, name }: { server: string; project: string; name: string }) {
+/** `withModel`: a project is open here (File → Collaborate…), so Publishing has its IDS tab (docs/ids.md). */
+export function PublishingPanel({ server, project, name, withModel = false }: { server: string; project: string; name: string; withModel?: boolean }) {
   const [offers, setOffers] = useState<string[] | null>(null);
   useEffect(() => { let live = true; void features(server).then((f) => { if (live) setOffers(f); }); return () => { live = false; }; }, [server]);
   if (offers === null) return null;
   if (!offers.includes('submissions')) return <p className="muted small" data-cde-publishing="none">This server does not offer publishing (an Atrium Server older than W4).</p>;
-  return <Publishing server={server} project={project} name={name} offers={offers} />;
+  return <Publishing server={server} project={project} name={name} offers={offers} withModel={withModel} />;
 }
 
-function Publishing({ server, project, name, offers }: { server: string; project: string; name: string; offers: string[] }) {
+function Publishing({ server, project, name, offers, withModel }: { server: string; project: string; name: string; offers: string[]; withModel: boolean }) {
   const [tab, setTab] = useState<Tab>('containers');
   const [data, setData] = useState<Containers | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
@@ -161,7 +168,7 @@ function Publishing({ server, project, name, offers }: { server: string; project
         <button type="button" className="link small" data-cde="handover-report" disabled={busy} title="The issues, their comments and the journal of who changed what, as an Excel workbook" onClick={() => void run(() => exportHandover(server, project, name))}><FileSpreadsheet size={12} /> Handover report (XLSX)</button>
       </p>
       <div className="cde-tabs" role="tablist">
-        {([['containers', 'Containers'], ['submissions', 'Submissions'], ['diff', 'Handover diff'], ...(offers.includes('register') ? [['register', 'Register']] : [])] as [Tab, string][]).map(([id, label]) => (
+        {([['containers', 'Containers'], ['submissions', 'Submissions'], ['diff', 'Handover diff'], ...(offers.includes('register') ? [['register', 'Register']] : []), ...(withModel ? [['ids', 'IDS']] : [])] as [Tab, string][]).map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={tab === id} className={`tab${tab === id ? ' active' : ''}`} data-cde-tab={id} onClick={() => setTab(id)}>{label}</button>
         ))}
       </div>
@@ -169,6 +176,7 @@ function Publishing({ server, project, name, offers }: { server: string; project
       {tab === 'containers' && <ContainersView server={server} project={project} name={name} data={data} busy={busy} run={run} />}
       {tab === 'submissions' && <SubmissionsQueue server={server} project={project} who={who} onDecided={load} checks={offers.includes('checks')} />}
       {tab === 'diff' && <HandoverDiffView server={server} project={project} name={name} data={data} />}
+      {tab === 'ids' && <IdsPanel />}
       {tab === 'register' && <RegisterPanel server={server} project={project} owner={who.me?.role === 'owner' || Boolean(who.me?.isAdmin && who.rules?.role === 'owner')} />}
     </div>
   );
@@ -502,6 +510,18 @@ export function IssueOnServer({ issue }: { issue: { id: string; number: number; 
   const [answer, setAnswer] = useState<SubmitAnswer | null>(null);
   const [queue, setQueue] = useState(false);
   const [checks, setChecks] = useState(false);
+  // The project's IDS files run before it goes (docs/ids.md): closed while they are read and checked, then as the run and the user's note say.
+  const [ids, setIds] = useState(false);
+  const [idsGate, setIdsGate] = useState<IdsGate>({ blocked: false, why: null });
+  useEffect(() => {
+    let live = true;
+    void query<{ files: unknown[]; onSubmit: boolean }>('ids.files').then((f) => {
+      if (!live || !f || f.files.length === 0 || !f.onSubmit) return;
+      setIds(true);
+      setIdsGate({ blocked: true, why: 'Checking the IDS files…' });
+    });
+    return () => { live = false; };
+  }, []);
   useEffect(() => {
     let live = true;
     void historyStatus().then(async (s) => {
@@ -525,7 +545,7 @@ export function IssueOnServer({ issue }: { issue: { id: string; number: number; 
     try {
       if (server && !await signedIn(server)) { notify('Sign in to the server first.'); useUi.setState({ dialog: 'remote' }); return; }
       if (!await saveForIssue(server, label)) return;
-      const a = await remoteCall<SubmitAnswer>(method, { issue: issue.id }, server);
+      const a = await remoteCall<SubmitAnswer>(method, { issue: issue.id, ...(idsGate.idsOverride ? { idsOverride: idsGate.idsOverride, idsFailing: idsGate.idsFailing } : {}) }, server);
       for (const n of a.notes ?? []) notify(n);
       setAnswer(a);
       if (a.ok) notify(method === 'remote.submitIssue' ? 'Submitted for approval.' : 'The issue tag is on the remote.');
@@ -543,9 +563,10 @@ export function IssueOnServer({ issue }: { issue: { id: string; number: number; 
           <p className="muted small">{remote.kind === 'server'
             ? 'The project is saved to the server, then the issue goes there: submitted for approval (an approver makes it Shared or Published), or as its issue tag directly where the project\'s rules let you.'
             : 'The project is saved to the folder, then the issue goes there as its issue tag.'}</p>
+          {ids && <IdsOnSubmit onGate={setIdsGate} />}
           <div className="cde-actions">
-            {remote.kind === 'server' && <button type="button" className="btn primary" disabled={busy || !mayAsk} data-cde-submit title={mayAsk ? 'Ask an approver to publish this issue' : queue ? 'Viewers do not submit issues' : 'This server has no publish queue (an Atrium Server older than W4)'} onClick={() => void go('remote.submitIssue')}><Check size={13} />Submit for approval</button>}
-            <button type="button" className="btn" disabled={busy || !direct} data-cde-tag-direct title={direct ? 'Make the issue tag now, without approval' : 'The project\'s rules keep issue tags for its owners: submit for approval'} onClick={() => void go('remote.issueTag')}>Make the issue tag now</button>
+            {remote.kind === 'server' && <button type="button" className="btn primary" disabled={busy || !mayAsk || idsGate.blocked} data-cde-submit title={mayAsk ? 'Ask an approver to publish this issue' : queue ? 'Viewers do not submit issues' : 'This server has no publish queue (an Atrium Server older than W4)'} onClick={() => void go('remote.submitIssue')}><Check size={13} />Submit for approval</button>}
+            <button type="button" className="btn" disabled={busy || !direct || idsGate.blocked} data-cde-tag-direct title={direct ? 'Make the issue tag now, without approval' : 'The project\'s rules keep issue tags for its owners: submit for approval'} onClick={() => void go('remote.issueTag')}>Make the issue tag now</button>
           </div>
         </>
       )}

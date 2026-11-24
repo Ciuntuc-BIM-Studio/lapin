@@ -281,7 +281,7 @@ public sealed partial class EngineDispatcher
                 {
                     // A new revision keeps its issue's number; only a first issue may let the server number it.
                     ["commit"] = commit, ["issue"] = Flag(p, "next") && issue.Record.Of == null ? null : issue.Record.Number, ["revision"] = issue.Record.Revision, ["purpose"] = issue.Purpose,
-                    ["suitability"] = issue.Suitability, ["note"] = (string?)p["note"] ?? issue.Record.Note ?? "",
+                    ["suitability"] = issue.Suitability, ["note"] = IssueNote(p, issue.Record.Note) ?? "",
                     ["documents"] = new JsonArray([.. issue.Documents.Select(x => (JsonNode)x)]),
                     ["files"] = new JsonArray([.. issue.Files.Select(f => (JsonNode)new JsonObject { ["name"] = f.File.Name, ["sha256"] = f.File.Sha256, ["size"] = f.File.Size })]),
                 };
@@ -323,7 +323,7 @@ public sealed partial class EngineDispatcher
             ["revision"] = issue.Record.Revision, ["status"] = issue.Suitability, ["container"] = issue.Purpose == "shared" ? "Shared" : "Published",
             ["files"] = new JsonArray([.. issue.Files.Select(f => (JsonNode)new JsonObject { ["name"] = f.File.Name, ["sha256"] = f.File.Sha256, ["size"] = f.File.Size })]),
         };
-        if (((string?)p["note"] ?? issue.Record.Note) is { Length: > 0 } note) tag["note"] = note;
+        if (IssueNote(p, issue.Record.Note) is { Length: > 0 } note) tag["note"] = note;
         var bytes = Jcs.Canonicalize(tag);
         var id = ObjectIds.Of(bytes);
         h.Add(id, bytes, ObjectKind.Tag);
@@ -350,5 +350,17 @@ public sealed partial class EngineDispatcher
         o["tag"] ??= issue.RefName;
         Tokens(o, tokens);
         return (o, null);
+    }
+    /// <summary>
+    /// The note a submission or an issue tag carries: the one asked (<c>note</c>), else the issue's; with <c>idsOverride</c>, the reason
+    /// the issue went although the project's IDS files failed (docs/ids.md), after it, so the approver and the tag keep it.
+    /// </summary>
+    public static string? IssueNote(JsonObject p, string? recorded)
+    {
+        var note = (string?)p["note"] ?? recorded;
+        if (((string?)p["idsOverride"])?.Trim() is not { Length: > 0 } why) return note;
+        var failing = (int?)Lapin.Model.Json.Number(p["idsFailing"]);
+        var line = $"Submitted despite {(failing is { } n ? $"{n} failing IDS specification{(n == 1 ? "" : "s")}" : "failing IDS specifications")}: {why}";
+        return note is { Length: > 0 } ? $"{note}\n{line}" : line;
     }
 }

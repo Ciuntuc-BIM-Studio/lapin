@@ -894,7 +894,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
         // A script's step open: the project is not saved half way through it (a rollback would leave the file ahead of the model).
         if (method is "project.save" or "project.saveBytes" or "project.saveVersion" or "project.updateVersion") session.RefuseDuringStep(ownerToo: true);
         // Another project: a file surveyed for this one (its bytes, its index) is not kept for it.
-        if (method is "project.new" or "project.newFromTemplate" or "project.open" or "project.openBytes" or "recovery.restore") { _surveyed = null; _fragSurveyed = null; _bosSurveyed = null; }
+        if (method is "project.new" or "project.newFromTemplate" or "project.open" or "project.openBytes" or "recovery.restore") { _surveyed = null; _fragSurveyed = null; _bosSurveyed = null; _ids = null; }
         // A file written where asked (the desktop's save dialog), else handed back to download (a browser): as a buffer of the reply's
         // frame when the caller asks for it so (`binary`, the interface does), else as base64, which JSON caps (report #156).
         JsonObject Deliver(ArraySegment<byte> bytes, string name)
@@ -1266,6 +1266,8 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 return (delivered, null);
             }
             case "project.exportMesh": return ExportMesh(p, Deliver);
+            // IDS 1.0 (docs/ids.md): the project's .ids files added, read, run over the model, the results, remarks and the report (EngineDispatcher.Ids.cs).
+            case "ids.add" or "ids.read" or "ids.run" or "ids.results" or "ids.makeRemarks" or "ids.report": return IdsCall(method, p, Deliver);
             // Lapin for the browser (decision 482): the project as one .html, a viewer and the package; what its dialog shows first.
             case "project.exportHtml": return ExportHtml(p, Deliver);
             case "project.htmlPlan": return HtmlPlan(p);

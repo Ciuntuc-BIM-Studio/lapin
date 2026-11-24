@@ -11,6 +11,7 @@ summary: Bare metalice cu capete configurabile — prelungite sau retrase, tăia
 - **Hală cu cadre portal…**: o hală metalică întreagă din câteva cifre, în configuratorul de hală (mai jos).
 - **Stâlp**: un stâlp al structurii, pus cu un clic pe etaj, dintr-un profil metalic: implicit un **HEB 200** din catalogul EN integrat (tipul lui de stâlp se face prima dată și se refolosește). Profilul se schimbă în Proprietăți sau în **Structură → Tipuri de structură**; unealta Stâlp din fila Structură pune ca înainte tipul curent al proiectului.
 - **Bară** (<kbd>SM</kbd>): o bară metalică între două puncte, la nivelul de sus al etajului, cu fața de sus a secțiunii pe axă, ca o grindă. Tipul îl alegi în Proprietăți înainte de primul clic, sau din tabul **Catalog**, unde fiecare tip metalic e desenat după secțiunea lui.
+- **Grindă cu zăbrele**: o grindă cu zăbrele între două puncte, dintr-un tip de grindă (mai jos).
 - **Convertește în bară**: contururile desenate selectate devin bare (mai jos).
 - **La 45°** și **Încadrează**: două bare îmbinate la capete (mai jos).
 - **Tipuri metalice**: tipurile de bare ale proiectului și altele noi.
@@ -136,6 +137,29 @@ Fiecare pană și riglă stă pe câte o **eclisă** pe fiecare riglă, stâlp s
 
 ![Elevația unui cadru](shots/steel-frame-view.webp)
 
+## Grinzi cu zăbrele
+
+**Oțel → Grindă cu zăbrele** (în engleză *Open-web joist*) pune o grindă cu zăbrele (de tip „bar joist") între două puncte: un grătar ușor din două tălpi legate prin zăbrele, cum se alcătuiesc planșeele și acoperișurile pe tablă cutată. Ca și bara, stă pe fața de sus a etajului, **axa ei e linia de sus (de reazem) a grinzii**, iar un clic și al doilea clic fac una; instrumentul se repetă. Tipul îl alegi în Proprietăți înainte de primul clic.
+
+![Grinzi cu zăbrele în 3D](shots/steel-joists.webp)
+
+![O grindă în Proprietăți](shots/steel-joist-props.webp)
+
+**Tipul** grinzii ține regulile ei, iar panoul de proprietăți le editează ca pe niște câmpuri când selectezi tipul (**Editează tipul** în secțiunea grinzii, sau tabul **Catalog**):
+
+- **înălțimea** și **golul** dintre corniere;
+- **talpa de sus** și **talpa de jos**: fiecare o pereche de corniere (latură, înălțime, grosime), cu aripa în sus sau în jos, **coborârea** tălpii de sus sub axă și **retragerea** tălpii de jos față de capete;
+- **reazemele** de la capete: **adâncimea** și **lungimea reazemului**;
+- **zăbrelele**: **bare** (bare rotunde), **corniere** sau **linii** (zăbrelele desenate doar prin axele lor, fără corp, cum se desenează familiile de grinzi cu zăbrele în Revit), mărimea și grosimea lor, lungimea **panoului** zigzagului și dacă are **montanți**.
+
+**Tip nou dintr-o presetare**, în proprietățile instrumentului, face un tip dintr-o presetare: **OWJ 300**, **OWJ 400** (implicită), **OWJ 500** sau **OWJ 600**. Presetările sunt dimensiuni rotunde ale Lapin și **orientative**: normele dumneavoastră și tabelele producătorului hotărăsc dimensiunile. Selectează o grindă și secțiunea ei arată tipul, înălțimea, tălpile (de exemplu *2L 40×40×4*) și zăbrelele; **Tip** schimbă tipul celor selectate. Trage cele două capete în plan ca să le muți; o schimbare de lungime redesenează zăbrelele după modelul tipului.
+
+În plan, grinda se desenează ca **o singură linie pe axă, cu numele tipului deasupra mijlocului**, cum se desenează grinzile pe un plan de structură; în 3D are tălpile, reazemele și zăbrelele. Cantitățile ei dau lungimea, volumul net și greutatea netă (**Qto_BeamBaseQuantities**), apoi înălțimea, numărul și lungimea zăbrelelor (**Lapin_JoistQuantities**).
+
+### Grinzi din alte programe
+
+O primire **Speckle**, și un import **IFC** al unei grinzi făcute din triunghiuri, face dintr-o *K-Series* sau *LH-Series Bar Joist* din Revit (sau orice grindă a cărei familie, tip sau nume spune „joist", sau al cărei tip se numește ca *16K2* ori *18LH04*) o grindă nativă, când corpul ei e două perechi de corniere drepte ca tălpi. Zăbrelele sunt liniile trimise de Revit alături de ea, păstrate cum au venit (secțiunea grinzii spune **Zăbrele așa cum le-a desenat fișierul importat**; **Regenerează zăbrelele** le înlocuiește cu modelul tipului). Ca la orice element recunoscut, grinda nativă trebuie să se potrivească cu corpul primit în limita a 1 mm sau 0,5 %; una care diferă mai mult rămâne referință. Vezi [Primirea din Speckle](import-export.md#primirea-din-speckle).
+
 ## IFC și cantități
 
 O bară se exportă ca **IfcMember** cu **IfcMemberType**-ul ei. Corpul se scrie cum scriu oțelul celelalte programe (Tekla, Advance Steel, Revit): secțiunea **extrudată** (IfcExtrudedAreaSolid), **tăiată** de planele capetelor (IfcBooleanClippingResult cu IfcHalfSpaceSolid), iar fiecare crestătură un **IfcOpeningElement** care o golește. O grindă sau un stâlp metalic cu capete se scrie la fel. Cantitățile fiecărei bare dau lungimea dintre tăieturi, aria secțiunii, volumul și greutatea netă (7850 kg/m³).
@@ -145,3 +169,5 @@ O hală se exportă ca **IfcBuildingSystem** (LOADBEARING) căruia îi sunt atri
 Un nod se exportă ca **IfcElementAssembly** al plăcilor (**IfcPlate**), șuruburilor (**IfcMechanicalFastener** BOLT), ancorelor (ANCHORBOLT) și plăcilor de ancoraj (**IfcDiscreteAccessory** ANCHORPLATE), fiecare cu mărimea și grupa în `Lapin_SteelPart`; el realizează legătura dintre barele pe care le leagă (**IfcRelConnectsWithRealizingElements**; un picior, între fundație și stâlpul lui). Sudurile rămân date, nu corpuri.
 
 Clasele de șuruburi pe care le poate primi o îmbinare sunt regulile **Șuruburi** ale proiectului: vezi [Reguli](rules.md).
+
+O grindă cu zăbrele se exportă ca **IfcBeam** cu tipul predefinit **JOIST** și **IfcBeamType**-ul ei JOIST, un singur element, cum le livrează producătorii (tălpile, reazemele și zăbrelele sunt un singur corp, nu bare separate).

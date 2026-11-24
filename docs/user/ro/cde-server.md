@@ -89,6 +89,8 @@ Pe un server CDE o emitere ajunge din Lapin pe server în două feluri, amândou
 
 O emitere WIP rămâne în proiect: emite în Comune sau Publicate ca să ajungă pe server.
 
+Când proiectul are fișiere IDS, ele se verifică înainte de **Propune spre aprobare**, iar o specificație care nu trece oprește propunerea, dacă nu spui de ce: vezi [Verificări IDS](ids.md).
+
 Emiterea din nou a acelorași planșe face o **revizie nouă a aceleiași emiteri** (Issue… o propune: **Emite ca** → *Revizie nouă a emiterii #n*, revizia de după ultima ei): propunerea și eticheta de emitere poartă numărul și identitatea acelei emiteri, `#1 P01`, apoi `#1 P02`. Odată publicată revizia ulterioară, cea Publicată dinainte trece în **Arhivate**. **Emitere nouă** dă documentelor un număr nou.
 
 Pagina proiectului (în browser) și **Fișier → Colaborează… → Publicare** (pe desktop) au aceste file:
