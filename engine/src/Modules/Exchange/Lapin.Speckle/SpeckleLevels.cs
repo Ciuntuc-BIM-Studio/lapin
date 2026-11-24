@@ -135,6 +135,8 @@ public sealed class SpeckleLevels
             o.storeyOf[level.Key] = id;
             o.made++;
         }
+        // Their heights before anything stands on them: a recognised beam's top is read from its storey's top.
+        Heights(edit, key, _ => true);
         if (renamedNames.Count > 0) notes.Add($"Storeys renamed as their levels now are: {string.Join(", ", renamedNames)}.");
         if (keptNames.Count > 0) notes.Add($"Not renamed, as other elements stand on them: {string.Join(", ", keptNames.Select(x => $"„{x}”"))}.");
         if (heldPlace.Count > 0) notes.Add($"Not moved to their levels' new elevations, as other or native elements stand on them: {string.Join(", ", heldPlace.Select(x => $"„{x}”"))}.");
@@ -157,8 +159,16 @@ public sealed class SpeckleLevels
             else { keptNames.Add(storey.Name); kept++; }
         }
         if (keptNames.Count > 0) notes.Add($"Kept, as elements stand on them, though the version no longer has their levels: {string.Join(", ", keptNames.Select(x => $"„{x}”"))}.");
+        // A storey's height changed under a native element of the model would move it (a beam's top is its storey's top less its offset).
+        Heights(edit, key, s => !On(m, s.Id).Any(e => !StoredBodies.Has(e)));
+    }
+
+    /// <summary>The storeys this model made given their heights, up to the storey over them (the top one 3 m), those <paramref name="may"/> lets.</summary>
+    static void Heights(IEdit edit, string key, Func<Entity, bool> may)
+    {
+        var m = edit.Model;
         var all = Spatial.Storeys(m).Select(x => (x.Id, Elevation: x.Num("elevation"))).OrderBy(x => x.Elevation).ToList();
-        foreach (var storey in Made(m, key))
+        foreach (var storey in Made(m, key).Where(may))
         {
             var z = storey.Num("elevation");
             var next = all.Where(x => x.Elevation > z + ImportStoreys.Tolerance).Select(x => (double?)x.Elevation).FirstOrDefault();

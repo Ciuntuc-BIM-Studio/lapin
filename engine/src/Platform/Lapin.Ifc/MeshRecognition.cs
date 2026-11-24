@@ -33,19 +33,23 @@ public sealed record MeshRecognitionReport(int Recognized, IReadOnlyDictionary<s
 /// </summary>
 public static class MeshRecognition
 {
+    /// <summary>A reference's attribute: the name of the type its file gives it (Revit's "W18x55"), which a recogniser names a native type after and keys it by.</summary>
+    public const string TypeNameKey = "fileTypeName";
+
     static readonly HashSet<string> Fillers = [IfcClass.Door, IfcClass.Window];
 
     /// <summary>
     /// The references among <paramref name="ids"/> made native where a recogniser takes them (walls first, so their doors and windows go with them),
     /// each then measured against the triangles it was (<paramref name="fidelity"/>, docs/spec-ifc.md, Poarta de fidelitate; null: enforced, what differs coming back the reference it was).
     /// </summary>
-    public static MeshRecognitionReport Recognize(IEdit edit, IServices services, IEnumerable<string> ids, FidelityOptions? fidelity = null)
+    /// <param name="outlineSections">A column or beam of no parametric section made with its body's own (<see cref="RecognitionContext.OutlineSections"/>).</param>
+    public static MeshRecognitionReport Recognize(IEdit edit, IServices services, IEnumerable<string> ids, FidelityOptions? fidelity = null, bool outlineSections = false)
     {
         var gate = fidelity ?? FidelityOptions.Default;
         var gated = new List<(string Id, string Class, List<MeshBuilder> Body, List<(Entity E, List<(string Class, string Relating)> By)> Saved)>();
         var recognizers = services.All<IIfcRecognizer>();
         if (recognizers.Count == 0) return MeshRecognitionReport.None;
-        var ctx = new RecognitionContext(services);
+        var ctx = new RecognitionContext(services) { OutlineSections = outlineSections };
         var byClass = new Dictionary<string, int>();
         var count = 0;
         // Only what a recogniser takes (a wall, a slab, a column…) and the doors and windows the walls take with them: a federated
@@ -93,7 +97,7 @@ public static class MeshRecognition
             if (prisms.Count == 0) { ctx.Skip("its body is no prism"); continue; }
             var box = (new Vec3(all.Min(p => p.X), all.Min(p => p.Y), all.Min(p => p.Z)), new Vec3(all.Max(p => p.X), all.Max(p => p.Y), all.Max(p => p.Z)));
             var foreign = new ForeignElement(current.Id, cls, current.PredefinedType, current.Name, current.Str("objectType"), storey, prisms, null, openings,
-                null, null, null, null, Properties(current), Box: box);
+                current.Str(TypeNameKey), null, null, null, Properties(current), Box: box);
             // The reference and its fills go; a recogniser makes them anew with the same ids, or they come back as they were.
             var saved = new[] { current }.Concat(fills).Select(x => (E: x, By: Related(edit.Model, x.Id))).ToList();
             foreach (var (x, _) in saved) edit.Remove(x.Id);

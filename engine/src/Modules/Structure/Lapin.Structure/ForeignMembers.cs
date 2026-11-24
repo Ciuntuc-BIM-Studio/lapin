@@ -40,6 +40,9 @@ public sealed class ForeignMembers : IIfcRecognizer
     public void Finish(IEdit edit, RecognitionContext ctx)
     {
         if (ctx.Services.Get<IPathElements>() is not { } paths) return;
+        // From triangles (OutlineSections) there are no connections to keep, only bodies: joining them would be Lapin's own, and
+        // each beam ends where its body does.
+        if (ctx.OutlineSections) return;
         var beams = ctx.Made.Where(id => edit.Model.Get(id)?.Class == IfcClass.Beam).ToList();
         try { FoundJoins.Make(edit, paths, beams, ctx.Footprints); }
         catch (CommandException ex) { ctx.Notes.Add($"Beams not joined: {ex.Message}"); }
@@ -68,26 +71,126 @@ public sealed class ForeignMembers : IIfcRecognizer
         return null;
     }
 
-    /// <summary>Whether two sections are one (to 0.1 mm).</summary>
-    static bool Same(Section? a, Section b) => a != null && a.Kind == b.Kind && a.Sides == b.Sides
+    /// <summary>
+    /// A column's own section from its plan (<see cref="RecognitionContext.OutlineSections"/>): its type's catalogue profile when
+    /// that is the plan, turned as the plan is (within 2 mm), else the plan itself as an outline about its box's centre; null for
+    /// a plan with too few corners. Its place is the centre of the plan's box along the turn.
+    /// </summary>
+    static (Section Section, Vec2 At, double Rotation)? OwnSection(IReadOnlyList<Vec2> plan, string? typeName)
+    {
+        if (plan.Count < 3) return null;
+        var poly = Polygon2.EnsureCcw([.. plan]);
+        // The turn: the edge whose direction gives the least box (the plan's own axes).
+        var (angle, best) = (0.0, double.MaxValue);
+        for (var i = 0; i < poly.Count; i++)
+        {
+            var d = poly[(i + 1) % poly.Count] - poly[i];
+            if (d.Length < 1e-6) continue;
+            var a = Math.Atan2(d.Y, d.X);
+            var (c, s) = (Math.Cos(-a), Math.Sin(-a));
+            var r = poly.Select(p => new Vec2(p.X * c - p.Y * s, p.X * s + p.Y * c)).ToList();
+            var boxArea = (r.Max(p => p.X) - r.Min(p => p.X)) * (r.Max(p => p.Y) - r.Min(p => p.Y));
+            if (boxArea < best - 1e-9) (best, angle) = (boxArea, a);
+        }
+        // Quarter turns kept to (-45°, 45°]: a plan's axes are the same whichever edge gave them.
+        while (angle > Math.PI / 4 + 1e-9) angle -= Math.PI / 2;
+        while (angle <= -Math.PI / 4 + 1e-9) angle += Math.PI / 2;
+        var (cos, sin) = (Math.Cos(-angle), Math.Sin(-angle));
+        var local = poly.Select(p => new Vec2(p.X * cos - p.Y * sin, p.X * sin + p.Y * cos)).ToList();
+        var centreLocal = new Vec2((local.Max(p => p.X) + local.Min(p => p.X)) / 2, (local.Max(p => p.Y) + local.Min(p => p.Y)) / 2);
+        var at = new Vec2(centreLocal.X * Math.Cos(angle) - centreLocal.Y * Math.Sin(angle), centreLocal.X * Math.Sin(angle) + centreLocal.Y * Math.Cos(angle));
+        var ring = Polygon2.EnsureCcw([.. local.Select(p => new Vec2(Math.Round(p.X - centreLocal.X, 6), Math.Round(p.Y - centreLocal.Y, 6)))]);
+        var width = Round(local.Max(p => p.X) - local.Min(p => p.X));
+        var depth = Round(local.Max(p => p.Y) - local.Min(p => p.Y));
+        var degrees = Math.Round(angle * 180 / Math.PI, 3);
+        var mine = new Section("outline", width, depth, Name: "Outline") { Rings = [ring] };
+        // The type's catalogue profile, at each quarter turn, when it is this outline.
+        if (Catalogue(typeName) is { } profile)
+            foreach (var q in new[] { 0, 90, 180, 270 })
+            {
+                var rad = q * Math.PI / 180;
+                var turned = profile.Outline().Select(p => new Vec2(p.X * Math.Cos(rad) - p.Y * Math.Sin(rad), p.X * Math.Sin(rad) + p.Y * Math.Cos(rad))).ToList();
+                if (SameOutline(turned, ring, 0.002)) return (profile, at, Math.Round(degrees + q, 3));
+            }
+        return (mine, at, degrees);
+    }
+
+    /// <summary>A beam's own section, or its type's catalogue profile where that is the same outline as it stands (within 2 mm).</summary>
+    static Section CatalogueOr(Section own, string? typeName) =>
+        Catalogue(typeName) is { } profile && own.Rings is [{ } ring, ..] && SameOutline(profile.Outline(), ring, 0.002) ? profile : own;
+
+    /// <summary>What a type made for a section is known by: its label, and for an outline its rings too (two shapes in one box are two types).</summary>
+    static string KeyOf(Section s) => s.Kind == "outline" && s.Rings is { } rings
+        ? $"{s.Label}:{string.Join(";", rings.Select(r => string.Join(" ", r.Select(p => FormattableString.Invariant($"{Math.Round(p.X, 5)},{Math.Round(p.Y, 5)}")))))}"
+        : s.Label;
+
+    /// <summary>The built-in library's profile the type is named after (IPE 300, HEA 200…), as a section; null when none is.</summary>
+    static Section? Catalogue(string? typeName)
+    {
+        if (typeName is not { Length: > 0 } name) return null;
+        // A type named as Revit's are, "family: type" or with a size after the profile, tried as it is, then by its last part.
+        foreach (var candidate in new[] { name, name.Split(':').Last().Trim() })
+            if (Lapin.Platform.ProfileLibraries.BuiltInProfiles.Find(candidate) is { } p)
+            {
+                try { return Section.Parse(p.SectionJson(null)); }
+                catch (CommandException) { return null; }
+            }
+        return null;
+    }
+
+    /// <summary>Whether every corner of each outline lies within <paramref name="tol"/> of the other's edges.</summary>
+    static bool SameOutline(IReadOnlyList<Vec2> a, IReadOnlyList<Vec2> b, double tol)
+    {
+        static double Distance(Vec2 p, IReadOnlyList<Vec2> poly)
+        {
+            var best = double.MaxValue;
+            for (var i = 0; i < poly.Count; i++)
+            {
+                Vec2 s = poly[i], t = poly[(i + 1) % poly.Count];
+                var st = t - s;
+                var k = Math.Clamp(Vec2.Dot(p - s, st) / Math.Max(1e-12, Vec2.Dot(st, st)), 0, 1);
+                best = Math.Min(best, (s + st * k - p).Length);
+            }
+            return best;
+        }
+        return a.Count >= 3 && b.Count >= 3 && a.All(p => Distance(p, b) <= tol) && b.All(p => Distance(p, a) <= tol);
+    }
+
+    /// <summary>Whether two sections are one (to 0.1 mm); two outlines only when their rings are the same too (two steel shapes in one box are not one).</summary>
+    static bool Same(Section? a, Section b) => a != null && (a.Kind != "outline" && b.Kind != "outline" ? true : a.Equals(b)) && a.Kind == b.Kind && a.Sides == b.Sides
         && Math.Abs(a.Width - b.Width) < 1e-4 && Math.Abs(a.Depth - b.Depth) < 1e-4 && Math.Abs(a.Web - b.Web) < 1e-4 && Math.Abs(a.Flange - b.Flange) < 1e-4;
 
     string? Column(IEdit edit, ForeignElement e, RecognitionContext ctx)
     {
         if (!One(e, ctx, p => p.Vertical, "a column whose body is not one vertical prism", out var prism)) return null;
         if (prism.Holes.Count > 0) { ctx.Skip("a column with holes in its section"); return null; }
-        if (ColumnSection(Footprints.Plan(prism.Outer)) is not { } read)
+        if ((ColumnSection(Footprints.Plan(prism.Outer)) ?? (ctx.OutlineSections ? OwnSection(Footprints.Plan(prism.Outer), e.TypeName) : null)) is not { } read)
         {
             ctx.Skip("a column whose section is not a rectangle, a regular polygon or a circle");
             return null;
         }
         var (section, at, rotation) = read;
+        // Bodies that are only triangles (OutlineSections): a faceted round read as Lapin's circle only where Lapin's chords are its
+        // facets (to 1 mm), else as the polygon it is (Revit's facets are not Lapin's: a 400 mm column 397 mm across one way), else its outline.
+        if (ctx.OutlineSections && section.Kind == "circle")
+        {
+            var plan = Footprints.Plan(prism.Outer);
+            var chords = section.Outline().Select(p => p + at).ToList();
+            if (!SameOutline(chords, plan, 0.001))
+            {
+                if (Footprints.RegularPolygon(plan) is { Sides: <= 64 } g
+                    && Section.Polygon(Round(2 * g.Radius), g.Sides) is var polygon
+                    && SameOutline([.. Place.Placed(polygon.Outline(), g.Centre, Math.Round(g.RotationDeg, 3))], plan, 0.001))
+                    (section, at, rotation) = (polygon, g.Centre, Math.Round(g.RotationDeg, 3));
+                else if (OwnSection(plan, null) is { } own) (section, at, rotation) = own;
+            }
+        }
         var storey = edit.Model.Get(e.StoreyId);
         if (storey == null) { ctx.Skip("a column without a storey"); return null; }
         var height = Round(prism.Height);
         // Its file type's section, or that rectangle turned a quarter (the file's first edge the other side).
         var turned = section.Kind == "rectangle" ? Section.Rectangle(section.Depth, section.Width) : null;
-        var type = Type(edit, ctx, IfcClass.ColumnType, e, $"column:{section.Label}:{height}:{e.Material}", $"Column {section.Label}", section.Label,
+        var type = Type(edit, ctx, IfcClass.ColumnType, e, $"column:{KeyOf(section)}:{height}:{e.Material}", $"Column {section.Label}", section.Label,
             name => Columns.CreateType(edit, name, section, height, e.Material ?? (section.IsProfile ? "Steel" : "Reinforced concrete")),
             t => Section.From(t.Attrs["section"]) is var ts && (Same(ts, section) || turned != null && Same(ts, turned)));
         if (turned != null && !Same(Section.From(type.Attrs["section"]), section)) rotation = Math.Round(((rotation + 90) % 360 + 360) % 360, 3);
@@ -118,13 +221,17 @@ public sealed class ForeignMembers : IIfcRecognizer
             foreach (var p in e.Prisms.Where(Lying).OrderByDescending(p => p.Height))
                 if (ReadBeam(p) is { } read && Same(typed, Section.Rectangle(read.Width, read.Depth))) { prism = p; break; }
         }
-        if (ReadBeam(prism, ctx) is not { } beamRead) return null;
+        var own = ctx.OutlineSections ? new Section?[1] : null;
+        if (ReadBeam(prism, ctx, own) is not { } beamRead) return null;
         var (start, end, width, depth, top, footprint) = beamRead;
-        var section = Section.Rectangle(width, depth);
-        var type = Type(edit, ctx, IfcClass.BeamType, e, $"beam:{section.Label}:{e.Material}", $"Beam {section.Label}", section.Label,
+        var section = own?[0] is { } shaped ? CatalogueOr(shaped, e.TypeName) : Section.Rectangle(width, depth);
+        var type = Type(edit, ctx, IfcClass.BeamType, e, $"beam:{KeyOf(section)}:{e.Material}", $"Beam {section.Label}", section.Label,
             name => Beams.CreateType(edit, name, section, e.Material ?? "Reinforced concrete"), t => Same(Section.From(t.Attrs["section"]), section));
         var topOffset = Math.Round(top - storey.Num("elevation") - storey.Num("height", 3), 6);
-        var beam = new Entity(e.GlobalId, IfcClass.Beam, e.Name ?? type.Name, new JsonObject { ["start"] = Place.Json2(start), ["end"] = Place.Json2(end), ["topOffset"] = topOffset }, "BEAM");
+        var beamAttrs = new JsonObject { ["start"] = Place.Json2(start), ["end"] = Place.Json2(end), ["topOffset"] = topOffset };
+        // From triangles, its body is what it ends as: it does not stop at a column's face (the bodies show where each ends).
+        if (ctx.OutlineSections) beamAttrs[Beams.ThroughColumnsKey] = true;
+        var beam = new Entity(e.GlobalId, IfcClass.Beam, e.Name ?? type.Name, beamAttrs, "BEAM");
         edit.Add(beam);
         Spatial.Contain(edit, storey.Id, beam.Id);
         edit.Relate(IfcClass.RelDefinesByType, type.Id, beam.Id);
@@ -137,7 +244,8 @@ public sealed class ForeignMembers : IIfcRecognizer
     /// A beam read from one prism: its axis in plan, its section (width across, depth up), its top, and its footprint in plan
     /// (for the joins); null, with the reason when <paramref name="ctx"/> is given, when it is no beam Lapin has.
     /// </summary>
-    static (Vec2 Start, Vec2 End, double Width, double Depth, double Top, IReadOnlyList<Vec2> Footprint)? ReadBeam(ShapePrism prism, RecognitionContext? ctx = null)
+    /// <param name="outline">When given (<see cref="RecognitionContext.OutlineSections"/>), a profile that is no rectangle is kept in its first slot as an outline section instead of refused.</param>
+    static (Vec2 Start, Vec2 End, double Width, double Depth, double Top, IReadOnlyList<Vec2> Footprint)? ReadBeam(ShapePrism prism, RecognitionContext? ctx = null, Section?[]? outline = null)
     {
         Vec2 start, end; double width, depth, top;
         IReadOnlyList<Vec2> footprint;
@@ -158,7 +266,17 @@ public sealed class ForeignMembers : IIfcRecognizer
             // a haunch, or a sloping beam's parallelogram or turned rectangle read across its sweep) would come in as its bounding box.
             Vec2 InPlane(Vec3 p) => new(Vec2.Dot(new Vec2(p.X, p.Y) - origin, across), p.Z);
             var area = Math.Abs(Polygon2.SignedArea([.. prism.Outer.Select(InPlane)])) - prism.Holes.Sum(h => Math.Abs(Polygon2.SignedArea([.. h.Select(InPlane)])));
-            if (area < 0.99 * (xMax - xMin) * (zMax - zMin)) { ctx?.Skip("a beam whose profile is not a rectangle (a shaped section, or a sloping beam)"); return null; }
+            if (area < 0.99 * (xMax - xMin) * (zMax - zMin))
+            {
+                // Its own section, about its box's centre (a steel profile, a shaped section), when asked for; else a reference.
+                if (outline != null && prism.Holes.Count == 0)
+                {
+                    var (uc, vc) = ((xMin + xMax) / 2, (zMin + zMax) / 2);
+                    var ring = Polygon2.EnsureCcw([.. prism.Outer.Select(InPlane).Select(q => new Vec2(Math.Round(q.X - uc, 6), Math.Round(q.Y - vc, 6)))]);
+                    outline[0] = new Section("outline", width, depth, Name: "Outline") { Rings = [ring] };
+                }
+                else { ctx?.Skip("a beam whose profile is not a rectangle (a shaped section, or a sloping beam)"); return null; }
+            }
             var centre = origin + across * ((xMin + xMax) / 2);
             start = centre; end = centre + dir * prism.Height;
             var (a0, a1) = (centre + across * ((xMin - xMax) / 2), centre + across * ((xMax - xMin) / 2));
@@ -189,7 +307,7 @@ public sealed class ForeignMembers : IIfcRecognizer
         var height = Round(prism.Height);
         var bottom = Math.Round(prism.BaseZ - storey.Num("elevation"), 6);
         var material = e.Material ?? "Reinforced concrete";
-        var type = Type(edit, ctx, IfcClass.FootingType, e, $"strip:{Round(width)}:{height}:{bottom}", $"SF {width * 100:0}×{height * 100:0}",
+        var type = Sized(edit, ctx, e, $"strip:{Round(width)}:{height}:{bottom}", $"SF {width * 100:0}×{height * 100:0}",
             name => StripFootings.CreateType(edit, name, [new LayerSpec(material, Round(width), Core: true)], height / 2, Round(width), height / 2, bottom, material));
         var (start, end) = (r.Centre - along * (length / 2), r.Centre + along * (length / 2));
         var footing = new Entity(e.GlobalId, IfcClass.Footing, e.Name ?? type.Name, new JsonObject { ["start"] = Place.Json2(start), ["end"] = Place.Json2(end) }, "STRIP_FOOTING");
@@ -211,7 +329,7 @@ public sealed class ForeignMembers : IIfcRecognizer
         var height = Round(prism.Height);
         var bottom = Math.Round(prism.BaseZ - storey.Num("elevation"), 6);
         var step = new PadStep(Round(r.Width), Round(r.Depth), height);
-        var type = Type(edit, ctx, IfcClass.FootingType, e, $"pad:{step.Length}:{step.Width}:{step.Height}:{bottom}", $"PF {step.Length * 100:0}×{step.Width * 100:0}",
+        var type = Sized(edit, ctx, e, $"pad:{step.Length}:{step.Width}:{step.Height}:{bottom}", $"PF {step.Length * 100:0}×{step.Width * 100:0}",
             name => PadFootings.CreateType(edit, name, [step], bottom, e.Material ?? "Reinforced concrete"));
         var footing = new Entity(e.GlobalId, IfcClass.Footing, e.Name ?? type.Name, new JsonObject { ["at"] = Place.Json2(r.Centre), ["rotation"] = Math.Round(r.RotationDeg, 3), [PadFootings.FollowKey] = false }, "PAD_FOOTING");
         edit.Add(footing);
@@ -236,7 +354,13 @@ public sealed class ForeignMembers : IIfcRecognizer
         {
             name = e.TypeName!;
             key = typed;
-            if (ctx.TypeIds.TryGetValue(key, out var first) && edit.Model.Get(first) is { } t && !fits(t)) { key = $"{typed}:{label}"; name = $"{e.TypeName} {label}"; }
+            if (ctx.TypeIds.TryGetValue(key, out var first) && edit.Model.Get(first) is { } t && !fits(t))
+            {
+                // Another section under the same file type: the next of its own that fits (two outlines in one box are two).
+                (key, name) = ($"{typed}:{label}", $"{e.TypeName} {label}");
+                for (var n = 2; ctx.TypeIds.TryGetValue(key, out var other) && edit.Model.Get(other) is { } o && !fits(o); n++)
+                    (key, name) = ($"{typed}:{label}:{n}", $"{e.TypeName} {label} ({n})");
+            }
         }
         if (ctx.TypeIds.TryGetValue(key, out var id) && edit.Model.Get(id) is { } known) return known;
         var type = create(name);
@@ -247,6 +371,18 @@ public sealed class ForeignMembers : IIfcRecognizer
 
     static Entity Type(IEdit edit, RecognitionContext ctx, string cls, ForeignElement e, string key, string fallbackName, Func<string, Entity> create) =>
         Type(edit, ctx, cls, e, key, fallbackName, "", create, _ => true);
+
+    /// <summary>
+    /// A footing's type, by its file type while that type was made for these sizes (<paramref name="sizes"/>): footings of one file
+    /// type and other sizes take one of their own each (a type's sizes are its footings' own), named after the file's with theirs.
+    /// </summary>
+    static Entity Sized(IEdit edit, RecognitionContext ctx, ForeignElement e, string sizes, string fallbackName, Func<string, Entity> create)
+    {
+        var mark = "sizes:" + sizes;
+        var type = Type(edit, ctx, IfcClass.FootingType, e, sizes, fallbackName, fallbackName, create, t => ctx.TypeIds.GetValueOrDefault(mark) == t.Id);
+        ctx.TypeIds.TryAdd(mark, type.Id);
+        return type;
+    }
 
     static double Round(double v) => Math.Round(v, 4);
 

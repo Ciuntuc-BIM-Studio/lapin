@@ -33,15 +33,18 @@ public static class SpeckleHints
     static readonly string[] SlabThicknessNames = ["Thickness", "Default Thickness", "Slab Thickness"];
     static readonly string[] HeightNames = ["Unconnected Height", "Wall Height"];
 
-    /// <summary>Whether recognition offers an object of this class: a wall or a slab.</summary>
-    public static bool Offered(string cls) => IsWall(cls) || cls == IfcClass.Slab;
+    /// <summary>Whether recognition offers an object of this class: a wall, a slab, a door or window (with its wall), a column, a beam or a footing.</summary>
+    public static bool Offered(string cls) => IsWall(cls) || cls is IfcClass.Slab or IfcClass.Door or IfcClass.Window or IfcClass.Column or IfcClass.Beam or "IfcMember" or IfcClass.Footing;
+
+    /// <summary>The class a reference stands for: its own, or the one it exports as.</summary>
+    public static string ClassOf(Entity e) => e.Str("exportAs") ?? e.Class;
 
     static bool IsWall(string cls) => cls is IfcClass.Wall or "IfcWallStandardCase";
 
     /// <summary>A wall's or slab's hints, or null when it has none (or is neither).</summary>
     public static ReceivedHints? Read(Base b, IReadOnlyDictionary<string, object?>? props, string cls, List<string>? notes = null)
     {
-        if (!Offered(cls)) return null;
+        if (!IsWall(cls) && cls != IfcClass.Slab) return null;
         Vec3? start = null, end = null;
         var curved = false;
         switch (SpeckleRead.Member(b, "location"))
@@ -279,6 +282,7 @@ public static class SpeckleRecognition
     }
 
     public const string Differs = "differs from its body by more than 1 mm or 0.5 %";
+    public const string FillDiffers = "a door or window no configurator makes as its body is (its opening native, it a reference in it)";
 
     /// <param name="shift">Where the version's origin stands in the project (the references' bodies are moved by it).</param>
     public static SpeckleRecognitionReport Run(IEdit edit, IServices services, IReadOnlyList<(string Id, ReceivedElement El)> offered, Vec3 shift, FidelityOptions? fidelity = null)
@@ -342,8 +346,70 @@ public static class SpeckleRecognition
                 attrs["cutPriority"] = WallCutPriority;
                 edit.Replace(slab.With(attrs: attrs));
             }
-        var walls = go.Except(slabs).ToList();
-        if (walls.Count > 0) reports.Add(MeshRecognition.Recognize(edit, services, walls, gate));
+        // The walls with the doors and windows in them (each made in its opening as the wall is). A door or window whose native
+        // body (the configurator's, at the opening's size) is not its received one stays a reference: its wall is made again
+        // without it, the opening bare, the reference standing in it.
+        bool Is(string id, params string[] classes) => m.Get(id) is { } x && classes.Contains(SpeckleHints.ClassOf(x));
+        var walls = go.Where(id => Is(id, IfcClass.Wall, "IfcWallStandardCase", IfcClass.Door, IfcClass.Window)).ToList();
+        var snapshot = walls.Where(id => m.Get(id) != null).ToDictionary(id => id, id => (E: m.Get(id)!, Storey: Spatial.StoreyOf(m, id)?.Id, Group: Groups.Of(m, id)?.Id));
+        if (walls.Count > 0)
+        {
+            var report = MeshRecognition.Recognize(edit, services, walls, gate);
+            var fills = walls.Where(id => Is(id, IfcClass.Door, IfcClass.Window) && m.Get(id) is { } f && !StoredBodies.Has(f)).ToList();
+            var failed = new HashSet<string>();
+            foreach (var id in fills)
+            {
+                var (before, _, _) = snapshot[id];
+                var native = m.Get(id)!;
+                var body = StoredBodies.Geometry(before, m, services);
+                var check = body is { Parts.Count: > 0 } ? RecognitionFidelity.Check(id, SpeckleHints.ClassOf(before), native.Class, native.Name, RecognitionFidelity.Meshes(body),
+                    RecognitionFidelity.Meshes(RecognitionFidelity.NativeGeometry(native, m, services)), gate, source: "triangles") : null;
+                if (check is not { Measured: true, Pass: true }) failed.Add(id);
+            }
+            if (failed.Count > 0)
+            {
+                // Their walls taken back to the references they were, with every door and window in them, and made again.
+                var again = new HashSet<string>();
+                foreach (var id in failed)
+                    if (m.RelatingOf(id, IfcClass.RelFillsElement) is { } opening && m.RelatingOf(opening.Id, IfcClass.RelVoidsElement) is { } wall) again.Add(wall.Id);
+                var members = new HashSet<string>(again);
+                foreach (var wallId in again)
+                    foreach (var opening in m.RelatedOf(wallId, IfcClass.RelVoidsElement).ToList())
+                        foreach (var fill in m.RelatedOf(opening.Id, IfcClass.RelFillsElement)) members.Add(fill.Id);
+                foreach (var wallId in again) edit.Remove(wallId);
+                foreach (var id in members)
+                {
+                    if (m.Get(id) != null) edit.Remove(id);
+                    if (!snapshot.TryGetValue(id, out var snap)) continue;
+                    edit.Add(snap.E);
+                    if (snap.Storey != null && m.Get(snap.Storey) != null) Spatial.Contain(edit, snap.Storey, id);
+                    if (snap.Group != null && m.Get(snap.Group) != null) edit.RelateAll(Groups.Rel, snap.Group, [id]);
+                }
+                foreach (var id in failed) Keep(FillDiffers);
+                report = report with { Fidelity = report.Fidelity == null ? null : report.Fidelity with { Checks = [.. report.Fidelity.Checks.Where(c => !again.Contains(c.Id))] } };
+                reports.Add(report);
+                var redo = members.Where(id => !failed.Contains(id) && m.Get(id) != null).ToList();
+                if (redo.Count > 0) reports.Add(MeshRecognition.Recognize(edit, services, redo, gate));
+            }
+            else reports.Add(report);
+        }
+        // Then the columns and beams, by their own sections where theirs is no parametric one; then the footings. Each made cuts no
+        // other as they came (its cut priority the wall's): Revit's columns, floors and walls meet as the bodies show.
+        // The columns before the beams: a column made cuts at the wall's priority before any beam is measured, so a beam running into
+        // it (as Revit's do) is not cut at its face.
+        foreach (var classes in new[] { new[] { IfcClass.Column }, new[] { IfcClass.Beam, "IfcMember" }, new[] { IfcClass.Footing } })
+        {
+            var members = go.Where(id => Is(id, classes)).ToList();
+            if (members.Count == 0) continue;
+            reports.Add(MeshRecognition.Recognize(edit, services, members, gate, outlineSections: true));
+            foreach (var id in members)
+                if (m.Get(id) is { } made && !StoredBodies.Has(made) && made.Class is IfcClass.Column or IfcClass.Footing)
+                {
+                    var attrs = made.CloneAttrs();
+                    attrs["cutPriority"] = WallCutPriority;
+                    edit.Replace(made.With(attrs: attrs));
+                }
+        }
         var skipped = new Dictionary<string, int>();
         foreach (var x in reports) foreach (var (k, v) in x.Skipped) skipped[k] = skipped.GetValueOrDefault(k) + v;
         var checks = reports.SelectMany(x => x.Fidelity?.Checks ?? []).ToList();

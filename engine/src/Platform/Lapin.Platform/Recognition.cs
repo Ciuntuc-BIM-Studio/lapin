@@ -99,6 +99,14 @@ public sealed class RecognitionContext(IServices services)
     public Dictionary<string, int> Skipped { get; } = [];
 
     public void Skip(string reason) => Skipped[reason] = Skipped.GetValueOrDefault(reason) + 1;
+
+    /// <summary>
+    /// Whether a column or beam whose section is none of the parametric ones (a steel profile, a shaped concrete section) is
+    /// made with its body's own section as an outline (or its type's catalogue profile when that is the body's), the fidelity gate
+    /// judging it; and a beam keeps the length its body has, through the columns on its axis (it does not stop at their faces).
+    /// Off for an IFC file (its profiles are read as profiles); on for bodies that are only triangles (a Speckle receive).
+    /// </summary>
+    public bool OutlineSections { get; init; }
 }
 
 /// <summary>

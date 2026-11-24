@@ -347,6 +347,11 @@ public static class SpeckleReceive
             }
             else { seen.Remove(id); continue; }
             attrs["properties"] = el.Properties.DeepClone();
+            // Its program's type (Revit's "W18x55", a Lapin type's name): what recognition names a native type after, keys the types it
+            // makes by (one per type and section), and finds a catalogue profile by.
+            if ((el.Properties["Speckle"] as JsonObject)?["type"] is JsonValue tv && tv.TryGetValue<string>(out var typeName) && typeName.Length > 0
+                || (el.Properties["Speckle"] as JsonObject)?["Type"] is JsonValue tv2 && tv2.TryGetValue<string>(out typeName) && typeName.Length > 0)
+                attrs[Lapin.Ifc.MeshRecognition.TypeNameKey] = typeName;
             attrs[Key] = Meta(el.ApplicationId, el.ObjectId, el.SpeckleType, el.Path);
             attrs["source"] = SourceText(s);
 

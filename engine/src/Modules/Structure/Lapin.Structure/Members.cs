@@ -213,6 +213,9 @@ public sealed record BeamSpan(PathCurve Curve, double S0, double S1, IReadOnlyLi
 /// </summary>
 public static class Beams
 {
+    /// <summary>A beam's attribute (true): its body runs its whole axis, through the columns on it, as the model it was received from has it.</summary>
+    public const string ThroughColumnsKey = "throughColumns";
+
     /// <summary>The stirrups and the body sample a curved axis this far apart to find a column's faces.</summary>
     const double SampleStep = 0.005;
 
@@ -234,12 +237,15 @@ public static class Beams
         var top = Top(m, beam);
         var bottom = top - Spec(m, beam).Section.Depth;
         var hits = new List<(double In, double Out)>();
-        if (length > 1e-9)
+        // A beam kept as its body came (ThroughColumns: received from triangles, running into its columns as its model has it).
+        if (length > 1e-9 && !beam.Bool(ThroughColumnsKey))
             // A project of many columns: only those near the axis are read (report #148: a beam read every column, so thousands of
             // beams built in a time growing with the square of the frame). Sorted by the place in their own attributes first, a
             // footprint reaching at most ColumnReach from its point. A few hundred are read whole, as before (NearReads.WholeUpTo).
             foreach (var column in NearReads.Many(m, IfcClass.Column) ? NearReads.Candidates(m, IfcClass.Column, AxisBox(c, ColumnReach)).Where(x => c.Distance(Place.Point(x)) <= ColumnReach) : m.OfClass(IfcClass.Column))
             {
+                // A reference (a stored body) has no place or section of a column's own: read as one, a default column at the origin.
+                if (StoredBodies.Has(column)) continue;
                 var (section, _, height) = Columns.Spec(m, column);
                 if (!(height > 0)) continue;
                 var z0 = Place.Elevation(m, column) + column.Num("baseOffset");
