@@ -175,11 +175,11 @@ A cloud is never exported with the model: IFC and Fragments carry the model, not
 
 ### Gaussian splats
 
-A Gaussian splat capture (a scene trained from photos or a video by Postshot, Polycam, Luma, Lichtfeld Studio, Brush or the original 3D Gaussian splatting code) is linked the same way: **File → Link point cloud…** takes a **3DGS PLY** (the layout the trainers write: each splat's centre, colour, opacity, size and rotation) and Niantic's **SPZ** (versions 1–3, its compressed form; version 4 is not read yet). A splat file is a point cloud with more to it, and Manage → Links names its kind **Gaussian splats**:
+A Gaussian splat capture (a scene trained from photos or a video by Postshot, Polycam, Luma, Lichtfeld Studio, Brush or the original 3D Gaussian splatting code) is linked the same way: **File → Link point cloud…** takes a **3DGS PLY** (the layout the trainers write: each splat's centre, colour, opacity, size and rotation), SuperSplat's **compressed PLY** (`.compressed.ply`), Niantic's **SPZ** (versions 1–4) and PlayCanvas's **SOG** (a `.sog` file, as SuperSplat and SplatTransform write it; on the desktop also a SOG folder, by its `meta.json`). Manage → Links names each file's format under its kind (**SOG v3 · SH 3**: the format, then the degree of its colour by direction). A splat file is a point cloud with more to it, and Manage → Links names its kind **Gaussian splats**:
 
 - its splats' centres are indexed as the cloud's points, coloured by their base colour, the nearly transparent ones left out. So everything a point cloud does works on it: plans and sections draw its slice as dots, the snaps in 2D and 3D find its points, and **Visibility / Graphics** shows, hides and halftones it;
 - a 3D view draws its splats: each one an ellipse that faces the camera, blended back to front, as the capture looks in its own viewer. Within the budget of **View → Display quality** (1, 2 or 4 million splats at once, half in a browser), the largest and most opaque splats are drawn first;
-- splats come from reconstructions, whose axes are not a building's: an SPZ has y up, a 3DGS PLY y down. Lapin stands the capture up by that when it is linked. If a file was written otherwise, the pin button in Manage → Links places it again and asks for its **Up axis** (z, y or −y), beside its unit, its move and its turn.
+- splats come from reconstructions, whose axes are not a building's: an SPZ has y up, a 3DGS PLY, a compressed PLY and a SOG y down. Lapin stands the capture up by that when it is linked. If a file was written otherwise, the pin button in Manage → Links places it again and asks for its **Up axis** (z, y or −y), beside its unit, its move and its turn.
 
 ![A Gaussian splat capture of a garden pavilion in the 3D view](shots/gaussian-splat-3d.webp)
 
@@ -189,7 +189,21 @@ In Manage → Links a splat cloud's row has a **Display** list: **Splats** (its 
 
 ![The same capture drawn as points](shots/gaussian-splat-points.webp)
 
-Splats are not exported with the model (nor printed on sheets yet: a sheet draws a capture's slice as dots). Their colour is the splats' base colour; the colour that changes with the viewing direction, the SOG format and SuperSplat's compressed PLY come later (`docs/plan-gaussian-splats.md`).
+Splats are not exported with the model (nor printed on sheets yet: a sheet draws a capture's slice as dots).
+
+#### Full colour and base colour
+
+A trained capture's colour changes with the side it is seen from: a shine on a car, a window that reflects the sky from one side and shows the room from the other. The file keeps that change as each splat's *spherical harmonics* (degrees 1 to 3, over its base colour). A 3D view draws it: in **Full colour** a splat's colour is worked out for the direction you look at it from, as the capture's own viewer does, whatever the link's turn and up axis. **Base colour** draws each splat in its base colour alone, the same from every side, with less memory and a quicker load. The list beside **Display** on the cloud's row in Manage → Links sets it for the link; **Visibility / Graphics → Point clouds** has a **Splat colour** column that sets it for one view (**as its link**, **Full colour** or **Base colour**).
+
+Full colour follows **View → Display quality**: **Fast** draws the first degree (the broad change), **Balanced** and **Precise** all three. When the splats drawn are many, Lapin lowers the degree until their colours fit in memory (96 MB on the desktop, 48 MB in a browser): at Balanced's 2 million splats every degree fits; at Precise's 4 million, two.
+
+![The pavilion as a SOG: its back wall warm seen from the garden, in full colour](shots/gaussian-splat-sh-front.webp)
+
+![The same wall from behind: cool](shots/gaussian-splat-sh-back.webp)
+
+![Manage → Links: the capture's format, SOG v3 with its first degree, and its colour set to Base colour](shots/gaussian-splat-sh-links.webp)
+
+![The wall from the garden in its base colour](shots/gaussian-splat-sh-base.webp)
 
 ### Scale, crop and measure a capture
 

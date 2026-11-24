@@ -177,11 +177,11 @@ Un nor nu se exportă cu modelul: IFC și Fragments duc modelul, nu scanarea, ia
 
 ### Gaussian splats
 
-O captură de Gaussian splats (o scenă antrenată din fotografii sau dintr-un film cu Postshot, Polycam, Luma, Lichtfeld Studio, Brush sau codul original de 3D Gaussian splatting) se leagă la fel: **File → Link point cloud…** ia un **PLY 3DGS** (forma în care îl scriu programele de antrenare: centrul, culoarea, opacitatea, mărimea și rotația fiecărui splat) și **SPZ**-ul Niantic (versiunile 1–3, forma lui comprimată; versiunea 4 încă nu se citește). Un fișier de splats e un nor de puncte cu ceva în plus, iar Manage → Links îi spune **Gaussian splats**:
+O captură de Gaussian splats (o scenă antrenată din fotografii sau dintr-un film cu Postshot, Polycam, Luma, Lichtfeld Studio, Brush sau codul original de 3D Gaussian splatting) se leagă la fel: **File → Link point cloud…** ia un **PLY 3DGS** (forma în care îl scriu programele de antrenare: centrul, culoarea, opacitatea, mărimea și rotația fiecărui splat), **PLY-ul comprimat** al SuperSplat (`.compressed.ply`), **SPZ**-ul Niantic (versiunile 1–4) și **SOG**-ul PlayCanvas (un fișier `.sog`, cum îl scriu SuperSplat și SplatTransform; pe desktop și un folder SOG, prin `meta.json` al lui). Manage → Links scrie formatul fiecărui fișier sub tipul lui (**SOG v3 · SH 3**: formatul, apoi gradul culorii după direcție). Un fișier de splats e un nor de puncte cu ceva în plus, iar Manage → Links îi spune **Gaussian splats**:
 
 - centrele splat-urilor sunt indexate ca punctele norului, colorate cu culoarea lor de bază, cele aproape transparente lăsate deoparte. Așa că tot ce face un nor de puncte merge și aici: planurile și secțiunile îi desenează felia ca puncte, snap-urile în 2D și 3D îi găsesc punctele, iar **Visibility / Graphics** îl arată, îl ascunde și îl face halftone;
 - o vedere 3D îi desenează splat-urile: fiecare o elipsă întoarsă spre cameră, amestecate din spate în față, cum arată captura în vizualizatorul ei. În bugetul din **View → Display quality** (1, 2 sau 4 milioane de splat-uri deodată, jumătate în browser), splat-urile cele mai mari și mai opace se desenează primele;
-- splat-urile vin din reconstrucții, ale căror axe nu sunt ale unei clădiri: un SPZ are y în sus, un PLY 3DGS y în jos. Lapin ridică captura după asta când e legată. Dacă un fișier e scris altfel, butonul cu pin din Manage → Links o reașază și îi cere **Up axis** (z, y sau −y), lângă unitate, mutare și rotire.
+- splat-urile vin din reconstrucții, ale căror axe nu sunt ale unei clădiri: un SPZ are y în sus, un PLY 3DGS, un PLY comprimat și un SOG y în jos. Lapin ridică captura după asta când e legată. Dacă un fișier e scris altfel, butonul cu pin din Manage → Links o reașază și îi cere **Up axis** (z, y sau −y), lângă unitate, mutare și rotire.
 
 ![O captură de Gaussian splats a unui foișor în grădină, în vederea 3D](shots/gaussian-splat-3d.webp)
 
@@ -191,7 +191,21 @@ O captură de Gaussian splats (o scenă antrenată din fotografii sau dintr-un f
 
 ![Aceeași captură desenată ca puncte](shots/gaussian-splat-points.webp)
 
-Splat-urile nu se exportă cu modelul (și nici nu se tipăresc încă pe planșe: o planșă desenează felia capturii ca puncte). Culoarea lor e culoarea de bază a splat-urilor; culoarea care se schimbă cu direcția din care privești, formatul SOG și PLY-ul comprimat al SuperSplat vin mai târziu (`docs/plan-gaussian-splats.md`).
+Splat-urile nu se exportă cu modelul (și nici nu se tipăresc încă pe planșe: o planșă desenează felia capturii ca puncte).
+
+#### Culoare completă și culoare de bază
+
+Culoarea unei capturi antrenate se schimbă după partea din care o privești: luciul unei mașini, o fereastră care dintr-o parte reflectă cerul și din cealaltă arată camera. Fișierul păstrează schimbarea asta ca *armonicele sferice* ale fiecărui splat (gradele 1–3, peste culoarea lui de bază). O vedere 3D o desenează: în **Full colour** culoarea unui splat e calculată pentru direcția din care îl privești, cum face vizualizatorul capturii, oricum ar fi rotită legătura și oricare i-ar fi axa de sus. **Base colour** desenează fiecare splat doar în culoarea lui de bază, la fel din orice parte, cu mai puțină memorie și o încărcare mai rapidă. Lista de lângă **Display** pe rândul norului din Manage → Links o stabilește pentru legătură; **Visibility / Graphics → Point clouds** are coloana **Splat colour**, care o stabilește pentru o vedere (**as its link**, **Full colour** sau **Base colour**).
+
+Culoarea completă urmează **View → Display quality**: **Fast** desenează primul grad (schimbarea mare), **Balanced** și **Precise** toate trei. Când se desenează multe splat-uri, Lapin coboară gradul până când culorile lor încap în memorie (96 MB pe desktop, 48 MB în browser): la cele 2 milioane de splat-uri ale Balanced încap toate gradele; la cele 4 milioane ale Precise, două.
+
+![Foișorul ca SOG: peretele din spate cald văzut din grădină, în culoare completă](shots/gaussian-splat-sh-front.webp)
+
+![Același perete din spate: rece](shots/gaussian-splat-sh-back.webp)
+
+![Manage → Links: formatul capturii, SOG v3 cu primul grad, și culoarea ei pusă pe Base colour](shots/gaussian-splat-sh-links.webp)
+
+![Peretele din grădină în culoarea lui de bază](shots/gaussian-splat-sh-base.webp)
 
 ### Scara, decuparea și măsurarea unei capturi
 
