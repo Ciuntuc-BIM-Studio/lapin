@@ -6,6 +6,7 @@
  */
 
 import type { Person } from './atrium';
+import type { IdsReport } from './serverIds';
 
 export type Severity = 'error' | 'warning' | 'info';
 export type Bbox = [number, number, number, number];
@@ -21,6 +22,8 @@ export interface CheckSummary { errors: number; warnings: number; infos: number 
 export interface ChecksReport {
   status: 'pending' | 'done' | 'failed'; run: number; requested: string | null; requestedBy: Person | null; finished: string | null; error: string | null;
   summary: CheckSummary | null; files?: CheckedFile[];
+  /** W6c: the IDS files over the submission's models (null when the rule is off or the project has none). */
+  ids?: IdsReport | null;
 }
 /** The checks' part of the publish gate. */
 export interface GateChecks { status: ChecksReport['status']; errors: number; warnings: number; infos: number }

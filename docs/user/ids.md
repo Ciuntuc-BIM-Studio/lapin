@@ -39,6 +39,10 @@ When the project has IDS files, **Manage → Issue… → On the CDE server** ru
 
 In **File → Collaborate… → Publishing**, the **IDS** tab is the same panel.
 
+## IDS files on the CDE server
+
+A CDE server can hold IDS files of its own for a project and check every submission's model against them, the approval counting what it finds: see [IDS on the server](cde-server.md#ids-on-the-server). **Check on the server**, in Manage → Issue… → On the CDE server, runs them on the commit just saved before you submit. The files kept in the project (this panel) and those on the server are separate: put the same file in both to have it checked here first.
+
 ## What IDS 1.0 does not check
 
 IDS 1.0 reads no geometry, no clashes and no calculations: for those, use [Clash detection](clash.md) and the [checks before an issue](cde.md). IFC2X3's mapping of occurrence classes to types is not applied (Lapin writes IFC4).

@@ -28,6 +28,7 @@ public sealed partial class CdeTests
         public readonly List<JsonObject> Submissions = [];
         public string IssueTags = "owner";
         public (byte[] Bytes, string? Type, string Query)? Register;
+        public readonly Dictionary<string, byte[]> Ids = new(StringComparer.OrdinalIgnoreCase);
         public Dictionary<string, JsonObject> InnerTopics => inner.Topics;
 
         static HttpResponseMessage Json(HttpStatusCode s, JsonNode o) => new(s) { Content = new StringContent(o.ToJsonString(), Encoding.UTF8, "application/json") };
@@ -60,7 +61,7 @@ public sealed partial class CdeTests
             var path = request.RequestUri!.AbsolutePath;
             var p = $"/lapin-remote/1.0/projects/{CdeProject}";
             var role = request.Headers.Authorization?.Parameter switch { "tok-mihai" => "owner", "tok-ana" => "editor", "tok-vio" => "viewer", _ => null };
-            if (role == null || !(path.StartsWith(p, StringComparison.Ordinal) || path.EndsWith("/submissions", StringComparison.Ordinal) || path.EndsWith("/register", StringComparison.Ordinal))) return await base.SendAsync(request, cancellationToken);
+            if (role == null || !(path.StartsWith(p, StringComparison.Ordinal) || path.EndsWith("/submissions", StringComparison.Ordinal) || path.EndsWith("/register", StringComparison.Ordinal) || path.Contains("/ids/", StringComparison.Ordinal))) return await base.SendAsync(request, cancellationToken);
             var body = request.Content == null ? null : await request.Content.ReadAsByteArrayAsync(cancellationToken);
             var json = body is { Length: > 0 } && body[0] == '{' ? JsonNode.Parse(body) as JsonObject : null;
             if (path == $"/atrium/1.0/projects/{CdeProject}/submissions" && request.Method == HttpMethod.Post)
@@ -84,6 +85,16 @@ public sealed partial class CdeTests
                 if (role != "owner") return Error(403, "forbidden", "Only owners import the register.");
                 Register = (body ?? [], request.Content?.Headers.ContentType?.MediaType, request.RequestUri.Query);
                 return Json(HttpStatusCode.OK, new JsonObject { ["name"] = "registru.csv", ["count"] = 1, ["entries"] = new JsonArray(), ["warnings"] = new JsonArray() });
+            }
+            if (path.StartsWith($"/atrium/1.0/projects/{CdeProject}/ids/", StringComparison.Ordinal))
+            {
+                var name = Uri.UnescapeDataString(path[($"/atrium/1.0/projects/{CdeProject}/ids/").Length..]);
+                if (request.Method == HttpMethod.Get)
+                    return Ids.TryGetValue(name, out var ids) ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(ids) } : Error(404, "no_ids", "No such IDS file.");
+                if (role != "owner") return Error(403, "forbidden", "Only owners change the IDS files.");
+                if (body is not { Length: > 0 } || body[0] != '<') return Error(400, "bad_ids", "Not IDS 1.0.", new JsonObject { ["problems"] = new JsonArray("Line 1: Not well-formed XML.") });
+                Ids[name] = body;
+                return Json(HttpStatusCode.Created, new JsonObject { ["name"] = name, ["type"] = request.Content?.Headers.ContentType?.MediaType });
             }
             if (path == $"{p}/refs") return Json(HttpStatusCode.OK, RefsJson());
             if (path == $"{p}/objects/missing")
@@ -282,5 +293,33 @@ public sealed partial class CdeTests
             Assert.Throws<InvalidOperationException>(() => c.Call("remote.atrium", new JsonObject { ["method"] = method, ["path"] = path, ["data"] = Convert.ToBase64String(csv) }));
         c.Token = "tok-ana";
         Assert.Equal(403, (int)c.Call("remote.atrium", new JsonObject { ["method"] = "PUT", ["path"] = $"atrium/1.0/projects/{CdeProject}/register", ["data"] = Convert.ToBase64String(csv) })["status"]!);
+    }
+
+    [Fact]
+    public void The_desktop_sends_an_IDS_file_as_its_file_reads_it_back_and_sends_no_other_IDS_request_as_bytes()
+    {
+        var server = new PublishServer(new IssueSyncTests.FakeCde());
+        var c = Issued(new HttpClient(server), _ => Server());
+        var ids = Encoding.UTF8.GetBytes("<ids xmlns=\"http://standards.buildingsmart.org/IDS\"/>");
+        var path = $"atrium/1.0/projects/{CdeProject}/ids/{Uri.EscapeDataString("LOIN arhitectură.ids")}";
+        var r = c.Call("remote.atrium", new JsonObject { ["method"] = "PUT", ["path"] = path, ["data"] = Convert.ToBase64String(ids), ["contentType"] = "application/xml" });
+        Assert.Equal(201, (int)r["status"]!);
+        Assert.Equal(("LOIN arhitectură.ids", "application/xml"), ((string?)r["body"]!["name"], (string?)r["body"]!["type"]));
+        Assert.Equal(ids, server.Ids["LOIN arhitectură.ids"]);
+        // Read back as bytes for a download, by the same path only.
+        Assert.Equal(ids, Convert.FromBase64String((string)c.Call("remote.atrium", new JsonObject { ["path"] = path, ["bytes"] = true })["data"]!));
+        // A file that is not IDS comes back as the server's 400 with its problems, as an answer.
+        var bad = c.Call("remote.atrium", new JsonObject { ["method"] = "PUT", ["path"] = path, ["data"] = Convert.ToBase64String(Encoding.UTF8.GetBytes("not xml")) });
+        Assert.Equal((400, "bad_ids", "Line 1: Not well-formed XML."), ((int)bad["status"]!, (string?)bad["body"]!["code"], (string?)bad["body"]!["problems"]![0]));
+        // Bytes go to one IDS file by name, and only with PUT: not the dry run, not the list, not a query, not another name.
+        foreach (var (method, bytesPath) in new[] {
+            ("POST", $"atrium/1.0/projects/{CdeProject}/ids/run?commit=abc"), ("PUT", $"atrium/1.0/projects/{CdeProject}/ids"), ("POST", path),
+            ("PUT", $"{path}?view=json"), ("PUT", $"atrium/1.0/projects/{CdeProject}/ids/loin.xml"), ("PUT", $"atrium/1.0/projects/{CdeProject}/ids/a/b.ids"),
+            ("PUT", $"atrium/1.0/projects/{CdeProject}/rules"), ("DELETE", path) })
+            Assert.Throws<InvalidOperationException>(() => c.Call("remote.atrium", new JsonObject { ["method"] = method, ["path"] = bytesPath, ["data"] = Convert.ToBase64String(ids) }));
+        foreach (var readPath in new[] { $"atrium/1.0/projects/{CdeProject}/ids", $"{path}?view=json", $"atrium/1.0/projects/{CdeProject}/rules" })
+            Assert.Null(c.Call("remote.atrium", new JsonObject { ["path"] = readPath, ["bytes"] = true })["data"]);
+        c.Token = "tok-ana";
+        Assert.Equal(403, (int)c.Call("remote.atrium", new JsonObject { ["method"] = "PUT", ["path"] = path, ["data"] = Convert.ToBase64String(ids) })["status"]!);
     }
 }
