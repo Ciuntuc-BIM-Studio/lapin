@@ -6423,6 +6423,7 @@ export const ZH: Record<string, string> = {
   "at every scale": "任何比例",
   "Drawing language": "图纸语言",
   "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "图纸自行书写的文字的语言（排水沟的管底、低点）；图例保留其放置时的语言",
+  'Open-web joist': '空腹桁架梁', 'New type from a preset': '从预设新建类型', 'The preset sizes are indicative: your own norms and sizes decide.': '预设尺寸仅供参考：以您自己的规范和尺寸为准。', 'Joist depth': '桁架梁高度', 'Chords': '弦杆', 'Webs': '腹杆', 'Angle webs': '角钢腹杆', 'Lines only': '仅线条', 'Round bar webs': '圆钢腹杆', 'Edit the type': '编辑类型', 'Webs as the imported file drew them': '腹杆与导入文件所绘一致', 'Regenerate webs': '重新生成腹杆',
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

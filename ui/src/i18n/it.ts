@@ -6387,6 +6387,7 @@ export const IT: Record<string, string> = {
   "at every scale": "a ogni scala",
   "Drawing language": "Lingua dei disegni",
   "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "La lingua delle parole che i disegni scrivono da sé (la QS di una canaletta, un punto basso); una legenda mantiene la lingua in cui è stata posata",
+  'Open-web joist': 'Travetto reticolare', 'New type from a preset': 'Nuovo tipo da una preimpostazione', 'The preset sizes are indicative: your own norms and sizes decide.': 'Le dimensioni delle preimpostazioni sono indicative: decidono le vostre norme e misure.', 'Joist depth': 'Altezza del travetto', 'Chords': 'Correnti', 'Webs': 'Diagonali', 'Angle webs': 'Diagonali in angolari', 'Lines only': 'Solo linee', 'Round bar webs': 'Diagonali in tondi', 'Edit the type': 'Modifica il tipo', 'Webs as the imported file drew them': 'Diagonali come le ha disegnate il file importato', 'Regenerate webs': 'Rigenera le diagonali',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

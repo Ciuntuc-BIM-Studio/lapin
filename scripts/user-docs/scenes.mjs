@@ -3730,6 +3730,43 @@ export const scenes = [
     },
   },
   {
+    // Open-web joists (decision 827): the Steel tab's Open-web joist placed with two clicks on the plan, a second one of a joist type made
+    // from a preset by the command; the joist's section in Properties; the joists in 3D.
+    id: 'steel-joists',
+    touches: ['steel'],
+    async run(t) {
+      await t.fresh();
+      const storey = await t.storey();
+      await t.button('Steel', { exact: true });
+      await t.ui({ view: 'plan' });
+      await t.wait(500);
+      await t.tool('steel.joist');
+      t.expect(await t.page.locator('[data-field=new-element]').count() > 0, 'the Open-web joist tool shows its type in Properties');
+      const a = await t.planPoint(1, 1);
+      const b = await t.planPoint(7, 1);
+      await t.page.mouse.click(a[0], a[1]);
+      await t.page.mouse.click(b[0], b[1]);
+      await t.wait(600);
+      await t.keys('Escape');
+      let joists = (await t.nodes()).filter((n) => n.type === 'LapinSteelJoist');
+      t.expect(joists.length === 1, `the tool places one joist (${joists.length})`);
+      const preset = (await t.cmd('steel.createJoistType', { preset: 'OWJ 500' })).id;
+      await t.cmd('steel.addJoist', { storeyId: storey, x1: 1, y1: 3, x2: 7, y2: 3, typeId: preset });
+      await t.cmd('steel.addJoist', { storeyId: storey, x1: 1, y1: 5, x2: 7, y2: 5, typeId: preset });
+      joists = (await t.nodes()).filter((n) => n.type === 'LapinSteelJoist');
+      t.expect(joists.length === 3, 'three joists');
+      await t.keys('Escape');
+      await t.ui({ tool: null, selection: joists[0].id, selected: [joists[0].id] });
+      await t.wait(700);
+      t.expect(await t.page.locator('[data-field=joist-section]').count() > 0, 'the joist shows its section in Properties');
+      await t.shot('steel-joist-props', { of: 'aside.props', pad: 0, maxHeight: 760 });
+      await t.ui({ selection: null, selected: [] });
+      await open3d(t);
+      await t.shot('steel-joists', { of: 'canvas', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // A profile's real shape: steel at LOD 400 with its root fillets (decision 415); a curtain wall's mullions and a window's frame and
     // sash from an aluminium section with chambers (decision 417).
     id: 'profile-shapes',

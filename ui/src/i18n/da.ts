@@ -6421,6 +6421,7 @@ export const DA: Record<string, string> = {
   "at every scale": "i alle målforhold",
   "Drawing language": "Tegningssprog",
   "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "Sproget for de ord, tegninger selv skriver (en rendes BK, et lavpunkt); en signaturforklaring beholder det sprog, den blev placeret i",
+  'Open-web joist': 'Gitterligger', 'New type from a preset': 'Ny type fra en forudindstilling', 'The preset sizes are indicative: your own norms and sizes decide.': 'Forudindstillingernes mål er vejledende: dine egne normer og mål afgør.', 'Joist depth': 'Liggerhøjde', 'Chords': 'Flanger', 'Webs': 'Diagonaler', 'Angle webs': 'Diagonaler af vinkelstål', 'Lines only': 'Kun linjer', 'Round bar webs': 'Diagonaler af rundstål', 'Edit the type': 'Redigér typen', 'Webs as the imported file drew them': 'Diagonaler, som den importerede fil tegnede dem', 'Regenerate webs': 'Gendan diagonalerne',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

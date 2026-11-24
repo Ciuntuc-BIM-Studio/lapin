@@ -6427,6 +6427,7 @@ export const PL: Record<string, string> = {
   "at every scale": "w każdej skali",
   "Drawing language": "Język rysunków",
   "The language of the words drawings write by themselves (a channel's IL, a low point); a legend keeps the language it was placed in": "Język słów, które rysunki piszą same (RD ścieku, punkt najniższy); legenda zachowuje język, w którym ją umieszczono",
+  'Open-web joist': 'Kratownica (dźwigar kratowy)', 'New type from a preset': 'Nowy typ z ustawienia wstępnego', 'The preset sizes are indicative: your own norms and sizes decide.': 'Wymiary ustawień wstępnych są orientacyjne: decydują Twoje własne normy i wymiary.', 'Joist depth': 'Wysokość dźwigara', 'Chords': 'Pasy', 'Webs': 'Krzyżulce', 'Angle webs': 'Krzyżulce z kątowników', 'Lines only': 'Tylko linie', 'Round bar webs': 'Krzyżulce z prętów okrągłych', 'Edit the type': 'Edytuj typ', 'Webs as the imported file drew them': 'Krzyżulce tak, jak narysował je zaimportowany plik', 'Regenerate webs': 'Wygeneruj krzyżulce ponownie',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

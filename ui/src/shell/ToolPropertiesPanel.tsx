@@ -13,7 +13,7 @@ import { findTool, typesOf } from '../platform/modules';
 export function ToolPropertiesPanel() {
   useSession((s) => s.nodes);
   const toolId = useUi((s) => s.tool);
-  useUi((s) => [s.wallTypeId, s.doorTypeId, s.windowTypeId, s.slabTypeId, s.stairTypeId, s.rampTypeId, s.ceilingTypeId, s.skirtingTypeId, s.curtainTypeId, s.memberTypeId].join());
+  useUi((s) => [s.wallTypeId, s.doorTypeId, s.windowTypeId, s.slabTypeId, s.stairTypeId, s.rampTypeId, s.ceilingTypeId, s.skirtingTypeId, s.curtainTypeId, s.memberTypeId, s.joistTypeId].join());
   const tool = findTool(toolId);
   if (!tool) {
     return (
