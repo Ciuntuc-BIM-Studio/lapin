@@ -17,6 +17,10 @@ export const PARAM_PRESETS: { label: string; param: MaterialParam; unit: string 
   { label: 'Density', unit: 'kg/m³', param: { pset: 'Pset_MaterialCommon', name: 'MassDensity', kind: 'number', value: 0 } },
   { label: 'Reaction to fire', unit: '', param: { name: 'Reaction to fire', kind: 'text', value: '' } },
   { label: 'Compressive strength', unit: 'MPa', param: { name: 'Compressive strength', kind: 'number', value: 0 } },
+  /** Read by the structural analysis (StructuralMaterials.OwnModulus), in MPa; IFC's export writes it as Pset_MaterialMechanical.YoungModulus in Pa. */
+  /** Read by the steel checks (StructuralMaterials.OwnStress) when no Pset_MaterialSteel.YieldStress or grade in the name gives fy. */
+  { label: 'Yield strength fy', unit: 'MPa', param: { name: 'Yield strength', kind: 'number', value: 0 } },
+  { label: "Young's modulus E", unit: 'MPa', param: { name: "Young's modulus", kind: 'number', value: 0 } },
 ];
 
 /** A parameter's key: its set and name, as the engine tells them apart. */

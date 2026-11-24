@@ -56,6 +56,12 @@ public sealed class DesignRun
     public bool Ok { get; private set; }
     public double Ms { get; private set; }
 
+    /// <summary>A steel member without fy, and where to give it (report #189): the Data tab's Yield strength fy, or a grade in the name.</summary>
+    public const string NoFy = "No fy: add Yield strength fy (MPa) in Manage → Materials → Data, or name its grade in the material's name (S235, S355): not checked.";
+
+    /// <summary>A concrete member without fck, and where to give it: the Data tab's Compressive strength, or a class in the name.</summary>
+    public const string NoFck = "No fck: add Compressive strength (MPa) in Manage → Materials → Data, or name its class in the material's name (C25/30): not checked.";
+
     sealed class Hit(long revision, DesignRun run)
     {
         public long Revision { get; } = revision;
@@ -175,6 +181,7 @@ public sealed class DesignRun
                 {
                     var props = SectionProperties.Of(shape);
                     // The analysis refuses a bar without E, so E is there; G is the analysis' own (the material's ν).
+                    if (props != null && mm.Mat.Fy == null) { notes.Add(NoFy); checks = []; break; }
                     if (props == null || mm.Mat.Fy is not { } fy || mm.Mat.E is not { } es) { notes.Add("No fy or no section properties: not checked."); checks = []; break; }
                     var member = new SteelMember(shape, props, fy.Value, es.Value, l, lcrY, lcrZ, llt)
                     {
@@ -188,7 +195,7 @@ public sealed class DesignRun
                 case "concrete":
                 {
                     if (shape.Kind != "rectangle") { notes.Add($"A „{shape.Kind}” concrete section: only rectangles are checked."); checks = []; break; }
-                    if (mm.Mat.Fc is not { } fc) { notes.Add("No fck (the material's name has no class such as C25/30): not checked."); checks = []; break; }
+                    if (mm.Mat.Fc is not { } fc) { notes.Add(NoFck); checks = []; break; }
                     var c = cv with { Fck = fc.Value };
                     var column = src.Kind == "column" || vertical;
                     var (sys, sk) = SystemOf(own, k, e, cantilever, members);

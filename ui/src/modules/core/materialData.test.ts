@@ -42,4 +42,12 @@ describe('a material’s data', () => {
     expect(unitOf({ pset: 'Pset_MaterialThermal', name: 'ThermalConductivity', kind: 'number', value: 0.035 })).toBe('W/(m·K)');
     expect(paramKey({ name: 'Reaction to fire', kind: 'text', value: 'A1' })).toBe('.reaction to fire');
   });
+
+  it('offers Young’s modulus E in MPa, the name the structural analysis reads (report #189)', () => {
+    const e = PARAM_PRESETS.find((p) => p.param.name === "Young's modulus");
+    expect(e?.param.kind).toBe('number');
+    expect(unitOf({ name: "Young's modulus", kind: 'number', value: 30000 })).toBe('MPa');
+    expect(unitOf({ name: 'Yield strength', kind: 'number', value: 355 })).toBe('MPa');
+    expect(unitOf({ name: 'Compressive strength', kind: 'number', value: 30 })).toBe('MPa');
+  });
 });
