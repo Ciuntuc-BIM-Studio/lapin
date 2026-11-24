@@ -238,7 +238,9 @@ Choose **Diagram** in View → **Display quality**, then how it colours:
 
 ![The same house in pastel by category](shots/view-diagram-pastel.webp)
 
-The colours are on screen only: drawings, sheets, the PDF, exports and the model keep their own. A colour you set for an element in **Visibility/Graphics** still wins, so you can accent a few things (the site in green, one building highlighted); glass stays see-through and the selection is still lit. Edit the pastels in **Preferences → Display → Diagram colours** (one colour a category, **Default colours** puts them back). The choice is kept on this computer. The Diagram display has no lamps and no night, and it does not offer Render.
+![Pastel by category at noon](shots/view-diagram-noon.webp)
+
+The colours are on screen only: drawings, sheets, the PDF, exports and the model keep their own. A colour you set for an element in **Visibility/Graphics** still wins, so you can accent a few things (the site in green, one building highlighted); glass stays see-through and the selection is still lit. Edit the pastels in **Preferences → Display → Diagram colours** (one colour a category, **Default colours** puts them back). The choice is kept on this computer. The light is neutral and even, so a face turned from the sun stays light and the shadows stay soft; the display has no textures (a terrain’s photo, a material’s picture), only the flat colours, and a cut-out figure keeps its outline in its colour. It has no lamps and no night, and it does not offer Render.
 
 The sun is the project’s: where it stands for the project’s place (Manage → **Location**) on a day at an hour. View → **Sun and shadows** sets the day (the equinox and the solstices are a click away) and the hour, plays the day through, and turns the sun on in the drawing view too. Without a coordinate system and a survey point, the place is Bucharest. The time zone follows the place’s longitude, with European summer time in Europe.
 

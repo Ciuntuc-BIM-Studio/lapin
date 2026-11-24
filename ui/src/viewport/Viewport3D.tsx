@@ -35,7 +35,7 @@ import { boxUv, boxUvSized, hasRelief, imageOf, imageTexture, orthophotos, ortho
 import { lookOf } from './look';
 import { xrayLooks } from './xray';
 import { glassThrough, reflections, standardMaterial } from './materialLook';
-import { DIAGRAM_BACKGROUND, DIAGRAM_EDGES, diagramLooks, useDiagram } from './diagram';
+import { DIAGRAM_BACKGROUND, DIAGRAM_EDGES, diagramLooks, flatTextures, useDiagram } from './diagram';
 import { nightOf, Realism, sunColour, useCameraLook, useRenderProfile, whiteBalanceKelvin } from './render3d';
 import { buildTraceScene, exposureFactor, resolutionOf, TraceMaterials, type TraceInput } from './pathTrace';
 import type { PathTraceView, TraceLook, TraceSky } from './pathTraceView';
@@ -1010,8 +1010,10 @@ export function Viewport3D() {
       probes.stale();
       placeGround();
       fitted = '';
+      // The diagram's light is neutral and even: a white fill from every side (a face turned from the sun is about three quarters as bright as a lit one), the sun a lesser share.
+      hemi.color.setHex(0xffffff); hemi.groundColor.setHex(spec.diagram ? 0xffffff : 0xd6cebf);
       if (!dir) {
-        sun.castShadow = false; sun.intensity = 1.6; hemi.intensity = spec.skyLight ? 1.2 : 2.2;
+        sun.castShadow = false; sun.intensity = spec.diagram ? 0.9 : 1.6; hemi.intensity = spec.diagram ? 2.6 : spec.skyLight ? 1.2 : 2.2;
         sun.color.set(0xffffff);
         sun.position.set(20, -30, 40); sun.target.position.set(0, 0, 0);
         invalidate.current();
@@ -1020,8 +1022,8 @@ export function Viewport3D() {
       const up = dir[2] > 0.005;
       const altitude = (Math.asin(Math.max(-1, Math.min(1, dir[2]))) * 180) / Math.PI;
       // The drawing keeps its even light under the sun; the others take most of theirs from the sky (render3d.ts).
-      sun.intensity = up ? (spec.diagram ? 1.8 : spec.skyLight ? 3.2 : 2.6) : 0;
-      hemi.intensity = spec.diagram ? (up ? 1.1 : 0.8) : spec.skyLight ? (up ? 0.25 : 0.4) : up ? 1.1 : 0.6;
+      sun.intensity = up ? (spec.diagram ? 0.9 : spec.skyLight ? 3.2 : 2.6) : 0;
+      hemi.intensity = spec.diagram ? 2.6 : spec.skyLight ? (up ? 0.25 : 0.4) : up ? 1.1 : 0.6;
       // The night's sky light: what is left of it under the opened exposure, a faint glow (the drawing keeps its even light).
       if (realism.night > 0) hemi.intensity *= (1 - realism.night) + (realism.night * 0.04) / realism.gain;
       // The diagram's sun is white: a card model under a daylight lamp, not a sunset.
@@ -1047,6 +1049,7 @@ export function Viewport3D() {
       glassThrough(s, realism.spec.glass);
       // The roughness and occlusion maps in the medium and realistic views; the drawing keeps its flat look (docs/plan-render.md, S1).
       surfaceMaps(s, profile === 'medium' || profile === 'realistic');
+      flatTextures(s, profile === 'diagram');
       // The diagram's light background and light edges (viewport/diagram.ts); the other displays keep the theme's.
       rendererRef.current?.setClearColor(profile === 'diagram' ? DIAGRAM_BACKGROUND : CLEAR[currentViewTheme()]);
       EDGES.color.setHex(profile === 'diagram' ? DIAGRAM_EDGES : EDGES_COLOUR);
@@ -2212,6 +2215,8 @@ export function Viewport3D() {
     // The instances of shared meshes: added, moved, taken out; drawn as their looks and the selection say.
     const layer = instances.current;
     if (layer) { layer.sync(render, meshes); layer.restyle(seen, [...shown], visualStyle, layers); }
+    // New materials (a rebuilt element) lose their pictures too in the diagram display.
+    flatTextures(s, renderProfile === 'diagram');
     boxDirty.current();
     traceDirty.current();
     invalidate.current();

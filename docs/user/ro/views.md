@@ -236,7 +236,9 @@ Alege **Diagramă** în Vedere → **Calitate afișare**, apoi cum se colorează
 
 ![Aceeași casă în pastel pe categorii](shots/view-diagram-pastel.webp)
 
-Culorile sunt doar pe ecran: desenele, planșele, PDF-ul, exporturile și modelul își păstrează culorile. O culoare pe care o stabilești pentru un element în **Vizibilitate / Grafică** rămâne cea care contează, așa că poți accentua câteva lucruri (terenul în verde, o clădire evidențiată); sticla rămâne transparentă, iar selecția se luminează ca de obicei. Pastelurile se modifică în **Preferințe → Afișare → Culorile diagramei** (o culoare pe categorie, **Culorile implicite** le pun la loc). Alegerea se păstrează pe acest calculator. Afișarea ca diagramă nu are lămpi și nici noapte, și nu oferă Render.
+![Pastel pe categorii la prânz](shots/view-diagram-noon.webp)
+
+Culorile sunt doar pe ecran: desenele, planșele, PDF-ul, exporturile și modelul își păstrează culorile. O culoare pe care o stabilești pentru un element în **Vizibilitate / Grafică** rămâne cea care contează, așa că poți accentua câteva lucruri (terenul în verde, o clădire evidențiată); sticla rămâne transparentă, iar selecția se luminează ca de obicei. Pastelurile se modifică în **Preferințe → Afișare → Culorile diagramei** (o culoare pe categorie, **Culorile implicite** le pun la loc). Alegerea se păstrează pe acest calculator. Lumina e neutră și egală, așa că o față întoarsă de la soare rămâne luminoasă, iar umbrele rămân line; afișarea nu are texturi (fotografia unui teren, imaginea unui material), doar culorile plate, iar o siluetă decupată își păstrează conturul în culoarea ei. Nu are lămpi și nici noapte, și nu oferă Render.
 
 Soarele e al proiectului: unde stă pentru locul proiectului (Gestionare → **Amplasament**) într-o zi, la o oră. Vedere → **Soare și umbre** stabilește ziua (echinocțiul și solstițiile sunt la un clic) și ora, rulează ziua și aprinde soarele și în vederea de desen. Fără sistem de coordonate și punct de reper, locul e Bucureștiul. Fusul orar urmează longitudinea locului, cu ora de vară europeană în Europa.
 

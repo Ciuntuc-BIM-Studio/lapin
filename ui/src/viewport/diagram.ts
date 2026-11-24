@@ -10,6 +10,7 @@
  * changes. The pastel palette is the coded default; the user edits it in Preferences → Display (category → colour, reset).
  */
 
+import * as THREE from 'three';
 import { create } from 'zustand';
 import type { Look } from '../platform/looks';
 
@@ -124,4 +125,53 @@ export function setDiagram(patch: { variant?: DiagramVariant; palette?: Partial<
 export function resetDiagramPalette(): void {
   useDiagram.setState({ palette: {} });
   try { localStorage.setItem(KEY, JSON.stringify(useDiagram.getState())); } catch { /* kept for this session */ }
+}
+
+/** A texture's silhouette: white where its picture is opaque, the alpha kept, so a cut-out figure keeps its outline and takes the colour of its material. */
+const silhouettes = new WeakMap<THREE.Texture, THREE.Texture>();
+function silhouetteOf(t: THREE.Texture): THREE.Texture | null {
+  let s = silhouettes.get(t);
+  if (s) return s;
+  const img = t.image as (CanvasImageSource & { width?: number; height?: number }) | undefined;
+  if (!img || typeof document === 'undefined' || !img.width || !img.height) return null;
+  const cv = document.createElement('canvas');
+  cv.width = img.width; cv.height = img.height;
+  const g = cv.getContext('2d');
+  if (!g) return null;
+  g.drawImage(img, 0, 0);
+  g.globalCompositeOperation = 'source-in';
+  g.fillStyle = '#fff';
+  g.fillRect(0, 0, cv.width, cv.height);
+  s = new THREE.CanvasTexture(cv);
+  s.wrapS = t.wrapS; s.wrapT = t.wrapT; s.flipY = t.flipY; s.colorSpace = t.colorSpace;
+  silhouettes.set(t, s);
+  return s;
+}
+
+/**
+ * No textures in the diagram display: every standard material loses its colour picture (a terrain's orthophoto, a material's
+ * texture, an entourage figure's), so it takes its palette colour flat. A cut-out (alpha test, or see-through) keeps its
+ * outline through the picture's silhouette. Off, every material gets its own picture back, exactly. Safe to call again as
+ * the scene changes: it only touches materials not yet in the mode asked.
+ */
+export function flatTextures(root: THREE.Object3D, on: boolean): void {
+  root.traverse((o) => {
+    const mat = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
+    for (const m of Array.isArray(mat) ? mat : mat ? [mat] : []) {
+      const std = m as THREE.MeshStandardMaterial;
+      if (!std.isMeshStandardMaterial) continue;
+      const own = std.userData.diagramMap as { map: THREE.Texture } | undefined;
+      if (on && !own && std.map) {
+        const cut = std.alphaTest > 0 || std.transparent;
+        const flat = cut ? silhouetteOf(std.map) : null;
+        std.userData.diagramMap = { map: std.map };
+        std.map = flat;
+        std.needsUpdate = true;
+      } else if (!on && own) {
+        std.map = own.map;
+        delete std.userData.diagramMap;
+        std.needsUpdate = true;
+      }
+    }
+  });
 }
