@@ -3,6 +3,9 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  "Same class, in this view": "Samme klasse, i denne visning",
+  "Nothing of what this tool places is in this view.": "Intet af det, dette værktøj placerer, er i denne visning.",
+  "Select an element first: Select similar takes the others of its class and type.": "Vælg først et element: Vælg lignende tager de andre af dets klasse og type.",
   // IDS 1.0 checks (docs/ids.md).
   "Run the check": "Kør kontrollen",
   "IDS": "IDS",

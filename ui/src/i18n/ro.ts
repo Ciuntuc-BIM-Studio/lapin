@@ -1,6 +1,9 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  "Same class, in this view": "Aceeași clasă, în această vedere",
+  "Nothing of what this tool places is in this view.": "Nimic din ce pune această unealtă nu e în această vedere.",
+  "Select an element first: Select similar takes the others of its class and type.": "Selectează mai întâi un element: Selectează similare le ia pe celelalte din clasa și tipul lui.",
   // IDS 1.0 checks (docs/ids.md).
   "Run the check": "Rulează verificarea",
   "IDS": "IDS",

@@ -3,6 +3,9 @@
 import type { Language } from './index';
 
 export const PT: Record<string, string> = {
+  "Same class, in this view": "Mesma classe, nesta vista",
+  "Nothing of what this tool places is in this view.": "Nada do que esta ferramenta coloca está nesta vista.",
+  "Select an element first: Select similar takes the others of its class and type.": "Selecione primeiro um elemento: Selecionar semelhantes pega os outros da mesma classe e tipo.",
   // IDS 1.0 checks (docs/ids.md).
   "Run the check": "Executar a verificação",
   "IDS": "IDS",

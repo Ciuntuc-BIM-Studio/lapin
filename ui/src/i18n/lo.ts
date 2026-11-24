@@ -3,6 +3,9 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  "Same class, in this view": "ຄລາສດຽວກັນ, ໃນມຸມມອງນີ້",
+  "Nothing of what this tool places is in this view.": "ບໍ່ມີສິ່ງທີ່ເຄື່ອງມືນີ້ວາງຢູ່ໃນມຸມມອງນີ້.",
+  "Select an element first: Select similar takes the others of its class and type.": "ເລືອກອົງປະກອບກ່ອນ: ເລືອກທີ່ຄ້າຍກັນ ຈະເອົາອັນອື່ນທີ່ມີຄລາສ ແລະ ປະເພດດຽວກັນ.",
   // IDS 1.0 checks (docs/ids.md).
   "Run the check": "ເລີ່ມການກວດສອບ",
   "IDS": "IDS",

@@ -3,6 +3,9 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  "Same class, in this view": "同一类，在此视图中",
+  "Nothing of what this tool places is in this view.": "此视图中没有此工具放置的元素。",
+  "Select an element first: Select similar takes the others of its class and type.": "请先选择一个元素：选择相似会选取同类同类型的其他元素。",
   // IDS 1.0 checks (docs/ids.md).
   "Run the check": "运行检查",
   "IDS": "IDS",
