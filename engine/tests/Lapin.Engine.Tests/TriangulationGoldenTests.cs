@@ -95,6 +95,6 @@ public sealed class TriangulationGoldenTests
         Assert.Equal(string.Join(" ", Golden), string.Join(" ", ids.Select(id => Hash(f, id))));
     }
 
-    // The terrain's: its feature line crosses the lower hardscape and stops at its edge now (decision 812), the rest as before the move.
+    // The terrain's: its feature line crosses the lower hardscape and stops at its edge now (decision 814), the rest as before the move.
     static readonly string[] Golden = ["98CEF6F7AC190BE5", "88BC0FB3700E4363", "45EC1C6398C70CD9", "1DE14F7C52A63E04", "F6EA2D624EB253DD", "5437249887C1927B", "7AE8FB9AD106BA1D"];
 }
