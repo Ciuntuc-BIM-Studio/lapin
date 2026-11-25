@@ -426,7 +426,7 @@ function LoadsEditor({ values, readOnly, onChange, setProblem }: { values: Loads
         </tbody>
       </table>
 
-      <h4 className="eyebrow">γd by safety class</h4>
+      <h4 className="eyebrow" style={{ textTransform: 'none' }}>γd by safety class</h4>
       <table className="layer-table rules-table" data-testid="rules-safety-classes">
         <thead><tr><th>Safety class</th><th data-no-i18n>γd</th><th /></tr></thead>
         <tbody>
@@ -443,7 +443,7 @@ function LoadsEditor({ values, readOnly, onChange, setProblem }: { values: Loads
       </table>
       <p className="muted small">γd multiplies the unfavourable actions of the ultimate combinations of a project of this safety class; none: γd 1.</p>
 
-      <h4 className="eyebrow">ψ of snow by the site's s0,k</h4>
+      <h4 className="eyebrow" style={{ textTransform: 'none' }}>ψ of snow by the site's s0,k</h4>
       <table className="layer-table rules-table" data-testid="rules-snow-zones">
         <thead><tr><th>From s0,k</th><th data-no-i18n>ψ0 ψ1 ψ2</th><th /></tr></thead>
         <tbody>
