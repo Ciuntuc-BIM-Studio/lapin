@@ -22,6 +22,7 @@ import { LANGUAGES, setLang, useLang } from '../i18n';
 import { BunnyIcon } from '../icons';
 import { modules, productInfo, replacements } from '../platform/modules';
 import { lazyPart } from '../platform/lazyPart';
+import { openOnboarding } from '../app/onboarding';
 import { MenuSub } from './MenuSub';
 
 // Ask Lapin and its answers (help/faq.ts), fetched the first time it is opened.
@@ -140,6 +141,7 @@ export function HelpMenu() {
       {open && (
         <div className="menu-pop" role="menu">
           <button type="button" role="menuitem" onClick={() => { setOpen(false); setAsking(true); }}>Ask Lapin…<kbd>F1</kbd></button>
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); openOnboarding('role'); }}>Interactive missions…</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('guide'); }}>User guide</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); setReport(true); }}>Report an issue…</button>
           {hasKey && <button type="button" role="menuitem" onClick={() => { setOpen(false); setMessages(true); }}><span>Messages…</span>{unread > 0 && <span className="badge" data-no-i18n>{unread}</span>}</button>}

@@ -12942,6 +12942,16 @@ export const SV: Record<string, string> = {
   'Pick & create similar': 'Plocka och skapa liknande',
   'Select an element first, then press Alt+I (or CS) to place another of the same type.': 'Markera ett element först och tryck sedan på Alt+I (eller CS) för att placera ett annat av samma typ.',
   'X-Ray peek · release': 'Röntgenkika · släpp',
+  // Game-like UX Phase 2 (docs/plan-ux-game-like.md).
+  'Guided sandbox': 'Guidad sandlåda',
+  'Interactive missions…': 'Interaktiva uppdrag…',
+  'Radial menu': 'Radialmeny',
+  'Role mission': 'Rolluppdrag',
+  'Basics': 'Grunder',
+  'Try': 'Prova',
+  'Reset sandbox model': 'Återställ sandlådemodell',
+  'Missions': 'Uppdrag',
+  'Drag left/right to adjust · Shift: fine · Ctrl: coarse': 'Dra vänster/höger för att justera · Shift: fin · Ctrl: grov',
 };
 
 /** Phrases with a number or a name in them. */

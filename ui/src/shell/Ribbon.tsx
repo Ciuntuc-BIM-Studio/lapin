@@ -25,6 +25,7 @@ import { MY_TAB } from '../app/myTools';
 import { MyToolsBand, toolDragProps, toolMenu } from './MyToolsBand';
 import { pressTool } from './pulldown';
 import { bindingText, hint, useBindings } from '../app/commands';
+import { recordToolClick } from '../app/microTips';
 import type { FileAction, RibbonTabDef, ToolDef } from '../platform/module';
 
 /**
@@ -159,7 +160,13 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
   // A group shown only while something holds (`shown`): drawn again when the preferences change (Developer extras).
   usePrefs();
   const tab = { ...all, groups: all.groups.filter((g) => g.shown?.() ?? true) };
-  const press = (tl: ToolDef, el?: HTMLElement) => { pressTool(tl, el); if (!tl.items?.length) onPicked?.(); };
+  const press = (tl: ToolDef, el?: HTMLElement) => {
+    pressTool(tl, el);
+    if (!tl.items?.length) {
+      recordToolClick(tl.id, tl.label, bindingText(tl.id).split(', ')[0] || tl.shortcut);
+      onPicked?.();
+    }
+  };
   // A pulldown is lit while one of its tools is on, and marked by its arrow.
   const on = (tl: ToolDef) => tool === tl.id || !!tl.items?.some((x) => x.id === tool);
   const mark = (tl: ToolDef, size: number) => (tl.items?.length ? <ChevronDown className="pulldown-mark" size={size} strokeWidth={2} aria-hidden /> : null);

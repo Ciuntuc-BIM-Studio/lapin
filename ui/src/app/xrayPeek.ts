@@ -14,6 +14,7 @@ import { useCad } from '../viewport/cad/session';
 import { useLive } from '../viewport/liveInput';
 import { valueOwner } from './valueOwner';
 import { useWalk } from '../viewport/walk';
+import { noteMissionEvent } from './onboarding';
 
 export const XRAY_PEEK_HOLD_MS = 200;
 
@@ -55,6 +56,7 @@ export function beginXrayPeek(): boolean {
   if (cad.buffer.trim().toLowerCase() === 'x') useCad.setState({ buffer: '' });
   useXrayPeek.setState({ active: true, prev: ui.visualStyle });
   useUi.setState({ visualStyle: 'xray' });
+  noteMissionEvent('xrayPeek');
   return true;
 }
 

@@ -12944,6 +12944,16 @@ export const EL: Record<string, string> = {
   'Pick & create similar': 'Επιλογή & δημιουργία παρόμοιου',
   'Select an element first, then press Alt+I (or CS) to place another of the same type.': 'Επίλεξε πρώτα ένα στοιχείο και μετά πάτησε Alt+I (ή CS) για να τοποθετήσεις άλλο ίδιου τύπου.',
   'X-Ray peek · release': 'Ματιά X-Ray · άφησε',
+  // Game-like UX Phase 2 (docs/plan-ux-game-like.md).
+  'Guided sandbox': 'Καθοδηγούμενο sandbox',
+  'Interactive missions…': 'Διαδραστικές αποστολές…',
+  'Radial menu': 'Ακτινικό μενού',
+  'Role mission': 'Αποστολή ρόλου',
+  'Basics': 'Βασικά',
+  'Try': 'Δοκιμή',
+  'Reset sandbox model': 'Επαναφορά μοντέλου sandbox',
+  'Missions': 'Αποστολές',
+  'Drag left/right to adjust · Shift: fine · Ctrl: coarse': 'Σύρε αριστερά/δεξιά για προσαρμογή · Shift: λεπτό · Ctrl: μεγάλο βήμα',
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

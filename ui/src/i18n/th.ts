@@ -12942,6 +12942,16 @@ export const TH: Record<string, string> = {
   'Pick & create similar': 'ดูดและสร้างแบบเดียวกัน',
   'Select an element first, then press Alt+I (or CS) to place another of the same type.': 'เลือกองค์ประกอบก่อน แล้วกด Alt+I (หรือ CS) เพื่อวางชิ้นใหม่ประเภทเดียวกัน.',
   'X-Ray peek · release': 'มองทะลุ X-Ray · ปล่อย',
+  // Game-like UX Phase 2 (docs/plan-ux-game-like.md).
+  'Guided sandbox': 'แซนด์บ็อกซ์แบบมีคำแนะนำ',
+  'Interactive missions…': 'ภารกิจแบบโต้ตอบ…',
+  'Radial menu': 'เมนูวงกลม',
+  'Role mission': 'ภารกิจตามบทบาท',
+  'Basics': 'พื้นฐาน',
+  'Try': 'ลอง',
+  'Reset sandbox model': 'รีเซ็ตโมเดลแซนด์บ็อกซ์',
+  'Missions': 'ภารกิจ',
+  'Drag left/right to adjust · Shift: fine · Ctrl: coarse': 'ลากซ้าย/ขวาเพื่อปรับ · Shift: ละเอียด · Ctrl: หยาบ',
 };
 
 /** Phrases with a number or a name in them. */

@@ -6879,6 +6879,16 @@ export const LO: Record<string, string> = {
   'Pick & create similar': 'ເລືອກ ແລະ ສ້າງແບບດຽວກັນ',
   'Select an element first, then press Alt+I (or CS) to place another of the same type.': 'ເລືອກອົງປະກອບກ່ອນ ແລ້ວກົດ Alt+I (ຫຼື CS) ເພື່ອວາງອັນອື່ນປະເພດດຽວກັນ.',
   'X-Ray peek · release': 'ເບິ່ງທະລຸ X-Ray · ປ່ອຍ',
+  // Game-like UX Phase 2 (docs/plan-ux-game-like.md).
+  'Guided sandbox': 'ແຊນບັອກແບບມີຄຳແນະນຳ',
+  'Interactive missions…': 'ພາລະກິດແບບໂຕ້ຕອບ…',
+  'Radial menu': 'ເມນູວົງກົມ',
+  'Role mission': 'ພາລະກິດຕາມບົດບາດ',
+  'Basics': 'ພື້ນຖານ',
+  'Try': 'ລອງ',
+  'Reset sandbox model': 'ຣີເຊັດໂມເດວແຊນບັອກ',
+  'Missions': 'ພາລະກິດ',
+  'Drag left/right to adjust · Shift: fine · Ctrl: coarse': 'ລາກຊ້າຍ/ຂວາເພື່ອປັບ · Shift: ລະອຽດ · Ctrl: ຫຍາບ',
 };
 
 /** Phrases with a number or a name in them. */
