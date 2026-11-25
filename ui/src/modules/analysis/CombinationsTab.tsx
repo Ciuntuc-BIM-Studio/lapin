@@ -6,7 +6,7 @@ import { execute, useSession } from '../../engine/session';
 import { t, useLang } from '../../i18n';
 import { Field } from './ChecksSection';
 import {
-  addCombinationArgs, boundedOrNull, COMBINATION_KINDS, COMBINATION_KIND_LABEL, combinationName, FACTOR_SET_LABEL, factorsPayload, factorTexts, formatFactor,
+  addCombinationArgs, boundedOrNull, COMBINATION_KINDS, COMBINATION_KIND_LABEL, combinationName, factorSetOptions, factorsPayload, factorTexts, formatFactor,
   GAMMA_RANGES, groupCombinations, PSI_CATEGORIES, psiFrom,
   type CombinationDto, type CombinationKind, type CombinationOptionsDto, type CombinationsDto, type FactorSet, type LoadCaseDto,
 } from './loads';
@@ -51,9 +51,18 @@ function FactorsSection({ o }: { o: CombinationOptionsDto }) {
         <label className="row small" title="The partial factors γ and the combination factors ψ the combinations use: the project's choice, indicative values">
           <span>Set of factors</span>
           <select aria-label="Set of factors" data-testid="combo-set" value={o.set} onChange={(e) => setOptions({ set: e.target.value as FactorSet })}>
-            {(['cr0', 'en'] as FactorSet[]).map((k) => <option key={k} value={k}>{FACTOR_SET_LABEL[k]}</option>)}
+            {factorSetOptions(o.sets).map((x) => <option key={x.key} value={x.key} data-no-i18n={x.ours ? undefined : true}>{x.label}</option>)}
           </select>
         </label>
+        {Object.keys(o.sets[o.set]?.safetyClasses ?? {}).length > 0 && (
+          <label className="row small" title="γd of the class multiplies the unfavourable actions of the ultimate combinations (the rules' Loads give it)">
+            <span>Safety class</span>
+            <select aria-label="Safety class" data-testid="combo-safety-class" value={o.safetyClass ?? ''} onChange={(e) => setOptions({ safetyClass: e.target.value || null })}>
+              <option value="">None (γd 1)</option>
+              {Object.entries(o.sets[o.set]!.safetyClasses!).map(([k, g]) => <option key={k} value={k} data-no-i18n>{`${k} (γd ${formatFactor(g)})`}</option>)}
+            </select>
+          </label>
+        )}
         {gammas.map(([key, label, title]) => {
           const own = o.own[key];
           return (

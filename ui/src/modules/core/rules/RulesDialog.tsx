@@ -18,11 +18,16 @@ import { FirmFolderFiles } from '../FirmFolderFiles';
 import { PendingDialog } from '../PendingDialog';
 import { importLibraryText } from '../../../platform/ImportPreview';
 import {
+  BUILTIN_LOAD_SETS, LOAD_SET_FIELDS, addLoadSet, addSnowZone, languageFrom, loadSetProblem, removeLoadSet, removeSafetyClass, removeSnowZone, setLoadSet, setPsi,
+  setSafetyClass, setSnowZone, sourcesFrom, type LoadSet, type LoadsSection,
+} from './rulesModel';
+import {
   BUILTIN_SETS, STAIR_FIELDS, addGrade, removeGrade, renameGrade, addStairSet, addStep, diametersText, findingsByModule, parseDiameters, removeStairSet, removeStep, removeSteel, addSteel,
   setPitch, setStairValue, setStep, stairProblem, stepsProblem, type Finding, type RulePack, type RulesList, type Section, type Step,
 } from './rulesModel';
 
-const SECTION_LABELS: Record<string, string> = { stairs: 'Stairs', rebar: 'Reinforcement', roofs: 'Roofs', bolts: 'Bolts' };
+const SECTION_LABELS: Record<string, string> = { stairs: 'Stairs', rebar: 'Reinforcement', roofs: 'Roofs', bolts: 'Bolts', loads: 'Loads' };
+const EDITED = ['stairs', 'rebar', 'roofs', 'bolts', 'loads'];
 
 export function RulesDialog() {
   const version = useSession((s) => s.version);
@@ -114,6 +119,7 @@ export function RulesDialog() {
                 <input key={item.id + item.name} data-field="rules-name" defaultValue={item.name} onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== item.name) void execute2('rules.update', { id: item.id, name: v }); }} /></label>}
             {!readOnly && <label className="field-line"><span className="eyebrow">Description</span>
               <input key={item.id + (item.description ?? '')} data-field="rules-description" defaultValue={item.description ?? ''} onBlur={(e) => { const v = e.target.value.trim(); if (v !== (item.description ?? '')) void execute2('rules.update', { id: item.id, description: v }); }} /></label>}
+            {!readOnly && <PackMetaFields item={item} setProblem={setProblem} />}
             <div className="row wrap">
               {!item.active && <button type="button" className="btn primary" data-field="rules-use" title="The project's configurators read this pack" onClick={() => void run('rules.setActive', { id: item.id })}><Check size={13} />Use in this project</button>}
               {item.active && <span className="chip">In use</span>}
@@ -134,7 +140,8 @@ export function RulesDialog() {
             {section === 'rebar' && pack.sections.rebar && <RebarEditor values={pack.sections.rebar} readOnly={readOnly} onChange={(v) => void update('rebar', v)} setProblem={setProblem} />}
             {section === 'roofs' && pack.sections.roofs && <RoofsEditor values={pack.sections.roofs} readOnly={readOnly} onChange={(v) => void update('roofs', v)} />}
             {section === 'bolts' && pack.sections.bolts && <BoltsEditor values={pack.sections.bolts} readOnly={readOnly} onChange={(v) => void update('bolts', v)} setProblem={setProblem} />}
-            {!['stairs', 'rebar', 'roofs', 'bolts'].includes(section) && <p className="muted small">This section has no table here: it comes and goes with the pack's file.</p>}
+            {section === 'loads' && pack.sections.loads && <LoadsEditor values={pack.sections.loads as unknown as LoadsSection} readOnly={readOnly} onChange={(v) => void update('loads', v as unknown as Section)} setProblem={setProblem} />}
+            {!EDITED.includes(section) && <p className="muted small">This section has no table here: it comes and goes with the pack's file.</p>}
           </main>
         </div>
       </div>
@@ -325,6 +332,153 @@ function BoltsEditor({ values, readOnly, onChange, setProblem }: { values: Secti
         <button type="button" className="icon" title="Add the grade" disabled={!grade.trim()} onClick={add}><Plus size={13} /></button>
       </div>}
       <p className="muted small">These are the grades a steel connection can be given, in its properties and in the hall's connections.</p>
+    </div>
+  );
+}
+
+// ─── What the pack says of itself ────────────────────────────────────────────
+
+/** The country, the edition of the rules, the language and the sources of a pack of the project's (docs/plan-national-packs.md). */
+function PackMetaFields({ item, setProblem }: { item: { id: string; meta?: { country?: string; edition?: string; language?: string; sources?: string[] } }; setProblem: (p: string | null) => void }) {
+  const meta = item.meta ?? {};
+  const put = (key: 'country' | 'edition' | 'language', had: string | undefined) => (e: React.FocusEvent<HTMLInputElement>) => {
+    const v = e.target.value.trim();
+    if (v === (had ?? '')) return;
+    if (key === 'language' && languageFrom(v) === null) { setProblem('The language is a two-letter code (sv, ro, en).'); return; }
+    void execute2('rules.update', { id: item.id, [key]: v });
+  };
+  const sources = (meta.sources ?? []).join('\n');
+  return (
+    <div className="row wrap" data-testid="rules-meta">
+      <label className="field-line"><span className="eyebrow">Country</span>
+        <input key={item.id + (meta.country ?? '')} data-field="rules-country" defaultValue={meta.country ?? ''} placeholder="SE" onBlur={put('country', meta.country)} /></label>
+      <label className="field-line"><span className="eyebrow">Edition of the rules</span>
+        <input key={item.id + (meta.edition ?? '')} data-field="rules-edition" defaultValue={meta.edition ?? ''} title="The edition the values were read from: rules change, so a pack names the one it follows" onBlur={put('edition', meta.edition)} /></label>
+      <label className="field-line"><span className="eyebrow">Language</span>
+        <input key={item.id + (meta.language ?? '')} data-field="rules-language" defaultValue={meta.language ?? ''} placeholder="sv" style={{ width: 60 }} onBlur={put('language', meta.language)} /></label>
+      <label className="field-line grow"><span className="eyebrow">Sources, one a line</span>
+        <textarea key={item.id + sources} data-field="rules-sources" rows={2} defaultValue={sources}
+          onBlur={(e) => { const next = sourcesFrom(e.target.value); if (next.join('\n') !== sources) void execute2('rules.update', { id: item.id, sources: next }); }} /></label>
+    </div>
+  );
+}
+
+// ─── Loads ───────────────────────────────────────────────────────────────────
+
+/** A ψ0, ψ1, ψ2 triple as three fields. */
+function PsiFields({ psi, readOnly, onChange, test }: { psi: Record<'0' | '1' | '2', number>; readOnly: boolean; onChange: (i: 0 | 1 | 2, v: number) => void; test: string }) {
+  return (
+    <span className="row">
+      {([0, 1, 2] as const).map((i) => (
+        <span key={i} data-rule={`${test}.${i}`}><NumberField value={psi[String(i) as '0']} readOnly={readOnly} min={0} max={1} onCommit={(n) => { if (n != null) onChange(i, n); }} /></span>
+      ))}
+    </span>
+  );
+}
+
+/**
+ * The loads of a pack (docs/plan-national-packs.md N1): its factor sets (γ, the expression and ξ, γd by safety class, ψ of snow by
+ * the site's s0,k, ψ by category) and the imposed loads. A project chooses its set and safety class in Loads → Combinations.
+ */
+function LoadsEditor({ values, readOnly, onChange, setProblem }: { values: LoadsSection; readOnly: boolean; onChange: (s: LoadsSection) => void; setProblem: (p: string | null) => void }) {
+  const names = Object.keys(values.sets ?? {});
+  const [chosen, setChosen] = useState(names[0] ?? 'en');
+  const [newSet, setNewSet] = useState('');
+  const [newClass, setNewClass] = useState('');
+  const name = names.includes(chosen) ? chosen : names[0]!;
+  const set = values.sets[name];
+  if (!set) return null;
+  const put = (next: LoadSet | null) => {
+    if (!next) { setProblem('A safety class needs a name, and its γd is between 0.5 and 1.5.'); return; }
+    const p = loadSetProblem(next);
+    if (p) { setProblem(`${name}: ${p}.`); return; }
+    onChange(setLoadSet(values, name, next));
+  };
+  const categories = Object.keys(set.psi);
+  return (
+    <div data-testid="rules-loads">
+      <div className="row wrap">
+        {names.map((n) => (
+          <span key={n} className={`chip${n === name ? ' on' : ''}`}>
+            <button type="button" className="link-button" data-load-set={n} onClick={() => setChosen(n)} data-no-i18n>{n}</button>
+            {!readOnly && !BUILTIN_LOAD_SETS.includes(n) && <button type="button" className="icon mini" title="Remove this set" onClick={() => onChange(removeLoadSet(values, n))}><X size={10} /></button>}
+          </span>
+        ))}
+        {!readOnly && <>
+          <input placeholder="New set's name" value={newSet} data-field="rules-new-load-set" onChange={(e) => setNewSet(e.target.value)} />
+          <button type="button" className="btn small" disabled={!newSet.trim()} data-field="rules-add-load-set" title="A set of your own, started from the one shown"
+            onClick={() => { const n = addLoadSet(values, newSet, name); if (n) { onChange(n); setChosen(newSet.trim()); setNewSet(''); } else setProblem('That set exists already, or its name is too long.'); }}><Plus size={12} />Set</button>
+        </>}
+      </div>
+      <label className="field-line"><span className="eyebrow">Label</span>
+        <input key={name + set.label} data-field="rules-load-label" defaultValue={set.label} readOnly={readOnly} data-no-i18n
+          onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== set.label) put({ ...set, label: v }); }} /></label>
+      <table className="layer-table rules-table" data-testid="rules-load-factors">
+        <tbody>
+          {LOAD_SET_FIELDS.map((f) => (
+            <tr key={f.key}><td data-no-i18n>{f.label}</td>
+              <td data-rule={`loads.${name}.${f.key}`}><NumberField value={set[f.key]} readOnly={readOnly} min={f.min} max={f.max} onCommit={(n) => { if (n != null) put({ ...set, [f.key]: n }); }} /></td></tr>
+          ))}
+          <tr><td>Expression</td>
+            <td><select value={set.expression} disabled={readOnly} data-field="rules-load-expression" onChange={(e) => put({ ...set, expression: e.target.value as LoadSet['expression'] })}>
+              <option value="6.10" data-no-i18n>6.10</option><option value="6.10ab">6.10a and 6.10b</option>
+            </select></td></tr>
+        </tbody>
+      </table>
+
+      <h4 className="eyebrow">γd by safety class</h4>
+      <table className="layer-table rules-table" data-testid="rules-safety-classes">
+        <thead><tr><th>Safety class</th><th data-no-i18n>γd</th><th /></tr></thead>
+        <tbody>
+          {Object.entries(set.safetyClasses).map(([c, g]) => (
+            <tr key={c}><td data-no-i18n>{c}</td>
+              <td data-rule={`loads.${name}.class.${c}`}><NumberField value={g} readOnly={readOnly} min={0.5} max={1.5} onCommit={(n) => { if (n != null) put(setSafetyClass(set, c, n)); }} /></td>
+              <td>{!readOnly && <button type="button" className="icon mini" title="Remove this class" onClick={() => put(removeSafetyClass(set, c))}><X size={11} /></button>}</td></tr>
+          ))}
+        </tbody>
+        {!readOnly && <tfoot><tr><td colSpan={3}><span className="row">
+          <input placeholder="Class" value={newClass} style={{ width: 80 }} data-field="rules-new-class" onChange={(e) => setNewClass(e.target.value)} />
+          <button type="button" className="btn small" disabled={!newClass.trim()} data-field="rules-add-class" onClick={() => { put(setSafetyClass(set, newClass, 1)); setNewClass(''); }}><Plus size={12} />Class</button>
+        </span></td></tr></tfoot>}
+      </table>
+      <p className="muted small">γd multiplies the unfavourable actions of the ultimate combinations of a project of this safety class; none: γd 1.</p>
+
+      <h4 className="eyebrow">ψ of snow by the site's s0,k</h4>
+      <table className="layer-table rules-table" data-testid="rules-snow-zones">
+        <thead><tr><th>From s0,k</th><th data-no-i18n>ψ0 ψ1 ψ2</th><th /></tr></thead>
+        <tbody>
+          {set.snowPsi.map((z, i) => (
+            <tr key={i}>
+              <td><NumberField value={z.from} suffix="kN/m²" readOnly={readOnly} min={0} max={20} onCommit={(n) => { if (n != null) put(setSnowZone(set, i, { from: n })); }} /></td>
+              <td><PsiFields psi={z.psi} readOnly={readOnly} test={`loads.${name}.snow.${i}`} onChange={(k, v) => put(setSnowZone(set, i, { psi: { ...z.psi, [String(k)]: v } }))} /></td>
+              <td>{!readOnly && <button type="button" className="icon mini" title="Remove this zone" onClick={() => put(removeSnowZone(set, i))}><X size={11} /></button>}</td>
+            </tr>
+          ))}
+        </tbody>
+        {!readOnly && <tfoot><tr><td colSpan={3}><button type="button" className="btn small" data-field="rules-add-snow-zone" onClick={() => put(addSnowZone(set))}><Plus size={12} />Zone</button></td></tr></tfoot>}
+      </table>
+      <p className="muted small">No zone: ψ of snow is the table's. With zones, a site's s0,k (Loads → Snow and wind) takes the last zone it reaches.</p>
+
+      <details className="small" data-testid="rules-load-psi">
+        <summary>ψ by category</summary>
+        <table className="layer-table rules-table">
+          <thead><tr><th>Category</th><th data-no-i18n>ψ0 ψ1 ψ2</th></tr></thead>
+          <tbody>{categories.map((c) => (
+            <tr key={c}><td data-no-i18n>{c}</td><td><PsiFields psi={set.psi[c]!} readOnly={readOnly} test={`loads.${name}.psi.${c}`} onChange={(i, v) => put(setPsi(set, c, i, v))} /></td></tr>
+          ))}</tbody>
+        </table>
+      </details>
+
+      <details className="small" data-testid="rules-imposed">
+        <summary>Imposed loads, qk</summary>
+        <table className="layer-table rules-table">
+          <thead><tr><th>Category</th><th data-no-i18n>qk</th></tr></thead>
+          <tbody>{Object.entries(values.imposed ?? {}).map(([c, q]) => (
+            <tr key={c}><td data-no-i18n>{c}</td><td data-rule={`loads.imposed.${c}`}><NumberField value={q} suffix="kN/m²" readOnly={readOnly} min={0} max={1000} onCommit={(n) => { if (n != null) onChange({ ...values, imposed: { ...values.imposed, [c]: n } }); }} /></td></tr>
+          ))}</tbody>
+        </table>
+      </details>
+      <p className="muted small">A project picks its set and safety class in Loads → Combinations. The values are yours, typed from the edition in force; Lapin's are indicative.</p>
     </div>
   );
 }
