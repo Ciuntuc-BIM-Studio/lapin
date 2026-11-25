@@ -3,7 +3,7 @@
 Asked on 25.11.2026 in in-app report #190 (a French user: real altitudes such as 650.00 m, with the project's zero tied to an altitude, for connection sections in permit filings).
 
 **Order: 3 of 6** (angle lock, structural usage, level datums, leaning walls, national packs, 3D mouse).
-**Status: done (S1–S6), branch `feat/level-datums`, 25.11.2026.** What is left is at the end.
+**Status: done (S1–S6), branch `feat/level-datums`, 25.11.2026; the leftovers (schedule level columns, a spot level's own datum, the elevation legend by the view) on branch `feat/leftovers-datum-structural`, 25.11.2026.** What is left is at the end.
 
 ## What exists today
 
@@ -72,10 +72,13 @@ The user accepted every recommendation:
 
 Built as designed: `LevelDatum` (`Lapin.Platform/LevelDatums.cs`) with `project.levelDatum`, `view.levelDatum` (a view, or every view on a sheet) and a level dimension's `datum`; the `levels` notation domain with the FR, RO and DE presets; every `FormatLevel` call site rerouted, with a test that fails on a new one; contours at round altitudes in absolute views (`TerrainContoursInView`); the survey import taking the terrain's datum; the datum warning with its button in Manage → Location → Levels; IFC `ElevationOfRefHeight` and the intent round trip; the UI (Location's Levels block, the view's Levels, the sheet's Levels in its views, the level dimension's Written as); strings in every language; the guide (levels.md, site.md, EN and RO) and the scene `level-datums`.
 
+Done after (25.11.2026, branch `feat/leftovers-datum-structural`):
+- A field schedule's column takes a level format (`level`: project, relative, absolute or both; none writes its number as before): its values written by the resolver, listed, never added up in the totals line. Documents keep `storey.altitude` and `storey.level`.
+- A Civil spot level says its own datum over the view's (`[x, y, datum]` in the terrain's `spots`; `civil.addSpot {datum}`, `civil.setSpotDatum {id, index | all, datum}`, one undo step); a split or a merge carries it with its spot. The terrain's properties set it for all its spot levels (**Written as**).
+- The elevation analysis legend (`civil.analysis {viewId}`) writes its levels as that view's datum does, the project's without a view.
+- Golden tests: with nothing set, a plain column, the spot levels and the legend write exactly what they wrote (`LevelDatumTests`).
+
 Left:
-- Schedules have no level columns yet, so there is no column format; documents have `storey.altitude` and `storey.level`.
-- Civil spot levels follow the view; they have no `datum` of their own (only the level dimension has).
-- The elevation analysis legend follows the project's datum, not the view's.
 - The guide's other language folders (da, de, es, fr, it, lo, pl, pt) lag behind the English and were not updated.
 - Point clouds aligned to the survey point's elevation, as planned for later.
 

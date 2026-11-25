@@ -18,6 +18,9 @@ import {
   AGGREGATES, AGGREGATE_LABELS, DIMENSIONS, UNITS, cleanOptions, fieldValues, moved, partSources, shortToken, sortOf,
   type Condition, type FieldColumn, type FieldGroupDef, type FieldOptions, type PartSource,
 } from '../../shell/fieldSchedule';
+import { VIEW_LEVEL_MODES } from '../../shell/levelDatum';
+
+const LEVEL_TIP = 'Its values are levels, written as the drawings write them: as the project\'s, relative to ±0.00, as altitudes or both';
 
 /** Chips and a box that adds what is typed (or picked from the project's values). */
 function Chips({ list, onChange, suggest, label, testId }: { list: string[]; onChange: (l: string[]) => void; suggest: string[]; label: string; testId: string }) {
@@ -130,6 +133,11 @@ export function FieldScheduleDialog() {
                   <input list="fs-units" className="fs-unit" value={c.unit ?? ''} placeholder="Unit" aria-label="Unit" onChange={(e) => setColumn(i, { unit: e.target.value })} />
                   <NumberField min={0} max={9} integer blank className="fs-decimals" value={c.decimals} placeholder="Dec." title="Decimals" onCommit={(v) => setColumn(i, { decimals: v ?? undefined })} />
                   <input className="fs-format" value={c.format ?? ''} placeholder="Format" aria-label="Format" title="A number format instead of the decimals: 0.## at most two, 0.00 always two" onChange={(e) => setColumn(i, { format: e.target.value || undefined })} />
+                  {/* Levels as the drawings write them (decision 867): the project's datum, relative, altitudes or both. */}
+                  <select className="fs-level" data-testid={`fs-col-level-${i}`} value={c.level ?? ''} aria-label="Level" title={LEVEL_TIP} onChange={(e) => setColumn(i, { level: (e.target.value || undefined) as FieldColumn['level'] })}>
+                    <option value="">not a level</option><option value="project">as the project's</option>
+                    {VIEW_LEVEL_MODES.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+                  </select>
                   <Order i={i} n={columns.length} on={(by) => setO({ ...o, columns: moved(columns, i, by) })} />
                   <button type="button" className="icon mini" title="Remove" onClick={() => setO({ ...o, columns: columns.filter((_, j) => j !== i) })}><Trash2 size={12} /></button>
                 </div>

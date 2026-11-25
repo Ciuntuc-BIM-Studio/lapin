@@ -6934,6 +6934,8 @@ export const LO: Record<string, string> = {
   "Relative level": "ລະດັບທຽບ",
   "Altitude": "ລະດັບສູງ",
   "Level and altitude": "ລະດັບ ແລະ ລະດັບສູງ",
+  "not a level": "ບໍ່ແມ່ນລະດັບ",
+  "Its values are levels, written as the drawings write them: as the project's, relative to ±0.00, as altitudes or both": "ຄ່າຂອງມັນແມ່ນລະດັບ, ຂຽນຕາມທີ່ແບບແຕ້ມຂຽນ: ຕາມໂຄງການ, ທຽບກັບ ±0.00, ເປັນລະດັບສູງ ຫຼື ທັງສອງ",
   "Tie note": "ໝາຍເຫດການຜູກ",
   "Zero sign": "ເຄື່ອງໝາຍສູນ",
   "Plus sign": "ເຄື່ອງໝາຍບວກ",

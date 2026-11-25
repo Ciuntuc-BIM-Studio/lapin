@@ -3,7 +3,7 @@
 Asked on 25.11.2026 in forum topic 256 (Victor1: how to tell structural from architectural walls, columns and beams; in Revit there are tabs for both and a Structural Usage tick in the properties).
 
 **Order: 2 of 6** (angle lock, structural usage, level datums, leaning walls, national packs, 3D mouse).
-**Status: done, stages U1–U3 (25.11.2026, decision 866); U4 (one unified default rule) left.** The type dialogs got no tick of their own: the properties' "Type structural" row sets it on the elements' type (and a type selected shows the tick itself).
+**Status: done, stages U1–U3 (25.11.2026, decision 866); the type dialogs' tick done (25.11.2026, branch `feat/leftovers-datum-structural`); U4 (one unified default rule) left on purpose.** Wall types, Floor types and Structure types show **Structural (load-bearing)** under the type's mark, writing the type's attribute through `element.setStructural {ids: [type], onType}` (one undo step; saving the type keeps it). U4 is left because no single rule keeps every consumer's results for unsaid elements: an unsaid thin wall that is no partition bears load in the views (decisions 500/502) and stays out of the analysis (a core under 10 cm); one rule would change one of them for models that say nothing (`StructuralUsageTests.U4_…`). It needs the user to accept a change of defaults (and, if stored, an `IProjectUpgrade` writing the old answer on existing walls).
 
 ## What exists today
 
@@ -64,7 +64,7 @@ Four rules that disagree:
 | U1 | Resolver, command, properties tick, export, tests | M |
 | U2 | Ribbon presets, view filter field, preset and discipline, schedules | M |
 | U3 | Analysis honours an explicit false on every class; notes, FAQ, guide (structure.md, walls.md, EN and RO), scene `structural-usage` | S |
-| U4 | Optional: one unified default rule | S |
+| U4 | Optional: one unified default rule (left: it changes the views' or the analysis' default for unsaid thin walls) | S |
 
 ## The user's answers (25.11.2026)
 

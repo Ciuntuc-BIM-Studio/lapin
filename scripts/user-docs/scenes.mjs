@@ -6343,6 +6343,12 @@ export const scenes = [
       await t.wait(800);
       await t.shot('structural-usage-plan', { of: '[data-testid=plan]', pad: 0 });
       await t.ui({ planViewId: null });
+      // The tick in a type dialog: on the wall type itself, one undo step (half-ticked while the rule decides).
+      await t.ui({ dialog: 'wallTypes' });
+      await t.page.waitForSelector('[data-testid=type-structural]', { timeout: 10_000 });
+      await t.page.locator('[data-action=type-structural]').click();
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'IfcWallType' && n.props.loadBearing === true), 'the Wall types tick sets the type structural');
+      await t.ui({ dialog: null });
     },
   },
   {
@@ -8149,6 +8155,14 @@ export const scenes = [
       await t.fit();
       await t.wait(1200);
       await t.shot('level-datum-site', { of: '[data-testid=plan]', pad: 0 });
+      // A spot level written as an altitude over a relative view: its terrain's Written as.
+      await t.cmd('project.levelDatum', { mode: null });
+      await t.cmd('civil.addSpot', { id: made.id, x: 20, y: 15 });
+      await t.cmd('civil.setSpotDatum', { id: made.id, all: true, datum: 'absolute' });
+      await select(t, made.id);
+      await t.until(async () => (await page.locator('[data-field=spot-level-datum]').count()) === 1, 'the terrain\'s properties offer the spot levels\' Written as');
+      t.expect(await page.locator('[data-field=spot-level-datum]').inputValue() === 'absolute', 'the spot levels are written as altitudes');
+      await t.ui({ selection: null, selected: [] });
       // A section across the house: both, +0.00 (+650.37).
       await t.cmd('project.levelDatum', { mode: 'both' });
       const view = (await t.cmd('view.create', { kind: 'section', start: [16, 4], end: [16, 22], name: 'Section A' })).id;

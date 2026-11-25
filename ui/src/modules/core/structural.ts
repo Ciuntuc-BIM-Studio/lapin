@@ -45,6 +45,12 @@ export const byRule = (row: StructuralRow) => row.said == null;
 /** The tick's next value from a click: said true or false; `null` goes back to the rule. */
 export const setArgs = (ids: string[], value: boolean | null, onType = false) => ({ ids, value, ...(onType ? { onType: true } : {}) });
 
+/** A type's own tick as its dialog shows it: 'rule' while the type says nothing (its attribute `loadBearing`), else yes or no. */
+export const typeTick = (value: unknown): 'rule' | 'yes' | 'no' => (value === true ? 'yes' : value === false ? 'no' : 'rule');
+
+/** The value a click on a type's tick sends: structural from the rule or from no, not structural from yes. */
+export const typeTickNext = (tick: 'rule' | 'yes' | 'no'): boolean => tick !== 'yes';
+
 /** Modify → Structural and Not structural: the tick on the selection's elements that may bear load. */
 export async function markSelection(value: boolean): Promise<void> {
   const nodes = useSession.getState().nodes;

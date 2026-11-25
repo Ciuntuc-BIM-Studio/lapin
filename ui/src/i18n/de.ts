@@ -6838,6 +6838,8 @@ export const DE: Record<string, string> = {
   "Relative level": "Relative Höhe",
   "Altitude": "Absolute Höhe",
   "Level and altitude": "Höhe und absolute Höhe",
+  "not a level": "keine Höhe",
+  "Its values are levels, written as the drawings write them: as the project's, relative to ±0.00, as altitudes or both": "Ihre Werte sind Höhen, geschrieben wie die Zeichnungen sie schreiben: wie im Projekt, relativ zu ±0.00, als absolute Höhen oder beides",
   "Tie note": "Bezugsvermerk",
   "Zero sign": "Nullzeichen",
   "Plus sign": "Pluszeichen",

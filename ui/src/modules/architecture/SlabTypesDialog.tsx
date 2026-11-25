@@ -24,6 +24,7 @@ import { TypeListActions, endsOf } from '../../shell/TypeListActions';
 import { BeamBlockFields } from './BeamBlockFields';
 import { BEAM_BLOCK_DEFAULT, beamBlockDepth, beamBlockOf, withCoreDepth, type BeamBlockSpec } from './beamBlock';
 import { TypeMarkField } from '../core/MarkField';
+import { TypeStructuralField } from '../core/StructuralSection';
 import { typeToEdit } from '../../shell/typeToEdit';
 
 /** A layer as the editor holds it: the thickness in metres; its priority (null: its material's, else 50 for the core and 0 for the rest) and category (null: its material's). */
@@ -99,6 +100,8 @@ export function SlabTypesDialog() {
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its core and thickness)" onChange={(e) => setName(e.target.value)} /></label>
             {/* The type's mark (forum topic 177), as a door's or window's type has it. */}
             <TypeMarkField typeId={editing} />
+            {/* The Structural tick on the type (docs/plan-structural-usage.md): its elements that say nothing take it. */}
+            <TypeStructuralField typeId={editing} />
             {/* Duplicate, and the type's place in every list of floor types (forum #71). */}
             <TypeListActions id={editing} onDuplicated={setEditing} {...endsOf(types, editing)} />
             <label className="field-line"><span className="eyebrow">Kind</span>

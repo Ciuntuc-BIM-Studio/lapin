@@ -38,7 +38,9 @@ The altitude is always the base point's elevation; the survey point's elevation 
 
 ![A section whose level marks read +0.00 (+650.00)](shots/level-datum-section.webp)
 
-A view can say its own: **Levels** in the view's properties (as the project's, relative, absolute or both). On a sheet, **Levels in its views** sets every view placed on it at once, and each view keeps it. A single level dimension says its own in **Written as**.
+A view can say its own: **Levels** in the view's properties (as the project's, relative, absolute or both). On a sheet, **Levels in its views** sets every view placed on it at once, and each view keeps it. A single level dimension says its own in **Written as**, and so do a terrain's spot levels: **Written as** beside **Spot levels** in the terrain's properties sets all of them (as the view's, relative, absolute or both). The legend of a terrain's elevation analysis writes its levels as the view in front writes them.
+
+**In schedules.** A field schedule's column of levels (a storey's elevation, `storey.elevation`, or any other height in the model) takes a level format in its row (the list after **Format**): **not a level** writes its number as before; **as the project's**, **relative to ±0.00**, **absolute (altitudes)** or **both** write it as the drawings write levels. A level column lists its values and is never added up in the totals line.
 
 **The notation.** Under **Levels**, the **Notation** block sets the texts: the relative level `{level}`, the altitude `{altitude}`, both `{level} ({altitude})`, the tie note `{level} = {altitude}`, the zero sign ±, the plus, the minus, and the plus before an altitude. The presets are indicative, to check against the practice you work to: **France (NGF)** writes 653.00 NGF, without the plus; **Romania (MN75)** +653.00 MN75; **Germany (NHN)** 653.00 ü. NHN. A symbol or a title block reads `{level.altitude}`, `{level.relative}`, `{level.tie}`, `{project.altitude}` and `{project.levelTie}`; a document `{{project.altitude}}`, `{{project.levelTie}}` and, for each storey, `{{storey.altitude}}` and `{{storey.level}}`.
 

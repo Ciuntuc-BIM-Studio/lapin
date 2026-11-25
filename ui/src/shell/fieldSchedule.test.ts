@@ -20,6 +20,11 @@ describe('field schedule options', () => {
     expect(o.totals).toBe(true);
   });
 
+  it('keeps a column\'s level format (decision 867), and nothing it does not know', () => {
+    const o = cleanOptions({ columns: [{ field: 'storey.elevation', level: 'absolute' }, { field: 'storey.elevation', level: 'project' }, { field: 'storey.elevation', level: 'up' as never }, { field: 'Length' }] });
+    expect(o.columns).toEqual([{ field: 'storey.elevation', level: 'absolute' }, { field: 'storey.elevation', level: 'project' }, { field: 'storey.elevation' }, { field: 'Length' }]);
+  });
+
   it('moves an item one place, and stays at the ends', () => {
     expect(moved([1, 2, 3], 1, -1)).toEqual([2, 1, 3]);
     expect(moved([1, 2, 3], 0, -1)).toEqual([1, 2, 3]);

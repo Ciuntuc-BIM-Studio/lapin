@@ -9,10 +9,15 @@ namespace Lapin.Architecture.Schedules;
 /// <summary>
 /// A field schedule's column: a field (any token of <see cref="FieldCatalog"/>) or a formula, its heading, how its values add up,
 /// its unit and decimals; or, in place of the decimals, a number format of its own (<c>0.##</c>: at most two, as some of Lapin's
-/// tables write them; audit S1).
+/// tables write them; audit S1). <paramref name="Level"/>: its numbers are levels (model z), written as the drawings write them
+/// (decision 867): <c>project</c> (the project's datum), <c>relative</c> (to ±0.00), <c>absolute</c> (altitudes) or <c>both</c>;
+/// none, a number as before.
 /// </summary>
-public sealed record FieldColumn(string? Field, string? Formula, string? Heading, string? Aggregate, string? Unit, int? Decimals, string? Format = null)
+public sealed record FieldColumn(string? Field, string? Formula, string? Heading, string? Aggregate, string? Unit, int? Decimals, string? Format = null, string? Level = null)
 {
+    /// <summary>The level formats a column takes.</summary>
+    public static readonly string[] Levels = [LevelDatum.Project, .. LevelDatum.Modes];
+
     public static readonly string[] Aggregates = ["sum", "avg", "min", "max", "count", "countDistinct", "first", "list", "rows"];
 
     /// <summary>What the column reads on an element: its field, or its formula as <c>= …</c>.</summary>
@@ -28,6 +33,7 @@ public sealed record FieldColumn(string? Field, string? Formula, string? Heading
         if (Unit != null) o["unit"] = Unit;
         if (Decimals != null) o["decimals"] = Decimals;
         if (Format != null) o["format"] = Format;
+        if (Level != null) o["level"] = Level;
         return o;
     }
 }
@@ -78,7 +84,8 @@ public sealed record FieldScheduleOptions(ElementFilter? Filter, IReadOnlyList<s
         if (field != null && ElementFields.FormulaOf(field) is { } ff) (formula, field) = (ff, null);
         if (field == null && formula == null) return null;
         var aggregate = Text(o["aggregate"]) is { } ag ? FieldColumn.Aggregates.FirstOrDefault(x => string.Equals(x, ag, StringComparison.OrdinalIgnoreCase)) : null;
-        return new(field, formula, Text(o["heading"]), aggregate, Text(o["unit"]), Int(o["decimals"]), Text(o["format"]) is { } fmt && IsFormat(fmt) ? fmt : null);
+        return new(field, formula, Text(o["heading"]), aggregate, Text(o["unit"]), Int(o["decimals"]), Text(o["format"]) is { } fmt && IsFormat(fmt) ? fmt : null,
+            Text(o["level"]) is { } lv && FieldColumn.Levels.Contains(lv) ? lv : null);
     }
 
     /// <summary>Whether a column's format is a plain number format: zeros, hashes, one point, a thousands comma (nothing else is taken).</summary>
@@ -129,6 +136,7 @@ public sealed record FieldScheduleOptions(ElementFilter? Filter, IReadOnlyList<s
                 throw new CommandException($"„{ag}”: a column adds up by {string.Join(", ", FieldColumn.Aggregates)}.");
             if (col.Formula != null && !ParamFormulas.IsTemplate(col.Formula)) ParamFormulas.Check(col.Formula);
             if (c is JsonObject cf && Text(cf["format"]) is { } fmt && !IsFormat(fmt)) throw new CommandException($"„{fmt}”: a column's format is written with 0, # and a point (0.00, 0.##).");
+            if (c is JsonObject cl && Text(cl["level"]) is { } lv && !FieldColumn.Levels.Contains(lv)) throw new CommandException($"„{lv}”: a level column is written as the project's (project), relative, absolute or both.");
         }
         foreach (var x in o["groupBy"] as JsonArray ?? []) if (ElementFields.FormulaOf(Text(x) ?? "") is { } gf) ParamFormulas.Check(gf);
         return Read(o);
@@ -280,11 +288,20 @@ public sealed class FieldSchedule : IScheduleSource
         }
         // A column is of numbers when every value it has is one; its aggregate by default: numbers summed, texts listed.
         var numeric = all.Select(vs => vs.Any(v => v.Exists) && vs.Where(v => v.Exists).All(v => v.Number != null)).ToArray();
-        string AggregateOf(int i) => columns[i].Aggregate ?? (numeric[i] ? "sum" : "list");
+        // A level column is never added up: its values listed, none in the totals line.
+        string AggregateOf(int i) => columns[i].Aggregate ?? (numeric[i] && columns[i].Level == null ? "sum" : "list");
+        // Levels as the drawings write them (decision 867): the project's datum, or the mode the column says.
+        var book = DraftingResources.Book(q.Model);
+        var datum = columns.Any(c => c.Level != null) ? LevelDatum.Of(q.Model) : null;
 
         string Number(int i, double v, bool whole = false)
         {
             var c = columns[i];
+            if (!whole && c.Level != null && datum != null)
+            {
+                var ld = datum.As(c.Level);
+                return c.Decimals is { } dd ? ld.TextWith(v, x => LevelDatum.Number(x, dd, false)) : ld.Text(v, book);
+            }
             if (!whole && c.Unit != null && Units.TryGetValue(c.Unit, out var factor)) v *= factor;
             if (whole) return Math.Round(v).ToString("0", CultureInfo.InvariantCulture);
             // Decimals as Lapin's tables write them ("0.00": a half rounded as the number reads to 15 digits, not as it is stored).
@@ -325,7 +342,7 @@ public sealed class FieldSchedule : IScheduleSource
         }
 
         string Single(int i, FieldValue v) =>
-            !v.Exists ? "" : v.Number is { } n && (v.Text == null || FieldValue.StrictNumber(v.Text) != null || columns[i].Unit != null || columns[i].Decimals != null || columns[i].Format != null) ? Number(i, n) : v.Shown;
+            !v.Exists ? "" : v.Number is { } n && (v.Text == null || FieldValue.StrictNumber(v.Text) != null || columns[i].Unit != null || columns[i].Decimals != null || columns[i].Format != null || columns[i].Level != null) ? Number(i, n) : v.Shown;
 
         // Rows in the order of their cells, left to right (a group's "—" after the rest), as a person sorts them.
         int Compare((string Key, List<string> Cells, FieldValue[] Sort) x, (string Key, List<string> Cells, FieldValue[] Sort) y)

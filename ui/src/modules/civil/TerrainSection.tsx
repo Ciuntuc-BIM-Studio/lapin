@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import { FileDown, FileUp } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
-import { execute, query, useSession } from '../../engine/session';
+import { activeStorey, execute, query, useSession } from '../../engine/session';
 import { SURVEY, downloadLandXml, pickText } from './survey';
 import { notify, useUi } from '../../app/store';
 import { redrawGrips, setPicked, useTerrainEdit } from './prefs';
 import { MAX_POINT_GRIPS, outlinePointIndices, terrainControls, type PointGripMode } from './pointGrips';
 import { formatLength, levelUnit, parseLevel } from '../../engine/unitsStore';
+import { VIEW_LEVEL_MODES, spotDatumChoice, spotDatumPatch } from '../../shell/levelDatum';
 
 interface Legend { kind: string; area: number; bands: { key: string; label: string; color: string; area: number }[] }
 
@@ -43,12 +44,14 @@ export function TerrainSection({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
   const pads = [...relations.values()].filter((r) => r.class === 'IfcRelVoidsElement' && r.relating === node.id).reduce((n, r) => n + r.related.length, 0);
   const [legend, setLegend] = useState<Legend | null>(null);
+  // The legend's levels as the view in front writes them (its datum over the project's; decision 867).
+  const viewId = useUi((u) => (u.view === 'plan' ? u.planViewId ?? (activeStorey() ? `plan:${activeStorey()!.id}` : null) : u.view === 'drawing' ? u.drawingViewId : null));
   useEffect(() => {
     if (analysis === 'none') { setLegend(null); return; }
     let live = true;
-    void query<Legend>('civil.analysis', { id: node.id }).then((l) => { if (live) setLegend(l); });
+    void query<Legend>('civil.analysis', { id: node.id, ...(viewId ? { viewId } : {}) }).then((l) => { if (live) setLegend(l); });
     return () => { live = false; };
-  }, [node.id, analysis, nodes]);
+  }, [node.id, analysis, nodes, viewId]);
   return (
     <div className="layers">
       <dl className="fields">
@@ -79,7 +82,15 @@ export function TerrainSection({ node }: { node: NodeDto }) {
         <dt>Brush strokes</dt>
         <dd>{strokes}{strokes > 0 && <> <button type="button" className="link small" onClick={() => void execute('civil.clearSculpt', { id: node.id, last: true })}>undo last</button> · <button type="button" className="link small" onClick={() => void execute('civil.clearSculpt', { id: node.id })}>clear</button></>}</dd>
         <dt>Spot levels</dt>
-        <dd>{spots}{spots > 0 && <> <button type="button" className="link small" onClick={() => void execute('civil.removeSpot', { id: node.id, all: true })}>clear</button></>}</dd>
+        <dd>{spots}{spots > 0 && <> <button type="button" className="link small" onClick={() => void execute('civil.removeSpot', { id: node.id, all: true })}>clear</button></>}
+          {/* Their own datum over the view's (decision 867), as a level dimension's: every spot level of the terrain at once. */}
+          {spots > 0 && node.editable && <div className="row small" title="Relative to ±0.00, as an altitude or both, over the view's">
+            <span>Written as</span> <select data-field="spot-level-datum" value={spotDatumChoice(node.props.spots)} aria-label="Written as" onChange={(e) => void execute('civil.setSpotDatum', spotDatumPatch(node.id, e.target.value))}>
+              <option value="">as the view's</option>
+              {VIEW_LEVEL_MODES.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+            </select>
+          </div>}
+        </dd>
         <dt>Slope tags</dt>
         <dd>{slopes}{slopes > 0 && <> <button type="button" className="link small" onClick={() => void execute('civil.removeSlope', { id: node.id, all: true })}>clear</button></>}</dd>
         <dt>Subregions</dt>
