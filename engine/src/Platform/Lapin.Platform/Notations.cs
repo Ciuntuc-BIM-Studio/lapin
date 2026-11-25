@@ -18,7 +18,7 @@ public sealed record NotationKey(string Key, string Label, string Default, IRead
 public sealed record NotationPreset(string Id, string Label, string Source, IReadOnlyDictionary<string, string> Values);
 
 /// <summary>
-/// A domain of notation (decision 861): a module's local-standard texts — rebar's diameter symbol and spacing, and next a tag's
+/// A domain of notation (decision 864): a module's local-standard texts — rebar's diameter symbol and spacing, and next a tag's
 /// prefix, a level's sign, a schedule's headings. Registered as a service by its module (<see cref="IModuleRegistry.Service{T}"/>);
 /// the core describes and sets every one (<c>notation.describe</c>, <c>notation.set</c>).
 /// </summary>
@@ -111,7 +111,7 @@ public sealed partial class Notation
 }
 
 /// <summary>
-/// The project's notations (decision 861): symbols, prefixes and suffixes are local standards in engineering and architecture,
+/// The project's notations (decision 864): symbols, prefixes and suffixes are local standards in engineering and architecture,
 /// so a domain's texts are templates the user may change per project, from a country preset (indicative) or by hand; Lapin's
 /// coded texts stay the default with the same output, and nothing is stored until the user changes something (an older
 /// project needs no upgrade).

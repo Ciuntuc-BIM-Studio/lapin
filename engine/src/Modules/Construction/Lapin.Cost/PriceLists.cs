@@ -11,10 +11,13 @@ namespace Lapin.Cost;
 /// One row of a price list: an article (its code, text, unit and unit price split into material, labour, equipment and
 /// transport; maybe its man-hours per unit and the trade that does it) or, when <see cref="Article"/> names one, a
 /// resource of that article (Romanian estimating's „consumuri”): its kind (material, labour, equipment, transport), its
-/// consumption per unit of the article and its own unit price, in the column of its kind.
+/// consumption per unit of the article and its own unit price, in the column of its kind. <see cref="Source"/>, <see cref="Url"/>
+/// and <see cref="Checked"/>: where the price was taken from (a supplier and its product code), its page and the day it was
+/// read (a template's rows have them, decision 859).
 /// </summary>
 public sealed record PriceRow(string Code, string Name, string Unit, double Material, double Labour, double Equipment, double Transport,
-    double? Hours = null, string? Trade = null, string? Article = null, string? Kind = null, double? Consumption = null)
+    double? Hours = null, string? Trade = null, string? Article = null, string? Kind = null, double? Consumption = null,
+    string? Source = null, string? Url = null, string? Checked = null)
 {
     public double Total => Material + Labour + Equipment + Transport;
     public bool IsResource => Article != null;
@@ -36,6 +39,9 @@ public sealed record PriceRow(string Code, string Name, string Unit, double Mate
         if (Article is { Length: > 0 } a) o["a"] = a;
         if (Kind is { Length: > 0 } k) o["k"] = k;
         if (Consumption is { } q) o["q"] = R(q);
+        if (Source is { Length: > 0 } src) o["src"] = src;
+        if (Url is { Length: > 0 } url) o["url"] = url;
+        if (Checked is { Length: > 0 } d) o["d"] = d;
         return o;
     }
 
@@ -44,8 +50,10 @@ public sealed record PriceRow(string Code, string Name, string Unit, double Mate
         if (n is not JsonObject o || (string?)o["c"] is not { Length: > 0 } code) return null;
         double N(string k) => Json.Number(o[k]) ?? 0;
         return new(code, (string?)o["n"] ?? "", (string?)o["u"] ?? "", N("m"), N("l"), N("e"), N("t"), Json.Number(o["h"]), (string?)o["tr"],
-            (string?)o["a"], (string?)o["k"], Json.Number(o["q"]));
+            (string?)o["a"], (string?)o["k"], Json.Number(o["q"]), Text(o["src"]), Text(o["url"]), Text(o["d"]));
     }
+
+    static string? Text(JsonNode? n) => ((string?)n)?.Trim() is { Length: > 0 } t ? t : null;
 }
 
 /// <summary>
@@ -59,7 +67,7 @@ public static class PriceLists
     public const string Class = "LapinPriceList";
 
     /// <summary>The columns a price list can have, in the order the matching dialog shows them.</summary>
-    public static readonly string[] Fields = ["code", "name", "unit", "material", "labour", "equipment", "transport", "price", "hours", "trade", "article", "kind", "consumption"];
+    public static readonly string[] Fields = ["code", "name", "unit", "material", "labour", "equipment", "transport", "price", "hours", "trade", "article", "kind", "consumption", "source", "url", "checked"];
 
     public sealed record List(Entity Entity, string Currency, IReadOnlyList<PriceRow> Rows, bool Indicative)
     {
@@ -142,6 +150,9 @@ public static class PriceLists
         ["article"] = ["parent", "parent article", "parent code", "articol parinte", "cod articol parinte", "for article", "pentru articol"],
         ["kind"] = ["kind", "resource kind", "tip", "tip resursa", "type", "categorie", "category"],
         ["consumption"] = ["consumption", "consum", "consumul", "norma de consum", "quantity per unit", "cantitate pe um"],
+        ["source"] = ["source", "sursa", "supplier", "furnizor", "magazin", "shop", "vendor"],
+        ["url"] = ["url", "link", "adresa", "pagina", "web"],
+        ["checked"] = ["checked", "checked on", "date", "data", "verificat", "verificat la", "data verificarii", "price date"],
     };
 
     /// <summary>
@@ -203,6 +214,7 @@ public static class PriceLists
         if (map.GetValueOrDefault("code") is not int code) throw new CommandException("Say which column holds the code.");
         string Cell(List<string> r, string f) => map.GetValueOrDefault(f) is int i && i >= 0 && i < r.Count ? r[i].Trim() : "";
         double? Num(List<string> r, string f) => Cell(r, f) is { Length: > 0 } c ? XlsxReader.Number(c) : null;
+        string? Opt(List<string> r, string f) => Cell(r, f) is { Length: > 0 } c ? c : null;
         var rows = new List<PriceRow>();
         var notes = new List<string>();
         var skipped = 0;
@@ -220,11 +232,13 @@ public static class PriceLists
                 var kind = KindOf(Cell(r, "kind")) ?? (l != null && m == null ? "labour" : e != null && m == null ? "equipment" : t != null && m == null ? "transport" : "material");
                 var price = kind switch { "labour" => l, "equipment" => e, "transport" => t, _ => m } ?? p ?? 0;
                 rows.Add(new PriceRow(c, Cell(r, "name"), Cell(r, "unit"), kind == "material" ? price : 0, kind == "labour" ? price : 0, kind == "equipment" ? price : 0,
-                    kind == "transport" ? price : 0, Num(r, "hours"), Cell(r, "trade") is { Length: > 0 } tr ? tr : null, article, kind, Num(r, "consumption") ?? 1));
+                    kind == "transport" ? price : 0, Num(r, "hours"), Cell(r, "trade") is { Length: > 0 } tr ? tr : null, article, kind, Num(r, "consumption") ?? 1,
+                    Opt(r, "source"), Opt(r, "url"), Opt(r, "checked")));
                 continue;
             }
             if (m == null && l == null && e == null && t == null && p != null) { totalOnly++; m = p; }
-            rows.Add(new PriceRow(c, Cell(r, "name"), Cell(r, "unit"), m ?? 0, l ?? 0, e ?? 0, t ?? 0, Num(r, "hours"), Cell(r, "trade") is { Length: > 0 } tr2 ? tr2 : null));
+            rows.Add(new PriceRow(c, Cell(r, "name"), Cell(r, "unit"), m ?? 0, l ?? 0, e ?? 0, t ?? 0, Num(r, "hours"), Cell(r, "trade") is { Length: > 0 } tr2 ? tr2 : null,
+                Source: Opt(r, "source"), Url: Opt(r, "url"), Checked: Opt(r, "checked")));
         }
         if (rows.Count == 0) throw new CommandException("No price could be read from the table: each row needs a code and a price.");
         if (totalOnly > 0) notes.Add($"{totalOnly} row(s) have only a total price: it counts as material.");
@@ -272,6 +286,21 @@ public static class PriceLists
         foreach (var r in Indicative)
             sb.Append($"{r.Code};{r.Name} (indicative, Lapin's rough value: replace it with your price);{r.Unit};{N(r.Material)};{N(r.Labour)};{N(r.Equipment)};{N(r.Transport)};{N(r.Hours ?? 0)};{r.Trade}\n");
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// A template a module ships (<see cref="IPriceListTemplate"/>), read as a <c>.lapinprices</c> file: its name, currency and
+    /// rows. A template is indicative or it is refused: Lapin ships no price that is not marked so.
+    /// </summary>
+    public static (string Name, string Currency, List<PriceRow> Rows) FromTemplate(IPriceListTemplate t)
+    {
+        var o = t.Read();
+        if ((string?)o["format"] != "lapin-price-list" || Json.Number(o["version"]) is not 1) throw new CommandException($"The template {t.Name} is not a Lapin price list.");
+        if (o["indicative"] is not JsonValue iv || !iv.TryGetValue<bool>(out var ind) || !ind) throw new CommandException($"The template {t.Name} does not say its prices are indicative.");
+        var rows = (o["rows"] as JsonArray)?.Select(PriceRow.Read).OfType<PriceRow>().ToList() ?? [];
+        if (rows.Count == 0) throw new CommandException($"The template {t.Name} has no rows.");
+        var currency = ((string?)o["currency"])?.Trim().ToUpperInvariant() is "EUR" ? "EUR" : "RON";
+        return ((string?)o["name"] is { Length: > 0 } n ? n : t.Name, currency, rows);
     }
 
     /// <summary>The indicative rows with their names marked, as the project keeps them when the template is taken as a list.</summary>

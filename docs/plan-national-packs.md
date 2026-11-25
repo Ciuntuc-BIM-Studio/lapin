@@ -10,7 +10,7 @@ Asked on 25.11.2026 in forum topic 261 (Slawomir: automating the design of house
 - **Rule packs.** `engine/src/Platform/Lapin.Platform/RulePacks.cs`: modules register an `IRuleSection` (key, default, `Check`) and an `IRuleCheck`. Four sections: stairs (`Architecture/Stairs/StairRuleSection.cs`), rebar, roofs, bolts. The built-in pack is `builtin:rules:ro`, "Romania (indicative)", read only. Users duplicate it, edit it, export it as `.lapinrules` (`lapin-rules` v1) and import it again. Checks list findings and never refuse. Guide: `docs/user/rules.md`.
 - **Store.** `docs/plan-extensions.md` §3.1: kind `rules`, `"indicative": true` required, packages Ed25519-signed; submissions by pull request to `lapin-extensions` (`manifest.ts`/`packs.ts`, `tools/lib.mjs`).
 - **Loads.** `Lapin.Analysis/CombinationSettings.cs` has two factor sets written in code, `en` and `cr0`: a third country means a code change. The imposed qk can be overridden per project; snow s0,k and wind qb are typed by hand, no maps shipped (`docs/user/loads.md`).
-- `Thermal.cs` works out U-values from indicative λ; the standard psets carry `FireRating`, `ThermalTransmittance`, `Compartmentation`. Notation domains with country presets exist (`Notations.cs`, decision 861) but the presets are written in code. `StandardsLibrary` reads `.lapinstandards`. A Swedish interface exists (`ui/src/i18n/sv.ts`).
+- `Thermal.cs` works out U-values from indicative λ; the standard psets carry `FireRating`, `ThermalTransmittance`, `Compartmentation`. Notation domains with country presets exist (`Notations.cs`, decision 864) but the presets are written in code. `StandardsLibrary` reads `.lapinstandards`. A Swedish interface exists (`ui/src/i18n/sv.ts`).
 
 ## Options for the mechanism
 

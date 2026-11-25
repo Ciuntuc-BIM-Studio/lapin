@@ -6,7 +6,7 @@ using Lapin.Platform;
 namespace Lapin.Architecture;
 
 /// <summary>
-/// A finish wrapped round a wall's free ends (in-app report #192, decision 859): a wall type's <c>wrapEnds</c> (its walls'
+/// A finish wrapped round a wall's free ends (in-app report #192, decision 862): a wall type's <c>wrapEnds</c> (its walls'
 /// default) or a wall's own says which face's outer layer turns each free end: <see cref="First"/> (layer 1's, the R face of a
 /// wall as drawn), <see cref="Last"/> (layer n's), <see cref="None"/>. At a free end that layer caps the end from its own face
 /// to the other one, and every other layer stops its thickness short, so the end shows the finish instead of the core; the

@@ -1787,7 +1787,7 @@ export const ZH: Record<string, string> = {
   'Quick tools': '快捷工具', 'Floating at the bottom': '浮动在底部', 'Docked on the left edge': '停靠在左边缘', 'Off (the number keys still work)': '关闭（数字键仍然有效）',
   'Command line': '命令行', 'Its own line': '独立一行', 'In the status line': '在状态行中', 'HUD': 'HUD', 'Over the view': '覆盖在视图上', 'Off': '关闭',
   'Tool prompt and inputs': '工具提示与输入', 'Banner over the view': '视图上方横幅', 'In the command line': '在命令行中', 'A button': '按钮',
-  'Docked': '停靠', 'Browser folds to a rail': '浏览器折叠为侧栏', 'Both fold': '两者均折叠', 'Property rows': '属性行', 'Normal': '常规', 'Dense (22 px)': '紧密（22 px）', 'Tabs': '选项卡', 'A hidden tab\'s tools stay in Commands… and the keyboard shortcuts.': '隐藏选项卡中的工具仍可在“命令…”和键盘快捷键中使用。', 'Always shown: Interface… is here': '始终显示：“界面…”在此',
+  'Docked': '停靠', 'Browser folds to a rail': '浏览器折叠为侧栏', 'Both fold': '两者均折叠', 'Property rows': '属性行', 'Normal': '常规', 'Dense (22 px)': '紧密（22 px）', 'Keys on tools': '工具上的按键', 'While Alt is held': '按住 Alt 时', 'Always': '始终', 'Tabs': '选项卡', 'A hidden tab\'s tools stay in Commands… and the keyboard shortcuts.': '隐藏选项卡中的工具仍可在“命令…”和键盘快捷键中使用。', 'Always shown: Interface… is here': '始终显示：“界面…”在此',
   'The side panels fold in every mode: the button on their header, a double-click on their edge, or the keyboard.': '侧面板在所有模式下均可折叠：使用标题上的按钮、双击其边缘或使用键盘。',
   'This dialog:': '此对话框：', 'Keyboard shortcuts…': '键盘快捷键…', 'Keyboard shortcuts': '键盘快捷键', 'Find a command or a key': '查找命令或按键',
   'Catalog': '目录', 'No types yet: the first is made as you place one.': '尚无类型：放置时会创建第一个。', 'A click places it; drag a card onto a quick slot to keep it there.': '单击即可放置；将卡片拖到快捷槽即可固定在那里。', 'This edition places no typed elements.': '此版本不放置带类型的构件。',
@@ -6754,7 +6754,7 @@ export const ZH: Record<string, string> = {
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "已创建屋面板配件明细表：位于项目浏览器的明细表下.",
   // A part of the window that stopped (PartBoundary, forum topic 258).
   "This part of Lapin stopped working; the rest of the window still works.": "Lapin 的这一部分已停止工作；窗口的其余部分仍可正常使用。", "Report…": "报告…", "Lapin's window stopped working.": "Lapin 窗口已停止工作。", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "重新加载窗口以继续。请报告您在此之前刚做的操作，以便修复。", "Reload the window": "重新加载窗口", "Report on the forum…": "在论坛上报告…",
-  // The project's notation (decision 861): Rebar settings → Notation.
+  // The project's notation (decision 864): Rebar settings → Notation.
   "Notation": "标注法",
   "Back to the preset's or Lapin's": "恢复为预设或 Lapin 的设置",
   "Symbols, prefixes and spacing differ from one country to another. The presets are indicative: check them against the standard you work to. A text you type goes over the preset; empty, it goes back.": "符号、前缀和间距因国家而异。预设仅供参考：请按您采用的标准核对。输入的文字优先于预设；留空则恢复。",
@@ -6777,6 +6777,28 @@ export const ZH: Record<string, string> = {
   "United Kingdom": "英国",
   "United States": "美国",
   "Spacing centre to centre": "中心间距",
+  // Roof panel layout, stage S4: the cost link (decision 859).
+  "Indicative subtotal": "参考小计",
+  "The lines with a price in the project's price lists: the quantity by the unit price. Labour and transport are not included": "在项目价格表中有价格的行：数量乘以单价。不含人工和运输",
+  "Lines no price list prices: ask the supplier": "任何价格表都没有价格的行：请向供应商询价",
+  "To quote": "待询价",
+  "Indicative: check the prices when ordering.": "仅供参考：下单时请核实价格。",
+  "No price list prices these lines yet. Add the Bilka – Dedeman template (indicative) or your own list in Price lists…, or from the Cost tab of Panel layout.": "还没有价格表为这些行定价。在“价格表…”中添加 Bilka – Dedeman 模板（参考价）或您自己的价格表，或从面板排布的“成本”选项卡添加。",
+  "No price list of the project prices these lines. Add the Bilka – Dedeman list (indicative prices read on 24.11.2026), or import your own with the same codes.": "项目的价格表都没有为这些行定价。添加 Bilka – Dedeman 价格表（2026年11月24日读取的参考价），或导入您自己的同编码价格表。",
+  "Add the Bilka – Dedeman template": "添加 Bilka – Dedeman 模板",
+  "Amount": "金额",
+  "Subtotal of the priced lines": "有价格行的小计",
+  "Where two ridge or hip caps lap: an operation, the material is in the caps": "两段屋脊盖瓦搭接处：一道工序，材料已含在盖瓦中",
+  "Joints between ridge caps": "屋脊盖瓦之间的接头",
+  "Cut from flat sheet": "由平板裁出",
+  "Indicative — check prices when ordering. Labour, transport and the rainwater system are not included.": "仅供参考 — 下单时请核实价格。不含人工、运输和雨水排放系统。",
+  "Source (supplier)": "来源（供应商）",
+  "Price checked on": "价格核实日期",
+  "Indicative lists to start from, added to the project only when you ask: replace their prices with yours (your own list first, or the estimate's price lists in your order).": "可作起点的参考价格表，只在您要求时才加入项目：用您的价格替换它们（您自己的价格表优先，或按您的顺序设定估算的价格表）。",
+  "The Bilka roof panels' prices read on 24.11.2026, mostly at Dedeman: indicative, check them when ordering.": "Bilka 面板价格于2026年11月24日读取，主要来自 Dedeman：仅供参考，下单时请核实。",
+  "Lapin's own rough values, a few rows to try the estimate with.": "Lapin 自己的粗略数值，几行，用来试算估算。",
+  "There is no such price list template.": "没有这样的价格表模板。",
+  "The day the price was read": "读取价格的日期",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
@@ -7322,4 +7344,10 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^(.+)'s ridge caps are (.+)\.$/, (m) => `${m[1]} 的屋脊盖为 ${m[2]}.`],
   [/^The battens are fixed with (.+)\.$/, (m) => `挂瓦条用 ${m[1]} 固定.`],
   [/^(.+) is not made in (.+)\.$/, (m) => `${m[1]} 不生产 ${m[2]}.`],
+  // Roof panel layout, stage S4.
+  [/^Price list added to the project: (.+)\.$/, (m) => `价格表已加入项目：${m[1]}。`],
+  [/^(\d+) panel\(s\) of (\d+) mm: priced per m² of sheet bought \(the nominal length by the (\d+) mm width\)\.$/, (m) => `${m[1]} 块 ${m[2]} mm 面板：按所购板材每 m² 计价（公称长度乘以 ${m[3]} mm 宽度）。`],
+  [/^The template (.+) is not a Lapin price list\.$/, (m) => `模板 ${m[1]} 不是 Lapin 价格表。`],
+  [/^The template (.+) does not say its prices are indicative\.$/, (m) => `模板 ${m[1]} 没有注明其价格为参考价。`],
+  [/^The template (.+) has no rows\.$/, (m) => `模板 ${m[1]} 没有任何行。`],
 ];

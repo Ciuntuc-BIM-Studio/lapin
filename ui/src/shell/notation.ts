@@ -1,5 +1,5 @@
 /**
- * The project's notations (decision 861): a domain's symbols, prefixes and suffixes as templates with {…} tokens, Lapin's
+ * The project's notations (decision 864): a domain's symbols, prefixes and suffixes as templates with {…} tokens, Lapin's
  * coded texts the default, country presets (indicative) and the user's own over them. The engine resolves and draws them
  * (`notation.describe`, `notation.set`); this is what the settings dialogs read and send.
  */

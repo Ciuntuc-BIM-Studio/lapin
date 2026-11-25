@@ -1782,7 +1782,7 @@ export const IT: Record<string, string> = {
   'Quick tools': 'Strumenti rapidi', 'Floating at the bottom': 'Mobili in basso', 'Docked on the left edge': 'Ancorati al bordo sinistro', 'Off (the number keys still work)': 'Disattivati (i tasti numerici funzionano comunque)',
   'Command line': 'Riga di comando', 'Its own line': 'Su una riga propria', 'In the status line': 'Nella riga di stato', 'HUD': 'HUD', 'Over the view': 'Sopra la vista', 'Off': 'Disattivato',
   'Tool prompt and inputs': 'Messaggio e campi dello strumento', 'Banner over the view': 'Banner sopra la vista', 'In the command line': 'Nella riga di comando', 'A button': 'Un pulsante',
-  'Docked': 'Ancorati', 'Browser folds to a rail': 'Il browser si riduce a una barra', 'Both fold': 'Entrambi si riducono', 'Property rows': 'Righe delle proprietà', 'Normal': 'Normali', 'Dense (22 px)': 'Dense (22 px)', 'Tabs': 'Schede', 'A hidden tab\'s tools stay in Commands… and the keyboard shortcuts.': 'Gli strumenti di una scheda nascosta restano in Comandi… e nelle scorciatoie da tastiera.', 'Always shown: Interface… is here': 'Sempre visibile: Interfaccia… è qui',
+  'Docked': 'Ancorati', 'Browser folds to a rail': 'Il browser si riduce a una barra', 'Both fold': 'Entrambi si riducono', 'Property rows': 'Righe delle proprietà', 'Normal': 'Normali', 'Dense (22 px)': 'Dense (22 px)', 'Keys on tools': 'Tasti sugli strumenti', 'While Alt is held': 'Finché Alt è premuto', 'Always': 'Sempre', 'Tabs': 'Schede', 'A hidden tab\'s tools stay in Commands… and the keyboard shortcuts.': 'Gli strumenti di una scheda nascosta restano in Comandi… e nelle scorciatoie da tastiera.', 'Always shown: Interface… is here': 'Sempre visibile: Interfaccia… è qui',
   'The side panels fold in every mode: the button on their header, a double-click on their edge, or the keyboard.': 'I pannelli laterali si riducono in ogni modalità: con il pulsante nell’intestazione, con un doppio clic sul bordo o con la tastiera.',
   'This dialog:': 'Questa finestra di dialogo:', 'Keyboard shortcuts…': 'Scorciatoie da tastiera…', 'Keyboard shortcuts': 'Scorciatoie da tastiera', 'Find a command or a key': 'Cerca un comando o un tasto',
   'Catalog': 'Catalogo', 'No types yet: the first is made as you place one.': 'Ancora nessun tipo: il primo si crea quando ne posi uno.', 'A click places it; drag a card onto a quick slot to keep it there.': 'Un clic lo posa; trascina una scheda su un posto rapido per tenerla lì.', 'This edition places no typed elements.': 'Questa edizione non posa elementi con tipo.',
@@ -6718,7 +6718,7 @@ export const IT: Record<string, string> = {
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "Abaco degli accessori dei pannelli creato: è nel browser di progetto, sotto Abachi.",
   // A part of the window that stopped (PartBoundary, forum topic 258).
   "This part of Lapin stopped working; the rest of the window still works.": "Questa parte di Lapin ha smesso di funzionare; il resto della finestra funziona ancora.", "Report…": "Segnala…", "Lapin's window stopped working.": "La finestra di Lapin ha smesso di funzionare.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "Ricarica la finestra per continuare. Segnala cosa hai fatto subito prima, così si potrà correggere.", "Reload the window": "Ricarica la finestra", "Report on the forum…": "Segnala sul forum…",
-  // The project's notation (decision 861): Rebar settings → Notation.
+  // The project's notation (decision 864): Rebar settings → Notation.
   "Notation": "Notazione",
   "Back to the preset's or Lapin's": "Torna al predefinito o a quello di Lapin",
   "Symbols, prefixes and spacing differ from one country to another. The presets are indicative: check them against the standard you work to. A text you type goes over the preset; empty, it goes back.": "Simboli, prefissi e passi cambiano da un paese all'altro. I predefiniti sono indicativi: verificali con la norma che usi. Un testo scritto prevale sul predefinito; vuoto, torna quello.",
@@ -6741,6 +6741,28 @@ export const IT: Record<string, string> = {
   "United Kingdom": "Regno Unito",
   "United States": "Stati Uniti",
   "Spacing centre to centre": "Interasse",
+  // Roof panel layout, stage S4: the cost link (decision 859).
+  "Indicative subtotal": "Subtotale indicativo",
+  "The lines with a price in the project's price lists: the quantity by the unit price. Labour and transport are not included": "Le righe con un prezzo nei listini del progetto: la quantità per il prezzo unitario. Manodopera e trasporto non inclusi",
+  "Lines no price list prices: ask the supplier": "Righe senza prezzo in alcun listino: chiedi un preventivo al fornitore",
+  "To quote": "Da quotare",
+  "Indicative: check the prices when ordering.": "Indicativo: controlla i prezzi al momento dell'ordine.",
+  "No price list prices these lines yet. Add the Bilka – Dedeman template (indicative) or your own list in Price lists…, or from the Cost tab of Panel layout.": "Nessun listino prezza ancora queste righe. Aggiungi il modello Bilka – Dedeman (indicativo) o il tuo listino in Listini prezzi…, oppure dalla scheda Costo della posa dei pannelli.",
+  "No price list of the project prices these lines. Add the Bilka – Dedeman list (indicative prices read on 24.11.2026), or import your own with the same codes.": "Nessun listino del progetto prezza queste righe. Aggiungi il listino Bilka – Dedeman (prezzi indicativi letti il 24.11.2026), oppure importa il tuo con gli stessi codici.",
+  "Add the Bilka – Dedeman template": "Aggiungi il modello Bilka – Dedeman",
+  "Amount": "Importo",
+  "Subtotal of the priced lines": "Subtotale delle righe con prezzo",
+  "Where two ridge or hip caps lap: an operation, the material is in the caps": "Dove due colmi si sovrappongono: un'operazione, il materiale è nei colmi",
+  "Joints between ridge caps": "Giunti tra i colmi",
+  "Cut from flat sheet": "Da lamiera piana",
+  "Indicative — check prices when ordering. Labour, transport and the rainwater system are not included.": "Indicativo — controlla i prezzi al momento dell'ordine. Manodopera, trasporto e sistema pluviale non inclusi.",
+  "Source (supplier)": "Fonte (fornitore)",
+  "Price checked on": "Prezzo verificato il",
+  "Indicative lists to start from, added to the project only when you ask: replace their prices with yours (your own list first, or the estimate's price lists in your order).": "Listini indicativi da cui partire, aggiunti al progetto solo quando lo chiedi: sostituisci i loro prezzi con i tuoi (prima il tuo listino, oppure i listini del computo nel tuo ordine).",
+  "The Bilka roof panels' prices read on 24.11.2026, mostly at Dedeman: indicative, check them when ordering.": "I prezzi dei pannelli Bilka letti il 24.11.2026, soprattutto da Dedeman: indicativi, controllali al momento dell'ordine.",
+  "Lapin's own rough values, a few rows to try the estimate with.": "I valori approssimativi di Lapin, poche righe per provare il computo.",
+  "There is no such price list template.": "Questo modello di listino non esiste.",
+  "The day the price was read": "Il giorno in cui è stato letto il prezzo",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
@@ -7288,4 +7310,10 @@ export const IT_PATTERNS: Language['patterns'] = [
   [/^(.+)'s ridge caps are (.+)\.$/, (m) => `I colmi di ${m[1]} sono ${m[2]}.`],
   [/^The battens are fixed with (.+)\.$/, (m) => `I listelli si fissano con ${m[1]}.`],
   [/^(.+) is not made in (.+)\.$/, (m) => `${m[1]} non è prodotto in ${m[2]}.`],
+  // Roof panel layout, stage S4.
+  [/^Price list added to the project: (.+)\.$/, (m) => `Listino aggiunto al progetto: ${m[1]}.`],
+  [/^(\d+) panel\(s\) of (\d+) mm: priced per m² of sheet bought \(the nominal length by the (\d+) mm width\)\.$/, (m) => `${m[1]} pannello/i da ${m[2]} mm: prezzo al m² di lamiera acquistata (la lunghezza nominale per la larghezza di ${m[3]} mm).`],
+  [/^The template (.+) is not a Lapin price list\.$/, (m) => `Il modello ${m[1]} non è un listino Lapin.`],
+  [/^The template (.+) does not say its prices are indicative\.$/, (m) => `Il modello ${m[1]} non dice che i suoi prezzi sono indicativi.`],
+  [/^The template (.+) has no rows\.$/, (m) => `Il modello ${m[1]} non ha righe.`],
 ];

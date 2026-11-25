@@ -10,7 +10,9 @@ namespace Lapin.RoofPanels;
 /// out on the architecture module's roofs. A roof names its profile (<c>roofpanels.setRoofPanels</c>, one undo step); the
 /// layout, the edges' kinds and the quantities are a query (<c>roofpanels.layout</c>), worked out from the roof's planes
 /// on every ask; the panels are parts a field schedule lists (<c>roofPanels</c>). The built-in profiles are published as
-/// the catalogue <c>roofpanels.profiles</c>.
+/// the catalogue <c>roofpanels.profiles</c>. Stage S4 (decision 859): the lines bought reach the estimate as the roof's
+/// <c>Lapin_RoofPanelQuantities</c>, keyed by article codes; the layout is priced from the project's price lists; the Bilka
+/// price list is an indicative template (<see cref="PanelCost"/>).
 /// </summary>
 public sealed class RoofPanelsModule : ILapinModule
 {
@@ -27,6 +29,10 @@ public sealed class RoofPanelsModule : ILapinModule
         r.Service(ShippedScheduleTemplate.Of("roofPanels", "Roof panels", null, ScheduleFields));
         // Stage S3: what else the panels need (accessories, fixings, battens, counter-battens, membrane), a second schedule.
         r.Service(ShippedScheduleTemplate.Of("roofPanelItems", "Roof panel accessories", null, ItemScheduleFields));
+        // Stage S4: the lines bought, by their article codes, as the roof's quantities (the estimate prices them), and the Bilka price
+        // list as an indicative template the user adds when asked.
+        r.Service<IQuantityFilter>(new PanelCost.Filter());
+        r.Service<IPriceListTemplate>(new PanelCost.BilkaTemplate());
 
         // {id (a roof), profile (a profile's id, or a profile of its own; null: none), color, maxLength (a made-to-order profile's longest panel, mm),
         //  support (the profile's support scheme), ridge (its ridge caps, large or small), fixing (the support's: nails or screws)}; only what differs
@@ -75,24 +81,31 @@ public sealed class RoofPanelsModule : ILapinModule
             return null;
         });
 
-        // {id (a roof), profile?, color?, maxLength?}: the layout in the roof's own profile, or in the one given (a preview).
+        // {id (a roof), profile?, color?, maxLength?}: the layout in the roof's own profile, or in the one given (a preview); with its
+        // cost (S4): the lines priced from the project's price lists.
         r.Query("layout", (q, a) =>
         {
+            JsonObject Out(RoofPanels.Layout l)
+            {
+                var o = RoofPanels.ToJson(l);
+                o["cost"] = PanelCost.Json(PanelCost.Estimate(l, q.Services.Get<IArticlePrices>(), q.Model));
+                return o;
+            }
             var roof = q.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.Roof } x ? x : throw new CommandException("Pick a roof.");
             try
             {
                 if (a["profile"] is null)
                 {
                     if (RoofPanels.ChoiceOf(roof) == null) return new JsonObject { ["problem"] = "The roof names no panel profile." };
-                    if (RoofPanels.Of(roof, q.Model) is { } own) return RoofPanels.ToJson(own);
+                    if (RoofPanels.Of(roof, q.Model) is { } own) return Out(own);
                     var c = RoofPanels.ChoiceOf(roof)!;
-                    return RoofPanels.ToJson(RoofPanels.Lay(roof, q.Model, PanelProfiles.Resolve(JsonValue.Create(c.Profile)).WithMaxLength(c.MaxLength), c.Color, c.Options));
+                    return Out(RoofPanels.Lay(roof, q.Model, PanelProfiles.Resolve(JsonValue.Create(c.Profile)).WithMaxLength(c.MaxLength), c.Color, c.Options));
                 }
                 var profile = PanelProfiles.Resolve(a["profile"]).WithMaxLength(Json.Number(a["maxLength"]) is { } ml ? (int)ml : null);
                 // A preview keeps the roof's own options where the profile has them, or takes the ones asked.
                 var mine = RoofPanels.ChoiceOf(roof);
                 var options = new Takeoff.Options((string?)a["support"] ?? mine?.Support, (string?)a["ridge"] ?? mine?.Ridge, (string?)a["fixing"] ?? mine?.Fixing);
-                return RoofPanels.ToJson(RoofPanels.Lay(roof, q.Model, profile, (string?)a["color"], options));
+                return Out(RoofPanels.Lay(roof, q.Model, profile, (string?)a["color"], options));
             }
             catch (ArgumentException e) { return new JsonObject { ["problem"] = e.Message }; }
         });

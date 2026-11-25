@@ -1776,7 +1776,7 @@ export const RO: Record<string, string> = {
   'Quick tools': 'Unelte rapide', 'Floating at the bottom': 'Plutind jos', 'Docked on the left edge': 'Pe marginea din stânga', 'Off (the number keys still work)': 'Oprite (tastele cu cifre merg în continuare)',
   'Command line': 'Linia de comandă', 'Its own line': 'Linie proprie', 'In the status line': 'În linia de stare', 'HUD': 'HUD', 'Over the view': 'Peste vedere', 'Off': 'Oprit',
   'Tool prompt and inputs': 'Mesajul uneltei și câmpurile', 'Banner over the view': 'Banner peste vedere', 'In the command line': 'În linia de comandă', 'A button': 'Un buton',
-  'Docked': 'Andocate', 'Browser folds to a rail': 'Browserul se pliază pe o bară', 'Both fold': 'Se pliază amândouă', 'Property rows': 'Rândurile proprietăților', 'Normal': 'Normale', 'Dense (22 px)': 'Dese (22 px)', 'Tabs': 'Taburi', 'A hidden tab\'s tools stay in Commands… and the keyboard shortcuts.': 'Uneltele unui tab ascuns rămân în Comenzi… și în scurtăturile de la tastatură.', 'Always shown: Interface… is here': 'Mereu afișat: Interfață… e aici',
+  'Docked': 'Andocate', 'Browser folds to a rail': 'Browserul se pliază pe o bară', 'Both fold': 'Se pliază amândouă', 'Property rows': 'Rândurile proprietăților', 'Normal': 'Normale', 'Dense (22 px)': 'Dese (22 px)', 'Keys on tools': 'Taste pe unelte', 'While Alt is held': 'Cât ții apăsat Alt', 'Always': 'Mereu', 'Tabs': 'Taburi', 'A hidden tab\'s tools stay in Commands… and the keyboard shortcuts.': 'Uneltele unui tab ascuns rămân în Comenzi… și în scurtăturile de la tastatură.', 'Always shown: Interface… is here': 'Mereu afișat: Interfață… e aici',
   'The side panels fold in every mode: the button on their header, a double-click on their edge, or the keyboard.': 'Panourile laterale se pliază în orice mod: butonul din antetul lor, dublu-click pe marginea lor sau tastatura.',
   'This dialog:': 'Acest dialog:', 'Keyboard shortcuts…': 'Scurtături de tastatură…', 'Keyboard shortcuts': 'Scurtături de tastatură', 'Find a command or a key': 'Caută o comandă sau o tastă',
   'Catalog': 'Catalog', 'No types yet: the first is made as you place one.': 'Încă nu sunt tipuri: primul se face când pui un element.', 'A click places it; drag a card onto a quick slot to keep it there.': 'Un clic îl pune; trage o carte pe un loc rapid ca să o păstrezi acolo.', 'This edition places no typed elements.': 'Această ediție nu pune elemente cu tip.',
@@ -6711,7 +6711,7 @@ export const RO: Record<string, string> = {
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "Extrasul accesoriilor panotajului a fost făcut: este în navigatorul proiectului, la Extrase.",
   // A part of the window that stopped (PartBoundary, forum topic 258).
   "This part of Lapin stopped working; the rest of the window still works.": "Această parte din Lapin s-a oprit; restul ferestrei funcționează în continuare.", "Report…": "Raportează…", "Lapin's window stopped working.": "Fereastra Lapin s-a oprit.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "Reîncarcă fereastra pentru a continua. Te rugăm să raportezi ce ai făcut chiar înainte, ca să poată fi reparat.", "Reload the window": "Reîncarcă fereastra", "Report on the forum…": "Raportează pe forum…",
-  // The project's notation (decision 861): Rebar settings → Notation.
+  // The project's notation (decision 864): Rebar settings → Notation.
   "Notation": "Notație",
   "Back to the preset's or Lapin's": "Înapoi la presetare sau la Lapin",
   "Symbols, prefixes and spacing differ from one country to another. The presets are indicative: check them against the standard you work to. A text you type goes over the preset; empty, it goes back.": "Simbolurile, prefixele și distanțele diferă de la o țară la alta. Presetările sunt orientative: verifică-le după standardul după care lucrezi. Un text pe care îl scrii trece peste presetare; gol, revine.",
@@ -6734,6 +6734,28 @@ export const RO: Record<string, string> = {
   "United Kingdom": "Regatul Unit",
   "United States": "Statele Unite",
   "Spacing centre to centre": "Distanță interax",
+  // Roof panel layout, stage S4: the cost link (decision 859).
+  "Indicative subtotal": "Subtotal orientativ",
+  "The lines with a price in the project's price lists: the quantity by the unit price. Labour and transport are not included": "Liniile cu preț în listele de prețuri ale proiectului: cantitatea înmulțită cu prețul unitar. Manopera și transportul nu sunt incluse",
+  "Lines no price list prices: ask the supplier": "Linii fără preț în nicio listă: cere oferta furnizorului",
+  "To quote": "De ofertat",
+  "Indicative: check the prices when ordering.": "Orientativ: verifică prețurile la comandă.",
+  "No price list prices these lines yet. Add the Bilka – Dedeman template (indicative) or your own list in Price lists…, or from the Cost tab of Panel layout.": "Nicio listă de prețuri nu are încă prețuri pentru aceste linii. Adaugă șablonul Bilka – Dedeman (orientativ) sau lista ta în Liste de prețuri…, ori din tabul Cost al panotajului.",
+  "No price list of the project prices these lines. Add the Bilka – Dedeman list (indicative prices read on 24.11.2026), or import your own with the same codes.": "Nicio listă de prețuri a proiectului nu are prețuri pentru aceste linii. Adaugă lista Bilka – Dedeman (prețuri orientative citite la 24.11.2026) sau importă lista ta cu aceleași coduri.",
+  "Add the Bilka – Dedeman template": "Adaugă șablonul Bilka – Dedeman",
+  "Amount": "Valoare",
+  "Subtotal of the priced lines": "Subtotalul liniilor cu preț",
+  "Where two ridge or hip caps lap: an operation, the material is in the caps": "Unde se petrec două coame: o operațiune, materialul e în coame",
+  "Joints between ridge caps": "Îmbinări între coame",
+  "Cut from flat sheet": "Din tablă plană",
+  "Indicative — check prices when ordering. Labour, transport and the rainwater system are not included.": "Orientativ — verifică prețurile la comandă. Manopera, transportul și sistemul pluvial nu sunt incluse.",
+  "Source (supplier)": "Sursa (furnizorul)",
+  "Price checked on": "Preț verificat la",
+  "Indicative lists to start from, added to the project only when you ask: replace their prices with yours (your own list first, or the estimate's price lists in your order).": "Liste orientative de la care pornești, adăugate în proiect doar când ceri: înlocuiește-le prețurile cu ale tale (lista ta întâi, sau listele de prețuri ale devizului în ordinea ta).",
+  "The Bilka roof panels' prices read on 24.11.2026, mostly at Dedeman: indicative, check them when ordering.": "Prețurile panourilor Bilka citite la 24.11.2026, în principal la Dedeman: orientative, verifică-le la comandă.",
+  "Lapin's own rough values, a few rows to try the estimate with.": "Valorile orientative ale lui Lapin, câteva rânduri ca să încerci devizul.",
+  "There is no such price list template.": "Nu există un astfel de șablon de listă de prețuri.",
+  "The day the price was read": "Ziua în care a fost citit prețul",
 };
 
 /** Phrases with a number or a name in them. */
@@ -7280,4 +7302,10 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(.+)'s ridge caps are (.+)\.$/, (m) => `Coamele profilului ${m[1]} sunt ${m[2]}.`],
   [/^The battens are fixed with (.+)\.$/, (m) => `Șipcile se prind cu ${m[1]}.`],
   [/^(.+) is not made in (.+)\.$/, (m) => `${m[1]} nu se fabrică în ${m[2]}.`],
+  // Roof panel layout, stage S4.
+  [/^Price list added to the project: (.+)\.$/, (m) => `Lista de prețuri a fost adăugată în proiect: ${m[1]}.`],
+  [/^(\d+) panel\(s\) of (\d+) mm: priced per m² of sheet bought \(the nominal length by the (\d+) mm width\)\.$/, (m) => `${m[1]} panouri de ${m[2]} mm: prețul pe m² de tablă cumpărată (lungimea nominală pe lățimea de ${m[3]} mm).`],
+  [/^The template (.+) is not a Lapin price list\.$/, (m) => `Șablonul ${m[1]} nu este o listă de prețuri Lapin.`],
+  [/^The template (.+) does not say its prices are indicative\.$/, (m) => `Șablonul ${m[1]} nu spune că prețurile lui sunt orientative.`],
+  [/^The template (.+) has no rows\.$/, (m) => `Șablonul ${m[1]} nu are rânduri.`],
 ];

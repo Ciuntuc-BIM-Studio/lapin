@@ -111,6 +111,65 @@ public interface IGeometryFilter
 }
 
 /// <summary>
+/// Quantities a module adds to another module's element (docs/plan-roof-panels.md §2.7: a roof's panels, accessories and
+/// fixings on the roof), worked out on every ask like the element's own: the sets come after its class's, so its schedules,
+/// formulas, IFC export and the estimate read them with the rest. Not asked for a reference or an external body.
+/// </summary>
+public interface IQuantityFilter
+{
+    IEnumerable<QuantitySet> Add(Entity entity, IModelView model);
+}
+
+/// <summary>
+/// Quantities of articles (docs/plan-roof-panels.md, stage S4): a set whose <see cref="QuantitySet.Part"/> is <see cref="Part"/>
+/// holds lines already counted in their article's unit — a quantity's name is the article's code (and, after <see cref="Variant"/>,
+/// what tells two lines of one code apart: the panels' length), its label the line's text, its value how many of the article's
+/// unit (pieces, boxes, rolls, m²). The estimate prices each by its code, whatever the element's type says.
+/// </summary>
+public static class ArticleQuantities
+{
+    public const string Part = "articles";
+    public const char Variant = '#';
+
+    /// <summary>A quantity's name for an article code and a variant.</summary>
+    public static string Name(string code, string? variant) => variant is { Length: > 0 } ? $"{code}{Variant}{variant}" : code;
+
+    /// <summary>The code and variant a quantity's name holds.</summary>
+    public static (string Code, string? Variant) Split(string name)
+    {
+        var i = name.IndexOf(Variant);
+        return i < 0 ? (name, null) : (name[..i], name[(i + 1)..]);
+    }
+}
+
+/// <summary>An article's price as the project's price lists give it: the list's row (its unit, its unit price in the list's currency, where it was taken from).</summary>
+public sealed record ArticlePrice(string Code, string Name, string Unit, double Price, string Currency, string List, bool Indicative,
+    string? Source = null, string? Url = null, string? Checked = null);
+
+/// <summary>
+/// The project's prices by article code (the cost module's price lists, in the order an estimate takes them), for a module
+/// that shows what its own lines cost (the roof panels' Cost tab). No service: the product has no cost module.
+/// </summary>
+public interface IArticlePrices
+{
+    ArticlePrice? Price(IModelView model, string code);
+}
+
+/// <summary>
+/// A price list a module ships as a template (docs/plan-roof-panels.md §2.7): indicative, with its date and sources on its
+/// rows, added to a project only when the user asks (Price lists → Templates). <see cref="Read"/> is the list as a
+/// <c>.lapinprices</c> file has it: <c>{format: "lapin-price-list", version: 1, name, currency, indicative: true, rows}</c>.
+/// </summary>
+public interface IPriceListTemplate
+{
+    string Id { get; }
+    string Name { get; }
+    /// <summary>What it is and where its prices come from, for the dialog.</summary>
+    string Note { get; }
+    JsonObject Read();
+}
+
+/// <summary>
 /// What the interface is told of an entity besides its attributes: derived, never stored, worked out each time the
 /// entity is sent (a roof window's frame on its slope, so its grips stand on its edges). A failure leaves the props as they are.
 /// </summary>

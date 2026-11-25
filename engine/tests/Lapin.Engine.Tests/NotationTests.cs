@@ -10,7 +10,7 @@ using Xunit;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// The project's notations (decision 861): the symbols, prefixes and suffixes a drawing writes are local standards, so each
+/// The project's notations (decision 864): the symbols, prefixes and suffixes a drawing writes are local standards, so each
 /// domain's texts are templates with <c>{…}</c> tokens, Lapin's coded ones the default, country presets (indicative) and the
 /// user's own over them, per project. Rebar is the first domain: the diameter's symbol, the count, step, length and steel as
 /// labels write them, and the bar bending schedule's headings.

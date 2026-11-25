@@ -135,7 +135,7 @@ public sealed record LabelStyle(IReadOnlyList<string> Parts, bool Balloon, strin
     /// <summary>Never a balloon without a mark: an empty circle says nothing.</summary>
     public bool ShowsBalloon(int mark) => Balloon && mark > 0;
 
-    /// <summary>What a group's label says of it, part by part: "41Ø8/150", "3Ø16 L=6000"; each part as the project's notation writes it (decision 861; null: Lapin's own).</summary>
+    /// <summary>What a group's label says of it, part by part: "41Ø8/150", "3Ø16 L=6000"; each part as the project's notation writes it (decision 864; null: Lapin's own).</summary>
     public string Text(LabelFacts f, Notation? n = null)
     {
         n ??= RebarNotation.Default;

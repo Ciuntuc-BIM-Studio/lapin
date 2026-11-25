@@ -11,6 +11,8 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="profiles.json" LogicalName="Lapin.RoofPanels.profiles.json" />
+    <!-- The Bilka price list, an indicative template the user adds to a project when asked (S4, decision 859). -->
+    <EmbeddedResource Include="bilka-dedeman-2026-11-24.lapinprices" LogicalName="Lapin.RoofPanels.bilka-dedeman-2026-11-24.lapinprices" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />

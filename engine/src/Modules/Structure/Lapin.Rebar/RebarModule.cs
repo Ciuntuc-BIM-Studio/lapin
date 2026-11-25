@@ -26,7 +26,7 @@ public sealed record RebarSettings(bool ColorByDiameter = true, double TextHeigh
 
     public IReadOnlyDictionary<string, JsonObject> Labels { get; init; } = Labels ?? new Dictionary<string, JsonObject>();
 
-    /// <summary>How the project writes the diameter, the step, the length and the schedule's headings (decision 861; kept in the project's <c>notations</c>, not here).</summary>
+    /// <summary>How the project writes the diameter, the step, the length and the schedule's headings (decision 864; kept in the project's <c>notations</c>, not here).</summary>
     public Notation Notation { get; init; } = RebarNotation.Default;
 
     /// <summary>The lap (m) for a bar of this diameter: the project's, or 50Ø.</summary>
@@ -126,7 +126,7 @@ public static class Rebars
 
     public static IEnumerable<Entity> On(IModelView m, string viewId, string cls) => m.OfClass(cls).Where(e => e.Str("viewId") == viewId);
 
-    /// <summary>What a label says of a bar: "4Ø12 L=2450" (the project's notation, decision 861).</summary>
+    /// <summary>What a label says of a bar: "4Ø12 L=2450" (the project's notation, decision 864).</summary>
     public static string Label(Entity e, RebarSpec s, Notation? n = null) =>
         LabelStyle.Default("bars").Text(new LabelFacts(Pieces(e).ToString(CultureInfo.InvariantCulture), s.Diameter, null, RebarShapes.Length(s), "", ""), n);
 
@@ -173,7 +173,7 @@ public sealed class RebarSchedule : IScheduleSource
 
     static readonly string[] ColumnKeys = ["heading.mark", "heading.diameter", "heading.shape", "heading.count", "heading.length", "heading.total", "heading.mass", "heading.note"];
 
-    /// <summary>The columns' headings as the project's notation writes them (decision 861; Lapin's: <see cref="Columns"/>).</summary>
+    /// <summary>The columns' headings as the project's notation writes them (decision 864; Lapin's: <see cref="Columns"/>).</summary>
     public static string[] ColumnsOf(Notation n) => [.. ColumnKeys.Select(k => n.Format(k, _ => null))];
 
     static string N(double v, int decimals = 2) => v.ToString(decimals == 2 ? "0.00" : "0.###", CultureInfo.InvariantCulture);
@@ -387,7 +387,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         });
 
         r.Service<IViewAnnotations>(this);
-        // How the project writes diameters, steps, lengths and the schedule's headings (decision 861).
+        // How the project writes diameters, steps, lengths and the schedule's headings (decision 864).
         RebarNotation.Register(r);
         // Rebar sets in slabs, footings and walls, with their multi-rebar tag (decision 730).
         RebarSets.Register(r);

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { NodeDto } from '../../engine/protocol';
 import {
+  BILKA_TEMPLATE, COST_GROUPS, costRows, costState, money, quantityText, sheetRows, subtotalText, type CostDto, type CostLineDto,
   choiceOf, colourLabel, edgeRows, faceTotals, ITEM_GROUPS, itemRows, laidFlat, lengthColours, needText, purchaseRows, purchaseText, REUSED, reuseLinks, setArgs,
   takeoffOptions, type LayoutDto, type PanelDto, type PanelProfileDto, type TakeoffDto,
 } from './roofpanels';
@@ -161,6 +162,19 @@ describe('the roof panels in every language', () => {
       expect(translate("Bilka Clasic 35's ridge caps are large or small.", id), id).toContain('Bilka Clasic 35');
     }
   });
+
+  it('names the Cost tab (S4) in each: its groups and columns, the subtotal, the notes, the engine\'s line notes', async () => {
+    const { loadAllLanguages, translate, LANGUAGES } = await import('../../i18n');
+    await loadAllLanguages();
+    for (const { id } of LANGUAGES.filter((l) => l.id !== 'en')) {
+      for (const phrase of [...COST_GROUPS.map((g) => g.label), 'Cost', 'Quantities', 'Price', 'Amount', 'Source', 'To quote', 'Indicative subtotal', 'Subtotal of the priced lines',
+        'Joints between ridge caps', 'Cut from flat sheet', 'Add the Bilka – Dedeman template', 'Price lists…', 'Templates', 'Source (supplier)', 'Price checked on',
+        'Indicative — check prices when ordering. Labour, transport and the rainwater system are not included.', 'There is no such price list template.'])
+        expect(translate(phrase, id), `${phrase} in ${id}`).not.toBeNull();
+      expect(translate('18 panel(s) of 4350 mm: priced per m² of sheet bought (the nominal length by the 1200 mm width).', id), id).toContain('4350');
+      expect(translate('Price list added to the project: Bilka – Dedeman (indicative, 24.11.2026).', id), id).toContain('Bilka – Dedeman');
+    }
+  });
 });
 
 describe('the takeoff the interface reads (S3)', () => {
@@ -206,5 +220,49 @@ describe('the takeoff the interface reads (S3)', () => {
     // To Retro Panel: no ridge option there, its support kept when it has it.
     expect(setArgs('r1', { profile: 'bilka-retro-panel', ridge: 'small', support: 'attached', fixing: 'screws' }, [tile, panel])).toEqual({ id: 'r1', profile: 'bilka-retro-panel', support: 'attached', fixing: 'screws' });
     expect(setArgs('r1', { profile: 'bilka-clasic-35', support: 'attached' }, [tile, panel])).toEqual({ id: 'r1', profile: 'bilka-clasic-35' });
+  });
+});
+
+describe('the Cost tab (S4)', () => {
+  const line = (over: Partial<CostLineDto>): CostLineDto => ({ code: 'x', name: 'X', group: 'flashings', quantity: 1, unit: 'piece 2 m', note: '', ...over });
+  const cost: CostDto = {
+    available: true, joints: 15, priced: 3, toQuote: 1, fromSheet: 1, indicative: true, subtotal: { RON: 22517.86 },
+    lines: [
+      line({ code: 'bilka-clasic-35/7016', variant: '4350 mm', group: 'panels', quantity: 93.96, unit: 'm²', pieces: 18, price: 50.77, amount: 4770.35 }),
+      line({ code: 'hip-large', quantity: 15, price: 79.73, amount: 1195.95, source: 'Dedeman 6037249' }),
+      line({ code: 'window-kit', quantity: 1, unit: 'piece' }),
+      line({ code: 'ridge-nodes', quantity: 4, unit: 'piece', madeFrom: 'flatSheet' }),
+      line({ code: 'batten', group: 'support', quantity: 165, unit: 'bar 3 m', price: 17.53, amount: 2892.45 }),
+    ],
+  };
+
+  it('groups the lines bought, the panels first, and keeps what is cut from flat sheet apart', () => {
+    expect(COST_GROUPS.map((g) => g.id)).toEqual(['panels', 'flashings', 'fixings', 'support']);
+    expect(costRows(cost, 'panels').map((l) => l.code)).toEqual(['bilka-clasic-35/7016']);
+    expect(costRows(cost, 'flashings').map((l) => l.code)).toEqual(['hip-large', 'window-kit']);
+    expect(sheetRows(cost).map((l) => l.code)).toEqual(['ridge-nodes']);
+  });
+
+  it('writes money with two decimals and thousands grouped, the subtotal a currency each', () => {
+    expect(money(22517.86)).toBe('22\u00a0517.86');
+    expect(money(1195.9)).toBe('1\u00a0195.90');
+    expect(money(0.17)).toBe('0.17');
+    expect(money(1234567)).toBe('1\u00a0234\u00a0567.00');
+    expect(subtotalText(cost)).toBe('22\u00a0517.86 RON');
+    expect(subtotalText({ subtotal: { EUR: 10, RON: 5 } })).toBe('10.00 EUR + 5.00 RON');
+    expect(subtotalText({ subtotal: {} })).toBe('');
+  });
+
+  it('says whether there is a cost module, a price for the lines or a subtotal', () => {
+    expect(costState(undefined)).toBe('none');
+    expect(costState({ ...cost, available: false })).toBe('none');
+    expect(costState({ ...cost, priced: 0, subtotal: {} })).toBe('unpriced');
+    expect(costState(cost)).toBe('priced');
+  });
+
+  it('writes the panels\' m² with two decimals and counts as they are', () => {
+    expect(quantityText({ quantity: 46.37352, unit: 'm²' })).toBe('46.37');
+    expect(quantityText({ quantity: 165, unit: 'bar 3 m' })).toBe('165');
+    expect(BILKA_TEMPLATE).toBe('bilka-dedeman-2026-11-24');
   });
 });

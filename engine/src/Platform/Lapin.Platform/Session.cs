@@ -704,7 +704,10 @@ public sealed partial class Session
         // A reference (its body from a file) measures by its file's quantities and its body, not by its class's native rules (ReferenceQuantities).
         if (ReferenceQuantities.Applies(e)) return ReferenceQuantities.Quantities(e, Geometry(id), _store);
         if (_catalog.QuantitiesOf(e.Class) is not { } producer) return [];
-        return producer(e, Geometry(id), _store).ToList();
+        var sets = producer(e, Geometry(id), _store).ToList();
+        // What other modules measure on it (a roof's panels and their accessories, IQuantityFilter).
+        foreach (var f in _catalog.All<IQuantityFilter>()) sets.AddRange(f.Add(e, _store));
+        return sets;
     }
 
     /// <summary>

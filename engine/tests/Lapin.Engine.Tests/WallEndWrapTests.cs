@@ -8,7 +8,7 @@ using Lapin.Platform;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// A finish wrapped round a wall's free ends (in-app report #192, decision 859): a wall type's, or a wall's own, <c>wrapEnds</c>
+/// A finish wrapped round a wall's free ends (in-app report #192, decision 862): a wall type's, or a wall's own, <c>wrapEnds</c>
 /// says which face's outer layer turns each free end (<c>first</c>: layer 1's, the R face; <c>last</c>: layer n's, the L face;
 /// <c>none</c>). That layer then caps the end from its own face to the other one, and every other layer stops its thickness short,
 /// so the end shows the finish, not the core; the wall's overall outline does not move. Joined ends are the joins'. Without

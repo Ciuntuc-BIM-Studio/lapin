@@ -2,7 +2,9 @@
  * Cost → Price lists… (docs/plan-4d5d.md, stage 6, step 4.1): the project's price lists; Import… reads a CSV or XLSX,
  * shows its first rows under its headings and each column's meaning, guessed from the heading (English or Romanian)
  * and changed here; the list goes into the project and into this computer's library, from which any project takes it
- * back. Lapin ships no prices: its template has a few rows of its own rough values, marked indicative.
+ * back. Lapin ships no prices: its template has a few rows of its own rough values, marked indicative. Templates (decision 859)
+ * lists the indicative lists the product's modules ship (the roof panels' Bilka – Dedeman list, with its sources and date),
+ * each added to the project only when asked.
  */
 
 import { backdropClose } from '../../shell/Dialog';
@@ -23,13 +25,18 @@ async function exportList(l: LibraryList) {
 }
 
 interface ListDto { id: string; name: string; currency: string; count: number; resources: number; indicative: boolean; source?: string | null }
+interface TemplateDto { id: string; name: string; note: string; rows: number; currency?: string; indicative: boolean; checked?: string | null }
 interface ReadDto { header: number; rows: number; headings: string[]; sample: string[][]; map: Record<string, number | null>; fields: string[] }
 
 /** What each column can mean, as the dialog names it. */
 export const FIELD_LABELS: Record<string, string> = {
   code: 'Code', name: 'Description', unit: 'Unit', material: 'Material', labour: 'Labour', equipment: 'Equipment', transport: 'Transport',
   price: 'Unit price (not split)', hours: 'Man-hours per unit', trade: 'Trade', article: 'Article it belongs to (a resource)', kind: 'Kind of resource', consumption: 'Consumption per unit',
+  source: 'Source (supplier)', url: 'Link', checked: 'Price checked on',
 };
+
+/** The template's id as cost.addPriceList takes it: Lapin's own rough values are `true`, a module's its id. */
+export const templateArg = (t: Pick<TemplateDto, 'id'>): true | string => (t.id === 'lapin' ? true : t.id);
 
 /** The column a heading's field is matched to, as the dialog's choice: each column picks one field; a field taken by another column is moved. */
 export function setColumn(map: Record<string, number | null>, column: number, field: string | null): Record<string, number | null> {
@@ -92,7 +99,9 @@ export function PriceListsDialog() {
   const [lists, setLists] = useState<ListDto[]>([]);
   const [lib, setLib] = useState<LibraryList[]>(library());
   const [file, setFile] = useState<{ name: string; bytes: Uint8Array; read: ReadDto } | null>(null);
+  const [templates, setTemplates] = useState<TemplateDto[]>([]);
   useEffect(() => { let live = true; void query<ListDto[]>('cost.priceLists').then((r) => { if (live) setLists(r ?? []); }); return () => { live = false; }; }, [version]);
+  useEffect(() => { let live = true; void query<TemplateDto[]>('cost.templates').then((r) => { if (live) setTemplates(r ?? []); }); return () => { live = false; }; }, []);
   const close = () => useUi.setState({ dialog: null });
   const pick = async () => {
     const f = await pickFile('Price list (CSV, XLSX)', ['csv', 'xlsx', 'txt']);
@@ -137,8 +146,22 @@ export function PriceListsDialog() {
               <div className="row">
                 <button type="button" className="btn primary" onClick={() => void pick()} data-testid="price-import"><FileUp size={14} />Import…</button>
                 <button type="button" className="btn" onClick={() => void template()} title="A CSV with the columns and a few rows of Lapin's rough values"><Download size={14} />Template</button>
-                <button type="button" className="btn" onClick={() => void execute('cost.addPriceList', { template: true })} title="Lapin's rough values as a list, to try the estimate: replace them with yours" data-testid="price-indicative">Use the indicative values</button>
               </div>
+              <h4 className="eyebrow">Templates</h4>
+              <p className="muted small">Indicative lists to start from, added to the project only when you ask: replace their prices with yours (your own list first, or the estimate's price lists in your order).</p>
+              <ul className="plain-list price-lists" data-testid="price-templates">
+                {templates.map((t) => (
+                  <li key={t.id} data-template={t.id} title={t.note}>
+                    <span data-no-i18n>{t.name}</span>
+                    <span className="muted small" data-no-i18n>{`${t.rows}${t.checked ? ` · ${t.checked}` : ''}`}</span>
+                    {t.indicative && <span className="tag">indicative</span>}
+                    <span className="grow" />
+                    <button type="button" className="btn" disabled={inProject.has(t.name)} data-testid={t.id === 'lapin' ? 'price-indicative' : undefined}
+                      title={t.id === 'lapin' ? "Lapin's rough values as a list, to try the estimate: replace them with yours" : t.note}
+                      onClick={() => void execute('cost.addPriceList', { template: templateArg(t) }).then((r) => { if (r) notify(`Price list added to the project: ${t.name}.`); })}>Add to the project</button>
+                  </li>
+                ))}
+              </ul>
               <h4 className="eyebrow"><BookMarked size={12} /> On this computer</h4>
               {lib.length === 0 ? <p className="muted small">Lists you import are kept here, for any project.</p> : (
                 <ul className="plain-list price-lists">

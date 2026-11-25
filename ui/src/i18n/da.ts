@@ -1782,7 +1782,7 @@ export const DA: Record<string, string> = {
   'Quick tools': 'Hurtigværktøjer', 'Floating at the bottom': 'Svævende forneden', 'Docked on the left edge': 'Forankret i venstre kant', 'Off (the number keys still work)': 'Fra (taltasterne virker stadig)',
   'Command line': 'Kommandolinje', 'Its own line': 'Sin egen linje', 'In the status line': 'I statuslinjen', 'HUD': 'HUD', 'Over the view': 'Over visningen', 'Off': 'Fra',
   'Tool prompt and inputs': 'Værktøjets prompt og felter', 'Banner over the view': 'Banner over visningen', 'In the command line': 'I kommandolinjen', 'A button': 'En knap',
-  'Docked': 'Forankret', 'Browser folds to a rail': 'Browseren foldes til en skinne', 'Both fold': 'Begge foldes', 'Property rows': 'Egenskabsrækker', 'Normal': 'Normale', 'Dense (22 px)': 'Tætte (22 px)', 'Tabs': 'Faner', 'A hidden tab\'s tools stay in Commands… and the keyboard shortcuts.': 'En skjult fanes værktøjer bliver i Kommandoer… og i tastaturgenvejene.', 'Always shown: Interface… is here': 'Vises altid: Grænseflade… er her',
+  'Docked': 'Forankret', 'Browser folds to a rail': 'Browseren foldes til en skinne', 'Both fold': 'Begge foldes', 'Property rows': 'Egenskabsrækker', 'Normal': 'Normale', 'Dense (22 px)': 'Tætte (22 px)', 'Keys on tools': 'Taster på værktøjer', 'While Alt is held': 'Mens Alt holdes nede', 'Always': 'Altid', 'Tabs': 'Faner', 'A hidden tab\'s tools stay in Commands… and the keyboard shortcuts.': 'En skjult fanes værktøjer bliver i Kommandoer… og i tastaturgenvejene.', 'Always shown: Interface… is here': 'Vises altid: Grænseflade… er her',
   'The side panels fold in every mode: the button on their header, a double-click on their edge, or the keyboard.': 'Sidepanelerne foldes i alle tilstande: med knappen i deres overskrift, et dobbeltklik på deres kant eller tastaturet.',
   'This dialog:': 'Denne dialog:', 'Keyboard shortcuts…': 'Tastaturgenveje…', 'Keyboard shortcuts': 'Tastaturgenveje', 'Find a command or a key': 'Find en kommando eller en tast',
   'Catalog': 'Katalog', 'No types yet: the first is made as you place one.': 'Ingen typer endnu: den første laves, når du sætter et element.', 'A click places it; drag a card onto a quick slot to keep it there.': 'Et klik sætter den; træk et kort til en hurtigplads for at beholde det der.', 'This edition places no typed elements.': 'Denne udgave sætter ingen elementer med type.',
@@ -6752,7 +6752,7 @@ export const DA: Record<string, string> = {
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "Listen over tagpladetilbehør er lavet: den ligger i projektbrowseren under Lister.",
   // A part of the window that stopped (PartBoundary, forum topic 258).
   "This part of Lapin stopped working; the rest of the window still works.": "Denne del af Lapin holdt op med at virke; resten af vinduet virker stadig.", "Report…": "Rapportér…", "Lapin's window stopped working.": "Lapins vindue holdt op med at virke.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "Genindlæs vinduet for at fortsætte. Rapportér venligst, hvad du gjorde lige før, så det kan rettes.", "Reload the window": "Genindlæs vinduet", "Report on the forum…": "Rapportér på forummet…",
-  // The project's notation (decision 861): Rebar settings → Notation.
+  // The project's notation (decision 864): Rebar settings → Notation.
   "Notation": "Notation",
   "Back to the preset's or Lapin's": "Tilbage til forudindstillingens eller Lapins",
   "Symbols, prefixes and spacing differ from one country to another. The presets are indicative: check them against the standard you work to. A text you type goes over the preset; empty, it goes back.": "Symboler, præfikser og afstande er forskellige fra land til land. Forudindstillingerne er vejledende: kontroller dem mod den standard, du arbejder efter. En tekst, du skriver, går foran forudindstillingen; tom vender den tilbage.",
@@ -6775,6 +6775,28 @@ export const DA: Record<string, string> = {
   "United Kingdom": "Storbritannien",
   "United States": "USA",
   "Spacing centre to centre": "Afstand center til center",
+  // Roof panel layout, stage S4: the cost link (decision 859).
+  "Indicative subtotal": "Vejledende subtotal",
+  "The lines with a price in the project's price lists: the quantity by the unit price. Labour and transport are not included": "Linjerne med en pris i projektets prislister: mængden gange enhedsprisen. Arbejdsløn og transport er ikke medregnet",
+  "Lines no price list prices: ask the supplier": "Linjer uden pris i nogen liste: bed leverandøren om et tilbud",
+  "To quote": "Skal indhentes tilbud",
+  "Indicative: check the prices when ordering.": "Vejledende: tjek priserne ved bestilling.",
+  "No price list prices these lines yet. Add the Bilka – Dedeman template (indicative) or your own list in Price lists…, or from the Cost tab of Panel layout.": "Ingen prisliste har endnu priser på disse linjer. Tilføj skabelonen Bilka – Dedeman (vejledende) eller din egen liste i Prislister…, eller fra fanen Omkostning i paneludlægningen.",
+  "No price list of the project prices these lines. Add the Bilka – Dedeman list (indicative prices read on 24.11.2026), or import your own with the same codes.": "Ingen af projektets prislister har priser på disse linjer. Tilføj listen Bilka – Dedeman (vejledende priser aflæst 24.11.2026), eller importér din egen med de samme koder.",
+  "Add the Bilka – Dedeman template": "Tilføj skabelonen Bilka – Dedeman",
+  "Amount": "Beløb",
+  "Subtotal of the priced lines": "Subtotal for linjerne med pris",
+  "Where two ridge or hip caps lap: an operation, the material is in the caps": "Hvor to rygninger overlapper: en arbejdsgang, materialet er i rygningerne",
+  "Joints between ridge caps": "Samlinger mellem rygninger",
+  "Cut from flat sheet": "Af plan plade",
+  "Indicative — check prices when ordering. Labour, transport and the rainwater system are not included.": "Vejledende — tjek priserne ved bestilling. Arbejdsløn, transport og tagafvandingen er ikke medregnet.",
+  "Source (supplier)": "Kilde (leverandør)",
+  "Price checked on": "Pris tjekket den",
+  "Indicative lists to start from, added to the project only when you ask: replace their prices with yours (your own list first, or the estimate's price lists in your order).": "Vejledende lister at starte fra, kun tilføjet projektet, når du beder om det: erstat deres priser med dine (din egen liste først, eller overslagets prislister i din rækkefølge).",
+  "The Bilka roof panels' prices read on 24.11.2026, mostly at Dedeman: indicative, check them when ordering.": "Bilka-panelernes priser aflæst 24.11.2026, mest hos Dedeman: vejledende, tjek dem ved bestilling.",
+  "Lapin's own rough values, a few rows to try the estimate with.": "Lapins egne grove værdier, nogle få rækker til at prøve overslaget med.",
+  "There is no such price list template.": "Den prislisteskabelon findes ikke.",
+  "The day the price was read": "Den dag prisen blev aflæst",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -7323,4 +7345,10 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^(.+)'s ridge caps are (.+)\.$/, (m) => `${m[1]}s rygninger er ${m[2]}.`],
   [/^The battens are fixed with (.+)\.$/, (m) => `Lægterne fastgøres med ${m[1]}.`],
   [/^(.+) is not made in (.+)\.$/, (m) => `${m[1]} fremstilles ikke i ${m[2]}.`],
+  // Roof panel layout, stage S4.
+  [/^Price list added to the project: (.+)\.$/, (m) => `Prisliste tilføjet projektet: ${m[1]}.`],
+  [/^(\d+) panel\(s\) of (\d+) mm: priced per m² of sheet bought \(the nominal length by the (\d+) mm width\)\.$/, (m) => `${m[1]} panel(er) på ${m[2]} mm: pris pr. m² købt plade (den nominelle længde gange ${m[3]} mm bredde).`],
+  [/^The template (.+) is not a Lapin price list\.$/, (m) => `Skabelonen ${m[1]} er ikke en Lapin-prisliste.`],
+  [/^The template (.+) does not say its prices are indicative\.$/, (m) => `Skabelonen ${m[1]} siger ikke, at dens priser er vejledende.`],
+  [/^The template (.+) has no rows\.$/, (m) => `Skabelonen ${m[1]} har ingen rækker.`],
 ];

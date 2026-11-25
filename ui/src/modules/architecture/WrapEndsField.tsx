@@ -1,5 +1,5 @@
 /**
- * Which face's finish wraps a wall's free ends (in-app report #192, decision 859): on a wall type (its walls' default) and on a
+ * Which face's finish wraps a wall's free ends (in-app report #192, decision 862): on a wall type (its walls' default) and on a
  * wall (its own, or as its type). The engine builds it (`WallEndWraps`): the face's outer layer caps each free end, the other
  * layers stop its thickness short; joined ends are the joins'.
  */

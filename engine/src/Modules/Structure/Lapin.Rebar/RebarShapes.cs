@@ -362,7 +362,7 @@ public static class RebarShapes
     /// <summary>A diameter as a label writes it ("Ø12"): whole millimetres as every label writes them (<see cref="Lapin.Model.Numbers.Mm"/>; the same text for every diameter, audit §9).</summary>
     public static string Dia(double d) => "Ø" + Lapin.Model.Numbers.Mm(d);
 
-    /// <summary>A diameter as the project's notation writes it (decision 861: „Ø12”, „H12”, „#12”); null: Lapin's own.</summary>
+    /// <summary>A diameter as the project's notation writes it (decision 864: „Ø12”, „H12”, „#12”); null: Lapin's own.</summary>
     public static string Dia(double d, Lapin.Platform.Notation? n) =>
         n == null || ReferenceEquals(n, RebarNotation.Default) ? Dia(d) : n.Format("diameter", k => k == "d" ? Lapin.Model.Numbers.Mm(d) : null);
 }

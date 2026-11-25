@@ -242,6 +242,7 @@ export function Ribbon() {
     useUi.setState({ tab: id });
   };
   // Office's key tips: the large tools' shortcuts show only while Alt is held down alone (their tooltips always have them).
+  const keysAlways = useInterface((i) => i.parts.keyTips === 'always');
   const [keytips, setKeytips] = useState(false);
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -259,7 +260,7 @@ export function Ribbon() {
   }, []);
   const paletteKeys = bindingText('app.palette');
   return (
-    <header className={`topbar ribbon-${mode}${keytips ? ' keytips' : ''}`} ref={host}>
+    <header className={`topbar ribbon-${mode}${keytips ? ' keytips' : ''}${keysAlways ? ' keys-always' : ''}`} ref={host}>
       <div className="tabs-row">
         <button type="button" className="brand" onClick={() => !isGuest() && useUi.setState({ screen: 'start' })} title="Start screen"><BrandName /></button>
         <QuickAccess />

@@ -1782,7 +1782,7 @@ export const DE: Record<string, string> = {
   'Quick tools': 'Schnellwerkzeuge', 'Floating at the bottom': 'Schwebend unten', 'Docked on the left edge': 'Am linken Rand angedockt', 'Off (the number keys still work)': 'Aus (die Zifferntasten funktionieren weiterhin)',
   'Command line': 'Befehlszeile', 'Its own line': 'Eigene Zeile', 'In the status line': 'In der Statuszeile', 'HUD': 'HUD', 'Over the view': 'Über der Ansicht', 'Off': 'Aus',
   'Tool prompt and inputs': 'Werkzeughinweis und Eingaben', 'Banner over the view': 'Banner über der Ansicht', 'In the command line': 'In der Befehlszeile', 'A button': 'Eine Schaltfläche',
-  'Docked': 'Angedockt', 'Browser folds to a rail': 'Browser klappt zu einer Leiste ein', 'Both fold': 'Beide klappen ein', 'Property rows': 'Eigenschaftszeilen', 'Normal': 'Normal', 'Dense (22 px)': 'Dicht (22 px)', 'Tabs': 'Registerkarten', 'A hidden tab\'s tools stay in Commands… and the keyboard shortcuts.': 'Die Werkzeuge einer ausgeblendeten Registerkarte bleiben in Befehle… und in den Tastenkürzeln.', 'Always shown: Interface… is here': 'Immer sichtbar: Oberfläche… ist hier',
+  'Docked': 'Angedockt', 'Browser folds to a rail': 'Browser klappt zu einer Leiste ein', 'Both fold': 'Beide klappen ein', 'Property rows': 'Eigenschaftszeilen', 'Normal': 'Normal', 'Dense (22 px)': 'Dicht (22 px)', 'Keys on tools': 'Tasten auf Werkzeugen', 'While Alt is held': 'Solange Alt gedrückt ist', 'Always': 'Immer', 'Tabs': 'Registerkarten', 'A hidden tab\'s tools stay in Commands… and the keyboard shortcuts.': 'Die Werkzeuge einer ausgeblendeten Registerkarte bleiben in Befehle… und in den Tastenkürzeln.', 'Always shown: Interface… is here': 'Immer sichtbar: Oberfläche… ist hier',
   'The side panels fold in every mode: the button on their header, a double-click on their edge, or the keyboard.': 'Die Seitenbereiche klappen in jedem Modus ein: mit der Schaltfläche in ihrer Kopfzeile, einem Doppelklick auf ihren Rand oder mit der Tastatur.',
   'This dialog:': 'Dieser Dialog:', 'Keyboard shortcuts…': 'Tastenkürzel…', 'Keyboard shortcuts': 'Tastenkürzel', 'Find a command or a key': 'Befehl oder Taste suchen',
   'Catalog': 'Katalog', 'No types yet: the first is made as you place one.': 'Noch keine Typen: der erste entsteht beim Platzieren.', 'A click places it; drag a card onto a quick slot to keep it there.': 'Ein Klick platziert ihn; ziehen Sie eine Karte auf einen Schnellplatz, um sie dort zu behalten.', 'This edition places no typed elements.': 'Diese Edition platziert keine Elemente mit Typ.',
@@ -6715,7 +6715,7 @@ export const DE: Record<string, string> = {
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "Die Zubehörliste der Dachpaneele wurde erstellt: sie steht im Projektbrowser unter Listen.",
   // A part of the window that stopped (PartBoundary, forum topic 258).
   "This part of Lapin stopped working; the rest of the window still works.": "Dieser Teil von Lapin funktioniert nicht mehr; der Rest des Fensters funktioniert weiter.", "Report…": "Melden…", "Lapin's window stopped working.": "Das Lapin-Fenster funktioniert nicht mehr.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "Lade das Fenster neu, um weiterzuarbeiten. Bitte melde, was du kurz davor getan hast, damit es behoben werden kann.", "Reload the window": "Fenster neu laden", "Report on the forum…": "Im Forum melden…",
-  // The project's notation (decision 861): Rebar settings → Notation.
+  // The project's notation (decision 864): Rebar settings → Notation.
   "Notation": "Notation",
   "Back to the preset's or Lapin's": "Zurück zur Vorgabe oder zu Lapins",
   "Symbols, prefixes and spacing differ from one country to another. The presets are indicative: check them against the standard you work to. A text you type goes over the preset; empty, it goes back.": "Symbole, Präfixe und Abstände sind von Land zu Land verschieden. Die Vorgaben sind Richtwerte: prüfe sie anhand der Norm, nach der du arbeitest. Ein eingegebener Text geht vor die Vorgabe; leer gilt wieder die Vorgabe.",
@@ -6738,6 +6738,28 @@ export const DE: Record<string, string> = {
   "United Kingdom": "Vereinigtes Königreich",
   "United States": "Vereinigte Staaten",
   "Spacing centre to centre": "Achsabstand",
+  // Roof panel layout, stage S4: the cost link (decision 859).
+  "Indicative subtotal": "Richtwert-Zwischensumme",
+  "The lines with a price in the project's price lists: the quantity by the unit price. Labour and transport are not included": "Die Positionen mit einem Preis in den Preislisten des Projekts: die Menge mal Einheitspreis. Lohn und Transport sind nicht enthalten",
+  "Lines no price list prices: ask the supplier": "Positionen ohne Preis in einer Liste: beim Lieferanten anfragen",
+  "To quote": "Anzufragen",
+  "Indicative: check the prices when ordering.": "Richtwerte: Preise bei der Bestellung prüfen.",
+  "No price list prices these lines yet. Add the Bilka – Dedeman template (indicative) or your own list in Price lists…, or from the Cost tab of Panel layout.": "Noch keine Preisliste hat Preise für diese Positionen. Füge die Vorlage Bilka – Dedeman (Richtwerte) oder deine eigene Liste unter Preislisten… hinzu, oder über den Reiter Kosten der Paneelverlegung.",
+  "No price list of the project prices these lines. Add the Bilka – Dedeman list (indicative prices read on 24.11.2026), or import your own with the same codes.": "Keine Preisliste des Projekts hat Preise für diese Positionen. Füge die Liste Bilka – Dedeman hinzu (Richtpreise, abgelesen am 24.11.2026), oder importiere deine eigene mit denselben Codes.",
+  "Add the Bilka – Dedeman template": "Vorlage Bilka – Dedeman hinzufügen",
+  "Amount": "Betrag",
+  "Subtotal of the priced lines": "Zwischensumme der Positionen mit Preis",
+  "Where two ridge or hip caps lap: an operation, the material is in the caps": "Wo sich zwei Firstkappen überlappen: ein Arbeitsgang, das Material steckt in den Kappen",
+  "Joints between ridge caps": "Stöße zwischen Firstkappen",
+  "Cut from flat sheet": "Aus Flachblech",
+  "Indicative — check prices when ordering. Labour, transport and the rainwater system are not included.": "Richtwerte — Preise bei der Bestellung prüfen. Lohn, Transport und die Dachentwässerung sind nicht enthalten.",
+  "Source (supplier)": "Quelle (Lieferant)",
+  "Price checked on": "Preis geprüft am",
+  "Indicative lists to start from, added to the project only when you ask: replace their prices with yours (your own list first, or the estimate's price lists in your order).": "Richtwert-Listen als Ausgangspunkt, dem Projekt nur auf Wunsch hinzugefügt: ersetze ihre Preise durch deine (deine eigene Liste zuerst, oder die Preislisten der Kostenschätzung in deiner Reihenfolge).",
+  "The Bilka roof panels' prices read on 24.11.2026, mostly at Dedeman: indicative, check them when ordering.": "Die Preise der Bilka-Paneele, abgelesen am 24.11.2026, überwiegend bei Dedeman: Richtwerte, bei der Bestellung prüfen.",
+  "Lapin's own rough values, a few rows to try the estimate with.": "Lapins eigene grobe Werte, ein paar Zeilen, um die Kostenschätzung auszuprobieren.",
+  "There is no such price list template.": "Diese Preislistenvorlage gibt es nicht.",
+  "The day the price was read": "Der Tag, an dem der Preis abgelesen wurde",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -7286,4 +7308,10 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^(.+)'s ridge caps are (.+)\.$/, (m) => `Die Firstkappen von ${m[1]} sind ${m[2]}.`],
   [/^The battens are fixed with (.+)\.$/, (m) => `Die Latten werden mit ${m[1]} befestigt.`],
   [/^(.+) is not made in (.+)\.$/, (m) => `${m[1]} wird nicht in ${m[2]} hergestellt.`],
+  // Roof panel layout, stage S4.
+  [/^Price list added to the project: (.+)\.$/, (m) => `Preisliste dem Projekt hinzugefügt: ${m[1]}.`],
+  [/^(\d+) panel\(s\) of (\d+) mm: priced per m² of sheet bought \(the nominal length by the (\d+) mm width\)\.$/, (m) => `${m[1]} Paneel(e) zu ${m[2]} mm: Preis je m² gekauftes Blech (Nennlänge mal ${m[3]} mm Breite).`],
+  [/^The template (.+) is not a Lapin price list\.$/, (m) => `Die Vorlage ${m[1]} ist keine Lapin-Preisliste.`],
+  [/^The template (.+) does not say its prices are indicative\.$/, (m) => `Die Vorlage ${m[1]} gibt ihre Preise nicht als Richtwerte an.`],
+  [/^The template (.+) has no rows\.$/, (m) => `Die Vorlage ${m[1]} hat keine Zeilen.`],
 ];

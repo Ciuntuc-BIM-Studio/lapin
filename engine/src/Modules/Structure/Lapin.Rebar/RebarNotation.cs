@@ -3,7 +3,7 @@ using Lapin.Platform;
 namespace Lapin.Rebar;
 
 /// <summary>
-/// Reinforcement's notation (decision 861), the first domain of the project's notations (<see cref="Notations"/>): the diameter's
+/// Reinforcement's notation (decision 864), the first domain of the project's notations (<see cref="Notations"/>): the diameter's
 /// symbol and how a label writes the count, the diameter, the step, the length and the steel, and the bar bending schedule's
 /// headings. The defaults are exactly what Lapin wrote before („3Ø16 L=6000”, „41Ø8/150”, „Ø (mm)”); the presets are
 /// indicative (the UK's H12-200 after BS 8666, the US's #13 @ 200 after ACI 318 with ASTM A615M's metric sizes, the spaced

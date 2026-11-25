@@ -1,5 +1,5 @@
 /**
- * A domain's notation in a settings dialog (decision 861): the preset (indicative), each text as a template with its tokens,
+ * A domain's notation in a settings dialog (decision 864): the preset (indicative), each text as a template with its tokens,
  * a symbol with a picker beside free text, an example of what it writes, and the way back to Lapin's own. Generic: any module
  * that registers a notation domain shows it with this block.
  */
