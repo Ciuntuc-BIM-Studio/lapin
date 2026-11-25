@@ -107,11 +107,11 @@ public static partial class StructuralMaterials
 
         // The project's category and the one an IFC file gave (IfcMaterial.Category, a material class: concrete, steel, brick).
         var lower = $"{name} {fields.Category} {material.Str("ifcCategory")}".ToLowerInvariant();
-        // What an IFC file says of a concrete in so many words: IFC's set for a concrete's properties, or its category. It comes
-        // before a bare timber class in the name (C30 is also EN 338's), never before a concrete or steel class.
-        var ifcCategory = material.Str("ifcCategory")?.ToLowerInvariant() ?? "";
+        // What says of a concrete in so many words: IFC's set for a concrete's properties, or a category (the project's own or its
+        // IFC file's). It comes before a bare timber class in the name (C30 is also EN 338's), never before a concrete or steel class.
+        var category = $"{fields.Category} {material.Str("ifcCategory")}".ToLowerInvariant();
         var saysConcrete = fields.Params.Any(p => p.Pset == "Pset_MaterialConcrete")
-            || ifcCategory.Contains("concrete") || ifcCategory.Contains("beton") || ifcCategory.Contains("hormig");
+            || category.Contains("concrete") || category.Contains("beton") || category.Contains("hormig");
         string kind = "other";
         string? grade = null, standard = null;
         if (ConcreteClass().Match(name) is { Success: true } cm && Concrete.TryGetValue($"C{cm.Groups[1].Value}/{cm.Groups[2].Value}", out var cc))

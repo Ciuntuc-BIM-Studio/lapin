@@ -461,6 +461,10 @@ public class AnalysisRunTests
         var f = LoadCaseTests.F();
         var categorised = new Entity("c30-ifc", IfcClass.Material, "C30", new JsonObject { ["ifcCategory"] = "concrete" });
         Assert.Equal("concrete", StructuralMaterials.Of(f.Model, categorised).Kind);
+        var own = new Entity("c30-own", IfcClass.Material, "C30", new JsonObject { ["category"] = "Concrete" });
+        Assert.Equal("concrete", StructuralMaterials.Of(f.Model, own).Kind);
+        var exported = new Entity("c30-exported", IfcClass.Material, "C30", new JsonObject { ["ifcCategory"] = "Concrete" });
+        Assert.Equal("concrete", StructuralMaterials.Of(f.Model, exported).Kind);
         var other = new Entity("c30-wood", IfcClass.Material, "C30", new JsonObject { ["ifcCategory"] = "wood" });
         Assert.Equal("timber", StructuralMaterials.Of(f.Model, other).Kind);
     }
