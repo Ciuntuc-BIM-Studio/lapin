@@ -133,6 +133,65 @@ public sealed class WallEndWrapTests : IDisposable
         Assert.Equal(0, Vertices(f, wall, "layer:1").Min(p => p.X), 6);
     }
 
+    /// <summary>
+    /// A lower wall (a parapet, 1 m) ending on the wrapped wall's face (forum topic 268's gaps, report #192's wrap): its core
+    /// goes through the wrapping plaster only up to its own top, the free ends stay wrapped, the plan's cut above it sees the
+    /// plaster whole and still turned round the ends.
+    /// </summary>
+    [Fact]
+    public void A_lower_wall_meeting_the_wrapped_face_cuts_the_wrapping_finish_only_up_to_its_top_and_the_ends_stay_wrapped()
+    {
+        var f = new Fixture();
+        var type = WallType(f, "first");
+        var wall = f.Wall(0, 0, Length, 0, type, height: Height);
+        // Layer 1 is the R face, right of the drawn direction: y < 0 here.
+        var low = f.Wall(2.5, -3, 2.5, 0, type, height: 1);
+        Assert.NotEmpty(Joins.Of(f.Model, low));
+        foreach (var key in new[] { "layer:1", "layer:2" })
+        {
+            Assert.Equal(Plaster, Vertices(f, wall, key).Min(v => v.X), 6);
+            Assert.Equal(Length - Plaster, Vertices(f, wall, key).Max(v => v.X), 6);
+        }
+        var v0 = Vertices(f, wall, "layer:0");
+        Assert.Equal(0, v0.Min(p => p.X), 6);
+        Assert.Equal(Length, v0.Max(p => p.X), 6);
+        Assert.Equal(Width, v0.Max(p => p.Y) - v0.Min(p => p.Y), 6);
+        Assert.Equal(Height, v0.Max(p => p.Z) - v0.Min(p => p.Z), 6);
+        // The lower wall's brick goes through the plaster under its top: the plaster less a gap of brick × plaster × 1 m.
+        var capped = Length * Height * Plaster + 2 * (Brick + Plaster) * Plaster * Height;
+        Assert.Equal(capped - Brick * Plaster * 1, Volume(f, wall, "layer:0"), 6);
+        Assert.Equal(Volume(f, wall, "layer:0"), Measured(f, wall, "layer:0"), 6);
+        // The other layers as wrapped, untouched by the lower wall.
+        Assert.Equal((Length - 2 * Plaster) * Height * Brick, Volume(f, wall, "layer:1"), 6);
+        // The lower wall's brick reaches the wrapped wall's brick, its plaster stops at the plaster.
+        Assert.Equal(-Brick / 2, Vertices(f, low, "layer:1").Max(p => p.Y), 6);
+        // The plan's cut (above the lower wall): the plaster one outline across the whole width, round both ends.
+        var cut = f.Session.Geometry(wall)!.Plan!.Where(p => p.Kind == "cut").ToList();
+        Assert.Contains(cut, p => p.Points.Max(q => q.Y) - p.Points.Min(q => q.Y) > Width - 1e-6 && p.Points.Min(q => q.X) < 1e-6 && p.Points.Max(q => q.X) > Length - 1e-6);
+    }
+
+    /// <summary>
+    /// A lower wall at the wrapped wall's end, turning a corner: the end is the join's (not wrapped), the other end still is,
+    /// and the lower wall's top does not change what the join makes of the end.
+    /// </summary>
+    [Fact]
+    public void A_lower_wall_at_a_wrapped_end_takes_that_end_and_the_free_one_stays_wrapped()
+    {
+        var f = new Fixture();
+        var type = WallType(f, "first");
+        var wall = f.Wall(0, 0, Length, 0, type, height: Height);
+        var tall = new Fixture();
+        var reference = tall.Wall(0, 0, Length, 0, WallType(tall, "first"), height: Height);
+        tall.Wall(Length, 0, Length, -4, tall.Model.OfClass(IfcClass.WallType).Single().Id, height: Height);
+        f.Wall(Length, 0, Length, -4, type, height: 1);
+        Assert.NotEmpty(Joins.Of(f.Model, wall));
+        var brick = Vertices(f, wall, "layer:1");
+        Assert.Equal(Plaster, brick.Min(p => p.X), 6);
+        // The joined end as a storey-high wall's corner makes it.
+        Assert.Equal(Vertices(tall, reference, "layer:1").Max(p => p.X), brick.Max(p => p.X), 6);
+        Assert.Equal(Vertices(tall, reference, "layer:0").Max(p => p.X), Vertices(f, wall, "layer:0").Max(p => p.X), 6);
+    }
+
     [Fact]
     public void A_core_on_the_face_wraps_nothing_and_IFC_keeps_the_setting_without_adding_it_to_imports()
     {

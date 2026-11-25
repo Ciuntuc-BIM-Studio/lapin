@@ -59,15 +59,17 @@ public static class SiteCommands
             return null;
         });
 
-        // A spot level on the plan, at a point of the terrain (removed by index, or the nearest to a point).
+        // A spot level on the plan, at a point of the terrain (removed by index, or the nearest to a point); datum?: how it is
+        // written over the view's (relative, absolute, both; project or none: the view's), decision 867.
         r.Command("addSpot", "Spot level", (ctx, a) =>
         {
             var at = Args.Point(a, "x", "y");
             var t = TerrainAt(ctx.Model, a, at);
-            var spots = Terrains.Spots(t).ToList();
-            spots.Add(at);
+            var datum = SpotDatum(a["datum"]);
+            var spots = Terrains.SpotLevels(t).ToList();
+            spots.Add((at, datum));
             var attrs = t.CloneAttrs();
-            attrs["spots"] = Terrains.ContourJson(spots);
+            attrs["spots"] = SpotsJson(spots);
             ctx.Replace(t.With(attrs: attrs));
             return new JsonObject { ["count"] = spots.Count };
         });
@@ -75,12 +77,30 @@ public static class SiteCommands
         r.Command("removeSpot", "Remove spot level", (ctx, a) =>
         {
             var t = Terrain(ctx.Model, (string?)a["id"]);
-            var spots = Terrains.Spots(t).ToList();
+            var spots = Terrains.SpotLevels(t).ToList();
             var attrs = t.CloneAttrs();
             if (a["all"] is JsonValue av && av.TryGetValue<bool>(out var all) && all) spots.Clear();
             else if (Json.Number(a["index"]) is { } i && i >= 0 && i < spots.Count) spots.RemoveAt((int)i);
-            else if (a["x"] != null && spots.Count > 0) { var p = Args.Point(a, "x", "y"); spots.Remove(spots.MinBy(q => (q - p).Length)); }
-            if (spots.Count > 0) attrs["spots"] = Terrains.ContourJson(spots); else attrs.Remove("spots");
+            else if (a["x"] != null && spots.Count > 0) { var p = Args.Point(a, "x", "y"); spots.Remove(spots.MinBy(q => (q.At - p).Length)); }
+            if (spots.Count > 0) attrs["spots"] = SpotsJson(spots); else attrs.Remove("spots");
+            ctx.Replace(t.With(attrs: attrs));
+            return null;
+        });
+
+        // How spot levels are written, over the view's (decision 867, as a level dimension's datum): {id, index | all, datum:
+        // relative | absolute | both | project | null (the view's)}. One undo step.
+        r.Command("setSpotDatum", "Spot level datum", (ctx, a) =>
+        {
+            var t = Terrain(ctx.Model, (string?)a["id"]);
+            var datum = SpotDatum(a["datum"]);
+            var spots = Terrains.SpotLevels(t).ToList();
+            if (spots.Count == 0) throw new CommandException("The terrain has no spot level.");
+            var all = a["all"] is JsonValue av && av.TryGetValue<bool>(out var everyOne) && everyOne;
+            if (all) spots = [.. spots.Select(s => (s.At, datum))];
+            else if (Json.Number(a["index"]) is { } i && i >= 0 && i < spots.Count && i == Math.Floor(i)) spots[(int)i] = (spots[(int)i].At, datum);
+            else throw new CommandException("Say which spot level (index) or all of them.");
+            var attrs = t.CloneAttrs();
+            attrs["spots"] = SpotsJson(spots);
             ctx.Replace(t.With(attrs: attrs));
             return null;
         });
@@ -540,12 +560,14 @@ public static class SiteCommands
             return null;
         });
 
-        // What the colours mean, and how much ground each band covers.
+        // What the colours mean, and how much ground each band covers: {id, kind?, viewId?}; with a view, its elevations written as
+        // its datum writes levels (decision 867), else as the project's.
         r.Query("analysis", (q, a) =>
         {
             var t = Terrain(q.Model, (string?)a["id"]);
             var kind = (string?)a["kind"] ?? t.Str("analysis") ?? "none";
-            return Analysis.Of(q.Model, t, kind) is { } r ? Analysis.Legend(r) : null;
+            var view = (string?)a["viewId"] is { Length: > 0 } vid ? Views.Find(q.Model, vid) : null;
+            return Analysis.Of(q.Model, t, kind, view) is { } r ? Analysis.Legend(r) : null;
         });
 
         // The terrains and the alignments (the tracks and their branches) as LandXML — those named, else all; surveyed elevations.
@@ -750,7 +772,8 @@ public static class SiteCommands
     {
         if (item is JsonObject o) return PointLists.Xy(o["contour"]) is { Count: >= 3 } c ? Polygon2.Centroid(c) : null;
         if (item is not JsonArray a || a.Count < 2) return null;
-        var v = a.Select(x => Json.Number(x) ?? double.NaN).ToArray();
+        // A spot level may say its datum after its point ([x, y, "absolute"]).
+        var v = (a.Count == 3 && a[2] is JsonValue sv && sv.TryGetValue<string>(out _) ? a.Take(2) : a).Select(x => Json.Number(x) ?? double.NaN).ToArray();
         if (!v.All(double.IsFinite)) return null;
         return v.Length >= 4 ? new Vec2((v[0] + v[2]) / 2, (v[1] + v[3]) / 2) : new Vec2(v[0], v[1]);
     }
@@ -772,6 +795,17 @@ public static class SiteCommands
     }
 
     static Entity Terrain(IModelView m, string? id) => Terrains.Require(m, id);
+
+    /// <summary>A spot level's own datum given in a command: relative, absolute or both; project or null the view's.</summary>
+    static string? SpotDatum(JsonNode? n)
+    {
+        if (n is null) return null;
+        var s = n is JsonValue v && v.TryGetValue<string>(out var t) ? t : null;
+        if (s == LevelDatum.Project) return null;
+        return LevelDatum.ModeOf(s) ?? throw new CommandException("A spot level is written relative to ±0.00, as an altitude or both (or as the view's).");
+    }
+
+    static JsonArray SpotsJson(IEnumerable<(Vec2 At, string? Datum)> spots) => new([.. spots.Select(s => (JsonNode)Terrains.SpotJson(s.At, s.Datum))]);
 
     /// <summary>The terrain named, else the one under the point, else the project's first.</summary>
     static Entity TerrainAt(IModelView m, JsonObject a, Vec2 at)

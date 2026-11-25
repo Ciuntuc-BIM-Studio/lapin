@@ -41,7 +41,7 @@ public static class Analysis
     /// <summary>The bands of a kind (elevation bands span the ground from its lowest to its highest point).</summary>
     public static IReadOnlyList<Band> Bands(string kind, Terrain t, LevelDatum? datum = null)
     {
-        // As the project's datum writes a level (decision 867), two decimals in metres.
+        // As the datum writes a level (decision 867: the view's over the project's), two decimals in metres.
         string L(double z) => datum?.Text(z, null) ?? LevelDatum.Number(z, null);
         if (kind == "slope") return SlopeBands;
         if (kind == "cutfill") return CutFillBands;
@@ -100,14 +100,15 @@ public static class Analysis
     }
 
     /// <summary>The terrain sampled for a kind of analysis: cells of about a sixtieth of its longer side, those over the ground.</summary>
-    public static Result? Of(IModelView m, Entity terrain, string kind)
+    public static Result? Of(IModelView m, Entity terrain, string kind, Entity? view = null)
     {
         if (!Kinds.Contains(kind) || kind == "none") return null;
         var t = Terrains.Of(terrain);
         if (t.Tin.Triangles.Count == 0) return null;
         var existing = kind == "cutfill" ? Terrains.Existing(terrain) : null;
         var designed = new Designed(m, terrain, t);
-        var bands = Bands(kind, t, LevelDatum.Of(m));
+        // The elevation bands' levels as the view writes them (its datum over the project's; none: the project's).
+        var bands = Bands(kind, t, LevelDatum.Of(m, view));
         var (min, max) = t.Bounds;
         var span = Math.Max(max.X - min.X, max.Y - min.Y);
         var cell = Math.Max(span / 60, 0.25);
