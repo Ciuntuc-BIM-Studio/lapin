@@ -246,6 +246,12 @@ export interface Grip {
   step?: (to: Vec2) => GripStep | null;
   /** A point of a drafted shape: its sketch, where a constrained sketch follows the drag (`studio.dragSketch`, previewed live). */
   sketch?: { viewId: string; shape: string; part: string };
+  /**
+   * An end of a straight element (decision 865): the fixed other end and the unit direction from it to this end. Ctrl/⌘ held
+   * while dragging keeps the point on that line (the element lengthens or shortens along its own angle); with polar on, the
+   * line is always offered as the "own angle" guide.
+   */
+  along?: { from: Vec2; dir: Vec2 };
   /** Where a drag puts it, kept to its own angles (a tag's knee, decision 331); `free` while Shift is held. */
   constrain?: (to: Vec2, free: boolean) => Vec2;
   /**

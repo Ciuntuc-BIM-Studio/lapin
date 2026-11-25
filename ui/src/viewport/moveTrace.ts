@@ -64,10 +64,12 @@ export type TraceState = 'snap' | 'ortho' | 'polar' | 'tracking' | 'free';
  * holding it; or free (the grid counts as free). A point that only happens
  * to be square to the base is free: blue means the constraint holds.
  */
-export function traceState(aimed: { kind: 'point' | 'grid' | 'free'; mode?: string; lock?: 'ortho' | 'polar' | 'tracking' | 'parallel' | 'tangent' } | null): TraceState {
+export function traceState(aimed: { kind: 'point' | 'grid' | 'free'; mode?: string; lock?: 'ortho' | 'polar' | 'tracking' | 'parallel' | 'tangent' | 'own' } | null): TraceState {
   if (!aimed) return 'free';
   if (aimed.mode) return 'snap';
   // A line held parallel or tangent is held by a guide as a tracking line is.
+  // Kept on the element's own line (decision 865) is held like a polar angle.
+  if (aimed.lock === 'own') return 'polar';
   if (aimed.lock) return aimed.lock === 'parallel' || aimed.lock === 'tangent' ? 'tracking' : aimed.lock;
   return 'free';
 }

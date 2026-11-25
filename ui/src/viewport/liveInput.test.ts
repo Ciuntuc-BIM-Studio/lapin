@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { liveBegin, liveCommit, liveEnd, liveMeasure, livePoint, liveToggleMode, parseAngle, parseLength, useLive } from './liveInput';
+import { liveBegin, liveLock, liveCommit, liveEnd, liveMeasure, livePoint, liveToggleMode, parseAngle, parseLength, useLive } from './liveInput';
 
 describe('live input', () => {
   it('reads lengths in mm unless they say, with sums', () => {
@@ -99,5 +99,65 @@ describe('live input', () => {
     expect(liveCommit()).toBe(true);
     expect(got[1].x).toBeCloseTo(11.5, 9); expect(got[1].y).toBeCloseTo(4.5, 9);
     liveEnd('tool');
+  });
+});
+
+describe('an end grip kept on its own line (decision 865)', () => {
+  // A wall from (0,0) at 37 degrees, 5 m long; its end is the grip. dir points from the fixed end to the grip.
+  const a = (37 * Math.PI) / 180;
+  const dir = { x: Math.cos(a), y: Math.sin(a) };
+  const from = { x: 0, y: 0 };
+  const end = { x: 5 * dir.x, y: 5 * dir.y };
+  const lock = { from, dir };
+  const st = (cursor: { x: number; y: number }, len = '', ang = '') => ({ base: end, cursor, len, ang, lock });
+
+  it('projects the cursor onto the line, on either side of the end', () => {
+    const lengthen = livePoint(st({ x: 8, y: 1 }))!;
+    const along = (lengthen.x - end.x) * dir.x + (lengthen.y - end.y) * dir.y;
+    expect(Math.hypot(lengthen.x - end.x, lengthen.y - end.y)).toBeCloseTo(Math.abs(along), 9);
+    expect(along).toBeGreaterThan(0);
+    // The point is on the element's line: no cross component from the fixed end.
+    expect(lengthen.x * dir.y - lengthen.y * dir.x).toBeCloseTo(0, 9);
+    const shorten = livePoint(st({ x: 1, y: 3 }))!;
+    expect(shorten.x * dir.y - shorten.y * dir.x).toBeCloseTo(0, 9);
+    expect((shorten.x - end.x) * dir.x + (shorten.y - end.y) * dir.y).toBeLessThan(0);
+  });
+
+  it('takes a typed value as the change in length, signed by the cursor\'s side', () => {
+    const out = livePoint(st({ x: 9, y: 9 }, '1500'))!;
+    expect(Math.hypot(out.x, out.y)).toBeCloseTo(6.5, 9);
+    const back = livePoint(st({ x: 0.5, y: 0.2 }, '1500'))!;
+    expect(Math.hypot(back.x, back.y)).toBeCloseTo(3.5, 9);
+    expect(Math.atan2(back.y, back.x)).toBeCloseTo(a, 9);
+  });
+
+  it('takes =value as the total length, and ignores a typed angle', () => {
+    const total = livePoint(st({ x: 9, y: 9 }, '=3500'))!;
+    expect(Math.hypot(total.x, total.y)).toBeCloseTo(3.5, 9);
+    const same = livePoint(st({ x: 9, y: 9 }, '=3500', '90'))!;
+    expect(same.x).toBeCloseTo(total.x, 9);
+    expect(same.y).toBeCloseTo(total.y, 9);
+  });
+
+  it('shows the element\'s own angle and the change in length', () => {
+    useLive.setState({ base: end, cursor: { x: 9, y: 9 }, len: '1500', ang: '', rel: '', mode: 'polar', measure: false, lock });
+    const m = liveMeasure()!;
+    expect(m.ang).toBeCloseTo(37, 6);
+    expect(m.len).toBeCloseTo(1.5, 9);
+    liveEnd();
+    useLive.setState({ owner: null });
+  });
+
+  it('is set and cleared mid-drag without losing what is typed', () => {
+    liveEnd();
+    liveBegin('grip', end, () => undefined, { delta: true });
+    useLive.setState({ len: '300' });
+    liveLock(lock);
+    expect(useLive.getState().lock).toEqual(lock);
+    expect(useLive.getState().len).toBe('300');
+    liveLock(null);
+    expect(useLive.getState().lock).toBeNull();
+    liveEnd();
+    expect(useLive.getState().lock).toBeNull();
   });
 });

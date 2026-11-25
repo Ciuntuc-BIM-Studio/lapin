@@ -440,10 +440,10 @@ export function PlanView() {
    */
   const alongGrid = (host: NodeDto, at: Vec2): Vec2 => { const arc = arcOf(host.props); return arc ? placeAlong(arc, at, gridSnapStep(view.scale), useCad.getState().aim) : at; };
 
-  const snapAt = useCallback((clientX: number, clientY: number, from?: Vec2): Aimed => {
+  const snapAt = useCallback((clientX: number, clientY: number, from?: Vec2, along?: { from: Vec2; dir: Vec2; locked: boolean }): Aimed => {
     const rect = svgRef.current!.getBoundingClientRect();
     const raw = toWorld(clientX - rect.left, clientY - rect.top);
-    const a = aim(raw, from ?? null, { grid: gridSnapStep(view.scale), orthoHeld: ortho });
+    const a = aim(raw, from ?? null, { grid: gridSnapStep(view.scale), orthoHeld: ortho, along });
     useCad.setState({ cursor: a.point, aim: a });
     liveCursor(a.point);
     return a;
@@ -648,7 +648,7 @@ export function PlanView() {
   // Direct editing: the selection's axes, outlines and grips (none while a tool or a command is busy).
   const editor = useGripEditor({
     viewIds: [ownPlan, storey ? `plan:${storey.id}` : null], mode: 'plan', storeyId: storey?.id, toScreen, scale: view.scale,
-    aim: (cx, cy, from) => { const s = snapAt(cx, cy, from); setHover(s); return s.point; },
+    aim: (cx, cy, from, _z, along) => { const s = snapAt(cx, cy, from, along); setHover(s); return s.point; },
     raw: (cx, cy) => { const r = svgRef.current!.getBoundingClientRect(); return toWorld(cx - r.left, cy - r.top); },
     disabled: !!tool?.gesture || !!cadStep, svg: svgRef, marks: drawing?.marks,
   });

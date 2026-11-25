@@ -67,12 +67,22 @@ interface LiveState {
    * points really measure (handed to the tool as `typed`), not where the second one goes.
    */
   measure: boolean;
+  /**
+   * An end grip dragged with Ctrl/⌘ held (decision 865): the element's own line (its fixed other end, and the direction from it
+   * to the grip). The point stays on the line, a typed value is the change in length (`=` then the total), the angle is the line's.
+   */
+  lock: AlongLine | null;
+  /** An end grip is dragged that could be kept on its line (shows the hint "Ctrl/⌘: keep its angle" until it is). */
+  lockable: boolean;
 }
+
+/** An element's own line: the fixed point and the unit direction from it to the end being dragged. */
+export interface AlongLine { from: Vec2; dir: Vec2 }
 
 /** The mode each rectangle tool was last left in (the box by the cursor opens as it was). */
 const modes = new Map<string, LiveMode>();
 
-export const useLive = create<LiveState>(() => ({ owner: null, base: null, cursor: null, len: '', ang: '', rel: '', ref: null, angles: false, focus: 'len', commit: null, delta: false, mode: 'polar', rect: null, measure: false }));
+export const useLive = create<LiveState>(() => ({ owner: null, base: null, cursor: null, len: '', ang: '', rel: '', ref: null, angles: false, focus: 'len', commit: null, delta: false, mode: 'polar', rect: null, measure: false, lock: null, lockable: false }));
 
 /** Whether anything is typed in the box (a length, an angle, an angle to the reference, a width or a height). */
 export const liveTyped = (s: Pick<LiveState, 'len' | 'ang'> & { rel?: string }): boolean => !!(s.len || s.ang || s.rel);
@@ -94,7 +104,7 @@ export function liveBegin(owner: string, base: Vec2, commit: (p: Vec2, typed?: n
   const measure = !!o.measure;
   const angles = !!o.angles || !!o.ref;
   if (s.owner === owner && s.base && Math.hypot(s.base.x - base.x, s.base.y - base.y) < 1e-12) { useLive.setState({ commit, delta, measure, angles, ...(o.ref ? { ref: o.ref } : {}) }); return; }
-  useLive.setState({ owner, base, commit, delta, measure, angles, len: '', ang: '', rel: '', ref: o.ref ?? null, focus: 'len', rect, mode: rect ? modes.get(rect) ?? defaultMode(rect) : 'polar' });
+  useLive.setState({ owner, base, commit, delta, measure, angles, len: '', ang: '', rel: '', ref: o.ref ?? null, focus: 'len', rect, mode: rect ? modes.get(rect) ?? defaultMode(rect) : 'polar', lock: null, lockable: false });
 }
 
 /** The reference the segment's angle is measured from (an overlay finds the wall or beam the start lies on); left alone when the same. */
@@ -106,7 +116,21 @@ export function liveSetRef(ref: AngleRef | null): void {
 export const liveCursor = (p: Vec2 | null) => useLive.setState({ cursor: p });
 export function liveEnd(owner?: string): void {
   if (owner && useLive.getState().owner !== owner) return;
-  useLive.setState({ owner: null, base: null, commit: null, len: '', ang: '', rel: '', ref: null, angles: false, delta: false, rect: null, mode: 'polar', measure: false });
+  useLive.setState({ owner: null, base: null, commit: null, len: '', ang: '', rel: '', ref: null, angles: false, delta: false, rect: null, mode: 'polar', measure: false, lock: null, lockable: false });
+}
+
+/** Ctrl/⌘ pressed or let go while an end grip is dragged: the lock on the element's own line (what is typed stays). */
+export function liveLock(lock: AlongLine | null, lockable = !!lock): void {
+  const was = useLive.getState().lock;
+  if (useLive.getState().lockable !== lockable) useLive.setState({ lockable });
+  if (was === lock || (was && lock && was.from === lock.from && was.dir === lock.dir)) return;
+  useLive.setState({ lock });
+}
+
+/** A point on the line nearest to `p`, and the signed distance along it from `base` (positive: the way `dir` points, lengthening). */
+export function alongPoint(lock: AlongLine, base: Vec2, p: Vec2): { point: Vec2; t: number } {
+  const t = (p.x - base.x) * lock.dir.x + (p.y - base.y) * lock.dir.y;
+  return { point: { x: base.x + lock.dir.x * t, y: base.y + lock.dir.y * t }, t };
 }
 
 const HINT_KEY = 'lapin.liveHintSeen';
@@ -131,9 +155,20 @@ export function liveToggleMode(): void {
 }
 
 /** Where the segment ends: the typed length and angle, else the cursor's. */
-export function livePoint(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'> & { mode?: LiveMode; measure?: boolean; rel?: string; ref?: AngleRef | null } = useLive.getState()): Vec2 | null {
+export function livePoint(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'> & { mode?: LiveMode; measure?: boolean; rel?: string; ref?: AngleRef | null; lock?: AlongLine | null } = useLive.getState()): Vec2 | null {
   if (!s.base) return null;
   const c = s.cursor ?? { x: s.base.x + 1, y: s.base.y };
+  if (s.lock) {
+    // Kept on the element's own line: the cursor's side says lengthen or shorten, a typed length is the change, `=` the total.
+    const { point, t } = alongPoint(s.lock, s.base, c);
+    const raw = s.len.trim();
+    const total = raw.startsWith('=');
+    const typed = raw ? parseLength(total ? raw.slice(1) : raw) : null;
+    if (typed == null) return point;
+    if (total) return { x: s.lock.from.x + s.lock.dir.x * typed, y: s.lock.from.y + s.lock.dir.y * typed };
+    const d = (t < 0 ? -1 : 1) * typed;
+    return { x: s.base.x + s.lock.dir.x * d, y: s.base.y + s.lock.dir.y * d };
+  }
   // Measuring: the point is the cursor's; what is typed is the true distance, not where the point goes.
   if (s.measure) return c;
   const dx = c.x - s.base.x, dy = c.y - s.base.y;
@@ -164,10 +199,12 @@ export function livePoint(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'> 
 }
 
 /** The segment as shown: its length (m) and angle (degrees from +X). */
-export function liveMeasure(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'> & { mode?: LiveMode; measure?: boolean; rel?: string; ref?: AngleRef | null } = useLive.getState()): { len: number; ang: number; dx: number; dy: number; end: Vec2 } | null {
+export function liveMeasure(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'> & { mode?: LiveMode; measure?: boolean; rel?: string; ref?: AngleRef | null; lock?: AlongLine | null } = useLive.getState()): { len: number; ang: number; dx: number; dy: number; end: Vec2 } | null {
   const end = livePoint(s);
   if (!s.base || !end) return null;
   const dx = end.x - s.base.x, dy = end.y - s.base.y;
+  // Kept on its line: the angle shown is the element's own, the length the change.
+  if (s.lock) return { len: Math.hypot(dx, dy), ang: ((Math.atan2(s.lock.dir.y, s.lock.dir.x) * 180) / Math.PI + 360) % 360, dx, dy, end };
   return { len: Math.hypot(dx, dy), ang: ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360, dx, dy, end };
 }
 

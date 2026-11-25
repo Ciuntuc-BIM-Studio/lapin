@@ -237,6 +237,17 @@ describe('a value a 3D tool waits for (decision 378)', () => {
     expect(after).toEqual([{ kind: 'command', id: 'hotbar.6' }]);
   });
 
+  it('types = into the live length only while an end grip is kept on its line (decision 865); Tab, < and Alt unchanged', () => {
+    const locked = (text = '') => state({ live: { active: true, text, typed: !!text, lock: true }, hotbar: 9 });
+    expect(keyIntent(press('='), locked())).toEqual({ kind: 'liveType', key: '=' });
+    expect(keyIntent(press('='), locked('3'))).not.toEqual({ kind: 'liveType', key: '=' });
+    expect(keyIntent(press('='), state({ live: { active: true, text: '', typed: false }, hotbar: 9 }))).not.toEqual({ kind: 'liveType', key: '=' });
+    expect(keyIntent(press('-'), locked())).toEqual({ kind: 'command', id: 'app.zoomOut' });
+    expect(keyIntent(press('Tab'), locked())).toEqual({ kind: 'liveFocus' });
+    expect(keyIntent(press('<'), locked('2400'))).toEqual({ kind: 'liveFocus', field: 'ang' });
+    expect(keyIntent(press('Alt'), locked())).not.toEqual({ kind: 'liveType', key: 'Alt' });
+  });
+
   it('knows a value\'s keys', () => {
     for (const k of ['0', '9', '.', ',', '-', '+', '<', '@', ';']) expect(valueKey('', k), k).toBe(true);
     expect(valueKey('', 'r')).toBe(true);

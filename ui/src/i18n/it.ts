@@ -6834,6 +6834,10 @@ const S5D_TAILS: Record<string, string> = {
   "Edit the types of this kind": "Modifica i tipi di questo genere",
   "Speckle: Send…": "Speckle: Invia…",
   "Speckle: Receive…": "Speckle: Ricevi…",
+  "Drag · hold Ctrl/⌘ while dragging to keep its angle": "Trascina · tieni premuto Ctrl/⌘ durante il trascinamento per mantenere l'angolo",
+  "Its angle is kept: type the change in length, or = and the total length": "L'angolo è mantenuto: digita la variazione di lunghezza, oppure = e la lunghezza totale",
+  "Angle kept": "Angolo mantenuto",
+  "Ctrl/⌘: keep its angle": "Ctrl/⌘: mantieni l'angolo",
 };
 export const IT_PATTERNS: Language['patterns'] = [
   // Publish sets (forum topic 225)
