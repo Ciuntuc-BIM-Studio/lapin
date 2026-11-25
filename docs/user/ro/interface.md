@@ -70,7 +70,7 @@ Fiecare extra se pornește sau se oprește separat din **File → Preferințe…
 
 Încă două stau separat, oprite până le alegi acolo: **Unelte rapide alese pentru spațiul de lucru** (uneltele 1–9 ale fiecărui spațiu de lucru, alese pentru disciplina lui; pornite când alegi o carte de rol; sloturile umplute de tine rămân), și **Sunete tactile de feedback (snap, plasare, undo)**; cât sunt pornite, un difuzor în linia de stare le oprește.
 
-În orice mod, Comenzi… (<kbd>Ctrl</kbd> <kbd>K</kbd>) are **Meniu radial** (<kbd>Alt</kbd> <kbd>Q</kbd>: uneltele obișnuite sau acțiunile selecției, într-un cerc la cursor), **Preia și creează similar** (<kbd>Alt</kbd> <kbd>I</kbd>: unealta elementului selectat, cu tipul lui), **Reluare construcție (time-lapse)** și semnele de cameră: <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>1</kbd>–<kbd>4</kbd> păstrează vederea 3D într-un semn, <kbd>Alt</kbd> <kbd>1</kbd>–<kbd>4</kbd> revine la ea. Toate se pot lega de alte taste din Scurtături de tastatură….
+În orice mod, Comenzi… (<kbd>Ctrl</kbd> <kbd>K</kbd>) are **Meniu radial** (<kbd>Alt</kbd> <kbd>Q</kbd>: uneltele obișnuite sau acțiunile selecției, într-un cerc la cursor), **Preia și creează similar** (<kbd>Alt</kbd> <kbd>I</kbd>: unealta elementului selectat, cu tipul lui), **Reluare construcție (time-lapse)** și pozițiile de cameră: <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>1</kbd>–<kbd>4</kbd> păstrează vederea 3D ca poziție, <kbd>Alt</kbd> <kbd>1</kbd>–<kbd>4</kbd> revine la ea. Toate se pot lega de alte taste din Scurtături de tastatură….
 
 ## Uneltele rapide
 
