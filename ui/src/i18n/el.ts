@@ -3345,7 +3345,7 @@ export const EL: Record<string, string> = {
   'A skirting in room runs round the room along the walls’ faces and stops at each door.': 'Ένα σοβατεπί σε χώρο τρέχει γύρω από τον χώρο κατά μήκος των όψεων των τοίχων και σταματά σε κάθε πόρτα.',
   'Gaps at the doors': 'Διακοπές στις πόρτες',
   'It follows its room’s outline.': 'Ακολουθεί το περίγραμμα του χώρου του.',
-  'Flip side': 'Αναστροφή πλευράς',
+  'Flip side': 'Αναστροφή πλευράς', 'The profile turned upside down': 'Το προφίλ αναποδογυρισμένο',
   'Finish selected rooms': 'Φινίρισμα επιλεγμένων χώρων',
   'Finish room': 'Φινίρισμα χώρου',
   'Room finishes': 'Φινιρίσματα χώρων',
