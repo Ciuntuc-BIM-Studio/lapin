@@ -55,6 +55,7 @@ public sealed class CostModule : ILapinModule
     {
         ["code"] = r.Code, ["name"] = r.Name, ["unit"] = r.Unit, ["m"] = r.Material, ["l"] = r.Labour, ["e"] = r.Equipment, ["t"] = r.Transport,
         ["hours"] = r.Hours, ["trade"] = r.Trade, ["article"] = r.Article, ["kind"] = r.Kind, ["consumption"] = r.Consumption,
+        ["source"] = r.Source, ["url"] = r.Url, ["checked"] = r.Checked,
     };
 
     static PriceRow? RowArg(JsonNode? n)
@@ -62,7 +63,8 @@ public sealed class CostModule : ILapinModule
         if (n is not JsonObject o || ((string?)o["code"])?.Trim() is not { Length: > 0 } code) return null;
         double N(string k) => Json.Number(o[k]) ?? 0;
         return new PriceRow(code, (string?)o["name"] ?? "", (string?)o["unit"] ?? "", N("m"), N("l"), N("e"), N("t"), Json.Number(o["hours"]),
-            (string?)o["trade"], ((string?)o["article"]) is { Length: > 0 } ar ? ar : null, (string?)o["kind"], Json.Number(o["consumption"]));
+            (string?)o["trade"], ((string?)o["article"]) is { Length: > 0 } ar ? ar : null, (string?)o["kind"], Json.Number(o["consumption"]),
+            (string?)o["source"], (string?)o["url"], (string?)o["checked"]);
     }
 
     static Entity AddList(ICommandContext ctx, string name, IReadOnlyList<PriceRow> rows, string currency, string? source, bool indicative)
@@ -168,6 +170,8 @@ public sealed class CostModule : ILapinModule
         r.Class(new(PriceLists.Class, "Price list", [], "#7a6a3a", Kind: "resource"));
         r.Class(new(ArticleRule.Class, "Article rule", [], "#7a6a3a", Kind: "resource"));
         r.Service<IIfcControls>(new CostIfc());
+        // The project's prices by article code, for a module showing what its own lines cost (the roof panels' Cost tab).
+        r.Service<IArticlePrices>(new ArticlePricesOf());
         foreach (var (id, label) in CostForms.All) r.Service<IScheduleSource>(new CostSchedule(id, label));
         // Cost over time (stage 7): the tasks' costs for the Gantt, the S-curve on sheets, the estimates of two versions compared.
         r.Service<IScheduleCosts>(new ScheduleCostsOf());
@@ -214,10 +218,32 @@ public sealed class CostModule : ILapinModule
             };
         });
 
-        // A list from rows given (the app's library, another project), or Lapin's indicative template.
+        // The templates the product's modules ship (decision 859: the roof panels' Bilka – Dedeman list), besides Lapin's own rough values.
+        r.Query("templates", (q, _) => new JsonArray([
+            new JsonObject { ["id"] = "lapin", ["name"] = "Lapin indicative prices", ["note"] = "Lapin's own rough values, a few rows to try the estimate with.", ["rows"] = PriceLists.Indicative.Count, ["indicative"] = true },
+            .. q.Services.All<IPriceListTemplate>().Select(t =>
+            {
+                var (name, currency, rows) = PriceLists.FromTemplate(t);
+                return (JsonNode)new JsonObject
+                {
+                    ["id"] = t.Id, ["name"] = name, ["note"] = t.Note, ["rows"] = rows.Count(x => !x.IsResource), ["currency"] = currency, ["indicative"] = true,
+                    ["checked"] = rows.Select(x => x.Checked).OfType<string>().Order(StringComparer.Ordinal).LastOrDefault(),
+                };
+            }),
+        ]));
+
+        // A list from rows given (the app's library, another project), Lapin's indicative template (template: true), or a template a module ships
+        // (template: its id). A template is added only when asked: nothing loads one by itself.
         r.Command("addPriceList", "Add price list", (ctx, a) =>
         {
-            var template = a["template"] is JsonValue tv && tv.TryGetValue<bool>(out var tb) && tb;
+            if (a["template"] is JsonValue sv && sv.TryGetValue<string>(out var templateId) && templateId != "lapin")
+            {
+                var t = ctx.Services.All<IPriceListTemplate>().FirstOrDefault(x => x.Id == templateId) ?? throw new CommandException("There is no such price list template.");
+                var (tname, tcurrency, trows) = PriceLists.FromTemplate(t);
+                var te = AddList(ctx, ((string?)a["name"])?.Trim() is { Length: > 0 } nn ? nn : tname, trows, tcurrency, "template:" + t.Id, true);
+                return new JsonObject { ["id"] = te.Id, ["name"] = te.Name };
+            }
+            var template = a["template"] is JsonValue tv && (tv.TryGetValue<bool>(out var tb) && tb || tv.TryGetValue<string>(out var ts) && ts == "lapin");
             var rows = template ? PriceLists.IndicativeRows() : (a["rows"] as JsonArray)?.Select(x => PriceRow.Read(x) ?? RowArg(x)).OfType<PriceRow>().ToList() ?? [];
             if (rows.Count == 0) throw new CommandException("A price list needs rows.");
             var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : template ? "Lapin indicative prices" : "Price list";
@@ -441,5 +467,20 @@ public sealed class CostModule : ILapinModule
             var res = Costing.Compute(q, e);
             return Convert.ToBase64String(CostForms.Pdf(FormsArg(q, a).Select(f => CostForms.Make(q, res, f)).ToList()));
         });
+    }
+
+    /// <summary>An article's price from the project's lists, in the order its estimate prices by (all of them when it has none).</summary>
+    sealed class ArticlePricesOf : IArticlePrices
+    {
+        public ArticlePrice? Price(IModelView m, string code)
+        {
+            var settings = Costing.EstimateOf(m) is { } e ? EstimateSettings.Of(e) : EstimateSettings.Of(new Entity("", Costing.Class, "", new JsonObject()));
+            if (Costing.Find(Costing.ListsFor(m, settings), code) is not { } hit) return null;
+            var (row, list) = hit;
+            var price = row.Total;
+            // An article priced by its resources: what they cost.
+            if (price == 0 && list.Resources[row.Code].ToList() is { Count: > 0 } res) price = res.Sum(x => (x.Consumption ?? 1) * x.ResourcePrice);
+            return new ArticlePrice(row.Code, row.Name, row.Unit, price, list.Currency, list.Name, list.Indicative, row.Source, row.Url, row.Checked);
+        }
     }
 }

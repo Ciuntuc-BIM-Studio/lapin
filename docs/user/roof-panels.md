@@ -1,7 +1,7 @@
 ---
 title: Roof panels
 order: 41
-summary: Lay metal tiles or standing-seam panels on a roof's slopes: what to buy by length, the offcuts reused in the valleys, the accessories, fixings, battens and membrane, roof windows cut out, the panels drawn as the covering.
+summary: Lay metal tiles or standing-seam panels on a roof's slopes: what to buy by length, the offcuts reused in the valleys, the accessories, fixings, battens and membrane, what it all costs from your price list, roof windows cut out, the panels drawn as the covering.
 ---
 
 ## Metal tiles and panels on a roof
@@ -17,7 +17,7 @@ Select a sloped roof and open **Panels** in the properties panel:
 - **Support.** For a profile carried in more than one way (Retro Panel): **Boards 150 mm** (150 mm wide, 50 mm apart, the maker's current guide) or **Battens** (the older guide's, 300 mm apart, 350 mm on slopes over 25°).
 - **Support fixings.** How the battens and counter-battens are fixed to the rafters: **Nails** 4 × 100 mm (the default) or **Screws** 6 × 100 mm.
 
-Each change is one undo step. Under them the section shows **To buy** (the panels by length and how many), **Panels laid**, **Reused offcuts** (valley pieces cut from what the hip pieces leave of their panels, not bought), **Sheet bought (m²)** (each panel bought at its nominal length by its whole width, as panels are priced), **Accessories and support** (every line of the takeoff below, with its quantity and unit) and the **Warnings**: a slope under the profile's least pitch, a roof without rafters (its counter-battens estimated).
+Each change is one undo step. Under them the section shows **To buy** (the panels by length and how many), **Panels laid**, **Reused offcuts** (valley pieces cut from what the hip pieces leave of their panels, not bought), **Sheet bought (m²)** (each panel bought at its nominal length by its whole width, as panels are priced), **Accessories and support** (every line of the takeoff below, with its quantity and unit), **Cost** (the indicative subtotal once a price list prices the lines, see [What it costs](#what-it-costs); until then a hint and **Price lists…**) and the **Warnings**: a slope under the profile's least pitch, a roof without rafters (its counter-battens estimated).
 
 ![A roof's Panels section: Bilka Balcanic, the panels to buy and the offcuts reused](shots/roof-panels-section.webp)
 
@@ -44,6 +44,25 @@ The layout counts what else the panels need, as the profile's data says, on the 
 A column says what it is counted from in **Needed** (metres run, the area, the fixings). The numbers are the Panotaj Bilka app's on the same roofs; they are budget quantities, indicative: confirm them with the maker's installation guide.
 
 ![The takeoff in Panel layout: the accessories, the fixings, the battens and the membrane](shots/roof-panels-takeoff.webp)
+
+## What it costs
+
+Lapin has no prices: they come from your price lists (see [Cost](cost.md)). Every line the panels are bought by carries an **article code**, and a price list prices it by that code:
+
+- **The panels**, per m² of sheet bought (each panel's nominal length by its whole width, how the shops price them), a line for each length: `bilka-clasic-35/7016` (Clasic 35 in RAL 7016), `bilka-retro-panel/8019`; Balcanic, sold in three stock lengths, has an article for each: `bilka-balcanic/8017/2930`.
+- **The accessories, fixings and support** by their codes: `ridge-large`, `hip-small`, `eave`, `valley`, `screw-long`, `batten`, `board`, `membrane`, `wood-nails`… (Retro Panel's own flashings end in `-retro`).
+
+To try it with real prices, add the **Bilka – Dedeman (indicative, 24.11.2026)** list: in **Panel layout**, open the **Cost** tab and click **Add the Bilka – Dedeman template**, or **Construction → Price lists… → Templates → Add to the project**. It holds the public prices read on 24.11.2026, mostly at Dedeman, each row with its source (the shop and its product code), its page and the day it was read. It is marked *indicative* and is added only when you ask: a project never gets it by itself.
+
+The **Cost** tab lists each line by group (panels, flashings and accessories, fixings, battens and membrane) with its **Quantity** and **Unit**, the **Price** the first list that has its code gives it, the **Amount** (the quantity by the price, rounded to the ban) and the **Source** (click it to open the shop's page). A line no list prices says **To quote**. The **Subtotal of the priced lines** adds only those with a price. Apart from them: the **Joints between ridge caps** (an operation, their material is in the caps) and what is **Cut from flat sheet** (ridge nodes, Retro Panel's hip end caps and valley clips: not bought; the flat sheets come in a later stage). Labour, transport and the rainwater system are not included. The Panels section shows the same subtotal.
+
+Change the profile, the colour, the ridge caps or the fixings and the table follows at once: Clasic 35 costs the same in RAL 7016 and 8017, Retro Panel has its own price, Balcanic a price for each stock length. The numbers are those of the Panotaj Bilka app's *Deviz RON* sheet on the same roofs.
+
+![The Cost tab: each line with its price, amount and source, the subtotal of the priced lines, the ridge joints and what is cut from flat sheet apart](shots/roof-panels-cost.webp)
+
+The same lines reach the **estimate** (**Construction → Estimate**) under the chapter **Roof**: they are the roof's quantities (the **Lapin_RoofPanelQuantities** set, which the properties, the schedules and the IFC export show too), priced by their codes. If the roof's type also has an article for its covering, take it off, or the covering is counted twice.
+
+**Your own prices.** Import your list with the same codes (code, description, unit, price; a source, a link and a date if you have them), then in the estimate's settings choose the price lists it prices by, yours first: a code takes the first list's price that has it, the template the rest. Or remove the template from **Price lists…**. A price in another unit than the line's (a price per metre for a line in 2 m pieces) is marked ⚠: change the unit or the price. These prices are indicative: check them when you order.
 
 ## Walls, roof windows and dormers
 

@@ -6804,6 +6804,28 @@ export const LO: Record<string, string> = {
   // Roof panel layout, stage S3: the accessories schedule.
   "A schedule of the roofs' panel accessories: flashings, fixings, battens and membrane, each in its unit": "ຕາຕະລາງອຸປະກອນແຜ່ນຫຼັງຄາ: ແຜ່ນປິດຂອບ, ການຍຶດ, ໄມ້ລະແນງ ແລະ ແຜ່ນກັນ, ແຕ່ລະອັນຕາມຫົວໜ່ວຍ",
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "ສ້າງຕາຕະລາງອຸປະກອນແຜ່ນຫຼັງຄາແລ້ວ: ຢູ່ໃນຕົວທ່ອງໂຄງການ, ພາຍໃຕ້ ຕາຕະລາງ.",
+  // Roof panel layout, stage S4: the cost link (decision 859).
+  "Indicative subtotal": "ຍອດລວມຍ່ອຍໂດຍປະມານ",
+  "The lines with a price in the project's price lists: the quantity by the unit price. Labour and transport are not included": "ລາຍການທີ່ມີລາຄາໃນລາຍການລາຄາຂອງໂຄງການ: ປະລິມານຄູນລາຄາຕໍ່ຫົວໜ່ວຍ. ບໍ່ລວມຄ່າແຮງງານ ແລະ ຄ່າຂົນສົ່ງ",
+  "Lines no price list prices: ask the supplier": "ລາຍການທີ່ບໍ່ມີລາຄາໃນລາຍການໃດ: ຂໍໃບສະເໜີລາຄາຈາກຜູ້ສະໜອງ",
+  "To quote": "ຕ້ອງຂໍລາຄາ",
+  "Indicative: check the prices when ordering.": "ໂດຍປະມານ: ກວດລາຄາເມື່ອສັ່ງຊື້.",
+  "No price list prices these lines yet. Add the Bilka – Dedeman template (indicative) or your own list in Price lists…, or from the Cost tab of Panel layout.": "ຍັງບໍ່ມີລາຍການລາຄາໃດໃຫ້ລາຄາລາຍການເຫຼົ່ານີ້. ເພີ່ມແມ່ແບບ Bilka – Dedeman (ໂດຍປະມານ) ຫຼື ລາຍການຂອງທ່ານເອງໃນ ລາຍການລາຄາ…, ຫຼື ຈາກແຖບ ຕົ້ນທຶນ ຂອງການຈັດວາງແຜ່ນ.",
+  "No price list of the project prices these lines. Add the Bilka – Dedeman list (indicative prices read on 24.11.2026), or import your own with the same codes.": "ບໍ່ມີລາຍການລາຄາຂອງໂຄງການໃດໃຫ້ລາຄາລາຍການເຫຼົ່ານີ້. ເພີ່ມລາຍການ Bilka – Dedeman (ລາຄາໂດຍປະມານທີ່ອ່ານໃນວັນທີ 24.11.2026), ຫຼື ນຳເຂົ້າລາຍການຂອງທ່ານທີ່ມີລະຫັດດຽວກັນ.",
+  "Add the Bilka – Dedeman template": "ເພີ່ມແມ່ແບບ Bilka – Dedeman",
+  "Amount": "ມູນຄ່າ",
+  "Subtotal of the priced lines": "ຍອດລວມຍ່ອຍຂອງລາຍການທີ່ມີລາຄາ",
+  "Where two ridge or hip caps lap: an operation, the material is in the caps": "ບ່ອນທີ່ຄອບສັນຫຼັງຄາສອງອັນຊ້ອນກັນ: ເປັນວຽກງານໜຶ່ງ, ວັດສະດຸຢູ່ໃນຄອບສັນ",
+  "Joints between ridge caps": "ຮອຍຕໍ່ລະຫວ່າງຄອບສັນຫຼັງຄາ",
+  "Cut from flat sheet": "ຈາກແຜ່ນເຫຼັກແປ",
+  "Indicative — check prices when ordering. Labour, transport and the rainwater system are not included.": "ໂດຍປະມານ — ກວດລາຄາເມື່ອສັ່ງຊື້. ບໍ່ລວມຄ່າແຮງງານ, ຄ່າຂົນສົ່ງ ແລະ ລະບົບລະບາຍນ້ຳຝົນ.",
+  "Source (supplier)": "ແຫຼ່ງທີ່ມາ (ຜູ້ສະໜອງ)",
+  "Price checked on": "ກວດລາຄາໃນວັນທີ",
+  "Indicative lists to start from, added to the project only when you ask: replace their prices with yours (your own list first, or the estimate's price lists in your order).": "ລາຍການໂດຍປະມານເພື່ອເລີ່ມຕົ້ນ, ເພີ່ມເຂົ້າໂຄງການເມື່ອທ່ານຂໍເທົ່ານັ້ນ: ປ່ຽນລາຄາຂອງມັນເປັນລາຄາຂອງທ່ານ (ລາຍການຂອງທ່ານກ່ອນ, ຫຼື ລາຍການລາຄາຂອງການປະເມີນລາຄາຕາມລຳດັບຂອງທ່ານ).",
+  "The Bilka roof panels' prices read on 24.11.2026, mostly at Dedeman: indicative, check them when ordering.": "ລາຄາແຜ່ນ Bilka ທີ່ອ່ານໃນວັນທີ 24.11.2026, ສ່ວນຫຼາຍຢູ່ Dedeman: ໂດຍປະມານ, ກວດມັນເມື່ອສັ່ງຊື້.",
+  "Lapin's own rough values, a few rows to try the estimate with.": "ຄ່າໂດຍປະມານຂອງ Lapin ເອງ, ບໍ່ເທົ່າໃດແຖວເພື່ອທົດລອງການປະເມີນລາຄາ.",
+  "There is no such price list template.": "ບໍ່ມີແມ່ແບບລາຍການລາຄານີ້.",
+  "The day the price was read": "ວັນທີທີ່ອ່ານລາຄາ",
 };
 
 /** Phrases with a number or a name in them. */
@@ -7350,4 +7372,10 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^(.+)'s ridge caps are (.+)\.$/, (m) => `ຝາສັນຂອງ ${m[1]} ແມ່ນ ${m[2]}.`],
   [/^The battens are fixed with (.+)\.$/, (m) => `ໄມ້ລະແນງຍຶດດ້ວຍ ${m[1]}.`],
   [/^(.+) is not made in (.+)\.$/, (m) => `${m[1]} ບໍ່ມີສີ ${m[2]}.`],
+  // Roof panel layout, stage S4.
+  [/^Price list added to the project: (.+)\.$/, (m) => `ເພີ່ມລາຍການລາຄາເຂົ້າໂຄງການແລ້ວ: ${m[1]}.`],
+  [/^(\d+) panel\(s\) of (\d+) mm: priced per m² of sheet bought \(the nominal length by the (\d+) mm width\)\.$/, (m) => `${m[1]} ແຜ່ນ ຍາວ ${m[2]} mm: ລາຄາຕໍ່ m² ຂອງແຜ່ນທີ່ຊື້ (ຄວາມຍາວລະບຸຄູນຄວາມກວ້າງ ${m[3]} mm).`],
+  [/^The template (.+) is not a Lapin price list\.$/, (m) => `ແມ່ແບບ ${m[1]} ບໍ່ແມ່ນລາຍການລາຄາຂອງ Lapin.`],
+  [/^The template (.+) does not say its prices are indicative\.$/, (m) => `ແມ່ແບບ ${m[1]} ບໍ່ໄດ້ບອກວ່າລາຄາຂອງມັນເປັນລາຄາໂດຍປະມານ.`],
+  [/^The template (.+) has no rows\.$/, (m) => `ແມ່ແບບ ${m[1]} ບໍ່ມີແຖວ.`],
 ];

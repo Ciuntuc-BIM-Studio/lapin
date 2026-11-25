@@ -38,9 +38,9 @@ public class RoofPanelTakeoffTests
     /// The roofs the reference numbers were taken on: the S1 gable and L hip; a gable whose west verge is flush with the face of a
     /// 9 m wall (the default 280 mm brick wall's east face on x = 0); a lean-to (shed, 15°) whose top edge is under a 9 m wall's face.
     /// </summary>
-    static (Fixture F, string Roof) Make(string name)
+    internal static (Fixture F, string Roof) Make(string name, params ILapinModule[] more)
     {
-        var f = new Fixture(new ArchitectureModule(), new RoofPanelsModule());
+        var f = new Fixture([new ArchitectureModule(), new RoofPanelsModule(), .. more]);
         switch (name)
         {
             case "gable": return (f, AddRoof(f, House, new JsonObject { ["shape"] = "gable", ["pitch"] = 30, ["overhang"] = 0.5, ["gableOverhang"] = 0.3 }));
@@ -75,20 +75,20 @@ public class RoofPanelTakeoffTests
     // --ridge small --wood-fastener screws: the small ridge cap and its roll, 558 screws instead of two boxes of nails.
     [InlineData("gable", "bilka-clasic-35", "small screws", "membrane:2 membrane-tape:2 batten:90 counter-batten:40 wood-screws:558 screw-short:2 screw-long:7 ridge-small:6 ridge-roll-small:3 gable-cap:2 eave:12 verge:12 snow-guard:12")]
     // Retro Panel on its boards (150 mm, 50 mm apart), and on the older guide's battens (--retro-support attached).
-    [InlineData("gable", "bilka-retro-panel", null, "membrane:2 membrane-tape:2 board:117 counter-batten:40 wood-nails:2 screw-flat:1161 screw-sealed:2 ridge-retro:6 gable-cap:2 eave-retro:12 verge:12 ridge-support:12 butyl-tape:3 snow-guard:12")]
-    [InlineData("gable", "bilka-retro-panel", "attached", "membrane:2 membrane-tape:2 batten:90 counter-batten:40 wood-nails:2 screw-flat:745 screw-sealed:2 ridge-retro:6 gable-cap:2 eave-retro:12 verge:12 ridge-support:12 butyl-tape:3 snow-guard:12")]
+    [InlineData("gable", "bilka-retro-panel", null, "membrane:2 membrane-tape:2 board:117 counter-batten:40 wood-nails:2 screw-flat:1161 screw-sealed:2 ridge-retro:6 gable-cap:2 eave-retro:12 verge-retro:12 ridge-support:12 butyl-tape:3 snow-guard-retro:12")]
+    [InlineData("gable", "bilka-retro-panel", "attached", "membrane:2 membrane-tape:2 batten:90 counter-batten:40 wood-nails:2 screw-flat:745 screw-sealed:2 ridge-retro:6 gable-cap:2 eave-retro:12 verge-retro:12 ridge-support:12 butyl-tape:3 snow-guard-retro:12")]
     // The L hip with its valley: hip caps and their end caps, ridge nodes, the valley and its seal, Retro's lap elements and valley clips.
     [InlineData("lhip", "bilka-balcanic", null, "membrane:3 membrane-tape:4 batten:165 counter-batten:68 wood-nails:3 screw-short:2 screw-long:11 ridge-large:7 hip-large:15 hip-end-large:5 ridge-roll-large:9 ridge-nodes:4 valley:3 valley-seal:13 eave:29 snow-guard:24")]
     [InlineData("lhip", "bilka-clasic-35", null, "membrane:3 membrane-tape:4 batten:165 counter-batten:68 wood-nails:3 screw-short:2 screw-long:12 ridge-large:7 hip-large:15 hip-end-large:5 ridge-roll-large:9 ridge-nodes:4 valley:3 valley-seal:13 eave:29 snow-guard:24")]
-    [InlineData("lhip", "bilka-retro-panel", null, "membrane:3 membrane-tape:4 board:210 counter-batten:68 wood-nails:4 screw-flat:2390 screw-sealed:3 ridge-retro:7 hip-retro:15 hip-end-retro:5 ridge-nodes:4 valley-retro:3 eave-retro:29 ridge-support:44 lap-small:6 butyl-tape:7 valley-clips:44 snow-guard:24")]
+    [InlineData("lhip", "bilka-retro-panel", null, "membrane:3 membrane-tape:4 board:210 counter-batten:68 wood-nails:4 screw-flat:2390 screw-sealed:3 ridge-retro:7 hip-retro:15 hip-end-retro:5 ridge-nodes:4 valley-retro:3 eave-retro:29 ridge-support:44 lap-small:6 butyl-tape:7 valley-clips:44 snow-guard-retro:24")]
     // A gable against a higher wall: two side abutments for two verges, one ridge end cap.
     [InlineData("wallgable", "bilka-balcanic", null, "membrane:2 membrane-tape:2 batten:84 counter-batten:37 wood-nails:2 screw-short:2 screw-long:6 ridge-large:6 ridge-roll-large:3 gable-cap:1 eave:12 verge:6 wall-side:6 snow-guard:11")]
     [InlineData("wallgable", "bilka-clasic-35", null, "membrane:2 membrane-tape:2 batten:84 counter-batten:37 wood-nails:2 screw-short:2 screw-long:6 ridge-large:6 ridge-roll-large:3 gable-cap:1 eave:12 verge:6 wall-side:6 snow-guard:11")]
-    [InlineData("wallgable", "bilka-retro-panel", null, "membrane:2 membrane-tape:2 board:111 counter-batten:37 wood-nails:2 screw-flat:1103 screw-sealed:2 ridge-retro:6 gable-cap:1 eave-retro:12 verge:6 wall-side:6 ridge-support:12 butyl-tape:3 snow-guard:11")]
+    [InlineData("wallgable", "bilka-retro-panel", null, "membrane:2 membrane-tape:2 board:111 counter-batten:37 wood-nails:2 screw-flat:1103 screw-sealed:2 ridge-retro:6 gable-cap:1 eave-retro:12 verge-retro:6 wall-side-retro:6 ridge-support:12 butyl-tape:3 snow-guard-retro:11")]
     // A lean-to under a wall: its top edge a top abutment.
     [InlineData("leanto", "bilka-balcanic", null, "membrane:2 membrane-tape:2 batten:75 counter-batten:34 wood-nails:2 screw-short:1 screw-long:6 eave:6 verge:8 wall-top:6 snow-guard:12")]
     [InlineData("leanto", "bilka-clasic-35", null, "membrane:2 membrane-tape:2 batten:75 counter-batten:34 wood-nails:2 screw-short:1 screw-long:6 eave:6 verge:8 wall-top:6 snow-guard:12")]
-    [InlineData("leanto", "bilka-retro-panel", null, "membrane:2 membrane-tape:2 board:98 counter-batten:34 wood-nails:2 screw-flat:951 screw-sealed:2 eave-retro:6 verge:8 wall-top:6 ridge-support:6 butyl-tape:2 snow-guard:12")]
+    [InlineData("leanto", "bilka-retro-panel", null, "membrane:2 membrane-tape:2 board:98 counter-batten:34 wood-nails:2 screw-flat:951 screw-sealed:2 eave-retro:6 verge-retro:8 wall-top-retro:6 ridge-support:6 butyl-tape:2 snow-guard-retro:12")]
     public void The_takeoff_is_the_Panotaj_Bilka_apps_estimate(string roof, string profile, string? options, string items)
     {
         var (f, id) = Make(roof);

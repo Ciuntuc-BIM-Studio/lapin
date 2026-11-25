@@ -6751,6 +6751,28 @@ export const PL: Record<string, string> = {
   // Roof panel layout, stage S3: the accessories schedule.
   "A schedule of the roofs' panel accessories: flashings, fixings, battens and membrane, each in its unit": "Zestawienie akcesoriów paneli dachowych: obróbki, mocowania, łaty i membrana, każde w swojej jednostce",
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "Zestawienie akcesoriów paneli dachowych utworzone: jest w przeglądarce projektu, w Zestawieniach.",
+  // Roof panel layout, stage S4: the cost link (decision 859).
+  "Indicative subtotal": "Orientacyjna suma częściowa",
+  "The lines with a price in the project's price lists: the quantity by the unit price. Labour and transport are not included": "Pozycje z ceną w cennikach projektu: ilość razy cena jednostkowa. Robocizna i transport nie są uwzględnione",
+  "Lines no price list prices: ask the supplier": "Pozycje bez ceny w żadnym cenniku: zapytaj dostawcę o ofertę",
+  "To quote": "Do wyceny",
+  "Indicative: check the prices when ordering.": "Orientacyjnie: sprawdź ceny przy zamówieniu.",
+  "No price list prices these lines yet. Add the Bilka – Dedeman template (indicative) or your own list in Price lists…, or from the Cost tab of Panel layout.": "Żaden cennik nie wycenia jeszcze tych pozycji. Dodaj szablon Bilka – Dedeman (orientacyjny) lub własny cennik w Cenniki…, albo z karty Koszt w układzie paneli.",
+  "No price list of the project prices these lines. Add the Bilka – Dedeman list (indicative prices read on 24.11.2026), or import your own with the same codes.": "Żaden cennik projektu nie wycenia tych pozycji. Dodaj cennik Bilka – Dedeman (ceny orientacyjne odczytane 24.11.2026) lub zaimportuj własny z tymi samymi kodami.",
+  "Add the Bilka – Dedeman template": "Dodaj szablon Bilka – Dedeman",
+  "Amount": "Wartość",
+  "Subtotal of the priced lines": "Suma częściowa pozycji z ceną",
+  "Where two ridge or hip caps lap: an operation, the material is in the caps": "Tam, gdzie zachodzą na siebie dwa gąsiory: operacja, materiał jest w gąsiorach",
+  "Joints between ridge caps": "Łączenia gąsiorów",
+  "Cut from flat sheet": "Z blachy płaskiej",
+  "Indicative — check prices when ordering. Labour, transport and the rainwater system are not included.": "Orientacyjnie — sprawdź ceny przy zamówieniu. Robocizna, transport i system rynnowy nie są uwzględnione.",
+  "Source (supplier)": "Źródło (dostawca)",
+  "Price checked on": "Cena sprawdzona dnia",
+  "Indicative lists to start from, added to the project only when you ask: replace their prices with yours (your own list first, or the estimate's price lists in your order).": "Orientacyjne cenniki na start, dodawane do projektu tylko na Twoje życzenie: zastąp ich ceny swoimi (najpierw własny cennik albo cenniki kosztorysu w Twojej kolejności).",
+  "The Bilka roof panels' prices read on 24.11.2026, mostly at Dedeman: indicative, check them when ordering.": "Ceny paneli Bilka odczytane 24.11.2026, głównie w Dedeman: orientacyjne, sprawdź je przy zamówieniu.",
+  "Lapin's own rough values, a few rows to try the estimate with.": "Własne przybliżone wartości Lapina, kilka wierszy do wypróbowania kosztorysu.",
+  "There is no such price list template.": "Nie ma takiego szablonu cennika.",
+  "The day the price was read": "Dzień odczytu ceny",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -7304,4 +7326,10 @@ export const PL_PATTERNS: Language['patterns'] = [
   [/^(.+)'s ridge caps are (.+)\.$/, (m) => `Gąsiory ${m[1]} to ${m[2]}.`],
   [/^The battens are fixed with (.+)\.$/, (m) => `Łaty mocuje się ${m[1]}.`],
   [/^(.+) is not made in (.+)\.$/, (m) => `${m[1]} nie jest produkowany w ${m[2]}.`],
+  // Roof panel layout, stage S4.
+  [/^Price list added to the project: (.+)\.$/, (m) => `Cennik dodany do projektu: ${m[1]}.`],
+  [/^(\d+) panel\(s\) of (\d+) mm: priced per m² of sheet bought \(the nominal length by the (\d+) mm width\)\.$/, (m) => `${m[1]} panel(e) ${m[2]} mm: cena za m² kupionej blachy (długość nominalna razy szerokość ${m[3]} mm).`],
+  [/^The template (.+) is not a Lapin price list\.$/, (m) => `Szablon ${m[1]} nie jest cennikiem Lapin.`],
+  [/^The template (.+) does not say its prices are indicative\.$/, (m) => `Szablon ${m[1]} nie podaje, że jego ceny są orientacyjne.`],
+  [/^The template (.+) has no rows\.$/, (m) => `Szablon ${m[1]} nie ma wierszy.`],
 ];

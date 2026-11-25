@@ -12869,6 +12869,28 @@ export const EL: Record<string, string> = {
   // Roof panel layout, stage S3: the accessories schedule.
   "A schedule of the roofs' panel accessories: flashings, fixings, battens and membrane, each in its unit": "Πίνακας των εξαρτημάτων των πάνελ στέγης: τελειώματα, στερεώσεις, πηχάκια και μεμβράνη, το καθένα στη μονάδα του",
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "Ο πίνακας εξαρτημάτων πάνελ στέγης δημιουργήθηκε: βρίσκεται στον περιηγητή έργου, στους Πίνακες.",
+  // Roof panel layout, stage S4: the cost link (decision 859).
+  "Indicative subtotal": "Ενδεικτικό μερικό σύνολο",
+  "The lines with a price in the project's price lists: the quantity by the unit price. Labour and transport are not included": "Οι γραμμές με τιμή στους τιμοκαταλόγους του έργου: η ποσότητα επί την τιμή μονάδας. Η εργασία και η μεταφορά δεν περιλαμβάνονται",
+  "Lines no price list prices: ask the supplier": "Γραμμές χωρίς τιμή σε κανέναν τιμοκατάλογο: ζητήστε προσφορά από τον προμηθευτή",
+  "To quote": "Προς προσφορά",
+  "Indicative: check the prices when ordering.": "Ενδεικτικό: ελέγξτε τις τιμές κατά την παραγγελία.",
+  "No price list prices these lines yet. Add the Bilka – Dedeman template (indicative) or your own list in Price lists…, or from the Cost tab of Panel layout.": "Κανένας τιμοκατάλογος δεν τιμολογεί ακόμη αυτές τις γραμμές. Προσθέστε το πρότυπο Bilka – Dedeman (ενδεικτικό) ή τον δικό σας κατάλογο στους Τιμοκαταλόγους…, ή από την καρτέλα Κόστος της διάταξης πάνελ.",
+  "No price list of the project prices these lines. Add the Bilka – Dedeman list (indicative prices read on 24.11.2026), or import your own with the same codes.": "Κανένας τιμοκατάλογος του έργου δεν τιμολογεί αυτές τις γραμμές. Προσθέστε τον κατάλογο Bilka – Dedeman (ενδεικτικές τιμές που διαβάστηκαν στις 24.11.2026) ή εισαγάγετε τον δικό σας με τους ίδιους κωδικούς.",
+  "Add the Bilka – Dedeman template": "Προσθήκη του προτύπου Bilka – Dedeman",
+  "Amount": "Ποσό",
+  "Subtotal of the priced lines": "Μερικό σύνολο των γραμμών με τιμή",
+  "Where two ridge or hip caps lap: an operation, the material is in the caps": "Εκεί όπου επικαλύπτονται δύο καπάκια κορφιά: μια εργασία, το υλικό είναι στα καπάκια",
+  "Joints between ridge caps": "Ενώσεις μεταξύ καπακιών κορφιά",
+  "Cut from flat sheet": "Από επίπεδη λαμαρίνα",
+  "Indicative — check prices when ordering. Labour, transport and the rainwater system are not included.": "Ενδεικτικό — ελέγξτε τις τιμές κατά την παραγγελία. Η εργασία, η μεταφορά και το σύστημα ομβρίων δεν περιλαμβάνονται.",
+  "Source (supplier)": "Πηγή (προμηθευτής)",
+  "Price checked on": "Τιμή ελεγμένη στις",
+  "Indicative lists to start from, added to the project only when you ask: replace their prices with yours (your own list first, or the estimate's price lists in your order).": "Ενδεικτικοί κατάλογοι για αρχή, που προστίθενται στο έργο μόνο όταν το ζητήσετε: αντικαταστήστε τις τιμές τους με τις δικές σας (πρώτα ο δικός σας κατάλογος, ή οι τιμοκατάλογοι του προϋπολογισμού με τη σειρά σας).",
+  "The Bilka roof panels' prices read on 24.11.2026, mostly at Dedeman: indicative, check them when ordering.": "Οι τιμές των πάνελ Bilka όπως διαβάστηκαν στις 24.11.2026, κυρίως στο Dedeman: ενδεικτικές, ελέγξτε τις κατά την παραγγελία.",
+  "Lapin's own rough values, a few rows to try the estimate with.": "Οι πρόχειρες τιμές του ίδιου του Lapin, λίγες γραμμές για να δοκιμάσετε τον προϋπολογισμό.",
+  "There is no such price list template.": "Δεν υπάρχει τέτοιο πρότυπο τιμοκαταλόγου.",
+  "The day the price was read": "Η ημέρα που διαβάστηκε η τιμή",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
@@ -13354,4 +13376,10 @@ export const EL_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(.+)'s ridge caps are (.+)\.$/, (m) => `Τα καπάκια κορφιά του ${m[1]} είναι ${m[2]}.`],
   [/^The battens are fixed with (.+)\.$/, (m) => `Τα πηχάκια στερεώνονται με ${m[1]}.`],
   [/^(.+) is not made in (.+)\.$/, (m) => `Το ${m[1]} δεν κατασκευάζεται σε ${m[2]}.`],
+  // Roof panel layout, stage S4.
+  [/^Price list added to the project: (.+)\.$/, (m) => `Ο τιμοκατάλογος προστέθηκε στο έργο: ${m[1]}.`],
+  [/^(\d+) panel\(s\) of (\d+) mm: priced per m² of sheet bought \(the nominal length by the (\d+) mm width\)\.$/, (m) => `${m[1]} πάνελ των ${m[2]} mm: τιμή ανά m² αγορασμένης λαμαρίνας (το ονομαστικό μήκος επί το πλάτος των ${m[3]} mm).`],
+  [/^The template (.+) is not a Lapin price list\.$/, (m) => `Το πρότυπο ${m[1]} δεν είναι τιμοκατάλογος του Lapin.`],
+  [/^The template (.+) does not say its prices are indicative\.$/, (m) => `Το πρότυπο ${m[1]} δεν λέει ότι οι τιμές του είναι ενδεικτικές.`],
+  [/^The template (.+) has no rows\.$/, (m) => `Το πρότυπο ${m[1]} δεν έχει γραμμές.`],
 ];

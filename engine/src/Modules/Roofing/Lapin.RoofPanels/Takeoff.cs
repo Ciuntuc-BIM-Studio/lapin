@@ -17,8 +17,11 @@ public static class Takeoff
     /// <summary>The roof's options (its <c>panels</c>): the support scheme, the ridge caps, the support's fixings; null takes the profile's default.</summary>
     public sealed record Options(string? Support, string? Ridge, string? Fixing);
 
-    /// <summary>A line of the takeoff: its code, name, group (<c>support</c>, <c>fixings</c>, <c>flashings</c>), how many in its unit, what that comes from (<see cref="Need"/> in <see cref="NeedUnit"/>).</summary>
-    public sealed record Item(string Code, string Name, string Group, double Quantity, string Unit, double? Need, string? NeedUnit, string Note);
+    /// <summary>
+    /// A line of the takeoff: its code, name, group (<c>support</c>, <c>fixings</c>, <c>flashings</c>), how many in its unit, what that
+    /// comes from (<see cref="Need"/> in <see cref="NeedUnit"/>); <see cref="MadeFrom"/>: <c>flatSheet</c> when it is cut from flat sheet, not bought (S4).
+    /// </summary>
+    public sealed record Item(string Code, string Name, string Group, double Quantity, string Unit, double? Need, string? NeedUnit, string Note, string? MadeFrom = null);
 
     /// <summary>A slope's share: its area less its holes, the membrane's laps on it, its battens (m, rows), its valley battens.</summary>
     public sealed record FaceTake(string Id, double Area, double MembraneLaps, double Battens, int Rows, int ValleyBattens);
@@ -176,9 +179,9 @@ public static class Takeoff
         stats["valleyClips"] = p.Staggered ? 2 * valleyBatten : 0; stats["windows"] = roof.Windows;
 
         var items = new List<Item>();
-        void Add(string code, string name, string group, double qty, string unit, double? need, string? needUnit, string note)
+        void Add(string code, string name, string group, double qty, string unit, double? need, string? needUnit, string note, string? madeFrom = null)
         {
-            if (qty > 0) items.Add(new Item(code, name, group, qty, unit, need, needUnit, note));
+            if (qty > 0) items.Add(new Item(code, name, group, qty, unit, need, needUnit, note, madeFrom));
         }
         static int Pack(double n, double size) => (int)Math.Ceiling(n / size);
 
@@ -244,17 +247,17 @@ public static class Takeoff
                             need += weight * Round6(e.Length);
                         }
                     if (a.JointBars) qty += Math.Ceiling(transverse / Math.Max(1.0, Math.Floor((a.Length + 5.0) / (p.UsefulWidth + 5.0))));
-                    Add(a.Code, a.Name, "flashings", qty, a.Unit, need, "m", a.Note);
+                    Add(a.Code, a.Name, "flashings", qty, a.Unit, need, "m", a.Note, a.MadeFrom);
                     break;
                 case "run":
                 case "perLength":
                     need = a.Edges.Sum(kv => kv.Value * Run(kv.Key)) + a.Joints * p.Width * transverse + a.Snow * snow;
                     var total = need * a.Factor;
                     qty = a.Rule == "run" ? RoofPanels.PieceCount(total, stock, (a.Lap ?? 0) / 1000.0) : Math.Ceiling(total / stock);
-                    Add(a.Code, a.Name, "flashings", qty, a.Unit, need, "m", a.Note);
+                    Add(a.Code, a.Name, "flashings", qty, a.Unit, need, "m", a.Note, a.MadeFrom);
                     break;
                 case "count":
-                    Add(a.Code, a.Name, "flashings", counts.GetValueOrDefault(a.Of ?? ""), a.Unit, null, null, a.Note);
+                    Add(a.Code, a.Name, "flashings", counts.GetValueOrDefault(a.Of ?? ""), a.Unit, null, null, a.Note, a.MadeFrom);
                     break;
             }
         }

@@ -32,7 +32,9 @@ Prețurile sunt ale tale: Lapin nu livrează niciun catalog de prețuri sau de n
 
 Schimbă coloanele ghicite greșit, alege rândul pe care e antetul și dacă prețurile sunt în lei sau în euro, apoi apasă **Import**. Lista intră în proiect. Cu **Păstrează și în biblioteca acestui calculator** bifat, rămâne și pe calculator: sub **Pe acest calculator**, **Adaugă în proiect** o aduce în proiectul următor.
 
-**Șablon** salvează un CSV cu coloanele și câteva rânduri cu valori orientative scrise de Lapin, marcate *orientativ*: completează-l cu prețurile tale și importă-l. **Folosește valorile orientative** pune aceste valori în proiect ca listă, ca să încerci devizul înainte să ai prețurile tale. Înlocuiește-le înainte să trimiți un deviz cuiva.
+Tot opțional: **Sursa (furnizorul)**, un **Link** la pagina lui și data la care a fost **Preț verificat la**, păstrate pe fiecare rând.
+
+**Șablon** salvează un CSV cu coloanele și câteva rânduri cu valori orientative scrise de Lapin, marcate *orientativ*: completează-l cu prețurile tale și importă-l. La **Șabloane**, **Adaugă în proiect** pune în proiect o listă gata făcută: **Lapin indicative prices** (valorile orientative ale lui Lapin, ca să încerci devizul înainte să ai prețurile tale) și listele aduse de modulele ediției, de pildă **Bilka – Dedeman (indicative, 24.11.2026)** pentru [panourile de acoperiș](roof-panels.md#cat-costa), fiecare rând cu sursa și data lui. Un șablon intră în proiect doar când ceri și e marcat *orientativ*: înlocuiește-i prețurile înainte să trimiți un deviz cuiva.
 
 ## Articole pe tipuri, reguli pe materiale
 

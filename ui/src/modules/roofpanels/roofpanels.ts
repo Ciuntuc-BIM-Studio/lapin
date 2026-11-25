@@ -46,6 +46,22 @@ export interface PanelDto {
   trimmedLength: number; grossArea: number; coverage: number; edges: string[];
   donor?: string | null; shift?: number | null; donatesTo?: string | null; plan: Pt[]; net: Pt[];
 }
+/**
+ * A line of the Cost tab (S4, decision 859): an article bought (the panels of a length in m² of sheet, an accessory, a fixing,
+ * the support) by its code, with the price the project's lists give it (none: to quote), its amount (the quantity by the price,
+ * rounded half up to the ban) and where the price comes from; made from flat sheet: not bought (stage S5).
+ */
+export interface CostLineDto {
+  code: string; variant?: string | null; name: string; group: string; quantity: number; unit: string; pieces?: number | null; madeFrom?: string | null; note: string;
+  price?: number | null; priceUnit?: string | null; currency?: string | null; amount?: number | null;
+  source?: string | null; url?: string | null; checked?: string | null; list?: string | null; indicative?: boolean | null; unitDiffers?: boolean | null;
+}
+/** The roof's panels priced: the lines, the joints between ridge caps (operations, apart), the subtotal of the priced lines by currency. */
+export interface CostDto {
+  available: boolean; lines: CostLineDto[]; joints: number; subtotal: Record<string, number>;
+  priced: number; toQuote: number; fromSheet: number; indicative: boolean;
+}
+
 export interface LayoutDto {
   roofId: string; profile: PanelProfileDto; color: string | null; stock: number[];
   faces: FaceDto[]; edges: EdgeDto[]; panels: PanelDto[];
@@ -53,6 +69,7 @@ export interface LayoutDto {
   totals: { roofArea: number; coverage: number; sheetArea: number; panels: number; bought: number; reused: number; lengths: number; boughtLength: number; edgeLengths: Record<string, number> };
   warnings: string[];
   takeoff?: TakeoffDto;
+  cost?: CostDto;
 }
 export type LayoutAnswer = LayoutDto | { problem: string };
 
@@ -234,3 +251,37 @@ export function laidFlat(faces: Pick<FaceDto, 'id' | 'outline'>[], gap = 1): { i
 export function panelLine(p: PanelDto): { code: string; length: number; donor: string | null; gives: string | null } {
   return { code: p.id, length: p.length, donor: p.donor ?? null, gives: p.donatesTo ?? null };
 }
+
+// ---------------------------------------------------------------------------------------------------- the cost (S4)
+
+/** The Bilka price list template's id (the roofpanels module ships it; cost.addPriceList adds it when the user asks). */
+export const BILKA_TEMPLATE = 'bilka-dedeman-2026-11-24';
+
+/** The Cost tab's groups, in its order, as the interface names them: the panels first. */
+export const COST_GROUPS: { id: string; label: string }[] = [{ id: 'panels', label: 'Panels' }, ...ITEM_GROUPS];
+
+/** The lines bought of a group (what is cut from flat sheet comes apart). */
+export const costRows = (c: Pick<CostDto, 'lines'> | undefined, group: string): CostLineDto[] => (c?.lines ?? []).filter((l) => l.group === group && !l.madeFrom);
+
+/** What is cut from flat sheet: not bought (stage S5). */
+export const sheetRows = (c: Pick<CostDto, 'lines'> | undefined): CostLineDto[] => (c?.lines ?? []).filter((l) => !!l.madeFrom);
+
+/** Money as the Cost tab writes it: two decimals, thousands grouped by a space that does not break (12 345.67), as the cost module groups them. */
+export function money(v: number): string {
+  const [i, d] = Math.abs(v).toFixed(2).split('.');
+  return `${v < 0 ? '−' : ''}${i.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0')}.${d}`;
+}
+
+/** The subtotal of the priced lines, a currency each: „12 345.67 RON”; empty when none is priced. */
+export const subtotalText = (c: Pick<CostDto, 'subtotal'> | undefined): string =>
+  Object.entries(c?.subtotal ?? {}).map(([cur, v]) => `${money(v)} ${cur}`).join(' + ');
+
+/** What the Panels section and the Cost tab say of the cost: no cost module, no price for the lines, or a subtotal. */
+export function costState(c: CostDto | undefined): 'none' | 'unpriced' | 'priced' {
+  if (!c?.available) return 'none';
+  return c.priced > 0 ? 'priced' : 'unpriced';
+}
+
+/** A line's quantity as the table writes it: m² with two decimals, a count as it is. */
+export const quantityText = (l: Pick<CostLineDto, 'quantity' | 'unit'>): string => (l.unit === 'm²' ? l.quantity.toFixed(2) : String(Math.round(l.quantity * 1000) / 1000));
+

@@ -6704,6 +6704,28 @@ export const RO: Record<string, string> = {
   // Roof panel layout, stage S3: the accessories schedule.
   "A schedule of the roofs' panel accessories: flashings, fixings, battens and membrane, each in its unit": "Un extras al accesoriilor panotajului: tinichigerie, prinderi, șipci și folie, fiecare în unitatea lui",
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "Extrasul accesoriilor panotajului a fost făcut: este în navigatorul proiectului, la Extrase.",
+  // Roof panel layout, stage S4: the cost link (decision 859).
+  "Indicative subtotal": "Subtotal orientativ",
+  "The lines with a price in the project's price lists: the quantity by the unit price. Labour and transport are not included": "Liniile cu preț în listele de prețuri ale proiectului: cantitatea înmulțită cu prețul unitar. Manopera și transportul nu sunt incluse",
+  "Lines no price list prices: ask the supplier": "Linii fără preț în nicio listă: cere oferta furnizorului",
+  "To quote": "De ofertat",
+  "Indicative: check the prices when ordering.": "Orientativ: verifică prețurile la comandă.",
+  "No price list prices these lines yet. Add the Bilka – Dedeman template (indicative) or your own list in Price lists…, or from the Cost tab of Panel layout.": "Nicio listă de prețuri nu are încă prețuri pentru aceste linii. Adaugă șablonul Bilka – Dedeman (orientativ) sau lista ta în Liste de prețuri…, ori din tabul Cost al panotajului.",
+  "No price list of the project prices these lines. Add the Bilka – Dedeman list (indicative prices read on 24.11.2026), or import your own with the same codes.": "Nicio listă de prețuri a proiectului nu are prețuri pentru aceste linii. Adaugă lista Bilka – Dedeman (prețuri orientative citite la 24.11.2026) sau importă lista ta cu aceleași coduri.",
+  "Add the Bilka – Dedeman template": "Adaugă șablonul Bilka – Dedeman",
+  "Amount": "Valoare",
+  "Subtotal of the priced lines": "Subtotalul liniilor cu preț",
+  "Where two ridge or hip caps lap: an operation, the material is in the caps": "Unde se petrec două coame: o operațiune, materialul e în coame",
+  "Joints between ridge caps": "Îmbinări între coame",
+  "Cut from flat sheet": "Din tablă plană",
+  "Indicative — check prices when ordering. Labour, transport and the rainwater system are not included.": "Orientativ — verifică prețurile la comandă. Manopera, transportul și sistemul pluvial nu sunt incluse.",
+  "Source (supplier)": "Sursa (furnizorul)",
+  "Price checked on": "Preț verificat la",
+  "Indicative lists to start from, added to the project only when you ask: replace their prices with yours (your own list first, or the estimate's price lists in your order).": "Liste orientative de la care pornești, adăugate în proiect doar când ceri: înlocuiește-le prețurile cu ale tale (lista ta întâi, sau listele de prețuri ale devizului în ordinea ta).",
+  "The Bilka roof panels' prices read on 24.11.2026, mostly at Dedeman: indicative, check them when ordering.": "Prețurile panourilor Bilka citite la 24.11.2026, în principal la Dedeman: orientative, verifică-le la comandă.",
+  "Lapin's own rough values, a few rows to try the estimate with.": "Valorile orientative ale lui Lapin, câteva rânduri ca să încerci devizul.",
+  "There is no such price list template.": "Nu există un astfel de șablon de listă de prețuri.",
+  "The day the price was read": "Ziua în care a fost citit prețul",
 };
 
 /** Phrases with a number or a name in them. */
@@ -7250,4 +7272,10 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(.+)'s ridge caps are (.+)\.$/, (m) => `Coamele profilului ${m[1]} sunt ${m[2]}.`],
   [/^The battens are fixed with (.+)\.$/, (m) => `Șipcile se prind cu ${m[1]}.`],
   [/^(.+) is not made in (.+)\.$/, (m) => `${m[1]} nu se fabrică în ${m[2]}.`],
+  // Roof panel layout, stage S4.
+  [/^Price list added to the project: (.+)\.$/, (m) => `Lista de prețuri a fost adăugată în proiect: ${m[1]}.`],
+  [/^(\d+) panel\(s\) of (\d+) mm: priced per m² of sheet bought \(the nominal length by the (\d+) mm width\)\.$/, (m) => `${m[1]} panouri de ${m[2]} mm: prețul pe m² de tablă cumpărată (lungimea nominală pe lățimea de ${m[3]} mm).`],
+  [/^The template (.+) is not a Lapin price list\.$/, (m) => `Șablonul ${m[1]} nu este o listă de prețuri Lapin.`],
+  [/^The template (.+) does not say its prices are indicative\.$/, (m) => `Șablonul ${m[1]} nu spune că prețurile lui sunt orientative.`],
+  [/^The template (.+) has no rows\.$/, (m) => `Șablonul ${m[1]} nu are rânduri.`],
 ];

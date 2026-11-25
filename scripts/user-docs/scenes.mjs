@@ -2458,9 +2458,10 @@ export const scenes = [
     // Roof panel layout (docs/plan-roof-panels.md, S2): an L-shaped house under a hip roof covered in Bilka Balcanic from the
     // roof's Panels section; Panel layout… shows the panels in plan with the hip offcuts reused in the valley pieces (orange),
     // and the 3D view the panels as the covering, each a profiled sheet. S3: the takeoff's tables (accessories, fixings,
-    // battens and membrane) and a roof window cut out of the panels with its flashing kit.
+    // battens and membrane) and a roof window cut out of the panels with its flashing kit. S4: the Cost tab, the Bilka – Dedeman
+    // template added from it, each line priced.
     id: 'roof-panels',
-    touches: ['architecture', 'roofpanels'],
+    touches: ['architecture', 'roofpanels', 'cost'],
     async run(t) {
       await t.fresh();
       const s = await t.storey();
@@ -2508,6 +2509,20 @@ export const scenes = [
       t.expect(await qty('hip-large') === '15' && await qty('valley') === '3' && await qty('batten') === '165', `the takeoff counts the app's hip caps, valley and battens (${await qty('hip-large')}, ${await qty('valley')}, ${await qty('batten')})`);
       await takeoff.scrollIntoViewIfNeeded();
       await t.shot('roof-panels-takeoff', { of: '[data-testid=roof-panel-layout] [data-testid=roof-panels-takeoff-items]', pad: 4 });
+      // S4, the cost: no price list yet, so the Cost tab offers the Bilka – Dedeman template (added only when asked); with it, each
+      // line priced with its source, the lines cut from flat sheet and the ridge joints apart, the subtotal of the priced lines.
+      t.expect((await t.nodes()).every((n) => n.type !== 'LapinPriceList'), 'no price list is loaded by itself');
+      await dialog.locator('[data-action=roof-panels-cost]').click();
+      await t.until(async () => await dialog.locator('[data-testid=roof-panels-cost-empty]').count() === 1, 'the Cost tab says no list prices the lines');
+      await dialog.locator('[data-action=roof-panels-add-template]').click();
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'LapinPriceList'), 'the template is in the project');
+      await t.until(async () => (await dialog.locator('[data-testid=roof-panels-cost-subtotal]').innerText()).includes('RON'), 'the Cost tab has a subtotal');
+      const subtotal = (await dialog.locator('[data-testid=roof-panels-cost-subtotal]').innerText()).replace(/\s+/g, ' ');
+      t.expect(subtotal.includes('21 662.03'), `the subtotal is the Panotaj Bilka app's on this roof less its flat sheet and rainwater (${subtotal})`);
+      t.expect(await dialog.locator('tr[data-cost="hip-large"]').innerText().then((x) => x.replace(/\s+/g, ' ').includes('1 195.95') && x.includes('Dedeman')), 'a line has its amount and its source');
+      t.expect(await dialog.locator('[data-testid=roof-panels-indicative]').count() === 1, 'the table says the prices are indicative');
+      t.expect(await dialog.locator('[data-testid=roof-panels-cost-sheet] tr').count() === 1, 'the ridge nodes, cut from flat sheet, are apart');
+      await t.shot('roof-panels-cost', { of: '[data-testid=roof-panel-layout]', pad: 0 });
       // A roof window on the south slope: the panels are cut round it, its edges get the window's flashing kit.
       await t.ui({ dialog: null });
       await t.cmd('architecture.addRoofOpening', { roofId: roof.id, x: 3.5, y: 1.6 });

@@ -4,20 +4,31 @@
  * line from the panel they are cut from, the edges coloured by kind; a panel's code, length and donor on hover. Beside it
  * the tables: what to buy, each roof plane's totals, the edges and the offcuts, and (S3) the accessories, fixings, battens and
  * membrane, with each slope's battens and membrane laps; openings drawn as the panels are cut round them. Another profile can be tried first (the
- * layout query takes a profile without changing the roof) and taken with Use this profile, one undo step.
+ * layout query takes a profile without changing the roof) and taken with Use this profile, one undo step. Stage S4: the Cost tab,
+ * each line bought with its price, amount and source from the project's price lists, the lines to quote, what is cut from flat
+ * sheet and the joints between ridge caps apart, the subtotal of the priced lines; indicative, as the prices it reads.
  */
 
 import { useMemo, useState } from 'react';
 import { useUi } from '../../app/store';
 import { Dialog } from '../../shell/Dialog';
-import { execute, useSession } from '../../engine/session';
+import { notify } from '../../app/store';
+import { engine, engineInBrowser, execute, useSession } from '../../engine/session';
 import { useLayout } from './PanelsSection';
 import {
-  bounds, centroid, choiceOf, EDGE_COLOUR, EDGE_LABEL, edgeRows, faceTotals, isLayout, ITEM_GROUPS, itemRows, laidFlat, lengthColours, needText, profilesOf,
-  purchaseRows, REUSED, reuseLinks, setArgs, type LayoutDto, type PanelDto, type Pt,
+  BILKA_TEMPLATE, bounds, centroid, choiceOf, COST_GROUPS, costRows, costState, EDGE_COLOUR, EDGE_LABEL, edgeRows, faceTotals, isLayout, ITEM_GROUPS, itemRows, laidFlat,
+  lengthColours, money, needText, profilesOf, purchaseRows, quantityText, REUSED, reuseLinks, setArgs, sheetRows, subtotalText, type CostDto, type CostLineDto,
+  type LayoutDto, type PanelDto, type Pt,
 } from './roofpanels';
 
 type Mode = 'plan' | 'flat';
+type Tab = 'quantities' | 'cost';
+
+/** A price's page (its supplier's), in the system's browser; a new tab on the web. */
+function openPage(url: string) {
+  if (engineInBrowser) { window.open(url, '_blank', 'noopener'); return; }
+  void engine.call('support.open', { link: 'extensionPage', url }).catch(() => notify('The link could not be opened.'));
+}
 
 export function PanelLayoutDialog() {
   const close = () => useUi.setState({ dialog: null });
@@ -31,6 +42,7 @@ export function PanelLayoutDialog() {
   const layout = useLayout(roofId, trying ? { profile: trying } : null);
   const [mode, setMode] = useState<Mode>('plan');
   const [hover, setHover] = useState<PanelDto | null>(null);
+  const [tab, setTab] = useState<Tab>('quantities');
   const use = () => {
     if (!roofId || !trying) return;
     void execute('roofpanels.setRoofPanels', setArgs(roofId, { profile: trying }, profiles)).then(() => setTried(null));
@@ -54,11 +66,18 @@ export function PanelLayoutDialog() {
           <button type="button" className={`seg-item${mode === 'plan' ? ' on' : ''}`} data-action="roof-panels-plan" onClick={() => setMode('plan')}>In plan</button>
           <button type="button" className={`seg-item${mode === 'flat' ? ' on' : ''}`} data-action="roof-panels-flat" onClick={() => setMode('flat')}>Laid flat</button>
         </span>
+        {isLayout(layout) && layout.cost?.available && (
+          <span className="seg small" role="group">
+            <button type="button" className={`seg-item${tab === 'quantities' ? ' on' : ''}`} data-action="roof-panels-quantities" onClick={() => setTab('quantities')}>Quantities</button>
+            <button type="button" className={`seg-item${tab === 'cost' ? ' on' : ''}`} data-action="roof-panels-cost" onClick={() => setTab('cost')}>Cost</button>
+          </span>
+        )}
         {trying && <span className="muted small">Compare: the roof keeps its own profile until you use this one.</span>}
       </div>
       {!layout && <p className="muted">Laying the panels…</p>}
       {layout && !isLayout(layout) && <p className="error" data-testid="roof-panel-layout-problem">{layout.problem}</p>}
-      {isLayout(layout) && (
+      {isLayout(layout) && tab === 'cost' && layout.cost?.available && <CostTable cost={layout.cost} />}
+      {isLayout(layout) && !(tab === 'cost' && layout.cost?.available) && (
         <div className="row" style={{ gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 560px', minWidth: 320 }}>
             <Drawing layout={layout} mode={mode} onHover={setHover} />
@@ -253,3 +272,83 @@ function Tables({ layout }: { layout: LayoutDto }) {
     </div>
   );
 }
+
+/** A line's price, amount and source; „to quote” when no list prices it. */
+function CostRow({ l }: { l: CostLineDto }) {
+  const priced = l.amount != null;
+  return (
+    <tr data-cost={l.code} title={l.note || undefined}>
+      <td>{l.group === 'panels' ? <span data-no-i18n>{l.name}</span> : <span>{l.name}</span>}{l.pieces != null && <span className="muted" data-no-i18n>{` (${l.pieces})`}</span>}</td>
+      <td className="num" data-no-i18n>{quantityText(l)}</td>
+      <td style={{ whiteSpace: 'nowrap' }}>{l.unit}</td>
+      {priced ? (
+        <>
+          <td className="num" data-no-i18n style={{ whiteSpace: 'nowrap' }} title={l.unitDiffers ? `${l.priceUnit}` : undefined}>{money(l.price ?? 0)}{l.unitDiffers ? ' ⚠' : ''}</td>
+          <td className="num" data-no-i18n style={{ whiteSpace: 'nowrap' }}>{money(l.amount ?? 0)}</td>
+          <td className="small" style={{ whiteSpace: 'nowrap' }} title={[l.list, l.checked, l.url].filter(Boolean).join(' · ')}>
+            {l.url?.startsWith('https://') ? <a href={l.url} data-no-i18n onClick={(e) => { e.preventDefault(); openPage(l.url!); }}>{l.source ?? l.list}</a> : <span data-no-i18n>{l.source ?? l.list}</span>}
+          </td>
+          <td className="small muted" data-no-i18n style={{ whiteSpace: 'nowrap' }}>{l.checked ?? ''}</td>
+        </>
+      ) : (
+        <td colSpan={4} className="muted small" data-testid="roof-panels-to-quote">To quote</td>
+      )}
+    </tr>
+  );
+}
+
+/**
+ * The Cost tab: the lines bought by group, each with its price, amount and source; the subtotal of the priced lines; the
+ * lines cut from flat sheet and the joints between ridge caps apart; the note that it is indicative. With no price for any
+ * line, the Bilka – Dedeman template can be added from here (when asked: never by itself).
+ */
+function CostTable({ cost }: { cost: CostDto }) {
+  const state = costState(cost);
+  const sheet = sheetRows(cost);
+  return (
+    <div className="roof-panels-cost" data-testid="roof-panels-cost-table">
+      {state === 'unpriced' && (
+        <div className="roof-panels-cost-hint" data-testid="roof-panels-cost-empty">
+          <p className="muted small">No price list of the project prices these lines. Add the Bilka – Dedeman list (indicative prices read on 24.11.2026), or import your own with the same codes.</p>
+          <div className="row" style={{ gap: 8 }}>
+            <button type="button" className="btn" data-action="roof-panels-add-template" onClick={() => void execute('cost.addPriceList', { template: BILKA_TEMPLATE })}>Add the Bilka – Dedeman template</button>
+            <button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'cost.prices' })}>Price lists…</button>
+          </div>
+        </div>
+      )}
+      <table className="layer-table" data-testid="roof-panels-cost-lines">
+        <thead><tr><th>Item</th><th>Quantity</th><th>Unit</th><th>Price</th><th>Amount</th><th>Source</th><th title="The day the price was read">Price checked on</th></tr></thead>
+        {COST_GROUPS.map((g) => {
+          const rows = costRows(cost, g.id);
+          if (rows.length === 0) return null;
+          return (
+            <tbody key={g.id}>
+              <tr className="group"><td colSpan={7} className="eyebrow">{g.label}</td></tr>
+              {rows.map((l) => <CostRow key={`${l.code}#${l.variant ?? ''}`} l={l} />)}
+            </tbody>
+          );
+        })}
+        <tbody>
+          <tr className="total" data-testid="roof-panels-cost-subtotal">
+            <td colSpan={4}>Subtotal of the priced lines</td>
+            <td className="num" data-no-i18n style={{ whiteSpace: 'nowrap' }}>{subtotalText(cost) || '—'}</td><td colSpan={2} />
+          </tr>
+        </tbody>
+      </table>
+      <dl className="fields small">
+        {cost.toQuote > 0 && <><dt title="Lines no price list prices: ask the supplier">To quote</dt><dd className="num" data-no-i18n>{cost.toQuote}</dd></>}
+        {cost.joints > 0 && <><dt title="Where two ridge or hip caps lap: an operation, the material is in the caps">Joints between ridge caps</dt><dd className="num" data-no-i18n>{cost.joints}</dd></>}
+      </dl>
+      {sheet.length > 0 && (
+        <>
+          <p className="eyebrow">Cut from flat sheet</p>
+          <table className="layer-table" data-testid="roof-panels-cost-sheet">
+            <tbody>{sheet.map((l) => <tr key={l.code} title={l.note || undefined}><td>{l.name}</td><td className="num" data-no-i18n>{quantityText(l)}</td><td>{l.unit}</td></tr>)}</tbody>
+          </table>
+        </>
+      )}
+      <p className="small roof-panels-indicative" data-testid="roof-panels-indicative">Indicative — check prices when ordering. Labour, transport and the rainwater system are not included.</p>
+    </div>
+  );
+}
+

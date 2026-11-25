@@ -1,5 +1,5 @@
 {
-  "note": "Lapin's built-in roof panel profiles: the makers' published dimensions, indicative; check them with the maker and the installation guide before ordering. Prices are never here: they go in a price list (the cost module).",
+  "note": "Lapin's built-in roof panel profiles: the makers' published dimensions, indicative; check them with the maker and the installation guide before ordering. Prices are never here: they go in a price list (the cost module). Every line carries an article code a price list prices it by: a panel's is its article (\"{id}/{color}\", per m² of sheet bought, or per stock length with \"{length}\"), an accessory's, a fixing's or a support's its code; what is made from flat sheet (madeFrom) is not bought.",
   "profiles": [
     {
       "id": "bilka-balcanic",
@@ -12,6 +12,7 @@
       "module": 350,
       "joints": "module",
       "lengths": [1180, 2230, 2930],
+      "article": "{id}/{color}/{length}",
       "colors": [{"code": "8017", "name": "RAL 8017 matt brown", "rgb": "#45322e"}],
       "minPitch": 8,
       "minPitchHipValley": 14,
@@ -110,6 +111,7 @@
           "unit": "piece",
           "rule": "count",
           "of": "ridgeNodes",
+          "madeFrom": "flatSheet",
           "note": "Made from flat sheet (stage S5)."
         },
         {"code": "gable-cap", "name": "Ridge end cap at the verge", "unit": "piece", "rule": "count", "of": "gableCaps"},
@@ -251,6 +253,7 @@
           "unit": "piece",
           "rule": "count",
           "of": "ridgeNodes",
+          "madeFrom": "flatSheet",
           "note": "Made from flat sheet (stage S5)."
         },
         {"code": "gable-cap", "name": "Ridge end cap at the verge", "unit": "piece", "rule": "count", "of": "gableCaps"},
@@ -375,24 +378,25 @@
       "accessories": [
         {"code": "ridge-retro", "name": "Angled ridge cap 417 mm", "unit": "piece 2 m", "rule": "edges", "edges": ["ridge"]},
         {"code": "hip-retro", "name": "Angled hip cap 417 mm", "unit": "piece 2 m", "rule": "edges", "edges": ["hip"]},
-        {"code": "hip-end-retro", "name": "Hip end cap", "unit": "piece", "rule": "count", "of": "hipCaps"},
+        {"code": "hip-end-retro", "name": "Hip end cap", "unit": "piece", "rule": "count", "of": "hipCaps", "madeFrom": "flatSheet", "note": "Made from flat sheet (stage S5)."},
         {
           "code": "ridge-nodes",
           "name": "Ridge nodes and ridge–valley heads",
           "unit": "piece",
           "rule": "count",
           "of": "ridgeNodes",
+          "madeFrom": "flatSheet",
           "note": "Made from flat sheet (stage S5)."
         },
         {"code": "gable-cap", "name": "Ridge end cap at the verge", "unit": "piece", "rule": "count", "of": "gableCaps"},
         {"code": "valley-retro", "name": "Valley 417 mm", "unit": "piece 2 m", "rule": "edges", "edges": ["valley"]},
         {"code": "eave-retro", "name": "Large eave flashing 312 mm", "unit": "piece 2 m", "rule": "edges", "edges": ["eave"]},
-        {"code": "verge", "name": "Verge flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["verge"]},
-        {"code": "top-edge", "name": "Top edge flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["topEdge"]},
-        {"code": "wall-side", "name": "Side wall abutment flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["wallSide"]},
-        {"code": "wall-top", "name": "Top wall abutment flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["wallTop"]},
-        {"code": "break-concave", "name": "Concave break flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["concaveBreak"]},
-        {"code": "break-convex", "name": "Convex break flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["convexBreak"]},
+        {"code": "verge-retro", "name": "Verge flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["verge"]},
+        {"code": "top-edge-retro", "name": "Top edge flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["topEdge"]},
+        {"code": "wall-side-retro", "name": "Side wall abutment flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["wallSide"]},
+        {"code": "wall-top-retro", "name": "Top wall abutment flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["wallTop"]},
+        {"code": "break-concave-retro", "name": "Concave break flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["concaveBreak"]},
+        {"code": "break-convex-retro", "name": "Convex break flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["convexBreak"]},
         {
           "code": "ridge-support",
           "name": "Ridge support 125 mm",
@@ -431,7 +435,7 @@
           "lap": 100,
           "factor": 1.1
         },
-        {"code": "valley-clips", "name": "Valley clips", "unit": "piece", "rule": "count", "of": "valleyClips", "note": "Cut from flat sheet."},
+        {"code": "valley-clips", "name": "Valley clips", "unit": "piece", "rule": "count", "of": "valleyClips", "madeFrom": "flatSheet", "note": "Cut from flat sheet."},
         {
           "code": "window-kit",
           "name": "Roof window flashing kit",
@@ -440,7 +444,7 @@
           "of": "windows",
           "note": "One a window, sized to it and to the profile's height."
         },
-        {"code": "snow-guard", "name": "Snow guard", "unit": "piece 2 m", "rule": "run", "snow": 1, "length": 2000, "lap": 100, "factor": 1.05}
+        {"code": "snow-guard-retro", "name": "Snow guard", "unit": "piece 2 m", "rule": "run", "snow": 1, "length": 2000, "lap": 100, "factor": 1.05}
       ]
     }
   ],

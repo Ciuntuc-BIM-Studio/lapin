@@ -14,7 +14,7 @@ vi.stubGlobal('localStorage', {
 });
 
 const { choiceKey, forgetFromLibrary, keepInLibrary, library, linesHolding, money, parseRate, qty, remember, remembered, startingChoice, unpricedCount, FORMS } = await import('./estimate');
-const { fieldOf, setColumn } = await import('./PriceListsDialog');
+const { FIELD_LABELS, fieldOf, setColumn, templateArg } = await import('./PriceListsDialog');
 import type { EstimateDto, LineDto } from './estimate';
 
 const line = (key: string, elements: string[]): LineDto => ({
@@ -68,6 +68,12 @@ describe('the estimate as shown', () => {
 });
 
 describe('the price list import', () => {
+  it('names every column the engine reads, the sources too, and adds a template by its id (Lapin\'s own as true)', () => {
+    for (const f of ['code', 'name', 'unit', 'material', 'price', 'source', 'url', 'checked']) expect(FIELD_LABELS[f], f).toBeTruthy();
+    expect(templateArg({ id: 'lapin' })).toBe(true);
+    expect(templateArg({ id: 'bilka-dedeman-2026-11-24' })).toBe('bilka-dedeman-2026-11-24');
+  });
+
   it('gives each column one meaning, a meaning moved from the column that had it', () => {
     const map = { code: 0, name: 1, unit: null, material: 3, price: null };
     const a = setColumn(map, 2, 'unit');

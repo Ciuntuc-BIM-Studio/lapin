@@ -66,6 +66,8 @@ public sealed class EstimateLine(string key, string chapter, string code)
     public string? Trade { get; set; }
     public string Basis { get; set; } = "count";
     public bool Priced { get; set; }
+    /// <summary>The decimals its quantity is kept to: 3, or 6 for a line a module counted in its article's unit (m² of sheet by the panel, decision 859).</summary>
+    public int Decimals { get; set; } = 3;
     /// <summary>The id of a line of the user's (null: derived from the model).</summary>
     public string? Manual { get; set; }
     public HashSet<string> Elements { get; } = [];
@@ -75,7 +77,7 @@ public sealed class EstimateLine(string key, string chapter, string code)
     /// <summary>The tasks a line of the user's is done in (stage 7; ids: a summary stands for its tasks).</summary>
     public List<string> Tasks { get; } = [];
 
-    public double Qty => Math.Round(Quantity, 3);
+    public double Qty => Math.Round(Quantity, Decimals);
     public double VM => Money.Round(Qty * M);
     public double VL => Money.Round(Qty * L);
     public double VE => Money.Round(Qty * E);
@@ -359,6 +361,31 @@ public static class Costing
             }
         }
 
+        // A line a module counted in its article's unit: the code (and its variant: a line apiece), the quantity as it is.
+        void AddArticle(Entity e, Quantity x)
+        {
+            var (code, variant) = ArticleQuantities.Split(x.Name);
+            var chapter = ChapterOf(e.Class);
+            string? storey = null;
+            if (s.Grouping == "storey")
+            {
+                storey = Spatial.StoreyOf(m, e, followHost: true)?.Id;
+                chapter = $"{(storey != null ? m.Get(storey)?.Name : null) ?? "—"} · {chapter}";
+            }
+            var key = $"{chapter}\u001f{code.ToUpperInvariant()}" + (variant != null ? $"\u001f{variant}" : "");
+            if (!lines.TryGetValue(key, out var line))
+            {
+                line = new EstimateLine(key, chapter, code) { Basis = x.Kind == "AREA" ? "area" : x.Kind == "LENGTH" ? "length" : "count", Decimals = 6, Name = x.Label ?? "" };
+                Price(line, code);
+                if (variant != null) line.Name = $"{line.Name} · {variant}";
+                lines[key] = line;
+                chapterMeta.TryAdd(chapter, OrderOf(ChapterOf(e.Class), storey));
+            }
+            line.Quantity += x.Value;
+            line.Elements.Add(e.Id);
+            line.Shares.Add(new LineShare(e.Id, ArticleQuantities.Part, x.Value));
+        }
+
         var kinds = PhaseKinds(m);
         if (s.Derive)
             foreach (var (e, sets) in Measured(q))
@@ -406,6 +433,12 @@ public static class Costing
                         Add(e, r2.Article, Parts.Select(m, e.Id, sets, null), true, ownMaterial);
                         priced = true;
                     }
+                }
+                // What a module counted in its articles' units (a roof's panels and their accessories, ArticleQuantities): priced by its codes.
+                foreach (var set in sets.Where(x => x.Part == ArticleQuantities.Part))
+                {
+                    foreach (var x in set.Quantities.Where(x => x.Value > 0 && double.IsFinite(x.Value))) AddArticle(e, x);
+                    priced = true;
                 }
                 if (!priced && arts.Count == 0)
                 {

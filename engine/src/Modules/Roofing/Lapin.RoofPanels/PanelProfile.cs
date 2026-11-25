@@ -19,7 +19,11 @@ public sealed record PanelColor(string Code, string Name, string? Rgb = null);
 /// <see cref="Option"/>: only when the roof's ridge option (the profile's <see cref="PanelProfile.Ridges"/>) is this one.
 /// </summary>
 public sealed record AccessoryItem(string Code, string Name, string Unit, string Rule, IReadOnlyDictionary<string, double> Edges,
-    int Length, int? Lap, double Factor, string? Of, string? Option, bool JointBars, double Joints, double Snow, string Note);
+    int Length, int? Lap, double Factor, string? Of, string? Option, bool JointBars, double Joints, double Snow, string Note)
+{
+    /// <summary>What it is made of when it is not bought (S4): <c>flatSheet</c>, cut from the flat sheet (stage S5); null, bought by its code.</summary>
+    public string? MadeFrom { get; init; }
+}
 
 /// <summary>
 /// A way to carry the panels (S3): <c>battens</c> across the slope (the first at <see cref="First"/> mm up from the eave, the
@@ -68,6 +72,19 @@ public sealed record PanelProfile(
     public IReadOnlyList<FixingItem> Fixings { get; init; } = [];
     /// <summary>The ridge options its accessories come in (a tile's large and small ridge caps), the first the default; none for one.</summary>
     public IReadOnlyList<string> Ridges { get; init; } = [];
+    /// <summary>
+    /// Its panels' article code (S4, decision 859): <c>{id}</c>, <c>{color}</c> and <c>{length}</c> replaced; a price list prices it per m²
+    /// of sheet bought (the nominal length by the whole width). The default, <c>{id}/{color}</c>, is one article a colour (made to
+    /// order); a stock profile priced by length names <c>{length}</c> too (Balcanic's three lengths).
+    /// </summary>
+    public string Article { get; init; } = "{id}/{color}";
+
+    /// <summary>The article code of its panels in <paramref name="color"/> and of <paramref name="length"/> mm.</summary>
+    public string ArticleCode(string? color, int length) =>
+        Article.Replace("{id}", Id).Replace("{color}", color ?? Colors.FirstOrDefault()?.Code ?? "").Replace("{length}", length.ToString(System.Globalization.CultureInfo.InvariantCulture)).TrimEnd('/');
+
+    /// <summary>Whether its article is one a length (the code names it), else one a colour, its lines told apart by their length.</summary>
+    public bool ArticleByLength => Article.Contains("{length}", StringComparison.Ordinal);
 
     public double Gross => GrossWidth / 1000.0;
     public double Width => UsefulWidth / 1000.0;
@@ -142,6 +159,7 @@ public sealed record PanelProfile(
             Support = [.. ((o["support"] as JsonArray) ?? []).OfType<JsonObject>().Select(ReadSupport)],
             Fixings = [.. ((o["fixings"] as JsonArray) ?? []).OfType<JsonObject>().Select(ReadFixing)],
             Ridges = [.. ((o["ridges"] as JsonArray) ?? []).Select(n => (string?)n).OfType<string>()],
+            Article = (string?)o["article"] is { Length: > 0 } art ? art : "{id}/{color}",
         };
     }
 
@@ -156,7 +174,8 @@ public sealed record PanelProfile(
         var code = (string?)a["code"] ?? "";
         return new AccessoryItem(code, (string?)a["name"] ?? code, (string?)a["unit"] ?? "piece", (string?)a["rule"] ?? "edges", edges,
             I(a["length"], 2000), Json.Number(a["lap"]) is { } lap ? (int)lap : null, Json.Number(a["factor"]) ?? 1, (string?)a["of"],
-            (string?)a["option"], (bool?)a["jointBars"] ?? false, Json.Number(a["joints"]) ?? 0, Json.Number(a["snow"]) ?? 0, (string?)a["note"] ?? "");
+            (string?)a["option"], (bool?)a["jointBars"] ?? false, Json.Number(a["joints"]) ?? 0, Json.Number(a["snow"]) ?? 0, (string?)a["note"] ?? "")
+        { MadeFrom = (string?)a["madeFrom"] is { Length: > 0 } mf ? mf : null };
     }
 
     static SupportScheme ReadSupport(JsonObject a)
@@ -187,7 +206,8 @@ public sealed record PanelProfile(
         ["waves"] = Waves, ["waveHeight"] = WaveHeight, ["notes"] = Notes, ["source"] = Source,
         ["ridges"] = new JsonArray([.. Ridges.Select(r => (JsonNode)r)]),
         ["support"] = new JsonArray([.. Support.Select(s => (JsonNode)new JsonObject { ["id"] = s.Id, ["name"] = s.Name, ["kind"] = s.Kind, ["section"] = s.Section })]),
-        ["accessories"] = new JsonArray([.. Accessories.Select(a => (JsonNode)new JsonObject { ["code"] = a.Code, ["name"] = a.Name, ["unit"] = a.Unit, ["option"] = a.Option })]),
+        ["accessories"] = new JsonArray([.. Accessories.Select(a => (JsonNode)new JsonObject { ["code"] = a.Code, ["name"] = a.Name, ["unit"] = a.Unit, ["option"] = a.Option, ["madeFrom"] = a.MadeFrom })]),
+        ["article"] = Article,
     };
 }
 

@@ -6745,6 +6745,28 @@ export const DA: Record<string, string> = {
   // Roof panel layout, stage S3: the accessories schedule.
   "A schedule of the roofs' panel accessories: flashings, fixings, battens and membrane, each in its unit": "En liste over tagpladernes tilbehør: inddækninger, fastgørelser, lægter og membran, hver i sin enhed",
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "Listen over tagpladetilbehør er lavet: den ligger i projektbrowseren under Lister.",
+  // Roof panel layout, stage S4: the cost link (decision 859).
+  "Indicative subtotal": "Vejledende subtotal",
+  "The lines with a price in the project's price lists: the quantity by the unit price. Labour and transport are not included": "Linjerne med en pris i projektets prislister: mængden gange enhedsprisen. Arbejdsløn og transport er ikke medregnet",
+  "Lines no price list prices: ask the supplier": "Linjer uden pris i nogen liste: bed leverandøren om et tilbud",
+  "To quote": "Skal indhentes tilbud",
+  "Indicative: check the prices when ordering.": "Vejledende: tjek priserne ved bestilling.",
+  "No price list prices these lines yet. Add the Bilka – Dedeman template (indicative) or your own list in Price lists…, or from the Cost tab of Panel layout.": "Ingen prisliste har endnu priser på disse linjer. Tilføj skabelonen Bilka – Dedeman (vejledende) eller din egen liste i Prislister…, eller fra fanen Omkostning i paneludlægningen.",
+  "No price list of the project prices these lines. Add the Bilka – Dedeman list (indicative prices read on 24.11.2026), or import your own with the same codes.": "Ingen af projektets prislister har priser på disse linjer. Tilføj listen Bilka – Dedeman (vejledende priser aflæst 24.11.2026), eller importér din egen med de samme koder.",
+  "Add the Bilka – Dedeman template": "Tilføj skabelonen Bilka – Dedeman",
+  "Amount": "Beløb",
+  "Subtotal of the priced lines": "Subtotal for linjerne med pris",
+  "Where two ridge or hip caps lap: an operation, the material is in the caps": "Hvor to rygninger overlapper: en arbejdsgang, materialet er i rygningerne",
+  "Joints between ridge caps": "Samlinger mellem rygninger",
+  "Cut from flat sheet": "Af plan plade",
+  "Indicative — check prices when ordering. Labour, transport and the rainwater system are not included.": "Vejledende — tjek priserne ved bestilling. Arbejdsløn, transport og tagafvandingen er ikke medregnet.",
+  "Source (supplier)": "Kilde (leverandør)",
+  "Price checked on": "Pris tjekket den",
+  "Indicative lists to start from, added to the project only when you ask: replace their prices with yours (your own list first, or the estimate's price lists in your order).": "Vejledende lister at starte fra, kun tilføjet projektet, når du beder om det: erstat deres priser med dine (din egen liste først, eller overslagets prislister i din rækkefølge).",
+  "The Bilka roof panels' prices read on 24.11.2026, mostly at Dedeman: indicative, check them when ordering.": "Bilka-panelernes priser aflæst 24.11.2026, mest hos Dedeman: vejledende, tjek dem ved bestilling.",
+  "Lapin's own rough values, a few rows to try the estimate with.": "Lapins egne grove værdier, nogle få rækker til at prøve overslaget med.",
+  "There is no such price list template.": "Den prislisteskabelon findes ikke.",
+  "The day the price was read": "Den dag prisen blev aflæst",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -7293,4 +7315,10 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^(.+)'s ridge caps are (.+)\.$/, (m) => `${m[1]}s rygninger er ${m[2]}.`],
   [/^The battens are fixed with (.+)\.$/, (m) => `Lægterne fastgøres med ${m[1]}.`],
   [/^(.+) is not made in (.+)\.$/, (m) => `${m[1]} fremstilles ikke i ${m[2]}.`],
+  // Roof panel layout, stage S4.
+  [/^Price list added to the project: (.+)\.$/, (m) => `Prisliste tilføjet projektet: ${m[1]}.`],
+  [/^(\d+) panel\(s\) of (\d+) mm: priced per m² of sheet bought \(the nominal length by the (\d+) mm width\)\.$/, (m) => `${m[1]} panel(er) på ${m[2]} mm: pris pr. m² købt plade (den nominelle længde gange ${m[3]} mm bredde).`],
+  [/^The template (.+) is not a Lapin price list\.$/, (m) => `Skabelonen ${m[1]} er ikke en Lapin-prisliste.`],
+  [/^The template (.+) does not say its prices are indicative\.$/, (m) => `Skabelonen ${m[1]} siger ikke, at dens priser er vejledende.`],
+  [/^The template (.+) has no rows\.$/, (m) => `Skabelonen ${m[1]} har ingen rækker.`],
 ];

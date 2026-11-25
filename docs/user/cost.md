@@ -32,7 +32,9 @@ Prices are yours: Lapin ships no catalogue of prices or norms. **Construction â†
 
 Change any column that was guessed wrong, choose the row the headings are on and whether the prices are in RON or EUR, then click **Import**. The list goes into the project. With **Keep in this computer's library too** ticked, it also stays on this computer: under **On this computer**, **Add to the project** brings it into your next project.
 
-**Template** saves a CSV with the columns and a few rows of Lapin's own rough values, marked *indicative*: fill it in with your prices and import it. **Use the indicative values** puts those rough values in the project as a list, so you can try the estimate before you have yours. Replace them before you send an estimate to anyone.
+Optional too: the **Source (supplier)**, a **Link** to its page and the date the **Price checked on**, kept with each row.
+
+**Template** saves a CSV with the columns and a few rows of Lapin's own rough values, marked *indicative*: fill it in with your prices and import it. Under **Templates**, **Add to the project** puts a ready list in the project: **Lapin indicative prices** (those rough values, to try the estimate before you have yours) and the lists the edition's modules bring, such as **Bilka â€“ Dedeman (indicative, 24.11.2026)** for [roof panels](roof-panels.md#what-it-costs), each row with its source and date. A template is added only when you ask, and is marked *indicative*: replace its prices before you send an estimate to anyone.
 
 ## Articles on types, rules on materials
 

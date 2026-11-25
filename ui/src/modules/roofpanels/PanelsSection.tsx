@@ -2,7 +2,8 @@
  * A roof's Panels section in the properties panel (docs/plan-roof-panels.md §4, S2): the profile it is covered with (none:
  * the covering as one layer, as before), the profile's colour, a made-to-order profile's longest panel, and what the
  * layout works out: the panels to buy by length, the offcuts reused, the sheet bought, the warnings. Each change is one
- * command (roofpanels.setRoofPanels), one undo step; Panel layout… opens the layout itself.
+ * command (roofpanels.setRoofPanels), one undo step; Panel layout… opens the layout itself. Stage S4: the indicative subtotal
+ * when the project's price lists price the lines, else a hint to add the Bilka – Dedeman template (never added by itself).
  */
 
 import { Fragment, useEffect, useState } from 'react';
@@ -10,7 +11,7 @@ import { LayoutGrid } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
-import { choiceOf, colourLabel, isLayout, ITEM_GROUPS, itemRows, profilesOf, purchaseRows, setArgs, takeoffOptions, type LayoutAnswer } from './roofpanels';
+import { choiceOf, colourLabel, costState, isLayout, ITEM_GROUPS, itemRows, profilesOf, purchaseRows, setArgs, subtotalText, takeoffOptions, type LayoutAnswer } from './roofpanels';
 
 /** The roof's layout, asked again whenever the model changes. */
 export function useLayout(roofId: string | null, preview?: Record<string, unknown> | null): LayoutAnswer | null {
@@ -118,6 +119,24 @@ export function PanelsSection({ node }: { node: NodeDto }) {
                 </tbody>
               </table>
             </>
+          )}
+          {costState(layout.cost) !== 'none' && layout.cost && (
+            <div data-testid="roof-panels-cost">
+              <p className="eyebrow">Cost</p>
+              {costState(layout.cost) === 'priced' ? (
+                <>
+                  <dl className="fields">
+                    <dt title="The lines with a price in the project's price lists: the quantity by the unit price. Labour and transport are not included">Indicative subtotal</dt>
+                    <dd className="num" data-no-i18n data-testid="roof-panels-subtotal">{subtotalText(layout.cost)}</dd>
+                    {layout.cost.toQuote > 0 && <><dt title="Lines no price list prices: ask the supplier">To quote</dt><dd className="num" data-no-i18n>{layout.cost.toQuote}</dd></>}
+                  </dl>
+                  <p className="muted small">Indicative: check the prices when ordering.</p>
+                </>
+              ) : (
+                <p className="muted small" data-testid="roof-panels-cost-hint">No price list prices these lines yet. Add the Bilka – Dedeman template (indicative) or your own list in Price lists…, or from the Cost tab of Panel layout.</p>
+              )}
+              <button type="button" className="btn compact" data-action="roof-panels-prices" onClick={() => useUi.setState({ dialog: 'cost.prices' })}>Price lists…</button>
+            </div>
           )}
           {layout.warnings.length > 0 && (
             <>
