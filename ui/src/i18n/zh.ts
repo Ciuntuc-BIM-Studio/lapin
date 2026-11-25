@@ -6642,6 +6642,8 @@ export const ZH: Record<string, string> = {
   'A flat roof takes no panels.': '平屋顶不铺面板.',
   'A barrel roof takes no panels yet: its covering is curved.': '筒形屋顶暂不铺面板：其屋面为曲面.',
   'The roof has no sloped plane to lay panels on.': '屋顶没有可铺面板的坡面.',
+  // A part of the window that stopped (PartBoundary, forum topic 258).
+  "This part of Lapin stopped working; the rest of the window still works.": "Lapin 的这一部分已停止工作；窗口的其余部分仍可正常使用。", "Report…": "报告…", "Lapin's window stopped working.": "Lapin 窗口已停止工作。", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "重新加载窗口以继续。请报告您在此之前刚做的操作，以便修复。", "Reload the window": "重新加载窗口", "Report on the forum…": "在论坛上报告…",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

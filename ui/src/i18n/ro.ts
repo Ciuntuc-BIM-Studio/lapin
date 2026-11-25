@@ -6599,6 +6599,8 @@ export const RO: Record<string, string> = {
   'A flat roof takes no panels.': 'Un acoperiș plat nu primește panouri.',
   'A barrel roof takes no panels yet: its covering is curved.': 'Un acoperiș în boltă nu primește încă panouri: învelitoarea lui e curbă.',
   'The roof has no sloped plane to lay panels on.': 'Acoperișul nu are nicio apă înclinată pe care să se așeze panouri.',
+  // A part of the window that stopped (PartBoundary, forum topic 258).
+  "This part of Lapin stopped working; the rest of the window still works.": "Această parte din Lapin s-a oprit; restul ferestrei funcționează în continuare.", "Report…": "Raportează…", "Lapin's window stopped working.": "Fereastra Lapin s-a oprit.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "Reîncarcă fereastra pentru a continua. Te rugăm să raportezi ce ai făcut chiar înainte, ca să poată fi reparat.", "Reload the window": "Reîncarcă fereastra", "Report on the forum…": "Raportează pe forum…",
 };
 
 /** Phrases with a number or a name in them. */

@@ -4,6 +4,7 @@ import { installDialogDrag } from './shell/dialogDrag';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { WindowBoundary } from './shell/PartBoundary';
 import { connect } from './engine/session';
 import { guardWindowClose, openStartupFile } from './engine/files';
 import './theme.css';
@@ -41,7 +42,7 @@ void syncWindows();
 // The interface in the language chosen (English, Romanian, Spanish, German, French, Danish, Italian, Polish, Portuguese, Lao,
 // Simplified Chinese or Greek), drawn once that language's file is here.
 void languageReady.then(() => {
-  createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>);
+  createRoot(document.getElementById('root')!).render(<StrictMode><WindowBoundary><App /></WindowBoundary></StrictMode>);
   startTranslator(document.getElementById('root')!);
 });
 

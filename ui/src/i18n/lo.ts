@@ -6699,6 +6699,8 @@ export const LO: Record<string, string> = {
   'A flat roof takes no panels.': 'ຫຼັງຄາແບນບໍ່ໃຊ້ແຜ່ນ.',
   'A barrel roof takes no panels yet: its covering is curved.': 'ຫຼັງຄາໂຄ້ງຍັງບໍ່ໃຊ້ແຜ່ນ: ວັດສະດຸມຸງຂອງມັນໂຄ້ງ.',
   'The roof has no sloped plane to lay panels on.': 'ຫຼັງຄາບໍ່ມີດ້ານຄ້ອຍໃຫ້ວາງແຜ່ນ.',
+  // A part of the window that stopped (PartBoundary, forum topic 258).
+  "This part of Lapin stopped working; the rest of the window still works.": "ສ່ວນນີ້ຂອງ Lapin ຢຸດເຮັດວຽກແລ້ວ; ສ່ວນທີ່ເຫຼືອຂອງໜ້າຕ່າງຍັງເຮັດວຽກຢູ່.", "Report…": "ລາຍງານ…", "Lapin's window stopped working.": "ໜ້າຕ່າງຂອງ Lapin ຢຸດເຮັດວຽກແລ້ວ.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "ໂຫຼດໜ້າຕ່າງຄືນໃໝ່ເພື່ອສືບຕໍ່. ກະລຸນາລາຍງານສິ່ງທີ່ທ່ານໄດ້ເຮັດກ່ອນໜ້ານັ້ນ ເພື່ອໃຫ້ແກ້ໄຂໄດ້.", "Reload the window": "ໂຫຼດໜ້າຕ່າງຄືນໃໝ່", "Report on the forum…": "ລາຍງານໃນຟໍຣັມ…",
 };
 
 /** Phrases with a number or a name in them. */

@@ -296,4 +296,27 @@ public sealed class ProfileEditorTests
         Assert.Equal(8, (double)((JsonArray)pp["points"]!)[1]!["curve"]!, 9);
         Assert.NotEmpty(Pairs(pp["existing"]));
     }
+
+    [Fact]
+    public void A_retaining_wall_on_a_bare_site_reads_as_a_profile_following_no_ground()
+    {
+        // Forum topic 258: a retaining wall drawn with no terrain, its Profile… opened. The answer has no ground series (the
+        // interface reads them as empty), no points to drag, a finite line along its length, and a cross section with no ground.
+        var f = F();
+        var w = Id(f.Run("civil.addRetainingWall", new JsonObject { ["points"] = Pts([0, 0], [6.0667, 0]), ["height"] = 1.0 }));
+        var pr = Profile(f, w);
+        Assert.Equal("corridor", (string)pr["kind"]!);
+        Assert.Equal("ground", (string)pr["mode"]!);
+        Assert.Null(pr["existing"]);
+        Assert.Null(pr["design"]);
+        Assert.Empty((JsonArray)pr["points"]!);
+        Assert.Equal(6.0667, (double)pr["length"]!, 6);
+        var line = Pairs(pr["line"]);
+        Assert.True(line.Count >= 2);
+        Assert.All(line, p => Assert.True(p.Z is { } z && double.IsFinite(z)));
+        var cross = (JsonArray)f.Session.Query("civil.crossProfile", new JsonObject { ["id"] = w, ["stations"] = P(1) })!;
+        Assert.Single(cross);
+        Assert.Null(cross[0]!["existing"]);
+        Assert.NotNull(pr.ToJsonString());
+    }
 }

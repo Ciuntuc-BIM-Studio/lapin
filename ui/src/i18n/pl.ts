@@ -6646,6 +6646,8 @@ export const PL: Record<string, string> = {
   'A flat roof takes no panels.': 'Dach płaski nie przyjmuje paneli.',
   'A barrel roof takes no panels yet: its covering is curved.': 'Dach łukowy nie przyjmuje jeszcze paneli: jego pokrycie jest zakrzywione.',
   'The roof has no sloped plane to lay panels on.': 'Dach nie ma pochyłej połaci, na której można rozłożyć panele.',
+  // A part of the window that stopped (PartBoundary, forum topic 258).
+  "This part of Lapin stopped working; the rest of the window still works.": "Ta część Lapina przestała działać; reszta okna nadal działa.", "Report…": "Zgłoś…", "Lapin's window stopped working.": "Okno Lapina przestało działać.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "Wczytaj okno ponownie, aby kontynuować. Zgłoś, co zrobiłeś tuż przedtem, aby można było to naprawić.", "Reload the window": "Wczytaj okno ponownie", "Report on the forum…": "Zgłoś na forum…",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

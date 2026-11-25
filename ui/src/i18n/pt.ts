@@ -6643,6 +6643,8 @@ export const PT: Record<string, string> = {
   'A flat roof takes no panels.': 'Um telhado plano não leva painéis.',
   'A barrel roof takes no panels yet: its covering is curved.': 'Um telhado em abóbada ainda não leva painéis: sua cobertura é curva.',
   'The roof has no sloped plane to lay panels on.': 'O telhado não tem água inclinada onde paginar painéis.',
+  // A part of the window that stopped (PartBoundary, forum topic 258).
+  "This part of Lapin stopped working; the rest of the window still works.": "Esta parte do Lapin deixou de funcionar; o resto da janela continua a funcionar.", "Report…": "Comunicar…", "Lapin's window stopped working.": "A janela do Lapin deixou de funcionar.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "Recarregue a janela para continuar. Comunique o que fez imediatamente antes, para que possa ser corrigido.", "Reload the window": "Recarregar a janela", "Report on the forum…": "Comunicar no fórum…",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

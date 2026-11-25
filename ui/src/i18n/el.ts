@@ -12761,6 +12761,8 @@ export const EL: Record<string, string> = {
   'A flat roof takes no panels.': 'Μια επίπεδη στέγη δεν δέχεται πάνελ.',
   'A barrel roof takes no panels yet: its covering is curved.': 'Μια θολωτή στέγη δεν δέχεται ακόμη πάνελ: η επικάλυψή της είναι καμπύλη.',
   'The roof has no sloped plane to lay panels on.': 'Η στέγη δεν έχει κεκλιμένη επιφάνεια για να διαταχθούν πάνελ.',
+  // A part of the window that stopped (PartBoundary, forum topic 258).
+  "This part of Lapin stopped working; the rest of the window still works.": "Αυτό το μέρος του Lapin σταμάτησε να λειτουργεί· το υπόλοιπο παράθυρο λειτουργεί κανονικά.", "Report…": "Αναφορά…", "Lapin's window stopped working.": "Το παράθυρο του Lapin σταμάτησε να λειτουργεί.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "Φορτώστε ξανά το παράθυρο για να συνεχίσετε. Αναφέρετε τι κάνατε ακριβώς πριν, ώστε να διορθωθεί.", "Reload the window": "Επαναφόρτωση παραθύρου", "Report on the forum…": "Αναφορά στο φόρουμ…",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

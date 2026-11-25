@@ -511,6 +511,16 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .notice.notice-problem button.icon { color: inherit; }
 [role="dialog"][tabindex="-1"]:focus { outline: none; }
 .lazy-part { padding: 16px; }
+/* A part of the window that stopped (PartBoundary, forum topic 258): said in place, the rest goes on. */
+.part-failed { margin: 6px 0; padding: 10px 12px; border: 1px solid var(--err); border-left-width: 3px; border-radius: 3px; background: var(--panel); color: var(--ink); }
+.part-failed p { margin: 0 0 6px; }
+.part-failed .mono { overflow-wrap: anywhere; max-height: 6em; overflow: auto; }
+.part-failed.compact { padding: 6px 8px; }
+.part-failed.overlay { position: absolute; left: 12px; bottom: 12px; z-index: 20; max-width: min(460px, calc(100% - 24px)); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18); }
+.window-failed { max-width: 640px; margin: 12vh auto 0; padding: 24px 28px; border: 1px solid var(--err); border-left-width: 4px; border-radius: 3px; background: var(--panel); color: var(--ink); }
+.window-failed h2 { margin: 0 0 10px; font-size: 17px; }
+.window-failed .mono { overflow-wrap: anywhere; max-height: 10em; overflow: auto; }
+.window-failed .row { margin-top: 14px; flex-wrap: wrap; }
 .dialog-backdrop { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: rgba(20, 18, 15, 0.35); }
 .dialog { width: fit-content; min-width: min(560px, calc(100vw - 32px)); max-width: calc(100vw - 32px); max-height: calc(100vh - 64px); display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 3px; box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2); }
 /* Configurators grow to what they hold: no sideways scrolling inside them. */
