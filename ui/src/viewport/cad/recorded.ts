@@ -12,7 +12,7 @@ import type { Vec2 } from '../../platform/module';
 import { normAngleDeg, pointOf, type Ref } from './constraints';
 import { dist, nearestOnSegment, prims, type Shape } from './shapes';
 
-export type InferenceLock = 'ortho' | 'polar' | 'tracking' | 'parallel' | 'tangent';
+export type InferenceLock = 'ortho' | 'polar' | 'tracking' | 'parallel' | 'tangent' | 'own';
 /** How a point was found: the snap that took it (and the drafted shape it is on), the line that held it. */
 /** `to`: with a parallel or tangent lock, the drafted side or curve that held the point. */
 export interface Inference { mode?: string; shapeId?: string; lock?: InferenceLock; to?: Ref }

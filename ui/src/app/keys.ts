@@ -74,7 +74,7 @@ export interface KeySnapshot {
   /** The command line takes all typing (the ` key). */
   takeAll?: boolean;
   /** A segment being drawn from a base: its length and angle can be typed (the focused field's text). */
-  live?: { active: boolean; /** Who owns the box: "drag" and "grip" are drags (autohold, issue 86). */ owner?: string | null; /** A drag is held by autohold. */ autohold?: boolean; text: string; typed: boolean; /** A rectangle tool: Space switches length/angle with width/height. */ rect?: boolean; mode?: 'polar' | 'rect' };
+  live?: { active: boolean; /** Who owns the box: "drag" and "grip" are drags (autohold, issue 86). */ owner?: string | null; /** A drag is held by autohold. */ autohold?: boolean; text: string; typed: boolean; /** A rectangle tool: Space switches length/angle with width/height. */ rect?: boolean; mode?: 'polar' | 'rect'; /** An end grip is kept on its own line (decision 865): `=` types a total length. */ lock?: boolean };
   /** The letters the active tool takes as its options now (ToolDef.letters), while its segment is drawn. */
   toolLetters?: string;
   /** A 3D tool waits for a typed value (valueOwner.ts): what is typed so far. */
@@ -175,6 +175,7 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
     if (e.key === 'Enter' && enterEffect(!!s.live.autohold, s.live.typed) === 'pointer') return { kind: 'liveAccept' };
     if (e.key === 'Escape' && s.live.typed) return { kind: 'liveClear' };
     if (e.key === 'Backspace' && s.live.text) return { kind: 'liveBack' };
+    if (e.key === '=' && s.live.lock && !s.live.text) return { kind: 'liveType', key: '=' };
     if (/^[0-9.,+]$/.test(e.key) || (e.key === '-' && (s.live.text || (s.live.rect && s.live.mode === 'rect')))) return { kind: 'liveType', key: e.key };
     if (unitKey(s.live.text, e.key)) return { kind: 'liveType', key: e.key.toLowerCase() };
     // The tool's option letters (a run's F, C, W, E), once a point is placed: after a unit's letter (2400c is cm), before the shortcuts.
@@ -229,7 +230,7 @@ function snapshot(): KeySnapshot {
     screen: ui.screen, dialog: openDialog(ui.dialog, !!document.querySelector('[role="dialog"]')), tool: ui.tool ?? toolAtKeydown, selected: ui.selected, toolSpace: !!(ui.tool && findTool(ui.tool)?.space),
     buffer: cad.buffer, step: cad.step ? { want: cad.step.want, space: !!cad.step.space } : null, hasLast: !!cad.last,
     hotbar: reach(hotbarIds()), keymap: keymap(), letters: useKeymap.getState().letters, takeAll: cad.takeAll,
-    live: (() => { const l = useLive.getState(); return { active: !!l.owner, owner: l.owner, autohold: autoholdOn(), text: l[l.focus], typed: !!(l.len || l.ang || l.rel), rect: !!l.rect, mode: l.mode }; })(),
+    live: (() => { const l = useLive.getState(); return { active: !!l.owner, owner: l.owner, autohold: autoholdOn(), text: l[l.focus], typed: !!(l.len || l.ang || l.rel), rect: !!l.rect, mode: l.mode, lock: !!l.lock }; })(),
     value: (() => { const o = valueOwner(); return o ? { text: o.text() } : null; })(),
     toolLetters: (ui.tool ? findTool(ui.tool)?.letters?.keys() : undefined) || undefined,
     nudge: nudgeReady(nudgeState()),

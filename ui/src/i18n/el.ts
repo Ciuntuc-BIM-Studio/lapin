@@ -12960,6 +12960,10 @@ const S5D_TAILS_EL: Record<string, string> = {
   "Edit the types of this kind": "Επεξεργασία των τύπων αυτού του είδους",
   "Speckle: Send…": "Speckle: Αποστολή…",
   "Speckle: Receive…": "Speckle: Λήψη…",
+  "Drag · hold Ctrl/⌘ while dragging to keep its angle": "Σύρετε · κρατήστε πατημένο Ctrl/⌘ κατά τη σύρση για να διατηρήσετε τη γωνία του",
+  "Its angle is kept: type the change in length, or = and the total length": "Η γωνία διατηρείται: πληκτρολογήστε την αλλαγή μήκους ή = και το συνολικό μήκος",
+  "Angle kept": "Γωνία κλειδωμένη",
+  "Ctrl/⌘: keep its angle": "Ctrl/⌘: διατήρηση γωνίας",
 };
 
 export const EL_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [

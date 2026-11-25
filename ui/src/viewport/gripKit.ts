@@ -15,11 +15,19 @@ export { pt } from '../platform/vec';
  * An axis from a to b. `step(start, end)` writes both ends; a dragged end
  * moves alone (its neighbours stay: the join holds while they still meet).
  */
+/** The line an end of a straight element lies on, seen from its other end (decision 865); none when the two coincide. */
+export function alongOf(from: Vec2, end: Vec2): { from: Vec2; dir: Vec2 } | undefined {
+  const dx = end.x - from.x, dy = end.y - from.y, d = Math.hypot(dx, dy);
+  return d < 1e-9 ? undefined : { from, dir: { x: dx / d, y: dy / d } };
+}
+
+const keepLine = (along: ReturnType<typeof alongOf>): { along?: NonNullable<ReturnType<typeof alongOf>> } => (along ? { along } : {});
+
 export function axisGrips(a: Vec2, b: Vec2, step: (start: Vec2, end: Vec2) => GripStep): Grip[] {
   const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
   return [
-    { key: 'start', kind: 'end', at: a, step: (to) => step(to, b) },
-    { key: 'end', kind: 'end', at: b, step: (to) => step(a, to) },
+    { key: 'start', kind: 'end', at: a, step: (to) => step(to, b), ...keepLine(alongOf(b, a)) },
+    { key: 'end', kind: 'end', at: b, step: (to) => step(a, to), ...keepLine(alongOf(a, b)) },
     { key: 'move', kind: 'move', at: mid, step: (to) => { const d = { x: to.x - mid.x, y: to.y - mid.y }; return step({ x: a.x + d.x, y: a.y + d.y }, { x: b.x + d.x, y: b.y + d.y }); } },
   ];
 }
@@ -88,6 +96,8 @@ export function outlineGrips<E>(o: Outline<E>, save: (next: Outline<E>) => GripS
     key: `${prefix}v${i}`, kind: 'vertex' as const, at: p,
     title: o.pts.length > 3 ? 'Drag to move the corner · Ctrl/⌘-click: remove this corner' : 'Drag to move the corner (an outline keeps three corners at least)',
     step: (to: Vec2) => save(moveVertex(o, i, to)),
+    // Ctrl/⌘ held while dragging keeps it on the edge before it (decision 865).
+    ...keepLine(alongOf(o.pts[(i - 1 + n) % n], p)),
     remove: () => { const next = removeVertex(o, i); return next ? save(next) : null; },
     ...(curved ? { corner: { straight: straightAt(i) && straightAt((i - 1 + n) % n), fillet: (r: number) => curved.fillet(i, r), chamfer: (d: number) => curved.chamfer(i, d) } } : {}),
   }));

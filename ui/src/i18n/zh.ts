@@ -6868,6 +6868,10 @@ const S5D_TAILS: Record<string, string> = {
   "Edit the types of this kind": "编辑此类的类型",
   "Speckle: Send…": "Speckle: 发送…",
   "Speckle: Receive…": "Speckle: 接收…",
+  "Drag · hold Ctrl/⌘ while dragging to keep its angle": "拖动 · 拖动时按住 Ctrl/⌘ 以保持其角度",
+  "Its angle is kept: type the change in length, or = and the total length": "角度已保持：输入长度的变化量，或输入 = 加总长度",
+  "Angle kept": "角度已锁定",
+  "Ctrl/⌘: keep its angle": "Ctrl/⌘：保持角度",
 };
 export const ZH_PATTERNS: Language['patterns'] = [
   // Publish sets (forum topic 225)

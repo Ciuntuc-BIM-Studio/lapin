@@ -12989,6 +12989,10 @@ const S5D_TAILS: Record<string, string> = {
   "Edit the types of this kind": "แก้ไขชนิดของประเภทนี้",
   "Speckle: Send…": "Speckle: ส่ง…",
   "Speckle: Receive…": "Speckle: รับ…",
+  "Drag · hold Ctrl/⌘ while dragging to keep its angle": "ลาก · กด Ctrl/⌘ ค้างไว้ขณะลากเพื่อคงมุมของมัน",
+  "Its angle is kept: type the change in length, or = and the total length": "คงมุมไว้: พิมพ์ค่าความยาวที่เปลี่ยน หรือ = แล้วตามด้วยความยาวรวม",
+  "Angle kept": "คงมุมแล้ว",
+  "Ctrl/⌘: keep its angle": "Ctrl/⌘: คงมุม",
 };
 export const TH_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   // Publish sets (forum topic 225)

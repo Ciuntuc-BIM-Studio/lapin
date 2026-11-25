@@ -70,6 +70,8 @@ export function LiveBox({ toScreen }: { toScreen: ToScreen }) {
         {cell('ang', '∠', formatAngle(m.ang), '°')}
         {rel != null && cell('rel', '∡', formatAngle(rel), '°')}
       </>}
+      {live.lock && <span className="live-tag" data-testid="angle-lock" title={t('Its angle is kept: type the change in length, or = and the total length')}>{t('Angle kept')}</span>}
+      {!live.lock && live.lockable && <span className="live-hint text" data-testid="angle-lock-hint">{t('Ctrl/⌘: keep its angle')}</span>}
       {Info && live.owner === 'tool' && <Info />}
       {live.rect && !liveHintSeen() && <span className="live-hint text" data-testid="live-hint">{live.mode === 'rect' ? t('Space: length ∠ angle') : t('Space: width × height')}</span>}
       {autohold && <span className="live-tag" data-testid="autohold-hint" title={t('Autohold: the drag follows the pointer without the button. Click to drop it here')}>{t('Autohold')}</span>}

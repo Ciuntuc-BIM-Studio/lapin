@@ -6926,6 +6926,10 @@ const S5D_TAILS: Record<string, string> = {
   "Edit the types of this kind": "ແກ້ໄຂປະເພດຂອງຊະນິດນີ້",
   "Speckle: Send…": "Speckle: ສົ່ງ…",
   "Speckle: Receive…": "Speckle: ຮັບ…",
+  "Drag · hold Ctrl/⌘ while dragging to keep its angle": "ລາກ · ກົດ Ctrl/⌘ ຄ້າງໄວ້ໃນຂະນະລາກເພື່ອຮັກສາມຸມຂອງມັນ",
+  "Its angle is kept: type the change in length, or = and the total length": "ຮັກສາມຸມໄວ້: ພິມການປ່ຽນແປງຄວາມຍາວ ຫຼື = ແລະຄວາມຍາວທັງໝົດ",
+  "Angle kept": "ຮັກສາມຸມແລ້ວ",
+  "Ctrl/⌘: keep its angle": "Ctrl/⌘: ຮັກສາມຸມ",
 };
 export const LO_PATTERNS: Language['patterns'] = [
   // Publish sets (forum topic 225)

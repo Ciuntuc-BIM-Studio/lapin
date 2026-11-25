@@ -12989,6 +12989,10 @@ const S5D_TAILS: Record<string, string> = {
   "Edit the types of this kind": "Redigera typerna av det här slaget",
   "Speckle: Send…": "Speckle: Skicka…",
   "Speckle: Receive…": "Speckle: Ta emot…",
+  "Drag · hold Ctrl/⌘ while dragging to keep its angle": "Dra · håll Ctrl/⌘ nedtryckt medan du drar för att behålla vinkeln",
+  "Its angle is kept: type the change in length, or = and the total length": "Vinkeln behålls: skriv ändringen i längd, eller = och den totala längden",
+  "Angle kept": "Vinkel låst",
+  "Ctrl/⌘: keep its angle": "Ctrl/⌘: behåll vinkeln",
 };
 export const SV_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   // Publish sets (forum topic 225)

@@ -374,9 +374,9 @@ export function DrawingView() {
     viewIds: [id], mode: 'drawing', toScreen, scale: v.scale, disabled: !!cadStep, svg: ref, marks: drawing?.marks,
     raw: (cx, cy) => { const r = ref.current!.getBoundingClientRect(); return toWorld(cx - r.left, cy - r.top); },
     frame: drawing?.frame, viewKind: drawing?.kind, developed: (drawing?.frames?.length ?? 0) > 0,
-    aim: (cx, cy, from) => {
+    aim: (cx, cy, from, _z, along) => {
       const r = ref.current!.getBoundingClientRect();
-      const a = aim(toWorld(cx - r.left, cy - r.top), from, { orthoHeld: false });
+      const a = aim(toWorld(cx - r.left, cy - r.top), from, { orthoHeld: false, along });
       setHover(a);
       liveCursor(a.point);
       return a.point;

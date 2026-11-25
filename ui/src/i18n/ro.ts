@@ -6826,6 +6826,10 @@ const S5D_TAILS: Record<string, string> = {
   "Edit the types of this kind": "Editează tipurile acestui fel",
   "Speckle: Send…": "Speckle: Trimite…",
   "Speckle: Receive…": "Speckle: Primește…",
+  "Drag · hold Ctrl/⌘ while dragging to keep its angle": "Trage · ține apăsat Ctrl/⌘ în timp ce tragi ca să-i păstrezi unghiul",
+  "Its angle is kept: type the change in length, or = and the total length": "Unghiul îi este păstrat: scrie schimbarea de lungime sau = și lungimea totală",
+  "Angle kept": "Unghi păstrat",
+  "Ctrl/⌘: keep its angle": "Ctrl/⌘: păstrează unghiul",
 };
 export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   // Publish sets (forum topic 225)
