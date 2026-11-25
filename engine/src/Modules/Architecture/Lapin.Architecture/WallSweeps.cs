@@ -338,12 +338,40 @@ public static class WallSweeps
         return new Reach(s0, s1, n0, n1, joined[0] == null && n0 == null && Math.Abs(s0 - face0) < 1e-9, joined[1] == null && n1 == null && Math.Abs(s1 - face1) < 1e-9);
     }
 
-    /// <summary>Whether an added sweep returns at its wall's free start and end (by default at both; a reveal never).</summary>
-    static (bool Start, bool End) Returns(Entity sweep)
+    /// <summary>
+    /// Whether an added sweep returns at its wall's free start and end (by default at both; a reveal never). A profile that
+    /// goes into the wall past its face (a coping over the wall's top, offset in) has nothing to wrap round the end: it ends
+    /// square there (forum topic 268, where the return gave it a strange wedge).
+    /// </summary>
+    static (bool Start, bool End) Returns(Entity sweep, ProfileShape shape)
     {
         if (sweep.Str("mode") == "cut") return (false, false);
+        if (Across(sweep, shape).Min(q => q.X) < -1e-6) return (false, false);
         var r = sweep.Str("returns") ?? "both";
         return (r is "start" or "both", r is "end" or "both");
+    }
+
+    /// <summary>
+    /// Whether the point (just past a sweep's end, on its face) is in another straight wall standing at the sweep's height: an
+    /// end drawn to another wall without a join (a wall of another storey) is not free, and does not return into it (forum topic 268).
+    /// </summary>
+    static bool AgainstWall(IModelView m, Entity wall, Vec2 p, double z0, double z1)
+    {
+        foreach (var other in m.OfClass(IfcClass.Wall))
+        {
+            if (other.Id == wall.Id || PathCurve.Of(other).IsArc) continue;
+            var (os, oe) = (Walls.Start(other), Walls.End(other));
+            var length = (oe - os).Length;
+            if (length < 1e-6) continue;
+            var od = (oe - os) * (1 / length);
+            var (along, across) = (Vec2.Dot(p - os, od), Vec2.Dot(p - os, od.Perp));
+            if (along < 0 || along > length) continue;
+            var bands = Walls.Section(m, other);
+            if (across < bands.Min(b => b.From) || across > bands.Max(b => b.To)) continue;
+            var b0 = Base(m, other);
+            if (b0 < z1 - 1e-6 && b0 + Walls.HeightOf(m, other) > z0 + 1e-6) return true;
+        }
+        return false;
     }
 
     /// <summary>
@@ -362,8 +390,17 @@ public static class WallSweeps
         var dir = (Walls.End(wall) - start).Normalized();
         var left = dir.Perp;
         var (s0, s1, n0, n1) = (reach.S0, reach.S1, reach.N0, reach.N1);
-        var (r0, r1) = Returns(sweep);
+        var (r0, r1) = Returns(sweep, shape);
         var (ret0, ret1) = (r0 && reach.Free0, r1 && reach.Free1);
+        if ((ret0 || ret1) && !c.IsArc)
+        {
+            var across = Across(sweep, shape);
+            var lv = Level(m, sweep, wall);
+            var (z0, z1) = (lv + across.Min(q => q.Y), lv + across.Max(q => q.Y));
+            const double past = 0.01;
+            if (ret0 && AgainstWall(m, wall, start + dir * (s0 - past) + left * yFace, z0, z1)) ret0 = false;
+            if (ret1 && AgainstWall(m, wall, start + dir * (s1 + past) + left * yFace, z0, z1)) ret1 = false;
+        }
         if (sweep.Num("setbackStart") is var sb0 and > 0) { s0 += sb0; n0 = null; ret0 = false; }
         if (sweep.Num("setbackEnd") is var sb1 and > 0) { s1 -= sb1; n1 = null; ret1 = false; }
         if (s1 - s0 < 0.005) { problems.Add("The sweep has no length left on its wall."); return o; }

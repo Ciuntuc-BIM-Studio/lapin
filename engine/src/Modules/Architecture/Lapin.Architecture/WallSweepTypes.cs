@@ -22,6 +22,7 @@ public static class WallSweepTypes
     public static void Register(IModuleRegistry r)
     {
         r.Service<IDeletion>(new Deletion());
+        r.Service<IProjectUpgrade>(new LostSweepsUpgrade());
 
         // {wallId | ids, tag?}: the type's sweeps switched off on these walls switched on again (one, or all).
         r.Command("restoreWallSweeps", "Switch type sweeps on", (ctx, a) =>
@@ -225,5 +226,54 @@ public static class WallSweepTypes
             o.Add((JsonNode)x);
         }
         return o;
+    }
+
+    /// <summary>
+    /// A project saved while the wall types dialog, saving a type with its name, dropped the sweeps it had just set (forum topic
+    /// 268): its walls kept them, tagged with the type, but the type listed none, so they could not be taken off there. Each
+    /// such definition is written back on the type from its walls' sweeps (one the wall has not made its own, where there is
+    /// one; the face as the type has it, a flipped wall's turned back). Nothing changes in a project without such sweeps.
+    /// </summary>
+    public sealed class LostSweepsUpgrade : IProjectUpgrade
+    {
+        public (IReadOnlyList<Entity> Entities, IReadOnlyList<Relation> Relations) Upgrade(IReadOnlyList<Entity> entities, IReadOnlyList<Relation> relations)
+        {
+            var byId = entities.ToDictionary(e => e.Id);
+            var lost = entities.Where(e => e.Class == WallSweeps.Class && e.Str("typeSweep") is { } tag && tag.IndexOf('/') > 0
+                    && byId.GetValueOrDefault(tag[..tag.IndexOf('/')]) is { Class: IfcClass.WallType } type
+                    && !Defs(type).Any(d => (string?)d["key"] == tag[(tag.IndexOf('/') + 1)..]))
+                .ToList();
+            if (lost.Count == 0) return (entities, relations);
+            var store = new ModelStore();
+            new History(store).Load(entities, relations);
+            var types = new Dictionary<string, Entity>();
+            foreach (var group in lost.GroupBy(s => s.Str("typeSweep")!).OrderBy(g => g.Key, StringComparer.Ordinal))
+            {
+                var slash = group.Key.IndexOf('/');
+                var (typeId, key) = (group.Key[..slash], group.Key[(slash + 1)..]);
+                // Only sweeps whose wall is still of that type tell what the type had.
+                var onType = group.Select(s => (Sweep: s, Wall: WallSweeps.HostOf(store, s)))
+                    .Where(x => x.Wall != null && Walls.TypeOf(store, x.Wall.Id)?.Id == typeId).ToList();
+                if (onType.Count == 0) continue;
+                var (sweep, wall) = onType.OrderBy(x => WallSweeps.OwnOf(x.Sweep.CloneAttrs()).Count).First();
+                var flipped = LayerSets.UsageOf(store, wall!.Id) is { } u && Layers.ReadUsage(u) is { Negative: true };
+                var def = new JsonObject { ["key"] = key };
+                foreach (var f in WallSweeps.Inherited)
+                {
+                    if (f is "start" or "end" || sweep.Attrs[f] is not { } v) continue;
+                    var value = v.DeepClone();
+                    if (f == "side" && flipped) value = (string?)v == "left" ? "right" : "left";
+                    def[f] = value;
+                }
+                var type = types.GetValueOrDefault(typeId) ?? byId[typeId];
+                var attrs = type.CloneAttrs();
+                var list = attrs[Key] as JsonArray ?? [];
+                list.Add((JsonNode)def);
+                attrs[Key] = list;
+                types[typeId] = type.With(attrs: attrs);
+            }
+            if (types.Count == 0) return (entities, relations);
+            return (entities.Select(e => types.GetValueOrDefault(e.Id) ?? e).ToList(), relations);
+        }
     }
 }
