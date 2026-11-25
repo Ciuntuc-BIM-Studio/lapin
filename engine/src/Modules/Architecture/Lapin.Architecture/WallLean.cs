@@ -181,6 +181,14 @@ public static class WallLean
 
     public static Solid Mapped(Solid s, Func<Vec3, Vec3> map) => SolidBuilder.Transform(s, map);
 
+    /// <summary>What a plumb wall's frame holds (an opening's box), leaned with the wall when it leans; as it is else.</summary>
+    public static Solid? Leaned(IModelView m, Entity wall, Solid? s)
+    {
+        if (s == null || Of(m, wall) is not { } lean) return s;
+        var a = Walls.Start(wall);
+        return Mapped(s, Map(lean, a, (Walls.End(wall) - a).Normalized(), Spatial.Base(m, wall)));
+    }
+
     // ------------------------------------------------------------ the loft
 
     /// <summary>

@@ -233,6 +233,18 @@ public sealed class WallLeanTests : IDisposable
         Assert.True(leaningDoor.Max.Y - leaningDoor.Min.Y > plumbDoor.Max.Y - plumbDoor.Min.Y + h * Tan * 0.75);
         Assert.Equal(plumbDoor.Min.Z, leaningDoor.Min.Z, 9);
         Assert.Equal(plumbDoor.Max.Z, leaningDoor.Max.Z, 9);
+        // The opening IFC writes voids the leaning wall as its body is cut: its box leaned with it, through the wall at its head.
+        {
+            var f = new Fixture();
+            var w = f.Wall(0, 0, Length, 0, Solid300(f), height: Height);
+            f.Run("architecture.addDoor", new JsonObject { ["wallId"] = w, ["along"] = 2.5 });
+            Lean(f, Deg, w);
+            var opening = f.Model.OfClass(IfcClass.OpeningElement).Single();
+            var body = f.Session.Catalog.All<IVoidShapes>().Select(v => v.Shape(opening, f.Model)).First(x => x != null)!;
+            var box = Measure.Bounds(body)!.Value;
+            Assert.True(box.Max.Y >= T / 2 / Cos + box.Max.Z * Tan, $"{box}");
+            Assert.True(box.Min.Y <= -T / 2 / Cos);
+        }
         Assert.Throws<CommandException>(() =>
         {
             var f = new Fixture();

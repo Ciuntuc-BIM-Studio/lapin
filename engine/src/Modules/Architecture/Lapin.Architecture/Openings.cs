@@ -513,7 +513,9 @@ public static class Openings
     public static Solid? CutterIn(IModelView m, Entity wall, Placed p)
     {
         var f = FrameOf(m, wall, p.Along);
-        return PathCurve.Of(wall) is { IsArc: true } c ? ArcCutter(c, f.Base, f.YMin, f.YMax, p) : Cutter(f, p);
+        if (PathCurve.Of(wall) is { IsArc: true } c) return ArcCutter(c, f.Base, f.YMin, f.YMax, p);
+        // A leaning wall's hole leans with it (plan-wall-lean-taper, L1), as its body is cut.
+        return WallLean.Leaned(m, wall, Cutter(f, p));
     }
 
     /// <summary>

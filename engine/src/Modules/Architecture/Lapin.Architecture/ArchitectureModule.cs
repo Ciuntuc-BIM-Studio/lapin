@@ -1897,7 +1897,7 @@ sealed class VoidShapes : IVoidShapes
     {
         if (element.Class != IfcClass.Wall) yield break;
         foreach (var (p, _) in ThroughOpenings.Into(m, element))
-            if (Openings.Cutter(Openings.FrameOf(m, element), p) is { } body) yield return (p.Opening.Id, body);
+            if (WallLean.Leaned(m, element, Openings.Cutter(Openings.FrameOf(m, element), p)) is { } body) yield return (p.Opening.Id, body);
     }
 }
 
