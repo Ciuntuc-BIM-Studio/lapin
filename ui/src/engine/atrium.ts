@@ -25,7 +25,7 @@ async function request<T>(server: string, method: string, path: string, body?: u
       headers: body === undefined ? {} : { 'content-type': 'application/json' },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
-    let json: T | null = null;
+    let json: T | null;
     try { json = await r.json() as T; } catch { json = null; }
     return { status: r.status, body: json, etag: r.headers.get('etag') };
   }
@@ -207,7 +207,7 @@ export async function putFile<T>(server: string, path: string, bytes: Uint8Array
   let a: Answer<T>;
   if (isCdeServer(server)) {
     const r = await api(`/${path}`, { method: 'PUT', headers: { 'content-type': type }, body: bytes as BodyInit });
-    let body: T | null = null;
+    let body: T | null;
     try { body = await r.json() as T; } catch { body = null; }
     a = { status: r.status, body, etag: null };
   } else {

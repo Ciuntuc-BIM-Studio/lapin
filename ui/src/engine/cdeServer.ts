@@ -92,7 +92,7 @@ export function withTokens<T>(f: () => Promise<T>): Promise<T> {
  */
 export async function heldCdeTokens(): Promise<{ access: string | null; refresh: string | null }> {
   if (!access) await refreshNow(null);
-  let kept: string | null = null;
+  let kept: string | null;
   try { kept = tabStorage()?.getItem(REFRESH_KEY) ?? null; } catch { kept = null; }
   return { access, refresh: kept };
 }
