@@ -12894,6 +12894,31 @@ export const TH: Record<string, string> = {
   "United Kingdom": "สหราชอาณาจักร",
   "United States": "สหรัฐอเมริกา",
   "Spacing centre to centre": "ระยะห่างจากศูนย์ถึงศูนย์",
+  // Keys on tools, the roof panels' cost link and the panels on other screens (merged later than this language).
+  "Keys on tools": "ปุ่มลัดบนเครื่องมือ",
+  "While Alt is held": "ขณะกด Alt ค้างไว้",
+  "Always": "เสมอ",
+  "Indicative subtotal": "ยอดรวมย่อยโดยประมาณ",
+  "The lines with a price in the project's price lists: the quantity by the unit price. Labour and transport are not included": "รายการที่มีราคาในรายการราคาของโครงการ: ปริมาณคูณราคาต่อหน่วย ไม่รวมค่าแรงและค่าขนส่ง",
+  "Lines no price list prices: ask the supplier": "รายการที่ไม่มีรายการราคาใดกำหนดราคา: ขอใบเสนอราคาจากผู้จัดจำหน่าย",
+  "To quote": "ต้องขอใบเสนอราคา",
+  "Indicative: check the prices when ordering.": "โดยประมาณ: ตรวจสอบราคาเมื่อสั่งซื้อ.",
+  "No price list prices these lines yet. Add the Bilka – Dedeman template (indicative) or your own list in Price lists…, or from the Cost tab of Panel layout.": "ยังไม่มีรายการราคาใดกำหนดราคารายการเหล่านี้ เพิ่มแม่แบบ Bilka – Dedeman (โดยประมาณ) หรือรายการของคุณเองใน รายการราคา… หรือจากแท็บต้นทุนของการจัดวางแผง.",
+  "No price list of the project prices these lines. Add the Bilka – Dedeman list (indicative prices read on 24.11.2026), or import your own with the same codes.": "ไม่มีรายการราคาของโครงการใดกำหนดราคารายการเหล่านี้ เพิ่มรายการ Bilka – Dedeman (ราคาโดยประมาณที่อ่านเมื่อ 24.11.2026) หรือนำเข้ารายการของคุณเองที่ใช้รหัสเดียวกัน.",
+  "Add the Bilka – Dedeman template": "เพิ่มแม่แบบ Bilka – Dedeman",
+  "Amount": "จำนวนเงิน",
+  "Subtotal of the priced lines": "ยอดรวมย่อยของรายการที่มีราคา",
+  "Where two ridge or hip caps lap: an operation, the material is in the caps": "ตรงที่ฝาครอบสันหลังคาหรือสันตะเข้สองชิ้นซ้อนกัน: เป็นงานหนึ่งขั้น วัสดุรวมอยู่ในฝาครอบแล้ว",
+  "Joints between ridge caps": "รอยต่อระหว่างฝาครอบสันหลังคา",
+  "Cut from flat sheet": "ตัดจากแผ่นเรียบ",
+  "Indicative — check prices when ordering. Labour, transport and the rainwater system are not included.": "โดยประมาณ — ตรวจสอบราคาเมื่อสั่งซื้อ ไม่รวมค่าแรง ค่าขนส่ง และระบบระบายน้ำฝน.",
+  "Source (supplier)": "แหล่งที่มา (ผู้จัดจำหน่าย)",
+  "Price checked on": "ตรวจสอบราคาเมื่อ",
+  "Indicative lists to start from, added to the project only when you ask: replace their prices with yours (your own list first, or the estimate's price lists in your order).": "รายการโดยประมาณให้เริ่มต้น เพิ่มเข้าโครงการเมื่อคุณสั่งเท่านั้น: แทนที่ราคาด้วยของคุณ (รายการของคุณเองก่อน หรือรายการราคาของการประมาณราคาตามลำดับของคุณ).",
+  "The Bilka roof panels' prices read on 24.11.2026, mostly at Dedeman: indicative, check them when ordering.": "ราคาแผงหลังคา Bilka ที่อ่านเมื่อ 24.11.2026 ส่วนใหญ่ที่ Dedeman: โดยประมาณ ตรวจสอบเมื่อสั่งซื้อ.",
+  "Lapin's own rough values, a few rows to try the estimate with.": "ค่าคร่าว ๆ ของ Lapin เอง ไม่กี่แถวไว้ลองประมาณราคา.",
+  "There is no such price list template.": "ไม่มีแม่แบบรายการราคาดังกล่าว.",
+  "The day the price was read": "วันที่อ่านราคา",
 };
 
 /** Phrases with a number or a name in them. */
@@ -13439,4 +13464,10 @@ export const TH_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(.+)'s ridge caps are (.+)\.$/, (m) => `ฝาครอบสันของ ${m[1]} คือ ${m[2]}.`],
   [/^The battens are fixed with (.+)\.$/, (m) => `ไม้ระแนงยึดด้วย ${m[1]}.`],
   [/^(.+) is not made in (.+)\.$/, (m) => `${m[1]} ไม่มีผลิตใน ${m[2]}.`],
+  // Roof panel layout, stage S4.
+  [/^Price list added to the project: (.+)\.$/, (m) => `เพิ่มรายการราคาเข้าโครงการแล้ว: ${m[1]}.`],
+  [/^(\d+) panel\(s\) of (\d+) mm: priced per m² of sheet bought \(the nominal length by the (\d+) mm width\)\.$/, (m) => `แผง ${m[1]} แผ่น ยาว ${m[2]} มม.: ตีราคาต่อ ตร.ม. ของแผ่นที่ซื้อ (ความยาวปกติคูณความกว้าง ${m[3]} มม.).`],
+  [/^The template (.+) is not a Lapin price list\.$/, (m) => `แม่แบบ ${m[1]} ไม่ใช่รายการราคาของ Lapin.`],
+  [/^The template (.+) does not say its prices are indicative\.$/, (m) => `แม่แบบ ${m[1]} ไม่ได้ระบุว่าราคาเป็นค่าโดยประมาณ.`],
+  [/^The template (.+) has no rows\.$/, (m) => `แม่แบบ ${m[1]} ไม่มีแถว.`],
 ];

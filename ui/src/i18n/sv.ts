@@ -12894,6 +12894,31 @@ export const SV: Record<string, string> = {
   "United Kingdom": "Storbritannien",
   "United States": "USA",
   "Spacing centre to centre": "Centrumavstånd",
+  // Keys on tools, the roof panels' cost link and the panels on other screens (merged later than this language).
+  "Keys on tools": "Tangenter på verktyg",
+  "While Alt is held": "Medan Alt hålls nedtryckt",
+  "Always": "Alltid",
+  "Indicative subtotal": "Vägledande delsumma",
+  "The lines with a price in the project's price lists: the quantity by the unit price. Labour and transport are not included": "Raderna med pris i projektets prislistor: mängden gånger á-priset. Arbetskraft och transport ingår inte",
+  "Lines no price list prices: ask the supplier": "Rader som ingen prislista prissätter: be leverantören om offert",
+  "To quote": "Offereras",
+  "Indicative: check the prices when ordering.": "Vägledande: kontrollera priserna vid beställning.",
+  "No price list prices these lines yet. Add the Bilka – Dedeman template (indicative) or your own list in Price lists…, or from the Cost tab of Panel layout.": "Ingen prislista prissätter de här raderna ännu. Lägg till mallen Bilka – Dedeman (vägledande) eller din egen lista i Prislistor…, eller från fliken Kostnad i Panelindelning.",
+  "No price list of the project prices these lines. Add the Bilka – Dedeman list (indicative prices read on 24.11.2026), or import your own with the same codes.": "Ingen av projektets prislistor prissätter de här raderna. Lägg till listan Bilka – Dedeman (vägledande priser avlästa 24.11.2026) eller importera din egen med samma koder.",
+  "Add the Bilka – Dedeman template": "Lägg till mallen Bilka – Dedeman",
+  "Amount": "Belopp",
+  "Subtotal of the priced lines": "Delsumma för raderna med pris",
+  "Where two ridge or hip caps lap: an operation, the material is in the caps": "Där två nock- eller valmpannor överlappar: en åtgärd, materialet finns i pannorna",
+  "Joints between ridge caps": "Skarvar mellan nockpannor",
+  "Cut from flat sheet": "Skuret ur plan plåt",
+  "Indicative — check prices when ordering. Labour, transport and the rainwater system are not included.": "Vägledande — kontrollera priserna vid beställning. Arbetskraft, transport och regnvattensystem ingår inte.",
+  "Source (supplier)": "Källa (leverantör)",
+  "Price checked on": "Pris kontrollerat den",
+  "Indicative lists to start from, added to the project only when you ask: replace their prices with yours (your own list first, or the estimate's price lists in your order).": "Vägledande listor att utgå från, läggs till i projektet först när du ber om det: ersätt deras priser med dina egna (din egen lista först, eller kalkylens prislistor i din ordning).",
+  "The Bilka roof panels' prices read on 24.11.2026, mostly at Dedeman: indicative, check them when ordering.": "Bilkas takpanelers priser avlästa 24.11.2026, mestadels hos Dedeman: vägledande, kontrollera dem vid beställning.",
+  "Lapin's own rough values, a few rows to try the estimate with.": "Lapins egna grova värden, några rader att pröva kalkylen med.",
+  "There is no such price list template.": "Det finns ingen sådan prislistemall.",
+  "The day the price was read": "Dagen då priset lästes av",
 };
 
 /** Phrases with a number or a name in them. */
@@ -13439,4 +13464,10 @@ export const SV_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(.+)'s ridge caps are (.+)\.$/, (m) => `Nockpannorna på ${m[1]} är ${m[2]}.`],
   [/^The battens are fixed with (.+)\.$/, (m) => `Läkten fästs med ${m[1]}.`],
   [/^(.+) is not made in (.+)\.$/, (m) => `${m[1]} tillverkas inte i ${m[2]}.`],
+  // Roof panel layout, stage S4.
+  [/^Price list added to the project: (.+)\.$/, (m) => `Prislistan lades till i projektet: ${m[1]}.`],
+  [/^(\d+) panel\(s\) of (\d+) mm: priced per m² of sheet bought \(the nominal length by the (\d+) mm width\)\.$/, (m) => `${m[1]} paneler på ${m[2]} mm: prissatta per m² inköpt plåt (den nominella längden gånger bredden ${m[3]} mm).`],
+  [/^The template (.+) is not a Lapin price list\.$/, (m) => `Mallen ${m[1]} är ingen Lapin-prislista.`],
+  [/^The template (.+) does not say its prices are indicative\.$/, (m) => `Mallen ${m[1]} anger inte att dess priser är vägledande.`],
+  [/^The template (.+) has no rows\.$/, (m) => `Mallen ${m[1]} har inga rader.`],
 ];
