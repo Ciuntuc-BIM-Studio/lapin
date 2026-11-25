@@ -17641,6 +17641,48 @@ export const scenes = [
       await t.shot('precision-measure-section', { clip: { x: 200, y: 120, width: 1200, height: 760 } });
     },
   },
+  {
+    // An end grip kept on the element's own angle (forum topic 260, decision 865): Ctrl/⌘ while dragging, the change in length typed.
+    id: 'grip-angle-lock',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const page = t.page;
+      const s = await t.storey();
+      const a = (37 * Math.PI) / 180;
+      const wall = (await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 0, x2: 4 * Math.cos(a), y2: 4 * Math.sin(a) })).id;
+      await t.fit();
+      await select(t, wall);
+      await t.wait(800);
+      const g = await page.locator('[data-testid=plan] [data-grip="end"]').first().boundingBox();
+      t.expect(g, 'the wall\'s end shows its grip');
+      const [gx, gy] = [g.x + g.width / 2, g.y + g.height / 2];
+      const [tx, ty] = await t.planPoint(4.6, 1.2);
+      await page.mouse.move(gx, gy);
+      await page.mouse.down();
+      await page.mouse.move((gx + tx) / 2, (gy + ty) / 2, { steps: 4 });
+      await page.mouse.move(tx, ty, { steps: 4 });
+      await t.wait(300);
+      t.expect(await page.locator('[data-testid=angle-lock-hint]').count() > 0, 'the live box says Ctrl/⌘ keeps the angle');
+      await page.keyboard.down('Control');
+      await page.mouse.move(tx + 2, ty - 2, { steps: 2 });
+      await t.wait(300);
+      t.expect(await page.locator('[data-testid=angle-lock]').count() > 0, 'the live box shows the angle is kept');
+      // The change in length typed: 1500 mm longer, on the side of the cursor.
+      for (const k of ['1', '5', '0', '0']) await page.keyboard.press(k);
+      await t.wait(300);
+      await t.shot('grip-angle-lock', { clip: { x: 250, y: 120, width: 1190, height: 700 } });
+      await page.keyboard.press('Enter');
+      await page.keyboard.up('Control');
+      await t.wait(800);
+      const w = (await t.nodes()).find((n) => n.id === wall);
+      const [x2, y2] = [w.props.x2 ?? w.props.end?.[0], w.props.y2 ?? w.props.end?.[1]];
+      if (x2 != null) {
+        t.expect(Math.abs(Math.atan2(y2, x2) - a) < 1e-6, `the wall keeps its 37° (${(Math.atan2(y2, x2) * 180 / Math.PI).toFixed(3)}°)`);
+        t.expect(Math.abs(Math.hypot(x2, y2) - 5.5) < 1e-3, `the wall is 1500 mm longer (${Math.hypot(x2, y2).toFixed(3)} m)`);
+      }
+    },
+  },
 ];
 
 /** A zip of stored entries (name, text), enough for a BCF file: the local headers, the central directory and its end, with CRC-32. */

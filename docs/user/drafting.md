@@ -92,6 +92,8 @@ Click an element to select it; <kbd>Shift</kbd>-click adds to the selection. To 
 
 ## Copying and moving
 
+A drafted line's end dragged with <kbd>Ctrl</kbd> (<kbd>⌘</kbd> on a Mac) held stays on the line's own angle, as a wall's end does ([Walls](walls.md#keep-its-angle-while-you-stretch)).
+
 To copy, select the element and type <kbd>CO</kbd>. Click a base point, then a second point. Lapin keeps copying until you press <kbd>Enter</kbd> or <kbd>Esc</kbd>. **Move** (<kbd>M</kbd>) works the same way.
 
 While you move or copy, a marker stays on the base point and a dashed line runs from it to the mouse, with a faded outline of what you move left where it was until you click or press <kbd>Esc</kbd>. The line and the marker change colour with the snap: green on a snapped point, blue when ortho or polar tracking holds the direction, the accent colour on a tracking line, grey when free. Next to the mouse, Lapin shows how far you have moved: Δx, Δy, the distance and the angle, in the project's units. You can type the distance and the angle there, as when you draw. In the Compact interface, these values are in the status line. Dragging a grip shows the same, and so does dragging a selected element itself, from the point where you pressed; press <kbd>Esc</kbd> before you let go and the element stays where it was.

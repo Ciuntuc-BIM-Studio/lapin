@@ -33,6 +33,7 @@ Each step ends with tests ported or written first, the checks green, and its row
     - Tab, while the cursor is over a shared grip, cycles which element it belongs to: one wall, the other, all of them. The owner is highlighted and named in the hint.
     - The rule confirmed on 25.10.2026 stays the default: one element selected moves only its own end; several selected move their shared end together.
 - **Edge grips.** The middle of an edge moves the edge parallel to itself, keeping its neighbours' directions. Ctrl or Alt on an edge middle inserts a vertex. Ctrl on a vertex deletes it, if the shape keeps enough vertices.
+- **Own angle (decision 865, 25.11.2026).** Ctrl/⌘ held *while* dragging an end grip (`Grip.along`: the fixed other end and the direction) keeps the point on the element's own line: it lengthens or shortens along its angle; snaps are projected onto the line or intersected with it; Ctrl wins over Shift's ortho; with polar on the line is also an "own angle" guide. Polyline and outline vertices lock to the edge before them. Curved elements have no lock. Not at the press: Ctrl at the press of a vertex still removes it.
 - **Feedback.** While dragging: the rubber band, the length and angle of the moved segments, snaps, tracking, typed values (E5).
 - **Views.** Plans first. Sections and elevations next, for heights and drafted shapes. 3D last, with grips on the active storey's plane (Q4).
 
@@ -71,6 +72,7 @@ Each step ends with tests ported or written first, the checks green, and its row
   - It shows the same values in a form: length, angle, Δx, Δy, and x and y absolute or relative to the last point.
   - For walls it adds thickness and height; for an arc, radius and sweep.
   - It is the place to type with a keyboard when the cursor is elsewhere.
+- **Kept angle (decision 865).** While an end grip is kept on its line, the angle field shows the element's own angle (with an "Angle kept" tag), a typed value is the change in length signed by the cursor's side, and `=` before it gives the total length.
 - **One parser for everything.** BIM tools and grip drags feed their points through the command line's parser, which already reads `@d<a`. Distances take units (`2.4`, `240cm`, `2400mm`) and simple sums (`3+0.25`).
 - **One preview.** The plan preview of polylines and polygons shows each segment's length too, not only two-point gestures.
 

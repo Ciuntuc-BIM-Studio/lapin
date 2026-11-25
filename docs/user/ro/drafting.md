@@ -92,6 +92,8 @@ Dă clic pe un element ca să-l selectezi; <kbd>Shift</kbd>-clic adaugă la sele
 
 ## Copiere și mutare
 
+Capătul unei linii desenate, tras cu <kbd>Ctrl</kbd> (<kbd>⌘</kbd> pe Mac) apăsat, rămâne pe unghiul propriu al liniei, ca la capătul unui perete ([Pereți](walls.md)).
+
 Ca să copiezi, selectează elementul și scrie <kbd>CO</kbd>. Dă clic pe un punct de bază, apoi pe un al doilea punct. Lapin copiază mai departe până apeși <kbd>Enter</kbd> sau <kbd>Esc</kbd>. **Mută** (<kbd>M</kbd>) merge la fel.
 
 Cât muți sau copiezi, un marcaj rămâne pe punctul de bază și o linie întreruptă merge de la el până la mouse, iar un contur estompat a ceea ce muți rămâne unde era până dai clic sau apeși <kbd>Esc</kbd>. Linia și marcajul își schimbă culoarea după snap: verde pe un punct prins, albastru când ortho sau urmărirea polară țin direcția, culoarea de accent pe o linie de urmărire, gri când e liber. Lângă mouse, Lapin arată cât ai mutat: Δx, Δy, distanța și unghiul, în unitățile proiectului. Poți scrie acolo distanța și unghiul, ca atunci când desenezi. În interfața Compact, valorile acestea sunt în linia de stare. La fel se vede și când tragi de un grip, și când tragi chiar de un element selectat, de la punctul unde ai apăsat; apasă <kbd>Esc</kbd> înainte să-i dai drumul și elementul rămâne unde era.
