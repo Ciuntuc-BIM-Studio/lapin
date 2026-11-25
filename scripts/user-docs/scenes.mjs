@@ -5297,6 +5297,8 @@ export const scenes = [
       await t.tool('architecture.wallTypes');
       await t.wait(600);
       t.expect(await t.page.locator('.dialog [data-testid=type-sweep]').count() === 1, 'the type lists its sweep');
+      // Forum topic 268: the row turns its profile upside down too (Flip).
+      t.expect(await t.page.locator('.dialog [data-field=type-sweep-flip]').count() === 1, 'the row has its Flip');
       await t.shot('wall-type-sweeps', { of: '.dialog', pad: 0 });
       await t.ui({ dialog: null });
     },

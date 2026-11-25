@@ -77,7 +77,8 @@ public static class WallTypes
         {
             var trimmed = name.Trim();
             if (trimmed.Length == 0) throw new CommandException("A type's name cannot be empty.");
-            edit.Replace(type.With(name: trimmed));
+            // The type as it is now: the sweeps just set on it stay (forum topic 268: saved with its name, the type lost them).
+            edit.Replace(edit.Model.Get(type.Id)!.With(name: trimmed));
         }
         if (lintels != null)
         {
@@ -98,6 +99,6 @@ public static class WallTypes
         Validate(layers);
         LayerSets.Rewrite(edit, edit.Model.Get(type.Id)!, layers);
         foreach (var wall in edit.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).Where(w => w.Class == IfcClass.Wall).ToList())
-            Walls.LayOut(edit, wall, type);
+            Walls.LayOut(edit, wall, edit.Model.Get(type.Id)!);
     }
 }

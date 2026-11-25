@@ -8,7 +8,9 @@ describe('a wall type\'s sweeps in the Wall types dialog (decision 298)', () => 
       { key: 'k2', profileId: 'p2', mode: 'cut', side: 'left', height: 2, fromTop: true, returns: 'none' },
     ];
     const rows = sweepRows(stored, (id) => (id === 'm1' ? 'Plaster' : '?'));
-    expect(rows.map((r) => [r.mode, r.side, r.material, r.fromTop])).toEqual([['add', 'right', 'Plaster', false], ['cut', 'left', '', true]]);
+    expect(rows.map((r) => [r.mode, r.side, r.material, r.fromTop, r.flip])).toEqual([['add', 'right', 'Plaster', false, true], ['cut', 'left', '', true, false]]);
+    // Flip (the profile upside down, forum topic 268) is the row's own field now, not kept aside.
+    expect(rows[0].rest).not.toHaveProperty('flip');
     const back = rows.map(sweepJson);
     expect(back[0]).toMatchObject({ key: 'k1', profileId: 'p1', mode: 'add', material: 'Plaster', flip: true, setbackEnd: 0.5, offset: 0.01 });
     expect(back[0]).not.toHaveProperty('profile');
@@ -17,6 +19,6 @@ describe('a wall type\'s sweeps in the Wall types dialog (decision 298)', () => 
   });
 
   it('a new row has no key: the engine gives it one', () => {
-    expect(sweepJson({ profileId: null, mode: 'add', side: 'right', height: 0.3, fromTop: false, offset: 0, material: 'Plaster', returns: null, rest: {} })).not.toHaveProperty('key');
+    expect(sweepJson({ profileId: null, mode: 'add', side: 'right', height: 0.3, fromTop: false, offset: 0, flip: false, material: 'Plaster', returns: null, rest: {} })).not.toHaveProperty('key');
   });
 });

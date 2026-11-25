@@ -2,8 +2,8 @@
  * The Wall types dialog's "Sweeps and reveals" (decision 298, Revit's wall type sweeps and reveals): the sweeps every
  * wall of the type carries, each a row: its profile, sweep or reveal, the face (R or L, as the legend names them: R is
  * the face of the type's first layer), the height over the wall's base or under its top, the offset from the face, the
- * material of a sweep and its returns at free ends. What a row keeps that it does not show (flip, set-backs) stays as it
- * was. Saved with the type, every wall of it follows; a wall may change one of them as its own, or switch one off.
+ * profile upside down (flip, forum topic 268), the material of a sweep and its returns at free ends. What a row keeps that
+ * it does not show (set-backs) stays as it was. Saved with the type, every wall of it follows; a wall may change one of them as its own, or switch one off.
  */
 
 import { Plus, Trash2 } from 'lucide-react';
@@ -20,12 +20,12 @@ export type Returns = 'none' | 'start' | 'end' | 'both';
 /** A type's sweep as the dialog holds it: the engine's fields, the material by name. */
 export interface TypeSweepRow {
   key?: string; profileId: string | null; profile?: ProfileJson; mode: SweepMode; side: 'left' | 'right';
-  height: number; fromTop: boolean; offset: number; material: string; returns: Returns | null;
-  /** The fields the row does not show, kept as they were (flip, set-backs, returns at openings, gaps). */
+  height: number; fromTop: boolean; offset: number; flip: boolean; material: string; returns: Returns | null;
+  /** The fields the row does not show, kept as they were (set-backs, returns at openings, gaps). */
   rest: Record<string, unknown>;
 }
 
-const SHOWN = new Set(['key', 'profileId', 'profile', 'mode', 'side', 'height', 'fromTop', 'offset', 'material', 'returns']);
+const SHOWN = new Set(['key', 'profileId', 'profile', 'mode', 'side', 'height', 'fromTop', 'offset', 'flip', 'material', 'returns']);
 
 /** The type's stored sweeps as rows (`materialOf` names a material id). */
 export function sweepRows(stored: unknown, materialOf: (id: string) => string): TypeSweepRow[] {
@@ -43,6 +43,7 @@ export function sweepRows(stored: unknown, materialOf: (id: string) => string): 
       height: typeof s.height === 'number' ? s.height : 0.3,
       fromTop: s.fromTop === true,
       offset: typeof s.offset === 'number' ? s.offset : 0,
+      flip: s.flip === true,
       material: typeof s.material === 'string' ? materialOf(s.material) : '',
       returns: typeof s.returns === 'string' ? (s.returns as Returns) : null,
       rest,
@@ -56,13 +57,13 @@ export function sweepJson(r: TypeSweepRow): Record<string, unknown> {
     ...r.rest,
     ...(r.key ? { key: r.key } : {}),
     ...(r.profileId ? { profileId: r.profileId } : r.profile ? { profile: r.profile } : {}),
-    mode: r.mode, side: r.side, height: r.height, fromTop: r.fromTop, offset: r.offset,
+    mode: r.mode, side: r.side, height: r.height, fromTop: r.fromTop, offset: r.offset, flip: r.flip,
     ...(r.mode === 'add' && r.material.trim() ? { material: r.material.trim() } : {}),
     ...(r.returns ? { returns: r.returns } : {}),
   };
 }
 
-const blankRow = (): TypeSweepRow => ({ profileId: null, mode: 'add', side: 'right', height: 0.3, fromTop: false, offset: 0, material: 'Plaster', returns: null, rest: {} });
+const blankRow = (): TypeSweepRow => ({ profileId: null, mode: 'add', side: 'right', height: 0.3, fromTop: false, offset: 0, flip: false, material: 'Plaster', returns: null, rest: {} });
 
 export function WallTypeSweeps({ rows, onChange }: { rows: TypeSweepRow[]; onChange: (rows: TypeSweepRow[]) => void }) {
   const letters = faceLetters(useLang((s) => s.lang));
@@ -75,7 +76,7 @@ export function WallTypeSweeps({ rows, onChange }: { rows: TypeSweepRow[]; onCha
       </div>
       {rows.length > 0 && (
         <table className="layer-edit sweeps" data-testid="type-sweeps">
-          <thead><tr><th>Profile</th><th>Kind</th><th title="The face: R is the face of the first layer, L the other">Face</th><th title="Over the wall's base, or under its top">Height</th><th>From the top</th><th title="Out from the face">Offset</th><th>Material</th><th title="Closed round the wall's free ends">Returns</th><th /></tr></thead>
+          <thead><tr><th>Profile</th><th>Kind</th><th title="The face: R is the face of the first layer, L the other">Face</th><th title="Over the wall's base, or under its top">Height</th><th>From the top</th><th title="Out from the face">Offset</th><th title="The profile turned upside down">Flip</th><th>Material</th><th title="Closed round the wall's free ends">Returns</th><th /></tr></thead>
           <tbody>
             {rows.map((r, i) => (
               <tr key={r.key ?? `new-${i}`} data-testid="type-sweep">
@@ -89,6 +90,7 @@ export function WallTypeSweeps({ rows, onChange }: { rows: TypeSweepRow[]; onCha
                 <td className="num"><LengthField className="layer-height" testId="type-sweep-height" metres={r.height} onCommit={(m) => { if (m != null) set(i, { height: m }); }} /></td>
                 <td><input type="checkbox" checked={r.fromTop} onChange={(e) => set(i, { fromTop: e.target.checked })} /></td>
                 <td className="num"><LengthField className="layer-height" metres={r.offset} onCommit={(m) => set(i, { offset: m ?? 0 })} /></td>
+                <td><input type="checkbox" data-field="type-sweep-flip" checked={r.flip} onChange={(e) => set(i, { flip: e.target.checked })} /></td>
                 <td>{r.mode === 'add' ? <MaterialPicker value={r.material} onChange={(material) => set(i, { material })} /> : <span className="muted small">the wall's</span>}</td>
                 <td><select value={r.returns ?? ''} data-field="type-sweep-returns" onChange={(e) => set(i, { returns: (e.target.value || null) as Returns | null })}>
                   <option value="">{r.mode === 'cut' ? 'none' : 'both'}</option>
