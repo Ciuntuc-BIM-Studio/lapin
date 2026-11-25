@@ -6826,6 +6826,16 @@ export const PL: Record<string, string> = {
   'Pick & create similar': 'Pobierz i utwórz podobny',
   'Select an element first, then press Alt+I (or CS) to place another of the same type.': 'Najpierw zaznacz element, a następnie naciśnij Alt+I (lub CS), aby wstawić kolejny tego samego typu.',
   'X-Ray peek · release': 'Podgląd X-Ray · puść',
+  // Game-like UX Phase 2 (docs/plan-ux-game-like.md).
+  'Guided sandbox': 'Piaskownica z przewodnikiem',
+  'Interactive missions…': 'Interaktywne misje…',
+  'Radial menu': 'Menu kołowe',
+  'Role mission': 'Misja roli',
+  'Basics': 'Podstawy',
+  'Try': 'Wypróbuj',
+  'Reset sandbox model': 'Resetuj model piaskownicy',
+  'Missions': 'Misje',
+  'Drag left/right to adjust · Shift: fine · Ctrl: coarse': 'Przeciągnij w lewo/prawo, aby zmienić · Shift: dokładnie · Ctrl: zgrubnie',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

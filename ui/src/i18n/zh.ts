@@ -6822,6 +6822,16 @@ export const ZH: Record<string, string> = {
   'Pick & create similar': '吸取并创建类似',
   'Select an element first, then press Alt+I (or CS) to place another of the same type.': '请先选择一个构件，然后按 Alt+I（或 CS）放置同类型构件。',
   'X-Ray peek · release': '透视预览 · 松开',
+  // Game-like UX Phase 2 (docs/plan-ux-game-like.md).
+  'Guided sandbox': '引导沙盒',
+  'Interactive missions…': '交互式任务…',
+  'Radial menu': '径向菜单',
+  'Role mission': '角色任务',
+  'Basics': '基础',
+  'Try': '试试',
+  'Reset sandbox model': '重置沙盒模型',
+  'Missions': '任务',
+  'Drag left/right to adjust · Shift: fine · Ctrl: coarse': '左右拖动调整 · Shift：精细 · Ctrl：粗调',
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

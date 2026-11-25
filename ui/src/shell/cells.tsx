@@ -5,30 +5,87 @@
  * typed in the project's unit (or with a unit: 240cm, 2.4m) and numbers may
  * be sums. LengthField and NumberField are the interface's one length and
  * number field, in the panel and outside it.
+ *
+ * Drag-to-Scrub (docs/plan-ux-game-like.md, P8): drag horizontally on the unit
+ * badge (or Alt+drag on a numeric field) to adjust smoothly (Shift = fine,
+ * Ctrl = coarse); commits once on release as a single undo step.
  */
 
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { formatLength, unitLabel, useStandards } from '../engine/unitsStore';
 import { commitLength, commitNumber, NO_COMMIT, type CommitRules } from './fieldCommit';
 
+export interface ScrubConfig {
+  start: number;
+  step: number;
+  fine: number;
+  coarse: number;
+  min?: number;
+  max?: number;
+  format: (v: number) => string;
+  commit: (v: number) => void;
+}
+
+/** Pure value calculation for horizontal drag-to-scrub (4 px per step). */
+export function scrubValue(start: number, dx: number, cfg: Pick<ScrubConfig, 'step' | 'fine' | 'coarse' | 'min' | 'max'>, mods: { shift: boolean; ctrl: boolean }): number {
+  const unit = mods.shift ? cfg.fine : mods.ctrl ? cfg.coarse : cfg.step;
+  const ticks = Math.trunc(dx / 4);
+  let next = Math.round((start + ticks * unit) * 1e6) / 1e6;
+  if (cfg.min != null && next < cfg.min) next = cfg.min;
+  if (cfg.max != null && next > cfg.max) next = cfg.max;
+  return next;
+}
+
 /** A cell: commits on blur or Enter, Escape restores; an onCommit that returns false (refused) puts the value back. */
-export function Cell({ value, onCommit, suffix, placeholder, className, readOnly, title, style, testId }: {
+export function Cell({ value, onCommit, suffix, placeholder, className, readOnly, title, style, testId, scrub }: {
   value: string; onCommit: (text: string) => boolean | void; suffix?: string; placeholder?: string; className?: string; readOnly?: boolean; title?: string;
   /** The input's own style (a width in a row of fields). */
   style?: CSSProperties;
   /** The input's data-field, for the guide's scenes and tests. */
   testId?: string;
+  /** Optional horizontal drag-to-scrub handler for numeric/length fields. */
+  scrub?: ScrubConfig;
 }) {
   const [text, setText] = useState(value);
   useEffect(() => setText(value), [value]);
+
+  const startScrub = (e: ReactPointerEvent) => {
+    if (!scrub || readOnly || e.button !== 0) return;
+    e.preventDefault();
+    const x0 = e.clientX;
+    let latest = scrub.start;
+    let moved = false;
+    const onMove = (ev: PointerEvent) => {
+      const dx = ev.clientX - x0;
+      if (!moved && Math.abs(dx) < 3) return;
+      moved = true;
+      latest = scrubValue(scrub.start, dx, scrub, { shift: ev.shiftKey, ctrl: ev.ctrlKey || ev.metaKey });
+      setText(scrub.format(latest));
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      if (moved && latest !== scrub.start) scrub.commit(latest);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+  };
+
   return (
     <span className="cell-wrap" style={style ? { width: 'auto' } : undefined}>
       <input className={`cell${className ? ` ${className}` : ''}`} value={text} placeholder={placeholder} readOnly={readOnly} title={title} style={style} data-field={testId}
+        onPointerDown={(e) => { if (e.altKey && scrub) startScrub(e); }}
         onChange={(e) => setText(e.target.value)}
         onBlur={() => { if (text !== value && onCommit(text) === false) setText(value); }}
         // Enter blurs (which commits); not prevented, so the properties panel's keys still move down.
         onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); else if (e.key === 'Escape' && text !== value) { setText(value); e.preventDefault(); } }} />
-      {suffix && <span className="cell-unit">{suffix}</span>}
+      {suffix && (
+        <span className={`cell-unit${scrub && !readOnly ? ' scrubbable' : ''}`}
+          title={scrub && !readOnly ? 'Drag left/right to adjust · Shift: fine · Ctrl: coarse' : undefined}
+          onPointerDown={scrub && !readOnly ? startScrub : undefined}>{suffix}</span>
+      )}
     </span>
   );
 }
@@ -49,16 +106,26 @@ export interface FieldProps extends CommitRules {
 export function LengthField({ metres, onCommit, placeholder, className, readOnly, title, style, testId, noUnit, ...rules }: FieldProps & { metres: number | null | undefined; onCommit: (m: number | null) => void; noUnit?: boolean }) {
   const u = useStandards((s) => s.units);
   const shown = typeof metres === 'number' ? formatLength(metres, u) : '';
+  const scrub: ScrubConfig | undefined = typeof metres === 'number' && !readOnly ? {
+    start: metres, step: 0.01, fine: 0.001, coarse: 0.1, min: rules.min, max: rules.max,
+    format: (m) => formatLength(m, u),
+    commit: (m) => onCommit(m),
+  } : undefined;
   return (
-    <Cell value={shown} className={`num${className ? ` ${className}` : ''}`} suffix={noUnit ? undefined : unitLabel(u) || undefined} placeholder={placeholder} readOnly={readOnly} title={title} style={style} testId={testId}
+    <Cell value={shown} className={`num${className ? ` ${className}` : ''}`} suffix={noUnit ? undefined : unitLabel(u) || undefined} placeholder={placeholder} readOnly={readOnly} title={title} style={style} testId={testId} scrub={scrub}
       onCommit={(t) => { const v = commitLength(t, metres, rules); if (v !== NO_COMMIT) onCommit(v); return v !== NO_COMMIT; }} />
   );
 }
 
 /** The one number field: sums allowed, a decimal comma too; the same commit rules as LengthField. */
 export function NumberField({ value, onCommit, suffix, placeholder, className, readOnly, title, style, testId, ...rules }: FieldProps & { value: number | null | undefined; onCommit: (n: number | null) => void; suffix?: string }) {
+  const scrub: ScrubConfig | undefined = typeof value === 'number' && !readOnly ? {
+    start: value, step: 1, fine: 0.1, coarse: 10, min: rules.min, max: rules.max,
+    format: (n) => String(n),
+    commit: (n) => onCommit(n),
+  } : undefined;
   return (
-    <Cell value={typeof value === 'number' ? String(value) : ''} className={`num${className ? ` ${className}` : ''}`} suffix={suffix} placeholder={placeholder} readOnly={readOnly} title={title} style={style} testId={testId}
+    <Cell value={typeof value === 'number' ? String(value) : ''} className={`num${className ? ` ${className}` : ''}`} suffix={suffix} placeholder={placeholder} readOnly={readOnly} title={title} style={style} testId={testId} scrub={scrub}
       onCommit={(t) => { const v = commitNumber(t, value, rules); if (v !== NO_COMMIT) onCommit(v); return v !== NO_COMMIT; }} />
   );
 }

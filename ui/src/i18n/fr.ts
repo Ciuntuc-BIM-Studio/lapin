@@ -6787,6 +6787,16 @@ export const FR: Record<string, string> = {
   'Pick & create similar': 'Pipette et créer similaire',
   'Select an element first, then press Alt+I (or CS) to place another of the same type.': 'Sélectionnez d’abord un élément, puis appuyez sur Alt+I (ou CS) pour en placer un autre du même type.',
   'X-Ray peek · release': 'Aperçu X-Ray · relâcher',
+  // Game-like UX Phase 2 (docs/plan-ux-game-like.md).
+  'Guided sandbox': 'Bac à sable guidé',
+  'Interactive missions…': 'Missions interactives…',
+  'Radial menu': 'Menu radial',
+  'Role mission': 'Mission du rôle',
+  'Basics': 'Bases',
+  'Try': 'Essayer',
+  'Reset sandbox model': 'Réinitialiser le modèle bac à sable',
+  'Missions': 'Missions',
+  'Drag left/right to adjust · Shift: fine · Ctrl: coarse': 'Glisser gauche/droite pour ajuster · Shift : fin · Ctrl : gros pas',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

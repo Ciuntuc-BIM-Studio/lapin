@@ -65,6 +65,9 @@ import { AskBox } from './shell/AskBox';
 import { setBrowserFindHooks, useBrowserFind, viewIdOfTab, viewSheetItems } from './shell/browserFind';
 import { openPlaceOnSheet, PlaceOnSheetDialog } from './shell/PlaceOnSheetDialog';
 import { PartBoundary } from './shell/PartBoundary';
+import { OnboardingMissions } from './shell/OnboardingMissions';
+import { PieMenu, usePiePointer } from './shell/PieMenu';
+import { noteMissionEvent } from './app/onboarding';
 
 // Find in project browser (forum topic 207): the browser unfolded (a floating one is always open), the view selected, and
 // the browser asked to show its row; Place on sheet… opens its picker.
@@ -257,6 +260,7 @@ function toggleQuickWalk(): void {
     start = { eye: { x: cam.target.x, y: cam.target.y, z: elev + EYE_HEIGHT }, yaw: cam.azimuth + Math.PI, pitch: 0, name: storey?.name ?? '3D' };
   }
   useWalk.setState({ start });
+  noteMissionEvent('walk');
   useUi.setState({ view: '3d' });
 }
 
@@ -543,6 +547,8 @@ function Workspace() {
       <GuestBar />
       <PresenceReporter />
       <AskBox />
+      <PartBoundary part="Missions" overlay><OnboardingMissions /></PartBoundary>
+      <PartBoundary part="Radial menu" overlay><PieMenu /></PartBoundary>
       {backgrounds().map((B, i) => <B key={i} />)}
     </div>
   );
@@ -557,6 +563,8 @@ function ViewWindow() {
       <main className="views"><PaneBody i={0} /></main>
       {Dialog && <PartBoundary part={`Dialog ${open}`} overlay onClose={() => useUi.setState({ dialog: null })} resetKey={open}><Dialog /></PartBoundary>}
       <AskBox />
+      <PartBoundary part="Missions" overlay><OnboardingMissions /></PartBoundary>
+      <PartBoundary part="Radial menu" overlay><PieMenu /></PartBoundary>
       {backgrounds().map((B, i) => <B key={i} />)}
     </div>
   );
@@ -567,6 +575,7 @@ export function App() {
   const theme = useUi((s) => s.theme);
   useShortcuts();
   useXrayPeekKeys();
+  usePiePointer();
   useDialogLayer();
   useEffect(() => { watchLocation(); installTruncationTitles(); }, []);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);

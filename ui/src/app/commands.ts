@@ -36,6 +36,9 @@ import { useMove3d } from '../viewport/moveIn3d';
 import { cancel as cancelStep } from '../viewport/cad/session';
 import { notify } from './store';
 import { canPlace, findInBrowser, placeOnSheet, viewIdOfTab } from '../shell/browserFind';
+import { BOOKMARK_SLOTS, gotoCameraBookmark, saveCameraBookmark } from './cameraBookmarks';
+import { openOnboarding } from './onboarding';
+import { togglePieMenu } from '../shell/PieMenu';
 
 /**
  * Undo and redo while a gesture is under way (audit U11): a CAD step is cancelled first; a body drag or a 3D move is not
@@ -93,6 +96,10 @@ function appCommands(): CommandDef[] {
       else notify('Select an element first, then press Alt+I (or CS) to place another of the same type.');
     } },
     { id: 'app.palette', label: 'Commands…', category: general, defaults: ['Ctrl+K'], run: dialog('palette') },
+    { id: 'app.pieMenu', label: 'Radial menu', category: general, defaults: ['Alt+Q'], run: togglePieMenu },
+    { id: 'app.missions', label: 'Interactive missions…', category: general, defaults: [], run: () => openOnboarding('role') },
+    ...BOOKMARK_SLOTS.map((slot) => ({ id: `app.bookmarkSave.${slot}`, label: `Save camera bookmark ${slot}`, category: views, defaults: [`Ctrl+Shift+${slot}`], run: () => { saveCameraBookmark(slot); } })),
+    ...BOOKMARK_SLOTS.map((slot) => ({ id: `app.bookmarkGoto.${slot}`, label: `Jump to camera bookmark ${slot}`, category: views, defaults: [`Shift+${slot}`], run: () => { gotoCameraBookmark(slot); } })),
     { id: 'app.commandLine', label: 'Command line: take all typing', category: general, defaults: ['Backquote'], run: () => useCad.setState((s) => ({ takeAll: !s.takeAll })) },
     { id: 'app.shortcuts', label: 'Keyboard shortcuts…', category: general, defaults: [], run: dialog('shortcuts') },
     { id: 'app.interface', label: 'Interface…', category: general, defaults: ['Ctrl+.'], run: dialog('interface') },

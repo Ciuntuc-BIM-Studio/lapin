@@ -6779,6 +6779,16 @@ export const RO: Record<string, string> = {
   'Pick & create similar': 'Preia și creează similar',
   'Select an element first, then press Alt+I (or CS) to place another of the same type.': 'Selectează mai întâi un element, apoi apasă Alt+I (sau CS) pentru a plasa altul de același tip.',
   'X-Ray peek · release': 'Previzualizare X-Ray · eliberează',
+  // Game-like UX Phase 2 (docs/plan-ux-game-like.md).
+  'Guided sandbox': 'Sandbox ghidat',
+  'Interactive missions…': 'Misiuni interactive…',
+  'Radial menu': 'Meniu radial',
+  'Role mission': 'Misiunea rolului',
+  'Basics': 'Bazele',
+  'Try': 'Încearcă',
+  'Reset sandbox model': 'Resetează modelul sandbox',
+  'Missions': 'Misiuni',
+  'Drag left/right to adjust · Shift: fine · Ctrl: coarse': 'Trage stânga/dreapta pentru ajustare · Shift: fin · Ctrl: pas mare',
 };
 
 /** Phrases with a number or a name in them. */

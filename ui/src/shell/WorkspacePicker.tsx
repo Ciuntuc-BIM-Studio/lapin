@@ -4,10 +4,12 @@
  * The project stays one: a hidden tab's tools are still in Commands… and the shortcuts.
  */
 
-import { Building2, Compass, Layers, PenTool, Route, Wrench } from 'lucide-react';
+import { Building2, Compass, Layers, PenTool, Play, Route, Wrench } from 'lucide-react';
 import { choosePreset, chooseWorkspace, useInterface, visibleTabIds, WORKSPACE_IDS, WORKSPACE_LABELS, type InterfacePreset, type WorkspaceId } from '../app/interface';
 import { NAV_STYLE_IDS, NAV_STYLES, type NavStyleId } from '../app/navStyle';
 import { setPrefs, usePrefs } from '../app/prefs';
+import { launchRoleSandbox } from '../app/onboarding';
+import { useSession } from '../engine/session';
 import { ribbonTabs } from '../platform/modules';
 
 const ROLES: { id: WorkspaceId; title: string; note: string; icon: typeof Building2 }[] = [
@@ -65,11 +67,17 @@ export function WorkspaceSelect() {
 export function RoleSelector() {
   const s = useInterface();
   const navStyle = usePrefs((p) => p.navStyle);
+  const connected = useSession((st) => st.connected);
   return (
     <section className="role-setup" aria-label="Choose your role" data-testid="role-selector">
       <div className="role-head">
         <p className="eyebrow">Your role</p>
         <div className="role-quick">
+          <button type="button" className="role-sandbox-btn" disabled={!connected} data-testid="launch-sandbox"
+            title="Start a ~70% pre-built mini-project with interactive missions for your role"
+            onClick={() => void launchRoleSandbox(s.workspace)}>
+            <Play size={12} /><span>Guided sandbox</span>
+          </button>
           <div className="role-pills" role="radiogroup" aria-label="Interface mode">
             {QUICK_PRESETS.map((p) => (
               <button type="button" key={p.id} role="radio" aria-checked={s.preset === p.id} className={`role-pill${s.preset === p.id ? ' on' : ''}`}
