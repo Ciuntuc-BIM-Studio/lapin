@@ -24,6 +24,28 @@ Fiecare nivel are planul lui sub **Planuri**. Dublu clic pe un plan ca să desen
 
 Cotele de nivel se scriu în unitățile proiectului: în metri (+3.00) într-un proiect metric, cum le scriu planșele, și în picioare și țoli (+9'-10 1/8") într-unul imperial. Le urmează browserul, caseta din stânga sus a vederii, marcajele de nivel din secțiuni și fațade și cotele de nivel.
 
+## Cote relative sau absolute
+
+Cotele se scriu relativ la ±0,00, dacă nu spui altfel. **Gestionare → Amplasament → Niveluri** stabilește cum le scrie tot proiectul:
+
+- **Cotele scrise ca**: **Relative la ±0.00** (+3.00, implicit), **Altitudini (absolute)** (+653.00, înălțimea față de nivelul mării, cum o cere secțiunea de racordare dintr-o autorizație de construire) sau **Ambele** (+3.00 (+653.00)).
+- **Nivelul cotei zero**: nivelul a cărui cotă e ±0,00 pe planșe (parterul, de exemplu). **Niciunul** păstrează 0,00 al modelului. Modelul nu se mută.
+- **±0.00 =**: altitudinea cotei ±0,00. Scrie 650.00 și cota punctului de bază se stabilește astfel încât ±0,00 să fie la 650,00; modelul nu se mută. Alături, nota de legare cum o scriu planșele: ±0.00 = +650.00.
+
+![Gestionare → Amplasament → Niveluri: ambele, ±0.00 = 650.00 și notația](shots/level-datum.webp)
+
+Altitudinea e întotdeauna cota punctului de bază; cota punctului topografic e doar informativă. Toate cotele o urmează: semnele de nivel din secțiuni și fațade, cotele de nivel, cotele punctuale, platformele, etichetele curbelor de nivel, cotele radierelor rigolelor, baza golurilor, jetoanele de cotă ale simbolurilor, documentele și indicatoarele.
+
+![O secțiune cu semnele de nivel +0.00 (+650.00)](shots/level-datum-section.webp)
+
+O vedere poate spune altfel: **Niveluri** în proprietățile vederii (ca proiectul, relative, absolute sau ambele). Pe o planșă, **Cotele în vederile ei** le setează pe toate vederile puse pe ea deodată, iar fiecare vedere păstrează alegerea. O singură cotă de nivel își alege reperul în **Scrisă ca**.
+
+**Notația.** Sub **Niveluri**, blocul **Notație** stabilește textele: cota relativă `{level}`, altitudinea `{altitude}`, ambele `{level} ({altitude})`, nota de legare `{level} = {altitude}`, semnul zero ±, plusul, minusul și plusul dinaintea unei altitudini. Presetările sunt orientative, de verificat după practica după care lucrezi: **Franța (NGF)** scrie 653.00 NGF, fără plus; **România (MN75)** +653.00 MN75; **Germania (NHN)** 653.00 ü. NHN. Un simbol sau un indicator citește `{level.altitude}`, `{level.relative}`, `{level.tie}`, `{project.altitude}` și `{project.levelTie}`; un document `{{project.altitude}}`, `{{project.levelTie}}` și, pentru fiecare nivel, `{{storey.altitude}}` și `{{storey.level}}`.
+
+**În IFC.** Exportul scrie altitudinea ca ElevationOfRefHeight al IfcBuilding (și, ca înainte, RefElevation al IfcSite și înălțimea conversiei de hartă); cotele nivelurilor rămân ale modelului. Modul și nivelul cotei zero merg cu datele proprii ale lui Lapin și revin când Lapin citește fișierul. Un IFC din alt program, fără conversie de hartă, dă unui proiect fără altitudine altitudinea lui, din ElevationOfRefHeight, altfel din RefElevation.
+
+Nimic nu se salvează până nu schimbi ceva: un proiect făcut de o versiune mai veche își scrie cotele ca înainte.
+
 ## Nivelul de dedesubt
 
 Ca să vezi alt nivel în timp ce desenezi, alege-l în lista **Fundal** din bara planului. Planul acelui nivel se desenează dedesubt, estompat și gri. Te poți prinde (snap) de el, dar nu-l poți selecta.
