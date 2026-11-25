@@ -110,9 +110,26 @@ Fundațiile cu profil merg drept sau curb. Două care se întâlnesc într-un co
 
 ![Un tip de fundație continuă cu profil](shots/footing-profile-type.webp)
 
+## Structural sau nu
+
+Orice perete, planșeu, acoperiș, stâlp, grindă și fundație are **Structural (portant)** în **Proprietăți**: bifat, poartă încărcări; debifat, nu poartă; nesetat, decide regula, iar căsuța apare estompată, cu sursa valorii. Regula: un perete e structural dacă nu e despărțitor (tipul lui IFC PARTITIONING), planșeele, acoperișurile, stâlpii, grinzile și fundațiile sunt; placajele și finisajele încăperilor nu sunt niciodată. Analiza își păstrează regula ei pentru un perete nesetat: îl ia dacă e din zidărie sau beton cu miezul de 10 cm sau mai mult (vezi [Calculul structural](analysis.md)).
+
+![Bifa Structural în Proprietăți, setată pe perete](shots/structural-usage-properties.webp)
+
+- **Tip structural**, dedesubt, pune bifa pe tipul elementelor: o iau toate elementele tipului care nu spun nimic ele însele.
+- **Perete structural** și **Placă structurală**, în grupul **Pereți și plăci** al tabului Structură, desenează pereții și planșeele din Arhitectură deja bifate; debifați **Structural** în bara liniei de comandă ca să rămână după regulă. Peretele și Placa din tabul Arhitectură o lasă nesetată.
+- **Modifică → Structural** și **Nestructural** o pun pe selecție.
+- Bifa este **Pset_…Common.LoadBearing** din IFC: contează și o valoare scrisă acolo sau venită dintr-un fișier IFC importat (bifa câștigă, iar Proprietățile spun când nu se potrivesc). Exportul IFC scrie bifa în setul comun; **Scrie LoadBearing dedus** din opțiunile exportului scrie și valoarea regulii pe celelalte (o emitere în CDE și o verificare IDS o fac mereu).
+- Filtrele, Selecția rapidă, seturile de coliziuni și extrasele citesc câmpul **Structural** (yes sau no). **Vizibilitate / Grafică → Filtre → Utilizare structurală** adaugă un filtru al celor nestructurale, desenate estompat în vedere.
+- Un planșeu, un acoperiș, un stâlp sau o grindă cu bifa debifată (sau cu LoadBearing false) iese din analiză, iar raportul ei spune asta.
+
+![Peretele structural din tabul Structură, cu bifa lui în bara liniei de comandă](shots/structural-usage-wall-tool.webp)
+
 ## O vedere de structură
 
-Disciplina unei vederi decide ce arată. O vedere **Structură** arată doar miezurile portante, fără finisaje. Disciplina o alegi în proprietățile vederii. Vezi [Secțiuni, fațade și 3D](views.md).
+Disciplina unei vederi decide ce arată. O vedere **Structură** arată doar miezurile portante, fără finisaje. Disciplina o alegi în proprietățile vederii. Vezi [Secțiuni, fațade și 3D](views.md). Cu **Celelalte specialități estompate** pornit în setările vederii, ce nu e structural (un perete despărțitor, un perete cu bifa debifată) se desenează estompat, cu celelalte discipline.
+
+![Un plan de structură: peretele despărțitor estompat, pereții portanți întregi](shots/structural-usage-plan.webp)
 
 ## Încărcări
 

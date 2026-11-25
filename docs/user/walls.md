@@ -78,6 +78,8 @@ In the 3D view a selected wall has three more grips: one on its top, to drag its
 
 ![A selected wall with its grips](shots/wall-selected.webp)
 
+**Structural (load-bearing)** in its Properties says whether the wall carries: ticked or cleared it is said; unset, the rule decides (a wall is structural unless it is a partition) and the box shows greyed. The Structure tab's **Structural wall** draws walls already ticked. See [Structural or not](structure.md#structural-or-not).
+
 The properties panel shows the selected wall. The top of the panel holds its type and layers. Below that are its length, height, base offset, storey and phase. Change any value and the model follows. Each wall's values are its own. Its **Thickness** comes from its type's layers: type a new one and the selected walls take the type with the same build-up and that thickness, the core resized and the finishes kept. Lapin uses the project's type if one has exactly that build-up, else it makes one named after theirs (*Partition wall 130mm* becomes *Partition wall 150mm*). The other walls of the old type stay as they are, and <kbd>Ctrl</kbd> <kbd>Z</kbd> undoes it in one step.
 
 ![A wall's properties](shots/wall-properties.webp)
