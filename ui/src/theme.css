@@ -3461,3 +3461,44 @@ body.panel-dragging, body.panel-dragging * { cursor: grabbing !important; user-s
 /* Drag-to-Scrub affordance on numeric unit badges. */
 .cell-unit.scrubbable { cursor: ew-resize; user-select: none; }
 .cell-unit.scrubbable:hover { color: var(--accent); }
+
+/* Phase 3 game-like UX (docs/plan-ux-game-like.md): 3D ViewCube, Volumetric Ghost Preview, Model Health Radar, Build Replay & Sound Toggle. */
+.viewcube-host { position: absolute; right: 12px; top: 12px; z-index: 5; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 10px 6px; border: 1px solid var(--rule); border-radius: 4px; background: var(--hud-glass); backdrop-filter: blur(4px); transition: background 0.15s ease; }
+.viewcube-host:hover { background: var(--hud); }
+/* When KeyPlan sits at top-right too, push ViewCube cleanly to its left so they never overlap. */
+.view-area:has(.hud-map) .viewcube-host { right: 202px; }
+.viewcube-scene { width: 52px; height: 52px; perspective: 220px; display: grid; place-items: center; }
+.viewcube { width: 38px; height: 38px; position: relative; transform-style: preserve-3d; transition: transform 0.08s linear; }
+.vc-face { position: absolute; inset: 0; display: grid; place-items: center; border: 1px solid var(--rule-strong); background: var(--panel); color: var(--ink); font: 700 8.5px var(--mono); letter-spacing: 0.04em; cursor: pointer; opacity: 0.92; padding: 0; }
+.vc-face:hover { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); opacity: 1; }
+.vc-top { transform: translateZ(19px); }
+.vc-bottom { transform: rotateX(180deg) translateZ(19px); }
+.vc-front { transform: rotateX(-90deg) translateZ(19px); }
+.vc-back { transform: rotateX(90deg) rotateZ(180deg) translateZ(19px); }
+.vc-right { transform: rotateY(90deg) rotateZ(-90deg) translateZ(19px); }
+.vc-left { transform: rotateY(-90deg) rotateZ(90deg) translateZ(19px); }
+.viewcube-bar { display: flex; gap: 4px; }
+.vc-chip { padding: 1px 6px; border: 1px solid var(--rule-strong); border-radius: 3px; background: var(--panel); color: var(--ink-muted); font: 600 9.5px var(--mono); cursor: pointer; }
+.vc-chip:hover, .vc-chip.on { border-color: var(--accent); color: var(--accent); background: var(--accent-wash); }
+
+/* 3D Volumetric Ghost Preview in Place3D. */
+.place3d-ghost-face { fill: var(--accent); fill-opacity: 0.16; stroke: var(--accent); stroke-width: 1; stroke-opacity: 0.65; }
+.place3d-ghost-top { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.place3d-ghost-face.bad { fill: var(--err); fill-opacity: 0.2; stroke: var(--err); }
+.place3d-ghost-top.bad { stroke: var(--err); }
+
+/* Model Health Radar pill & popover in StatusBar. */
+.health-radar-host { position: relative; display: inline-flex; align-items: center; }
+.health-pill { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
+.health-pill.ok { color: var(--ok); }
+.health-pill.warn { color: var(--accent); }
+.health-popover { position: absolute; bottom: 26px; left: 0; z-index: 60; width: 290px; max-height: 280px; overflow-y: auto; padding: 10px 12px; border: 1px solid var(--rule-strong); border-radius: 5px; background: var(--panel); color: var(--ink); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16); display: flex; flex-direction: column; gap: 6px; }
+.health-head { display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 12px; }
+.health-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.health-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border: 1px solid var(--rule); border-radius: 3px; background: var(--bg); }
+.health-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; font-size: 11.5px; }
+.sound-toggle { display: inline-flex; align-items: center; padding: 0 4px; }
+
+/* Build Replay floating timeline bar. */
+.replay-bar { position: fixed; left: 50%; bottom: 48px; transform: translateX(-50%); z-index: 45; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid var(--rule-strong); border-radius: 999px; background: var(--hud); backdrop-filter: blur(6px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16); }
+.replay-bar input[type=range] { width: 180px; accent-color: var(--accent); }

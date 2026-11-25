@@ -17,6 +17,7 @@ import { activeStorey, execute, useSession } from '../engine/session';
 import { newProject } from '../engine/files';
 import { useUi } from './store';
 import { useWalk } from '../viewport/walk';
+import { playSound } from './sounds';
 
 export type MissionTrack = 'basics' | 'role';
 
@@ -186,6 +187,7 @@ export function markStepsDone(ids: string[]): void {
     const merged = [...new Set([...s.done, ...ids])];
     if (merged.length === s.done.length) return s;
     try { localStorage.setItem(DONE_KEY, JSON.stringify(merged)); } catch { /* session only */ }
+    playSound('complete');
     return { done: merged };
   });
 }

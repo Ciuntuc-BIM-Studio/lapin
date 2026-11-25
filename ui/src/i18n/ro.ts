@@ -6789,6 +6789,15 @@ export const RO: Record<string, string> = {
   'Reset sandbox model': 'Resetează modelul sandbox',
   'Missions': 'Misiuni',
   'Drag left/right to adjust · Shift: fine · Ctrl: coarse': 'Trage stânga/dreapta pentru ajustare · Shift: fin · Ctrl: pas mare',
+  // Game-like UX Phase 3 (docs/plan-ux-game-like.md).
+  'Tactile feedback sounds (snap, place, undo)': 'Sunete tactile de feedback (snap, plasare, undo)',
+  'Tactile sounds: on / off': 'Sunete tactile: pornit / oprit',
+  'Tactile sounds enabled.': 'Sunetele tactile au fost activate.',
+  'Tactile sounds muted.': 'Sunetele tactile au fost dezactivate.',
+  'Model health radar': 'Radar sănătate model',
+  'Model OK': 'Model OK',
+  'No geometric or storey issues detected.': 'Nu s-au detectat probleme geometrice sau de nivel.',
+  'Build replay (time-lapse)': 'Reluare construcție (time-lapse)',
 };
 
 /** Phrases with a number or a name in them. */

@@ -12954,6 +12954,15 @@ export const EL: Record<string, string> = {
   'Reset sandbox model': 'Επαναφορά μοντέλου sandbox',
   'Missions': 'Αποστολές',
   'Drag left/right to adjust · Shift: fine · Ctrl: coarse': 'Σύρε αριστερά/δεξιά για προσαρμογή · Shift: λεπτό · Ctrl: μεγάλο βήμα',
+  // Game-like UX Phase 3 (docs/plan-ux-game-like.md).
+  'Tactile feedback sounds (snap, place, undo)': 'Απτικοί ήχοι ανάδρασης (snap, τοποθέτηση, αναίρεση)',
+  'Tactile sounds: on / off': 'Απτικοί ήχοι: ενεργό / ανενεργό',
+  'Tactile sounds enabled.': 'Οι απτικοί ήχοι ενεργοποιήθηκαν.',
+  'Tactile sounds muted.': 'Οι απτικοί ήχοι σίγασαν.',
+  'Model health radar': 'Ραντάρ υγείας μοντέλου',
+  'Model OK': 'Μοντέλο OK',
+  'No geometric or storey issues detected.': 'Δεν εντοπίστηκαν γεωμετρικά προβλήματα ή προβλήματα ορόφων.',
+  'Build replay (time-lapse)': 'Επανάληψη κατασκευής (time-lapse)',
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

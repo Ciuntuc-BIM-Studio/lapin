@@ -6889,6 +6889,15 @@ export const LO: Record<string, string> = {
   'Reset sandbox model': 'ຣີເຊັດໂມເດວແຊນບັອກ',
   'Missions': 'ພາລະກິດ',
   'Drag left/right to adjust · Shift: fine · Ctrl: coarse': 'ລາກຊ້າຍ/ຂວາເພື່ອປັບ · Shift: ລະອຽດ · Ctrl: ຫຍາບ',
+  // Game-like UX Phase 3 (docs/plan-ux-game-like.md).
+  'Tactile feedback sounds (snap, place, undo)': 'ສຽງຕອບສະໜອງແບບສຳຜັດ (snap, ວາງ, ຍົກເລີກ)',
+  'Tactile sounds: on / off': 'ສຽງສຳຜັດ: ເປີດ / ປິດ',
+  'Tactile sounds enabled.': 'ເປີດໃຊ້ສຽງສຳຜັດແລ້ວ.',
+  'Tactile sounds muted.': 'ປິດສຽງສຳຜັດແລ້ວ.',
+  'Model health radar': 'ເຣດາກວດສອບຄວາມສົມບູນໂມເດວ',
+  'Model OK': 'ໂມເດວປົກກະຕິ',
+  'No geometric or storey issues detected.': 'ບໍ່ພົບບັນຫາທາງເລຂາຄະນິດ ຫຼື ຊັ້ນ.',
+  'Build replay (time-lapse)': 'ຫຼິ້ນຊ້ຳການກໍ່ສ້າງ (time-lapse)',
 };
 
 /** Phrases with a number or a name in them. */

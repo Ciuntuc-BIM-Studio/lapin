@@ -6836,6 +6836,15 @@ export const PL: Record<string, string> = {
   'Reset sandbox model': 'Resetuj model piaskownicy',
   'Missions': 'Misje',
   'Drag left/right to adjust · Shift: fine · Ctrl: coarse': 'Przeciągnij w lewo/prawo, aby zmienić · Shift: dokładnie · Ctrl: zgrubnie',
+  // Game-like UX Phase 3 (docs/plan-ux-game-like.md).
+  'Tactile feedback sounds (snap, place, undo)': 'Dźwięki dotykowe (przyciąganie, wstawianie, cofanie)',
+  'Tactile sounds: on / off': 'Dźwięki dotykowe: wł. / wył.',
+  'Tactile sounds enabled.': 'Włączono dźwięki dotykowe.',
+  'Tactile sounds muted.': 'Wyciszono dźwięki dotykowe.',
+  'Model health radar': 'Radar kondycji modelu',
+  'Model OK': 'Model OK',
+  'No geometric or storey issues detected.': 'Nie wykryto problemów z geometrią ani kondygnacjami.',
+  'Build replay (time-lapse)': 'Odtwarzanie budowy (time-lapse)',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

@@ -6,7 +6,7 @@
 
 import { useDialogLayer } from './shell/Dialog';
 import { Fragment, lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { AppWindow, Bot, Box, Columns2, Footprints, Ruler, FolderTree, Layers, ListTree, PanelLeftOpen, PanelRightOpen, Rows2, SlidersHorizontal, X } from 'lucide-react';
+import { AppWindow, Bot, Box, Columns2, Footprints, Ruler, FolderTree, Layers, ListTree, PanelLeftOpen, PanelRightOpen, Rows2, SlidersHorizontal, Volume2, VolumeX, X } from 'lucide-react';
 import { beginPanelDrag, DockOverlay, FloatingPanel, useKeepFloatsInWindow } from './shell/PanelDock';
 import { closeOverlay, columns, panelsOn, setPanelWidth, setStackRatio, type PanelId, type Side, showOverlay, showPropsTab, syncToolPropsTab, togglePanel, usePanels, type PanelTab } from './app/panels';
 import { assistantAvailable } from './assistant/available';
@@ -67,7 +67,10 @@ import { openPlaceOnSheet, PlaceOnSheetDialog } from './shell/PlaceOnSheetDialog
 import { PartBoundary } from './shell/PartBoundary';
 import { OnboardingMissions } from './shell/OnboardingMissions';
 import { PieMenu, usePiePointer } from './shell/PieMenu';
+import { HealthRadar } from './shell/HealthRadar';
+import { BuildReplay } from './shell/BuildReplay';
 import { noteMissionEvent } from './app/onboarding';
+import { toggleTactileSounds } from './app/sounds';
 
 // Find in project browser (forum topic 207): the browser unfolded (a floating one is always open), the view selected, and
 // the browser asked to show its row; Place on sheet… opens its picker.
@@ -122,6 +125,7 @@ function StatusBar() {
   const elements = useSession((s) => s.render.size);
   const doc = useSession((s) => s.doc);
   const parts = useInterface((s) => s.parts);
+  const soundsOn = usePrefs((p) => p.tactileSounds);
   const facts = useHudFacts();
   const merged = parts.commandLine === 'status';
   return (
@@ -133,6 +137,11 @@ function StatusBar() {
       {parts.hud === 'status' && <span className="status-hud">{facts.level} <span className="accent">{facts.elevation}</span> · {facts.view}</span>}
       <CursorCoords />
       <NavStyleMenu />
+      <HealthRadar />
+      <button type="button" className="status-link sound-toggle" data-testid="sound-toggle"
+        title={soundsOn ? 'Tactile sounds on — click to mute' : 'Tactile sounds muted — click to enable'}
+        aria-label={soundsOn ? 'Mute tactile sounds' : 'Enable tactile sounds'}
+        onClick={toggleTactileSounds}>{soundsOn ? <Volume2 size={12} /> : <VolumeX size={12} />}</button>
       <span className="status-file" title={`${projectTitle(doc?.path)}${doc?.dirty ? ' · unsaved' : ''}`}>{projectTitle(doc?.path)}{doc?.dirty ? ' · unsaved' : ''}</span>
       <CdeServerStatus />
       <span>{elements} elements</span>
@@ -549,6 +558,7 @@ function Workspace() {
       <AskBox />
       <PartBoundary part="Missions" overlay><OnboardingMissions /></PartBoundary>
       <PartBoundary part="Radial menu" overlay><PieMenu /></PartBoundary>
+      <PartBoundary part="Build replay" overlay><BuildReplay /></PartBoundary>
       {backgrounds().map((B, i) => <B key={i} />)}
     </div>
   );
@@ -565,6 +575,7 @@ function ViewWindow() {
       <AskBox />
       <PartBoundary part="Missions" overlay><OnboardingMissions /></PartBoundary>
       <PartBoundary part="Radial menu" overlay><PieMenu /></PartBoundary>
+      <PartBoundary part="Build replay" overlay><BuildReplay /></PartBoundary>
       {backgrounds().map((B, i) => <B key={i} />)}
     </div>
   );

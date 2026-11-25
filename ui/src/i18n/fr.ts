@@ -6797,6 +6797,15 @@ export const FR: Record<string, string> = {
   'Reset sandbox model': 'Réinitialiser le modèle bac à sable',
   'Missions': 'Missions',
   'Drag left/right to adjust · Shift: fine · Ctrl: coarse': 'Glisser gauche/droite pour ajuster · Shift : fin · Ctrl : gros pas',
+  // Game-like UX Phase 3 (docs/plan-ux-game-like.md).
+  'Tactile feedback sounds (snap, place, undo)': 'Sons tactiles de retour (accrochage, placement, annuler)',
+  'Tactile sounds: on / off': 'Sons tactiles : activé / désactivé',
+  'Tactile sounds enabled.': 'Sons tactiles activés.',
+  'Tactile sounds muted.': 'Sons tactiles coupés.',
+  'Model health radar': 'Radar de santé du modèle',
+  'Model OK': 'Modèle OK',
+  'No geometric or storey issues detected.': 'Aucun problème géométrique ou de niveau détecté.',
+  'Build replay (time-lapse)': 'Relecture de construction (time-lapse)',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

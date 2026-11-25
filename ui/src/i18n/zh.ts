@@ -6832,6 +6832,15 @@ export const ZH: Record<string, string> = {
   'Reset sandbox model': '重置沙盒模型',
   'Missions': '任务',
   'Drag left/right to adjust · Shift: fine · Ctrl: coarse': '左右拖动调整 · Shift：精细 · Ctrl：粗调',
+  // Game-like UX Phase 3 (docs/plan-ux-game-like.md).
+  'Tactile feedback sounds (snap, place, undo)': '触感反馈音效（捕捉、放置、撤销）',
+  'Tactile sounds: on / off': '触感音效：开 / 关',
+  'Tactile sounds enabled.': '已启用触感音效。',
+  'Tactile sounds muted.': '已静音触感音效。',
+  'Model health radar': '模型健康雷达',
+  'Model OK': '模型正常',
+  'No geometric or storey issues detected.': '未检测到几何或楼层问题。',
+  'Build replay (time-lapse)': '建造回放（延时动画）',
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
