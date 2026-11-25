@@ -774,6 +774,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new("gutterFall", "Gutter fall (mm/m)", "number", Min: 0, Max: 20),
             new("gutterEnds", "Gutter end caps", "choice", Choices: ["True", "False"]),
             new("downpipes", "Downpipes", "choice", Choices: ["auto", "elements", "none"]),
+            // The downpipes' size (the automatic ones', and an element's without its own; 100 mm when not given): a roof panel
+            // layout's rainwater system sets it with the gutter's (S5).
+            new("downpipeDiameter", "Downpipe size", "length", Min: 0.04, Max: 0.3),
         ], "#b0563d"));
         r.Geometry(IfcClass.Roof, (roof, model, services) => RoofCuts.Geometry(roof, model, services));
         // A roof cuts walls and Studio solids by its covering, and is cut by slabs, beams, columns and footings.

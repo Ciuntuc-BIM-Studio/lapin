@@ -39,6 +39,7 @@ export const ROOF_TEMPLATE_FIELDS = [
   'gutterFall',
   'gutterEnds',
   'downpipes',
+  'downpipeDiameter',
   'snowGuards',
   'structure',
   'rafterSection',

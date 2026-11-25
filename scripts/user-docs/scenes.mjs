@@ -2459,7 +2459,7 @@ export const scenes = [
     // roof's Panels section; Panel layout… shows the panels in plan with the hip offcuts reused in the valley pieces (orange),
     // and the 3D view the panels as the covering, each a profiled sheet. S3: the takeoff's tables (accessories, fixings,
     // battens and membrane) and a roof window cut out of the panels with its flashing kit. S4: the Cost tab, the Bilka – Dedeman
-    // template added from it, each line priced.
+    // template added from it, each line priced. S5: the Rainwater and Flat sheet tabs, the Panels section's rainwater fields.
     id: 'roof-panels',
     touches: ['architecture', 'roofpanels', 'cost'],
     async run(t) {
@@ -2518,11 +2518,36 @@ export const scenes = [
       await t.until(async () => (await t.nodes()).some((n) => n.type === 'LapinPriceList'), 'the template is in the project');
       await t.until(async () => (await dialog.locator('[data-testid=roof-panels-cost-subtotal]').innerText()).includes('RON'), 'the Cost tab has a subtotal');
       const subtotal = (await dialog.locator('[data-testid=roof-panels-cost-subtotal]').innerText()).replace(/\s+/g, ' ');
-      t.expect(subtotal.includes('21 662.03'), `the subtotal is the Panotaj Bilka app's on this roof less its flat sheet and rainwater (${subtotal})`);
+      t.expect(subtotal.includes('27 747.95'), `the subtotal is the Panotaj Bilka app's whole priced subtotal on this roof (${subtotal})`);
       t.expect(await dialog.locator('tr[data-cost="hip-large"]').innerText().then((x) => x.replace(/\s+/g, ' ').includes('1 195.95') && x.includes('Dedeman')), 'a line has its amount and its source');
       t.expect(await dialog.locator('[data-testid=roof-panels-indicative]').count() === 1, 'the table says the prices are indicative');
       t.expect(await dialog.locator('[data-testid=roof-panels-cost-sheet] tr').count() === 1, 'the ridge nodes, cut from flat sheet, are apart');
       await t.shot('roof-panels-cost', { of: '[data-testid=roof-panel-layout]', pad: 0 });
+      // S5, the rainwater system: Auto takes 150/100 on this 153 m² roof, eight downpipes (two on each long slope, one on the
+      // others), the app's lines; the model's gutters are still 125 mm, said.
+      await dialog.locator('[data-action=roof-panels-drainage]').click();
+      await t.until(async () => await dialog.locator('[data-testid=roof-panels-drainage-runs] tbody tr[data-run]').count() === 6, 'the Rainwater tab lists the six slopes');
+      t.expect((await dialog.locator('[data-testid=roof-panels-drainage-selected]').innerText()).trim() === '150/100', 'Auto counts the 150/100 system above 100 m²');
+      t.expect((await dialog.locator('tr[data-item="gutter-150"] td.num').first().innerText()).trim() === '15', 'fifteen 4 m gutters, as the app counts them');
+      t.expect((await dialog.locator('tr[data-item="outlet-150"] td.num').first().innerText()).trim() === '8', 'eight outlets, one a downpipe');
+      await t.shot('roof-panels-drainage', { of: '[data-testid=roof-panel-layout]', pad: 0 });
+      // The flat sheet: the three ridge nodes and the valley head laid whole on two 2000 × 1250 sheets, each drawn; the four combinations listed.
+      await dialog.locator('[data-action=roof-panels-sheets]').click();
+      await t.until(async () => await dialog.locator('[data-testid=roof-panels-sheet]').count() === 2, 'two sheets drawn');
+      t.expect(await dialog.locator('[data-testid=roof-panels-sheet] [data-piece]').count() === 4, 'four pieces on them');
+      t.expect(await dialog.locator('[data-testid=roof-panels-sheet-combinations] tbody tr').count() === 4, 'the four combinations of ridge cap and system');
+      await t.shot('roof-panels-sheets', { of: '[data-testid=roof-panel-layout]', pad: 0 });
+      // The Panels section's rainwater fields: Auto asked sizes the roof's own gutters and downpipes, one undo step.
+      await t.ui({ dialog: null });
+      await t.wait(400);
+      const system = t.page.locator('[data-testid=roof-panels-drainage-system]');
+      t.expect(await system.count() === 1, 'the Panels section has the rainwater system');
+      t.expect(await t.page.locator('[data-action=roof-panels-apply-drainage]').count() === 1, 'it offers to size the gutters to the system');
+      await t.page.locator('[data-action=roof-panels-apply-drainage]').click();
+      await t.until(async () => (await t.nodes()).find((n) => n.id === roof.id)?.props?.gutterWidth === 0.15, 'the roof\'s gutters take 150 mm');
+      await t.wait(600);
+      await t.page.locator('[data-testid=roof-panels-drainage]').scrollIntoViewIfNeeded();
+      await t.shot('roof-panels-drainage-section', { of: '[data-testid=roof-panels-drainage]', pad: 6 });
       // A roof window on the south slope: the panels are cut round it, its edges get the window's flashing kit.
       await t.ui({ dialog: null });
       await t.cmd('architecture.addRoofOpening', { roofId: roof.id, x: 3.5, y: 1.6 });

@@ -76,6 +76,7 @@
           "reserve": 1.1
         }
       ],
+      "flatSheet": {"code": "flat-sheet-8017", "name": "Flat sheet 2000 × 1250 × 0.5 mm, RAL 8017", "ridgeWidths": {"large": 290, "small": 230}, "blanks": ["ridgeNode", "valleyHead", "gutterCorner", "valleyClips"]},
       "accessories": [
         {"code": "ridge-large", "name": "Ridge cap, large (290 mm)", "unit": "piece 2 m", "rule": "edges", "edges": ["ridge"], "option": "large"},
         {"code": "hip-large", "name": "Hip cap, large (290 mm)", "unit": "piece 2 m", "rule": "edges", "edges": ["hip"], "option": "large"},
@@ -218,6 +219,7 @@
           "reserve": 1.1
         }
       ],
+      "flatSheet": {"code": "flat-sheet-8017", "name": "Flat sheet 2000 × 1250 × 0.5 mm, RAL 8017", "ridgeWidths": {"large": 290, "small": 230}, "blanks": ["ridgeNode", "valleyHead", "gutterCorner", "valleyClips"]},
       "accessories": [
         {"code": "ridge-large", "name": "Ridge cap, large (290 mm)", "unit": "piece 2 m", "rule": "edges", "edges": ["ridge"], "option": "large"},
         {"code": "hip-large", "name": "Hip cap, large (290 mm)", "unit": "piece 2 m", "rule": "edges", "edges": ["hip"], "option": "large"},
@@ -375,6 +377,7 @@
           "reserve": 1.1
         }
       ],
+      "flatSheet": {"code": "flat-sheet-8019", "name": "Flat sheet 2000 × 1250 × 0.5 mm, RAL 8019", "ridgeWidth": 417, "blanks": ["ridgeNode", "valleyHead", "hipEnd", "gableCap", "gutterCorner", "valleyClips"]},
       "accessories": [
         {"code": "ridge-retro", "name": "Angled ridge cap 417 mm", "unit": "piece 2 m", "rule": "edges", "edges": ["ridge"]},
         {"code": "hip-retro", "name": "Angled hip cap 417 mm", "unit": "piece 2 m", "rule": "edges", "edges": ["hip"]},
@@ -449,6 +452,56 @@
     }
   ],
   "common": {
+    "rainwater": {
+      "note": "The rainwater system sized as the Panotaj Bilka app does, after Bilka's guide: per slope at least one downpipe, one per 10 m of gutter and as many as the flow (its sloped area by the rain's intensity) over a downpipe's capacity; the larger system above 100 m² of roof or a heavier rain than 0.05 l/s·m². Budget allowances, indicative: check the local rain, the gutters' falls and the valleys' concentrated flow.",
+      "source": "https://www.bilka.ro/calcul-corect-dimensiuni-jgheab-burlan-suprafata-acoperis/",
+      "rain": 0.05,
+      "maxRun": 10,
+      "largerAbove": 100,
+      "systems": [
+        {"id": "125/90", "gutter": 125, "pipe": 90, "capacity": 1.5},
+        {"id": "150/100", "gutter": 150, "pipe": 100, "capacity": 3.0}
+      ],
+      "gutterLength": 4000,
+      "hookSpacing": 600,
+      "hookEnd": 200,
+      "pipeLength": 3000,
+      "pipeDefault": 3000,
+      "clampSpacing": 2000,
+      "clampFirst": 150,
+      "items": [
+        {"code": "gutter-{g}", "name": "Gutter Ø{g}, 4 m", "unit": "piece 4 m", "rule": "gutters", "note": "Each eave's run in 4 m pieces."},
+        {"code": "gutter-hook-{g}", "name": "Gutter hook Ø{g} × 210 mm", "unit": "piece", "rule": "hooks", "note": "600 mm apart, one more an eave."},
+        {"code": "gutter-outer-{g}", "name": "Outer gutter corner Ø{g}, 90°", "unit": "piece", "rule": "outerCorners"},
+        {"code": "gutter-inner-{g}", "name": "Inner gutter corner Ø{g}, 90°", "unit": "piece", "rule": "innerCorners"},
+        {"code": "gutter-special-{g}", "name": "Gutter corner Ø{g} at another angle", "unit": "piece", "rule": "specialCorners", "madeFrom": "flatSheet", "note": "Cut from flat sheet: check the section, the outlet and the joint to the half-round gutter."},
+        {"code": "gutter-join-{g}", "name": "Gutter joint Ø{g}", "unit": "piece", "rule": "joints", "note": "Between the pieces of a run and at the corners."},
+        {"code": "gutter-cap-{g}", "name": "Gutter end cap Ø{g}", "unit": "piece", "rule": "ends", "note": "One at each free end."},
+        {"code": "outlet-{g}", "name": "Gutter outlet Ø{g} to downpipe Ø{p}", "unit": "piece", "rule": "downpipes", "note": "One a downpipe."},
+        {"code": "downpipe-{p}", "name": "Downpipe Ø{p}, 3 m", "unit": "piece 3 m", "rule": "pipes", "note": "At the model's downpipes' average length, offcuts reused between them: measure the runs before ordering."},
+        {"code": "elbow-{p}", "name": "Elbow 60° Ø{p}", "unit": "piece", "rule": "downpipes", "per": 2, "note": "Two a downpipe."},
+        {"code": "downpipe-extension-{p}", "name": "Downpipe extension Ø{p}, 1 m", "unit": "piece 1 m", "rule": "downpipes", "note": "One a downpipe."},
+        {"code": "pipe-clamp-{p}", "name": "Downpipe clamp Ø{p}", "unit": "piece", "rule": "clamps", "note": "The first about 150 mm under the elbow, at most 2 m apart."},
+        {"code": "pipe-exit-{p}", "name": "Downpipe shoe Ø{p}", "unit": "piece", "rule": "downpipes", "note": "A free outfall."},
+        {"code": "pipe-anchors", "name": "Wall plug and screw 8 × 65 / 5 × 80 mm", "unit": "set 4", "rule": "clamps", "pack": 4, "note": "Fixed straight into masonry: choose the anchor for the clamp and the facade."},
+        {"code": "sealant", "name": "Roof sealant", "unit": "cartridge 280 ml", "rule": "sealant", "pack": 5, "note": "A cartridge every five ridge nodes, valley heads, hip end caps and odd gutter corners."}
+      ]
+    },
+    "flatSheet": {
+      "note": "Pieces cut from flat sheet, each a whole rectangle on one sheet with a margin round the sheet and a gap between pieces (the Panotaj Bilka app's budget envelopes): check the templates before marking out and folding.",
+      "width": 2000,
+      "height": 1250,
+      "margin": 10,
+      "gap": 5,
+      "blanks": [
+        {"id": "ridgeNode", "prefix": "NC", "name": "Ridge node, three ways", "of": "threeWay", "width": {"base": 610, "ridge": 1}, "height": {"base": 560, "ridge": 1}},
+        {"id": "valleyHead", "prefix": "CD", "name": "Ridge–valley head", "of": "valleyHeads", "width": {"base": 460, "ridge": 1}, "height": {"base": 650}},
+        {"id": "hipEnd", "prefix": "IC", "name": "Hip end cap", "of": "hipCaps", "width": {"base": 40, "ridge": 1}, "height": {"base": 300}},
+        {"id": "gableCap", "prefix": "CF", "name": "Ridge end cap at the verge", "of": "gableCaps", "width": {"base": 40, "ridge": 1}, "height": {"base": 180}},
+        {"id": "gutterCorner", "prefix": "CJ", "name": "Gutter corner Ø{g} at {angle}°", "of": "angles", "width": {"base": 180, "gutter": 4}, "height": {"base": 120, "gutter": 3}},
+        {"id": "valleyClips", "prefix": "AD", "name": "Strip for valley clips", "of": "valleyClips", "per": 20, "each": 55, "height": {"base": 70}}
+      ]
+    },
     "note": "Shared by every profile's takeoff (the Panotaj Bilka app's estimate): budget allowances, indicative; confirm the products and the fixing scheme for the real build-up.",
     "membrane": {"code": "membrane", "name": "Breathable roof membrane 150 g/m²", "unit": "roll 75 m²", "width": 1500, "lap": 100, "roll": 75, "reserve": 1.08},
     "membraneTape": {"code": "membrane-tape", "name": "Membrane lap tape", "unit": "roll 25 m", "roll": 25},

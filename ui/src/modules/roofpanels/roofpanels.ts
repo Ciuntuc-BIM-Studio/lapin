@@ -22,7 +22,11 @@ export interface PanelProfileDto {
  * What a roof names: its profile, colour and a made-to-order profile's longest panel; the takeoff's options (S3): the support
  * scheme, the ridge caps and the support's fixings (nails or screws), each absent when the profile's default.
  */
-export interface PanelChoice { profile: string; color?: string | null; maxLength?: number | null; support?: string; ridge?: string; fixing?: string }
+export interface PanelChoice {
+  profile: string; color?: string | null; maxLength?: number | null; support?: string; ridge?: string; fixing?: string;
+  /** S5: the rainwater system (`125/90`, `150/100`; absent: Auto), the downpipes (absent: Auto), the rain (l/s·m²; absent: 0.05). */
+  drainage?: string; downpipes?: number | null; rain?: number | null;
+}
 
 export type Pt = [number, number];
 
@@ -62,6 +66,33 @@ export interface CostDto {
   priced: number; toQuote: number; fromSheet: number; indicative: boolean;
 }
 
+/** A slope with a guttered eave (S5): its eave (m), the area that drains to it (m²), its flow (l/s), the least downpipes by system, those the estimate gives it and the model's. */
+export interface DrainageRunDto { face: string; eave: number; area: number; flow: number; minimum: Record<string, number>; planned: number; model: number }
+/**
+ * The roof's rainwater system (S5): the rain, the area drained, the system recommended, asked (`auto`) and used, the least
+ * downpipes by system, the number asked (null: Auto) and counted, the checks, each slope, the model's gutters and downpipes,
+ * a downpipe's average length and clamps, the gutters' counts, the lines, what to check.
+ */
+export interface DrainageDto {
+  rain: number; defaultRain: number; roofArea: number; recommended: string; selection: string; selected: string;
+  systems: { id: string; gutter: number; pipe: number; capacity: number }[];
+  minimum: Record<string, number>; override: number | null; downpipes: number; belowMinimum: boolean; differs: boolean;
+  unrouted: number; noOutlet: string[]; runs: DrainageRunDto[];
+  model: { gutters: boolean; gutterWidth: number; pipeDiameter: number; downpipes: number; mode: string };
+  averagePipe: number; clamps: number;
+  counts: { pieces: number; hooks: number; outer: number; inner: number; special: number; eaves: number; ends: number; joints: number; angles: number[] };
+  items: (ItemDto & { madeFrom?: string | null })[]; warnings: string[]; source: string;
+}
+/** A piece cut from flat sheet, laid (S5): its code, name, sheet (from 1), place and size as laid (mm), its own size. */
+export interface SheetPieceDto { id: string; name: string; sheet: number; x: number; y: number; width: number; height: number; blankWidth: number; blankHeight: number }
+/** The roof's flat sheet (S5): the article, the stock (mm), the roof's combination and its pieces, every combination's sheets. */
+export interface FlatSheetDto {
+  code: string; name: string; width: number; height: number; margin: number; gap: number;
+  ridge: string | null; system: string; sheets: number; pieces: SheetPieceDto[];
+  tooBig: { id: string; name: string; width: number; height: number }[];
+  combinations: { ridge: string | null; system: string; sheets: number; pieces: number }[];
+}
+
 export interface LayoutDto {
   roofId: string; profile: PanelProfileDto; color: string | null; stock: number[];
   faces: FaceDto[]; edges: EdgeDto[]; panels: PanelDto[];
@@ -70,6 +101,8 @@ export interface LayoutDto {
   warnings: string[];
   takeoff?: TakeoffDto;
   cost?: CostDto;
+  drainage?: DrainageDto;
+  flatSheet?: FlatSheetDto;
 }
 export type LayoutAnswer = LayoutDto | { problem: string };
 
@@ -89,7 +122,7 @@ export function colourLabel(c: PanelColour): string {
 
 /** What the roof names (its `panels`), or null. */
 export function choiceOf(node: NodeDto | undefined): PanelChoice | null {
-  const p = node?.props.panels as { profile?: unknown; color?: unknown; maxLength?: unknown; support?: unknown; ridge?: unknown; fixing?: unknown } | undefined;
+  const p = node?.props.panels as { profile?: unknown; color?: unknown; maxLength?: unknown; support?: unknown; ridge?: unknown; fixing?: unknown; drainage?: unknown; downpipes?: unknown; rain?: unknown } | undefined;
   if (!p || typeof p.profile !== 'string' || !p.profile) return null;
   const text = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
   return {
@@ -97,6 +130,7 @@ export function choiceOf(node: NodeDto | undefined): PanelChoice | null {
     color: typeof p.color === 'string' ? p.color : null,
     maxLength: typeof p.maxLength === 'number' ? p.maxLength : null,
     support: text(p.support), ridge: text(p.ridge), fixing: text(p.fixing),
+    drainage: text(p.drainage), downpipes: typeof p.downpipes === 'number' ? p.downpipes : undefined, rain: typeof p.rain === 'number' ? p.rain : undefined,
   };
 }
 
@@ -114,8 +148,61 @@ export function setArgs(roofId: string, choice: PanelChoice | null, profiles: Pa
   if (choice.support && (!p || !p.support || p.support.some((x) => x.id === choice.support))) args.support = choice.support;
   if (choice.ridge && (!p || !p.ridges || p.ridges.includes(choice.ridge))) args.ridge = choice.ridge;
   if (choice.fixing) args.fixing = choice.fixing;
+  // The rainwater system (S5): what is not Auto, and the default rain left out.
+  if (choice.drainage && choice.drainage !== 'auto') args.drainage = choice.drainage;
+  if (choice.downpipes != null && choice.downpipes >= 1) args.downpipes = Math.round(choice.downpipes);
+  if (choice.rain != null && choice.rain > 0) args.rain = choice.rain;
   return args;
 }
+
+/**
+ * The arguments for a change of the rainwater system (S5): the choice with its drainage asked, sent with `drainage` always so
+ * the roof's gutters and downpipes take the system's sizes in the same undo step.
+ */
+export function drainageArgs(roofId: string, choice: PanelChoice, change: { drainage?: string; downpipes?: number | null; rain?: number | null }, profiles: PanelProfileDto[]): Record<string, unknown> {
+  const next = { ...choice, ...change };
+  const args = setArgs(roofId, next, profiles);
+  args.drainage = next.drainage && next.drainage !== 'auto' ? next.drainage : 'auto';
+  return args;
+}
+
+/** A number typed for the downpipes: a whole number from 1, or Auto (empty, 0 or not a number). */
+export function downpipesOf(text: string): number | null {
+  const n = Number(text.trim().replace(',', '.'));
+  return text.trim() === '' || !Number.isFinite(n) || n < 1 ? null : Math.round(n);
+}
+
+/** A rain typed (l/s·m²): a positive number, or the default (null) when empty or not one. */
+export function rainOf(text: string): number | null {
+  const n = Number(text.trim().replace(',', '.'));
+  return text.trim() === '' || !Number.isFinite(n) || n <= 0 ? null : n;
+}
+
+/** The sizing's check in a few words, as the app's "Verificare selecție": under the least, another system than recommended, or within the estimate. */
+export function drainageCheck(d: Pick<DrainageDto, 'belowMinimum' | 'differs'>): 'below' | 'differs' | 'ok' {
+  return d.belowMinimum ? 'below' : d.differs ? 'differs' : 'ok';
+}
+
+/** The rainwater lines bought (what is cut from flat sheet comes apart). */
+export const drainageRows = (d: Pick<DrainageDto, 'items'> | undefined) => (d?.items ?? []).filter((i) => !i.madeFrom);
+
+/** The sheets one by one (1 … n), each with its pieces, for the cutting pictures. */
+export function sheetsOf(f: Pick<FlatSheetDto, 'sheets' | 'pieces'>): { sheet: number; pieces: SheetPieceDto[] }[] {
+  return Array.from({ length: f.sheets }, (_, i) => ({ sheet: i + 1, pieces: f.pieces.filter((p) => p.sheet === i + 1) }));
+}
+
+/** How much of the sheets the pieces take (0–1): their area as laid over the sheets'. */
+export function sheetUse(f: Pick<FlatSheetDto, 'sheets' | 'pieces' | 'width' | 'height'>): number {
+  if (f.sheets === 0) return 0;
+  return f.pieces.reduce((s, p) => s + p.width * p.height, 0) / (f.sheets * f.width * f.height);
+}
+
+/** A combination's name as the table writes it: „Large ridge cap · 125/90”, a standing seam's only its system. */
+export const combinationLabel = (c: { ridge: string | null; system: string }) => (c.ridge ? `${c.ridge === 'small' ? 'Small' : 'Large'} · ${c.system}` : c.system);
+
+/** The cutting piece's colour, by its kind (the code's prefix). */
+export const PIECE_COLOUR: Record<string, string> = { NC: '#c0392b', CD: '#16a085', IC: '#d35400', CF: '#7a4fb0', CJ: '#2f6fb3', AD: '#b8860b' };
+export const pieceColour = (id: string) => PIECE_COLOUR[id.split('-')[0]] ?? '#7f8c8d';
 
 /** The takeoff's groups, in the order the tables show them, as the interface names them. */
 export const ITEM_GROUPS: { id: string; label: string }[] = [
@@ -258,7 +345,7 @@ export function panelLine(p: PanelDto): { code: string; length: number; donor: s
 export const BILKA_TEMPLATE = 'bilka-dedeman-2026-11-24';
 
 /** The Cost tab's groups, in its order, as the interface names them: the panels first. */
-export const COST_GROUPS: { id: string; label: string }[] = [{ id: 'panels', label: 'Panels' }, ...ITEM_GROUPS];
+export const COST_GROUPS: { id: string; label: string }[] = [{ id: 'panels', label: 'Panels' }, ...ITEM_GROUPS, { id: 'rainwater', label: 'Rainwater system' }];
 
 /** The lines bought of a group (what is cut from flat sheet comes apart). */
 export const costRows = (c: Pick<CostDto, 'lines'> | undefined, group: string): CostLineDto[] => (c?.lines ?? []).filter((l) => l.group === group && !l.madeFrom);

@@ -6,7 +6,9 @@
  * membrane, with each slope's battens and membrane laps; openings drawn as the panels are cut round them. Another profile can be tried first (the
  * layout query takes a profile without changing the roof) and taken with Use this profile, one undo step. Stage S4: the Cost tab,
  * each line bought with its price, amount and source from the project's price lists, the lines to quote, what is cut from flat
- * sheet and the joints between ridge caps apart, the subtotal of the priced lines; indicative, as the prices it reads.
+ * sheet and the joints between ridge caps apart, the subtotal of the priced lines; indicative, as the prices it reads. Stage S5:
+ * the Rainwater tab (the app's "Pluvial" sheet: the system, each slope's least downpipes, the count, the lines, what to check) and
+ * the Flat sheet tab (the app's "Debitare tablă": each sheet drawn with its pieces, every combination's sheet count).
  */
 
 import { useMemo, useState } from 'react';
@@ -16,13 +18,13 @@ import { notify } from '../../app/store';
 import { engine, engineInBrowser, execute, useSession } from '../../engine/session';
 import { useLayout } from './PanelsSection';
 import {
-  BILKA_TEMPLATE, bounds, centroid, choiceOf, COST_GROUPS, costRows, costState, EDGE_COLOUR, EDGE_LABEL, edgeRows, faceTotals, isLayout, ITEM_GROUPS, itemRows, laidFlat,
-  lengthColours, money, needText, profilesOf, purchaseRows, quantityText, REUSED, reuseLinks, setArgs, sheetRows, subtotalText, type CostDto, type CostLineDto,
-  type LayoutDto, type PanelDto, type Pt,
+  BILKA_TEMPLATE, bounds, centroid, choiceOf, COST_GROUPS, costRows, costState, drainageCheck, drainageRows, EDGE_COLOUR, EDGE_LABEL, edgeRows, faceTotals,
+  isLayout, ITEM_GROUPS, itemRows, laidFlat, lengthColours, money, needText, pieceColour, profilesOf, purchaseRows, quantityText, REUSED, reuseLinks, setArgs, sheetRows,
+  sheetsOf, sheetUse, subtotalText, type CostDto, type CostLineDto, type DrainageDto, type FlatSheetDto, type LayoutDto, type PanelDto, type Pt, type SheetPieceDto,
 } from './roofpanels';
 
 type Mode = 'plan' | 'flat';
-type Tab = 'quantities' | 'cost';
+type Tab = 'quantities' | 'drainage' | 'sheets' | 'cost';
 
 /** A price's page (its supplier's), in the system's browser; a new tab on the web. */
 function openPage(url: string) {
@@ -66,10 +68,12 @@ export function PanelLayoutDialog() {
           <button type="button" className={`seg-item${mode === 'plan' ? ' on' : ''}`} data-action="roof-panels-plan" onClick={() => setMode('plan')}>In plan</button>
           <button type="button" className={`seg-item${mode === 'flat' ? ' on' : ''}`} data-action="roof-panels-flat" onClick={() => setMode('flat')}>Laid flat</button>
         </span>
-        {isLayout(layout) && layout.cost?.available && (
+        {isLayout(layout) && (
           <span className="seg small" role="group">
             <button type="button" className={`seg-item${tab === 'quantities' ? ' on' : ''}`} data-action="roof-panels-quantities" onClick={() => setTab('quantities')}>Quantities</button>
-            <button type="button" className={`seg-item${tab === 'cost' ? ' on' : ''}`} data-action="roof-panels-cost" onClick={() => setTab('cost')}>Cost</button>
+            {layout.drainage && <button type="button" className={`seg-item${tab === 'drainage' ? ' on' : ''}`} data-action="roof-panels-drainage" onClick={() => setTab('drainage')}>Rainwater</button>}
+            {layout.flatSheet && <button type="button" className={`seg-item${tab === 'sheets' ? ' on' : ''}`} data-action="roof-panels-sheets" onClick={() => setTab('sheets')}>Flat sheet</button>}
+            {layout.cost?.available && <button type="button" className={`seg-item${tab === 'cost' ? ' on' : ''}`} data-action="roof-panels-cost" onClick={() => setTab('cost')}>Cost</button>}
           </span>
         )}
         {trying && <span className="muted small">Compare: the roof keeps its own profile until you use this one.</span>}
@@ -77,7 +81,9 @@ export function PanelLayoutDialog() {
       {!layout && <p className="muted">Laying the panels…</p>}
       {layout && !isLayout(layout) && <p className="error" data-testid="roof-panel-layout-problem">{layout.problem}</p>}
       {isLayout(layout) && tab === 'cost' && layout.cost?.available && <CostTable cost={layout.cost} />}
-      {isLayout(layout) && !(tab === 'cost' && layout.cost?.available) && (
+      {isLayout(layout) && tab === 'drainage' && layout.drainage && <DrainageTable d={layout.drainage} />}
+      {isLayout(layout) && tab === 'sheets' && layout.flatSheet && <SheetsTable f={layout.flatSheet} />}
+      {isLayout(layout) && (tab === 'quantities' || (tab === 'cost' && !layout.cost?.available) || (tab === 'drainage' && !layout.drainage) || (tab === 'sheets' && !layout.flatSheet)) && (
         <div className="row" style={{ gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 560px', minWidth: 320 }}>
             <Drawing layout={layout} mode={mode} onHover={setHover} />
@@ -347,8 +353,150 @@ function CostTable({ cost }: { cost: CostDto }) {
           </table>
         </>
       )}
-      <p className="small roof-panels-indicative" data-testid="roof-panels-indicative">Indicative — check prices when ordering. Labour, transport and the rainwater system are not included.</p>
+      <p className="small roof-panels-indicative" data-testid="roof-panels-indicative">Indicative — check prices when ordering. Labour and transport are not included.</p>
     </div>
   );
 }
 
+
+const CHECK_TEXT: Record<ReturnType<typeof drainageCheck>, string> = {
+  below: 'Under the least estimated', differs: 'Another system than the recommended one', ok: 'Within the estimate',
+};
+
+/**
+ * The Rainwater tab (S5), the app's "Pluvial" sheet: the system recommended and counted, the rain, the area drained, the least
+ * downpipes and the count with its check; each slope with a guttered eave (its eave, the area reaching it, the flow, the least
+ * for each system, the downpipes the estimate gives it and the model's); the lines; what to check.
+ */
+function DrainageTable({ d }: { d: DrainageDto }) {
+  const n2 = (v: number) => v.toFixed(2);
+  const check = drainageCheck(d);
+  const rows = drainageRows(d);
+  const corners = d.items.filter((i) => i.madeFrom);
+  return (
+    <div className="roof-panels-drainage" data-testid="roof-panels-drainage-table">
+      <dl className="fields small">
+        <dt title="150/100 above 100 m² of roof or a heavier rain than 0.05 l/s·m², else 125/90">Recommended system</dt><dd data-no-i18n>{d.recommended}</dd>
+        <dt>System counted</dt><dd data-no-i18n data-testid="roof-panels-drainage-selected">{d.selected}</dd>
+        <dt>Rain (l/s·m²)</dt><dd className="num" data-no-i18n>{d.rain}</dd>
+        <dt>Area drained</dt><dd className="num" data-no-i18n>{`${n2(d.roofArea)} m²`}</dd>
+        <dt>Least estimated</dt><dd className="num" data-no-i18n>{d.minimum[d.selected] ?? 0}</dd>
+        <dt>Downpipes counted</dt><dd className="num" data-no-i18n>{d.downpipes}</dd>
+        <dt title="A downpipe's length as the model's downpipes have it, and the clamps along it">Downpipe length (m)</dt><dd className="num" data-no-i18n>{`${n2(d.averagePipe)} · ${d.clamps}`}</dd>
+      </dl>
+      <p className={`small ${check === 'ok' ? 'muted' : 'warn'}`} data-testid="roof-panels-drainage-check">{CHECK_TEXT[check]}</p>
+      <p className="eyebrow">Per roof plane</p>
+      <table className="layer-table" data-testid="roof-panels-drainage-runs">
+        <thead><tr><th>Roof plane</th><th>Eave (m)</th><th title="Its own area and what slopes without a gutter pass on to it">Area drained (m²)</th><th>Flow (l/s)</th>
+          {d.systems.map((x) => <th key={x.id} data-no-i18n>{`${x.id}`}</th>)}<th title="The downpipes the estimate gives the slope: the least, or the number asked shared out">Counted</th><th>In the model</th></tr></thead>
+        <tbody>
+          {d.runs.map((r) => (
+            <tr key={r.face} data-run={r.face}>
+              <td data-no-i18n>{r.face}</td><td className="num" data-no-i18n>{n2(r.eave)}</td><td className="num" data-no-i18n>{n2(r.area)}</td><td className="num" data-no-i18n>{r.flow.toFixed(3)}</td>
+              {d.systems.map((x) => <td key={x.id} className="num" data-no-i18n>{r.minimum[x.id]}</td>)}
+              <td className="num" data-no-i18n>{r.planned}</td><td className={`num${r.model < r.planned ? ' warn' : ''}`} data-no-i18n>{r.model}</td>
+            </tr>
+          ))}
+          <tr className="total">
+            <td>Total</td><td /><td className="num" data-no-i18n>{n2(d.roofArea)}</td><td />
+            {d.systems.map((x) => <td key={x.id} className="num" data-no-i18n>{d.minimum[x.id]}</td>)}
+            <td className="num" data-no-i18n>{d.downpipes}</td><td className="num" data-no-i18n>{d.model.downpipes}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p className="muted small">The least on a slope: the most of one, one per 10 m of gutter and its flow over a downpipe's capacity (1.5 l/s for 125/90, 3.0 l/s for 150/100, indicative).</p>
+      {rows.length > 0 && (
+        <>
+          <p className="eyebrow">Gutters and downpipes</p>
+          <table className="layer-table" data-testid="roof-panels-drainage-items">
+            <thead><tr><th>Item</th><th>Quantity</th><th>Unit</th><th title="What the quantity is counted from: the length run, the area, the fixings">Needed</th></tr></thead>
+            <tbody>
+              {rows.map((i) => (
+                <tr key={i.code} title={i.note || undefined} data-item={i.code}>
+                  <td>{i.name}</td><td className="num" data-no-i18n>{i.quantity}</td><td>{i.unit}</td><td className="num"><Need i={i} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+      {corners.length > 0 && <p className="small" data-no-i18n>{corners.map((c) => `${c.name} × ${c.quantity}`).join(' · ')}</p>}
+      {d.warnings.length > 0 && (
+        <>
+          <p className="eyebrow">To check</p>
+          <ul className="small roof-panels-warnings" data-testid="roof-panels-drainage-warnings">{d.warnings.map((w) => <li key={w}>{w}</li>)}</ul>
+        </>
+      )}
+      <p className="muted small">Check the local rain, the gutters' falls, the outlets' places and the water a valley brings to one spot.</p>
+    </div>
+  );
+}
+
+/** One sheet drawn to scale (mm, y down as the cutting table reads it): its margin, each piece coloured by kind with its code. */
+function SheetPicture({ f, sheet, pieces }: { f: FlatSheetDto; sheet: number; pieces: SheetPieceDto[] }) {
+  const font = Math.min(f.width, f.height) / 18;
+  return (
+    <figure className="roof-panels-sheet" data-testid="roof-panels-sheet" data-sheet={sheet} style={{ margin: 0 }}>
+      <svg viewBox={`-20 -20 ${f.width + 40} ${f.height + 40}`} style={{ width: '100%', maxWidth: 420, background: 'var(--raised)', borderRadius: 4 }}>
+        <rect x={0} y={0} width={f.width} height={f.height} fill="#e9edf1" stroke="#36404a" strokeWidth={4} />
+        <rect x={f.margin} y={f.margin} width={f.width - 2 * f.margin} height={f.height - 2 * f.margin} fill="none" stroke="#9aa3ad" strokeWidth={2} strokeDasharray="12 8" />
+        {pieces.map((p) => (
+          <g key={p.id} data-piece={p.id}>
+            <rect x={p.x} y={p.y} width={p.width} height={p.height} fill={pieceColour(p.id)} fillOpacity={0.35} stroke={pieceColour(p.id)} strokeWidth={4}>
+              <title>{`${p.id} · ${p.name} · ${p.blankWidth} × ${p.blankHeight} mm`}</title>
+            </rect>
+            <text x={p.x + p.width / 2} y={p.y + p.height / 2} fontSize={Math.min(font, p.height * 0.6, p.width / 3.2)} textAnchor="middle" dominantBaseline="middle" fill="#1d232a" data-no-i18n>{p.id}</text>
+          </g>
+        ))}
+      </svg>
+      <figcaption className="small muted" data-no-i18n>{`${sheet} / ${f.sheets} · ${f.width} × ${f.height} mm`}</figcaption>
+    </figure>
+  );
+}
+
+/**
+ * The Flat sheet tab (S5), the app's "Debitare tablă": the sheets every combination of ridge cap and rainwater system takes (the
+ * roof's own marked), each of the roof's sheets drawn with its pieces, and the cutting table.
+ */
+function SheetsTable({ f }: { f: FlatSheetDto }) {
+  const sheets = sheetsOf(f);
+  return (
+    <div className="roof-panels-sheets" data-testid="roof-panels-sheets">
+      <p className="muted small">{`Each piece is cut whole from one ${f.width} × ${f.height} mm sheet, ${f.margin} mm from its edges and ${f.gap} mm from the next piece. The sizes are budget envelopes: check the templates before marking out and folding.`}</p>
+      <table className="layer-table" data-testid="roof-panels-sheet-combinations">
+        <thead><tr><th>Combination</th><th>Pieces</th><th>Sheets</th></tr></thead>
+        <tbody>
+          {f.combinations.map((c) => {
+            const mine = c.ridge === f.ridge && c.system === f.system;
+            return (
+              <tr key={`${c.ridge ?? ''}${c.system}`} className={mine ? 'total' : undefined} data-combination={`${c.ridge ?? ''}/${c.system}`}>
+                <td>{c.ridge && <><span>{c.ridge === 'small' ? 'Small ridge cap' : 'Large ridge cap'}</span><span data-no-i18n>{' · '}</span></>}<span data-no-i18n>{`${c.system}${mine ? ' ✓' : ''}`}</span></td><td className="num" data-no-i18n>{c.pieces}</td><td className="num" data-no-i18n>{c.sheets}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {f.sheets === 0 && <p className="muted" data-testid="roof-panels-no-sheets">Nothing on this roof is cut from flat sheet.</p>}
+      {f.sheets > 0 && (
+        <>
+          <p className="small" data-no-i18n>{`${f.name} · ${f.sheets} · ${Math.round(sheetUse(f) * 100)} %`}</p>
+          <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
+            {sheets.map((s) => <SheetPicture key={s.sheet} f={f} sheet={s.sheet} pieces={s.pieces} />)}
+          </div>
+          <table className="layer-table" data-testid="roof-panels-sheet-pieces">
+            <thead><tr><th>Sheet</th><th>Piece</th><th>Item</th><th>X (mm)</th><th>Y (mm)</th><th>Width (mm)</th><th>Height (mm)</th></tr></thead>
+            <tbody>
+              {f.pieces.map((p) => (
+                <tr key={p.id}>
+                  <td className="num" data-no-i18n>{p.sheet}</td><td data-no-i18n>{p.id}</td><td>{p.name}</td>
+                  <td className="num" data-no-i18n>{p.x}</td><td className="num" data-no-i18n>{p.y}</td><td className="num" data-no-i18n>{p.width}</td><td className="num" data-no-i18n>{p.height}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+      {f.tooBig.length > 0 && <p className="warn small">{`${f.tooBig.length} piece(s) do not fit whole on a sheet: cut them from a coil or another stock.`}</p>}
+    </div>
+  );
+}

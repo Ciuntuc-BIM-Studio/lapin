@@ -12,7 +12,9 @@ namespace Lapin.RoofPanels;
 /// on every ask; the panels are parts a field schedule lists (<c>roofPanels</c>). The built-in profiles are published as
 /// the catalogue <c>roofpanels.profiles</c>. Stage S4 (decision 859): the lines bought reach the estimate as the roof's
 /// <c>Lapin_RoofPanelQuantities</c>, keyed by article codes; the layout is priced from the project's price lists; the Bilka
-/// price list is an indicative template (<see cref="PanelCost"/>).
+/// price list is an indicative template (<see cref="PanelCost"/>). Stage S5: the rainwater system sized on the roof's own gutters
+/// and downpipes (<see cref="Rainwater"/>) and the flashings cut from flat sheet laid on sheets (<see cref="FlatStock"/>), both
+/// priced with the rest.
 /// </summary>
 public sealed class RoofPanelsModule : ILapinModule
 {
@@ -35,8 +37,9 @@ public sealed class RoofPanelsModule : ILapinModule
         r.Service<IPriceListTemplate>(new PanelCost.BilkaTemplate());
 
         // {id (a roof), profile (a profile's id, or a profile of its own; null: none), color, maxLength (a made-to-order profile's longest panel, mm),
-        //  support (the profile's support scheme), ridge (its ridge caps, large or small), fixing (the support's: nails or screws)}; only what differs
-        //  from the profile's defaults is kept.
+        //  support (the profile's support scheme), ridge (its ridge caps, large or small), fixing (the support's: nails or screws),
+        //  drainage (the rainwater system: auto, 125/90 or 150/100), downpipes (a number; absent: auto), rain (l/s·m²)}; only what differs
+        //  from the defaults is kept. Given drainage, downpipes or rain, the roof's gutters and downpipes take the system's sizes (S5).
         r.Command("setRoofPanels", "Roof panels", (ctx, a) =>
         {
             var roof = ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.Roof } x ? x : throw new CommandException("Pick a roof.");
@@ -74,14 +77,43 @@ public sealed class RoofPanelsModule : ILapinModule
                     if (!woods.Any(x => x.Id == fixing)) throw new CommandException($"The battens are fixed with {string.Join(" or ", woods.Select(x => x.Id))}.");
                     if (fixing != woods[0].Id) o["fixing"] = fixing;
                 }
+                // Stage S5: the rainwater system (Auto when not given), the downpipes (Auto when not given), the rain.
+                var rain = PanelProfiles.Rain;
+                var drainage = (string?)a["drainage"];
+                if (drainage is { Length: > 0 } && drainage != "auto")
+                {
+                    if (rain.Find(drainage) == null) throw new CommandException($"The rainwater system is Auto, {string.Join(" or ", rain.Systems.Select(x => x.Id))}.");
+                    o["drainage"] = drainage;
+                }
+                if (a["downpipes"] is JsonValue dv)
+                {
+                    if (Json.Number(dv) is not { } dn || dn < 1 || dn != Math.Floor(dn) || dn > 999) throw new CommandException("The downpipes are a whole number from 1, or Auto.");
+                    o["downpipes"] = (int)dn;
+                }
+                if (a["rain"] is JsonValue rv)
+                {
+                    if (Json.Number(rv) is not { } rn || !(rn > 0) || rn > 1) throw new CommandException("The rain's intensity is a positive number of l/s·m² (0.05 by default).");
+                    if (Math.Abs(rn - rain.Rain) > 1e-9) o["rain"] = rn;
+                }
                 attrs[RoofPanels.Key] = o;
                 RoofPanels.EnsureMaterial(ctx, profile, color ?? profile.Colors.FirstOrDefault()?.Code);
+                // The roof's own gutters and downpipes follow the system the drainage is sized for, when it is asked (one source:
+                // the model draws what the estimate counts); the recommendation is the one for the roof as it is now.
+                if (a.ContainsKey("drainage") || a.ContainsKey("downpipes") || a.ContainsKey("rain"))
+                {
+                    var choice = RoofPanels.ChoiceOf(roof.With(attrs: attrs))!;
+                    if (Rainwater.SystemFor(roof.With(attrs: attrs), ctx.Model, profile, choice.Options) is { } sys)
+                    {
+                        attrs["gutterWidth"] = sys.Gutter / 1000.0;
+                        attrs["downpipeDiameter"] = sys.Pipe / 1000.0;
+                    }
+                }
             }
             ctx.Replace(roof.With(attrs: attrs));
             return null;
         });
 
-        // {id (a roof), profile?, color?, maxLength?}: the layout in the roof's own profile, or in the one given (a preview); with its
+        // {id (a roof), profile?, color?, maxLength?, support?, ridge?, fixing?, drainage?, downpipes?, rain?}: the layout in the roof's own profile, or in the one given (a preview); with its
         // cost (S4): the lines priced from the project's price lists.
         r.Query("layout", (q, a) =>
         {
@@ -104,7 +136,9 @@ public sealed class RoofPanelsModule : ILapinModule
                 var profile = PanelProfiles.Resolve(a["profile"]).WithMaxLength(Json.Number(a["maxLength"]) is { } ml ? (int)ml : null);
                 // A preview keeps the roof's own options where the profile has them, or takes the ones asked.
                 var mine = RoofPanels.ChoiceOf(roof);
-                var options = new Takeoff.Options((string?)a["support"] ?? mine?.Support, (string?)a["ridge"] ?? mine?.Ridge, (string?)a["fixing"] ?? mine?.Fixing);
+                var options = new Takeoff.Options((string?)a["support"] ?? mine?.Support, (string?)a["ridge"] ?? mine?.Ridge, (string?)a["fixing"] ?? mine?.Fixing,
+                    a.ContainsKey("drainage") ? (string?)a["drainage"] : mine?.Drainage, a.ContainsKey("downpipes") ? (Json.Number(a["downpipes"]) is { } dp ? (int)dp : null) : mine?.Downpipes,
+                    a.ContainsKey("rain") ? Json.Number(a["rain"]) : mine?.Rain);
                 return Out(RoofPanels.Lay(roof, q.Model, profile, (string?)a["color"], options));
             }
             catch (ArgumentException e) { return new JsonObject { ["problem"] = e.Message }; }
