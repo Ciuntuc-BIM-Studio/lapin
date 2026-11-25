@@ -9,6 +9,8 @@ import { PT, PT_PATTERNS } from './pt';
 import { LANGUAGES, translate, type Lang, type Language } from './index';
 import { LO, LO_PATTERNS } from './lo';
 import { EL, EL_PATTERNS } from './el';
+import { SV, SV_PATTERNS } from './sv';
+import { TH, TH_PATTERNS } from './th';
 import { RO, RO_PATTERNS } from './ro';
 import { loadAllLanguages } from './index';
 
@@ -60,7 +62,7 @@ describe('the Spanish interface', () => {
 
 describe('the languages', () => {
   it('are offered each named in itself, English first', () => {
-    expect(LANGUAGES.map((l) => l.name)).toEqual(['English', 'Română', 'Español', 'Deutsch', 'Français', 'Dansk', 'Italiano', 'Polski', 'Português', 'ພາສາລາວ', '简体中文', 'Ελληνικά']);
+    expect(LANGUAGES.map((l) => l.name)).toEqual(['English', 'Română', 'Español', 'Deutsch', 'Français', 'Dansk', 'Italiano', 'Polski', 'Português', 'ພາສາລາວ', '简体中文', 'Ελληνικά', 'Svenska', 'ไทย']);
   });
 
   it('English is the interface as written', () => {
@@ -205,7 +207,7 @@ describe('the languages', () => {
   });
 
   // German, French, Danish, Italian, Polish, Portuguese and Lao: the same phrases and patterns as Romanian and Spanish.
-  const others: [Lang, string, Language['dict'], Language['patterns']][] = [['de', 'German', DE, DE_PATTERNS], ['fr', 'French', FR, FR_PATTERNS], ['da', 'Danish', DA, DA_PATTERNS], ['it', 'Italian', IT, IT_PATTERNS], ['pl', 'Polish', PL, PL_PATTERNS], ['pt', 'Portuguese', PT, PT_PATTERNS], ['lo', 'Lao', LO, LO_PATTERNS], ['el', 'Greek', EL, EL_PATTERNS]];
+  const others: [Lang, string, Language['dict'], Language['patterns']][] = [['de', 'German', DE, DE_PATTERNS], ['fr', 'French', FR, FR_PATTERNS], ['da', 'Danish', DA, DA_PATTERNS], ['it', 'Italian', IT, IT_PATTERNS], ['pl', 'Polish', PL, PL_PATTERNS], ['pt', 'Portuguese', PT, PT_PATTERNS], ['lo', 'Lao', LO, LO_PATTERNS], ['el', 'Greek', EL, EL_PATTERNS], ['sv', 'Swedish', SV, SV_PATTERNS], ['th', 'Thai', TH, TH_PATTERNS]];
   const ends = (s: string) => s.trim().match(/[…:.?]$/)?.[0] ?? '';
   for (const [lang, name, dict, patterns] of others) {
     it(`${name} has every phrase Romanian has, and no other, each ending as the English does`, () => {
@@ -330,7 +332,7 @@ describe('a word with two meanings', () => {
 describe('a view\'s level of development (decision 404)', () => {
   it('names each level and what it adds in every language, the style\'s level too', async () => {
     const { LOD_HELP, LODS } = await import('../modules/core/viewStyles');
-    for (const lang of ['ro', 'es', 'de', 'fr', 'da', 'it', 'pl', 'pt', 'lo', 'zh', 'el'] as Lang[]) {
+    for (const lang of ['ro', 'es', 'de', 'fr', 'da', 'it', 'pl', 'pt', 'lo', 'zh', 'el', 'sv', 'th'] as Lang[]) {
       expect(translate(LOD_HELP, lang)).not.toBeNull();
       for (const [, label] of LODS) expect(translate(label, lang)).not.toBeNull();
     }
@@ -346,7 +348,7 @@ describe('the Script panel’s messages (decision 489, stage 3)', () => {
     '„walls.py” came with the project „house.lapin”.',
   ];
   it('are translated in Romanian, German and Chinese', () => {
-    for (const lang of ['ro', 'de', 'zh', 'el'] as Lang[]) {
+    for (const lang of ['ro', 'de', 'zh', 'el', 'sv', 'th'] as Lang[]) {
       for (const s of samples) expect(translate(s, lang), `${lang}: ${s}`).not.toBeNull();
     }
     expect(translate('Done in 0.12 s: one undo step.', 'ro')).toContain('0.12');

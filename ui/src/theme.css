@@ -39,7 +39,7 @@
 .brand-lockup.big { gap: 12px; }
 .brand-lockup.big .brand-mark { width: 46px; height: 46px; border-radius: 8px; font-size: 28px; }
 .brand-lockup.big .brand-edition { font-weight: 300; }
-:root { --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Lao", "Noto Sans Lao UI", "Lao Sangam MN", "Leelawadee UI", sans-serif; --mono: ui-monospace, "SF Mono", Menlo, monospace; }
+:root { --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Lao", "Noto Sans Lao UI", "Lao Sangam MN", "Noto Sans Thai", "Thonburi", "Leelawadee UI", sans-serif; --mono: ui-monospace, "SF Mono", Menlo, monospace; }
 /*
  * Two more looks, both light: classic (a neutral grey desktop look: grey chrome, white panels and canvas, a blue accent,
  * the system's UI font a little smaller, square corners, plain labels) and contrast (high contrast: white and black, text and
@@ -50,7 +50,7 @@
   --ink: #1b1b1b; --ink-muted: #595959; --accent: #0067c0; --accent-ink: #ffffff; --accent-wash: #cce4f7;
   --hud: rgba(240, 240, 240, 0.94); --hud-glass: rgba(240, 240, 240, 0.7); --ok: #0b6a0b; --err: #c42b1c;
   --trace-snap: #0b6a0b; --trace-locked: #0067c0; --trace-tracking: var(--accent); --trace-free: #595959;
-  --font: "Segoe UI", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Noto Sans Lao", "Noto Sans Lao UI", "Lao Sangam MN", "Leelawadee UI", sans-serif;
+  --font: "Segoe UI", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Noto Sans Lao", "Noto Sans Lao UI", "Lao Sangam MN", "Noto Sans Thai", "Thonburi", "Leelawadee UI", sans-serif;
   color-scheme: light;
 }
 [data-theme="contrast"] {

@@ -39,7 +39,7 @@ if (!detached) setTimeout(() => void checkForUpdates(), 8000);
 if (!detached && !isGuest()) startReplies();
 void syncWindows();
 // The interface in the language chosen (English, Romanian, Spanish, German, French, Danish, Italian, Polish, Portuguese, Lao,
-// Simplified Chinese or Greek), drawn once that language's file is here.
+// Simplified Chinese, Greek, Swedish or Thai), drawn once that language's file is here.
 void languageReady.then(() => {
   createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>);
   startTranslator(document.getElementById('root')!);
