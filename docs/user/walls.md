@@ -176,6 +176,20 @@ The wall stays a wall: its thickness, its layers, its joins and its doors and wi
 
 ![The house's west wall as a gable, its window kept](shots/wall-profile-3d.webp)
 
+### A leaning wall
+
+A straight wall can lean out of plumb: a battered facade, a retaining wall towards its earth, a sloping gallery wall. **Lean** in its properties takes the angle in degrees from vertical: a positive angle tilts the wall towards its left face (L, left of the direction it was drawn in), a negative one towards its right face (R). Beside it Lapin shows the batter as civil drawings give it (10° is about 5.7:1). Select several walls and type the angle once: they all lean, in one undo step. Empty gives each wall its type's lean back; a wall type has the same **Lean** in Wall types, for all its walls.
+
+The wall leans as a whole. Each layer keeps its own thickness measured across the faces (a 250 mm brick stays 250 mm), the height stays the vertical one, and **Lean from** says what stays put: the **Base** (the default, the wall stays on its footing or slab edge), the **Top**, or the **Mid-height**. Where two walls meet, the corner follows the line where their faces cross, whether both lean or only one does, so they meet with no gap and no overlap; a wall ending on a leaning wall follows its face up. Doors and windows lean with the wall (their jambs in its plane) or, with **Openings in a leaning wall** set to **Plumb**, stand upright; their sill and head stay level either way, and the hole is the same.
+
+A plan cuts the wall at its cut height, so its outline there is moved by the lean; the base line seen below and the top edge overhead (dashed) are drawn where they lie outside the cut. Sections, elevations and 3D show the true sloping faces. The quantities measure what is built: **Width** is the layers' thickness, **Height** the vertical one, the side areas the faces' true areas and the volume the solid's. An IFC export writes a single-layer leaning wall as an oblique extrusion (an IfcWall whose body is swept at the angle, read as such by Revit and ArchiCAD), with its layer set, and the lean in Lapin's intent; a wall like that from another program is read back as a leaning wall when it matches the file.
+
+Not yet: a curved wall, a wall with its own top profile, a wall rising to a roof or attached to one (set **Top under a roof** to **none**), a wall whose layers have extents of their own, and one that wraps its finish round its free ends. Those stand plumb and the Problems panel says why.
+
+![Two walls selected, 10° typed in Lean: the batter shown beside it](shots/wall-lean-properties.webp)
+
+![The two walls leaning at their corner, the door leaning with its wall](shots/wall-lean-3d.webp)
+
 ### A curtain wall's boundary and members
 
 **Profile…** in a curtain wall's properties draws its boundary the same way, on a sketch of its own: a gable, a slope, steps, or any outline, with the same side form (a curved curtain wall keeps the profile dialog, with points to drag and a table in millimetres). The wall rises to its highest point. Its grid gains a line where the boundary bends (a bend within a mullion and a half of a grid line is moved onto it); each bay keeps the transoms that fit under its lowest point; the panel above the last one fills up to the boundary, and an edge member follows it, sloped; the mullions are cut to it. The type's settings stay, and **Profile…** opens the boundary again to change it, with no rebuilding; **Flat top** gives the rectangle back. It shows in 3D, elevations and sections, the schedules measure the panels and members as drawn, and the IFC carries them as parts.

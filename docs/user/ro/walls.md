@@ -174,6 +174,20 @@ Peretele rămâne perete: grosimea, straturile, îmbinările, ușile și ferestr
 
 ![Peretele de vest al casei ca fronton, cu fereastra păstrată](shots/wall-profile-3d.webp)
 
+### Un perete înclinat
+
+Un perete drept se poate înclina față de verticală: o fațadă înclinată, un zid de sprijin spre pământul lui, un perete de galerie în pantă. **Înclinare**, în proprietățile lui, primește unghiul în grade față de verticală: un unghi pozitiv înclină peretele spre fața lui stângă (L, la stânga direcției în care a fost desenat), unul negativ spre fața dreaptă (R). Lângă el Lapin arată panta cum o dau desenele de construcții (10° înseamnă cam 5,7:1). Selectați mai mulți pereți și scrieți unghiul o dată: se înclină toți, într-un singur pas de anulare. Gol îi dă fiecărui perete înapoi înclinarea tipului; un tip de perete are aceeași **Înclinare** în Tipuri de pereți, pentru toți pereții lui.
+
+Peretele se înclină întreg. Fiecare strat își păstrează grosimea măsurată pe fețe (o cărămidă de 250 mm rămâne de 250 mm), înălțimea rămâne cea verticală, iar **Înclinare față de** spune ce rămâne pe loc: **Bază** (implicit: peretele rămâne pe fundație sau pe marginea plăcii), **Sus** sau **Mijlocul înălțimii**. Unde se întâlnesc doi pereți, colțul urmează linia unde li se taie fețele, fie că se înclină amândoi, fie doar unul, așa că se îmbină fără gol și fără suprapunere; un perete care se oprește într-un perete înclinat îi urmează fața în sus. Ușile și ferestrele se înclină cu peretele (glafurile în planul lui) sau, cu **Golurile într-un perete înclinat** pe **Verticale**, stau drepte; pragul și buiandrugul rămân orizontale în ambele cazuri, iar golul e același.
+
+Un plan taie peretele la înălțimea lui de tăiere, deci conturul de acolo e mutat cu înclinarea; linia bazei văzută dedesubt și muchia de sus de deasupra (întreruptă) se desenează unde sunt în afara tăieturii. Secțiunile, fațadele și 3D arată fețele adevărate, în pantă. Cantitățile măsoară ce e construit: **Lățime** e grosimea straturilor, **Înălțime** cea verticală, ariile laterale sunt ariile adevărate ale fețelor, iar volumul e al solidului. Exportul IFC scrie un perete înclinat dintr-un singur strat ca extrudare oblică (un IfcWall al cărui corp e extrudat sub unghiul lui, citit ca atare de Revit și ArchiCAD), cu setul lui de straturi și cu înclinarea în intenția Lapin; un astfel de perete dintr-un alt program e citit înapoi ca perete înclinat când se potrivește cu fișierul.
+
+Încă nu: un perete curb, un perete cu profil propriu al părții de sus, unul care urcă sub un acoperiș sau e atașat de unul (puneți **Capătul sub acoperiș** pe **niciunul**), unul ale cărui straturi au prelungiri proprii și unul care își întoarce finisajul la capetele libere. Aceștia rămân verticali, iar panoul Probleme spune de ce.
+
+![Doi pereți selectați, 10° scris la Înclinare: panta arătată lângă](shots/wall-lean-properties.webp)
+
+![Cei doi pereți înclinați la colțul lor, ușa înclinată cu peretele ei](shots/wall-lean-3d.webp)
+
 ### Conturul și barele unui perete cortină
 
 **Profil…** din proprietățile unui perete cortină îi desenează conturul în același fel, pe o schiță proprie: un fronton, o pantă, trepte sau orice contur, cu același formular lateral (un perete cortină curb păstrează dialogul de profil, cu puncte de tras și un tabel în milimetri). Peretele urcă până la cel mai înalt punct. Grila lui primește o linie unde se frânge conturul (o frângere la mai puțin de un montant și jumătate de o linie a grilei e mutată pe ea); fiecare travee păstrează traversele care încap sub punctul ei cel mai de jos; panoul de deasupra ultimei umple până la contur, iar o bară de margine îi urmează linia, înclinată; montanții sunt tăiați după el. Setările tipului rămân, iar **Profil…** deschide din nou conturul ca să-l schimbi, fără reconstruire; **Vârf drept** dă dreptunghiul înapoi. Se vede în 3D, fațade și secțiuni, extrasele măsoară panourile și barele așa cum sunt desenate, iar IFC-ul le poartă ca piese.

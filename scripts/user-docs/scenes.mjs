@@ -1823,6 +1823,32 @@ export const scenes = [
     },
   },
   {
+    // Leaning walls (in-app report #191, plan-wall-lean-taper L1): two walls joined at a corner, both selected, 10° typed in Lean in
+    // their properties (one undo step, the batter shown beside it); both lean, their corner on their faces' planes, the door leaning
+    // with its wall. Seen in 3D.
+    id: 'wall-lean',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const a = (await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 0, x2: 8, y2: 0, height: 3 })).id;
+      const b = (await t.cmd('architecture.addWall', { storeyId: s, x1: 8, y1: 0, x2: 8, y2: 6, height: 3 })).id;
+      await t.cmd('architecture.addDoor', { wallId: a, x: 3, y: 0 });
+      await t.ui({ view: 'plan', keyPlan: false, selection: a, selected: [a, b] });
+      await t.wait(800);
+      const field = t.page.locator('[data-field=wall-lean]');
+      await field.fill('10');
+      await field.press('Enter');
+      await t.until(async () => (await t.nodes()).filter((n) => n.id === a || n.id === b).every((n) => n.props.lean === 10), 'both selected walls lean 10°');
+      t.expect((await t.page.locator('[data-testid=wall-lean-from]').count()) === 1, 'Lean from shows once the walls lean');
+      await t.shot('wall-lean-properties', { of: 'aside.props', pad: 0, maxHeight: 620 });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.4, pitch: -0.3, distance: 16, target: { x: 5, y: 2, z: 1.5 } }, false));
+      await t.wait(1500);
+      await t.shot('wall-lean-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
     // Tracing over a PDF (a tester's wish, #89, decision 371): a page drawn by Lapin itself (a plan sheet as PDF) brought back
     // into an empty plan at 1:100, its lines as drafting and as one group.
     id: 'trace-pdf',
