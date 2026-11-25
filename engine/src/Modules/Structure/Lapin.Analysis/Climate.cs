@@ -53,6 +53,8 @@ public sealed record WindSite(double Qb, string Terrain = "II", double Importanc
 public static class Climate
 {
     public const string Key = "climate";
+    /// <summary>The region of the rule pack's climate list the site's values were picked from (docs/plan-national-packs.md N2).</summary>
+    public const string RegionKey = "region";
     public const string Indicative = "indicative: CR 1-1-3/2012 and CR 1-1-4/2012 (EN 1991-1-3, EN 1991-1-4, their recommended values); the site's s0,k and qb are yours";
 
     /// <summary>EN 1991-1-4 Table 4.1: each terrain category's roughness length z0 and least height zmin (metres).</summary>
@@ -170,12 +172,28 @@ public static class Climate
         return o;
     }
 
+    /// <summary>Whether the climate's values are still the region's: its sk the snow's s0,k, its qb the wind's (what it gives).</summary>
+    public static bool StillOf(IModelView m, JsonObject climate, string region)
+    {
+        if (ClimateRuleSection.Find(m, region) is not { } r) return false;
+        bool same(double? want, JsonNode? have) => want is not { } v || Json.Number(have) is { } h && Math.Abs(h - v) < 1e-9;
+        return same(r.Sk, climate["snow"]?["s0k"]) && same(r.Qb, climate["wind"]?["qb"]);
+    }
+
+    /// <summary>The region the site's values were picked from, when they still are its.</summary>
+    public static string? RegionOf(IModelView m) =>
+        Spatial.Project(m)?.Attrs[Key] is JsonObject c && (string?)c[RegionKey] is { } r && StillOf(m, c, r) ? r : null;
+
     public static JsonObject ToJson(IModelView m)
     {
         var s = Snow(m);
         var w = Wind(m);
         return new JsonObject
         {
+            // The rule pack's list of regions (none in Lapin's) and the one picked.
+            ["region"] = RegionOf(m),
+            ["regionLabel"] = ClimateRuleSection.RegionLabel(m),
+            ["regions"] = new JsonArray(ClimateRuleSection.Regions(m).Select(r => { var o = r.ToJson(); if (r.Qb is { } qb) o["qbDerived"] = qb; return (JsonNode)o; }).ToArray()),
             ["snow"] = s == null ? null : new JsonObject { ["s0k"] = s.S0k, ["ce"] = s.Ce, ["ct"] = s.Ct, ["importance"] = s.Importance },
             ["wind"] = w == null ? null : new JsonObject { ["qb"] = w.Qb, ["terrain"] = w.Terrain, ["importance"] = w.Importance },
             ["terrains"] = new JsonArray(Terrains.Select(t => (JsonNode)new JsonObject { ["key"] = t.Key, ["z0"] = t.Value.Z0, ["zmin"] = t.Value.ZMin, ["label"] = t.Value.Label }).ToArray()),

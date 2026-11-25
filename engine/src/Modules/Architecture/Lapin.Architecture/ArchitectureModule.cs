@@ -373,6 +373,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         // A window's sills as parts of their own for schedules and tags (forum topic 178, decision 736).
         WindowSills.Register(r);
         Stairs.StairsModule.Register(r);
+        // Accessibility in the project's rule pack (docs/plan-national-packs.md N3): doors, corridors, turning circles, ramps.
+        AccessibilityRuleSection.Register(r);
         Stairs.UnderStairs.Register(r);
         Ceilings.Register(r);
         Skirtings.Register(r);
