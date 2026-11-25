@@ -156,6 +156,8 @@ Select the roof to change it in the properties panel:
 
 ![A roof's properties](shots/roof-properties.webp)
 
+**Metal tiles and panels.** A roof's **Panels** section covers it in a metal tile or panel profile: Lapin lays the panels on its slopes, says what to buy by length and draws them as the covering. See [Roof panels](roof-panels.md).
+
 ![A flat roof in section: the concrete deck and the covering over it, each hatched by its material](shots/roof-deck-section.webp)
 
 **Roof configurator** (the button beside the style, or **Architecture → Roof configurator** with a roof selected) gathers everything in one place: the styles on the left, then the shape and its edges, the covering and drainage, the framing and the openings, over a plan of the roof (click an edge to make it auto, an eave or a gable) and, for the framing, a section across the ridge with the truss or couple at the middle. Pick a style to start from and change any field by hand; **Apply** makes it one undo step. **Save as style…** keeps the roof as it is configured as a style of the project, listed under **Project** above the catalogue's (and in the properties panel's list) for other roofs and new ones; **Update style** saves the changes into it again, and every roof of the style follows. A project style can be renamed or deleted; its roofs keep how they look.

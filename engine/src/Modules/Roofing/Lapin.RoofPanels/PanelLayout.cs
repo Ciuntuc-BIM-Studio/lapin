@@ -128,7 +128,7 @@ public static class PanelLayout
                     if (Clip.Area(footprint) < 1e-6) continue;
                     var start = Math.Max(0, (int)Math.Floor((Clip.MinY(footprint) + 1e-6) / p.Pitch));
                     var stop = (int)Math.Ceiling((Clip.MaxY(footprint) - 1e-6) * 1000);
-                    var eaveWidth = Math.Max(0, Math.Min(x + width, roof.Eave) - Math.Max(x, 0));
+                    var eaveWidth = roof.EaveSpans.Sum(e => Math.Max(0, Math.Min(x + width, e.To) - Math.Max(x, e.From)));
                     if (eaveWidth > 1e-5 && eaveWidth < 0.22) { ok = false; break; }
                     cols.Add(new Column(x, start, stop, footprint));
                 }

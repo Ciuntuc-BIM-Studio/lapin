@@ -25,6 +25,29 @@ public static class RoofPanels
             ? new Choice(id, (string?)o["color"], Json.Number(o["maxLength"]) is { } m ? (int)m : null)
             : null;
 
+    /// <summary>
+    /// The project material a profile's panels are made of in a colour (decision 855): „Bilka Balcanic, RAL 8017 matt brown”,
+    /// a painted sheet in the colour's own RGB (matt, hardly metallic), so the 3D view shows the panels in their colour and
+    /// not as the covering's bare metal; sections hatch it, the takeoff lists it. Made by the command that names the profile.
+    /// </summary>
+    public static string MaterialName(PanelProfile p, string? color) =>
+        (p.Colors.FirstOrDefault(c => c.Code == color) ?? p.Colors.FirstOrDefault()) is { } c ? $"{p.Name}, {c.Name}" : $"{p.Name}, painted sheet";
+
+    /// <summary>The panels' material made when the project has none of its name; its id.</summary>
+    public static string EnsureMaterial(IEdit edit, PanelProfile p, string? color)
+    {
+        var name = MaterialName(p, color);
+        if (Materials.Find(edit.Model, name) is { } found) return found.Id;
+        var rgb = (p.Colors.FirstOrDefault(c => c.Code == color) ?? p.Colors.FirstOrDefault())?.Rgb ?? "#6b6f73";
+        var m = new Entity(edit.NewId(), IfcClass.Material, name, new JsonObject
+        {
+            ["color"] = rgb, ["texture"] = "none", ["category"] = "Metal", ["roughness"] = 0.6, ["metalness"] = 0.1,
+            ["description"] = $"{p.Name} roof panels, painted steel sheet. Made by the roof panel layout; the maker's colour, indicative.",
+        });
+        edit.Add(m);
+        return m.Id;
+    }
+
     /// <summary>A roof's panel layout, with its profile, colour and warnings.</summary>
     public sealed record Layout(
         Entity Roof, PanelProfile Profile, string? Color, List<RoofFace> Faces, List<RoofEdge> Edges, PanelLayout.Result Result, List<string> Warnings)
@@ -58,15 +81,44 @@ public static class RoofPanels
         return length > 0 ? Math.Max(1, (int)Math.Ceiling((length - lap) / (stock - lap) - 1e-10)) : 0;
     }
 
-    /// <summary>The roof's sloped planes, as the layout reads them; a problem when it has none to lay panels on.</summary>
-    public static (IReadOnlyList<IReadOnlyList<Vec3>> Planes, string? Problem, bool Openings) Planes(Entity roof, IModelView m)
+    /// <summary>
+    /// The roof's sloped planes as the layout reads them: each plane less what other roofs take away where they meet it
+    /// (decision 847), so the panels follow the covering as it is built; a plane cut in two is two. <see cref="PlaneSet.PlaneOf"/>
+    /// is each one's plane in the roof's shape; <see cref="PlaneSet.Junctions"/> the lines in plan where a roof at this one's
+    /// height takes it away (a valley between the two roofs); <see cref="PlaneSet.Holes"/>, whether another roof stands inside
+    /// a plane (not cut from the panels yet).
+    /// </summary>
+    public sealed record PlaneSet(IReadOnlyList<IReadOnlyList<Vec3>> Planes, IReadOnlyList<int> PlaneOf, IReadOnlyList<(Vec2 A, Vec2 B)> Junctions, bool Openings, bool Holes);
+
+    /// <summary>The roof's planes for the layout; a problem when it has none to lay panels on.</summary>
+    public static (PlaneSet? Set, string? Problem) Planes(Entity roof, IModelView m)
     {
-        if (Roof.Resolve(roof, m) is not { } r) return ([], "The roof needs at least 3 corners.", false);
-        if (r.Flat) return ([], "A flat roof takes no panels.", false);
-        if (r.Barrel) return ([], "A barrel roof takes no panels yet: its covering is curved.", false);
+        if (Roof.Resolve(roof, m) is not { } r) return (null, "The roof needs at least 3 corners.");
+        if (r.Flat) return (null, "A flat roof takes no panels.");
+        if (r.Barrel) return (null, "A barrel roof takes no panels yet: its covering is curved.");
         var (shape, problem) = Roof.Solve(r);
-        if (shape == null) return ([], problem ?? "The roof cannot be solved.", false);
-        return (shape.Planes.Select(p => p.Points).ToList(), null, RoofOpenings.Of(roof).Any());
+        if (shape == null) return (null, problem ?? "The roof cannot be solved.");
+        var cuts = RoofJunctions.Cuts(r, shape, m);
+        var planes = new List<IReadOnlyList<Vec3>>();
+        var planeOf = new List<int>();
+        var junctions = new List<(Vec2, Vec2)>();
+        var holes = false;
+        for (var i = 0; i < shape.Planes.Count; i++)
+        {
+            var pts = shape.Planes[i].Points;
+            var mine = cuts.Where(c => c.Plane == i).ToList();
+            if (mine.Count == 0) { planes.Add(pts); planeOf.Add(i); continue; }
+            var n = VecMath.NewellNormal(pts);
+            if (Math.Abs(n.Z) < 1e-9) { planes.Add(pts); planeOf.Add(i); continue; }
+            var o = pts[0];
+            double Z(Vec2 p) => o.Z - (n.X * (p.X - o.X) + n.Y * (p.Y - o.Y)) / n.Z;
+            var (rings, inside) = PlanTrim.Difference(pts.Select(p => p.Xy).ToList(), mine.Select(c => (IReadOnlyList<Vec2>)c.Region).ToList());
+            holes |= inside.Count > 0;
+            foreach (var ring in rings) { planes.Add(ring.Select(p => new Vec3(p.X, p.Y, Z(p))).ToList()); planeOf.Add(i); }
+            foreach (var c in mine.Where(c => !c.Under))
+                for (var k = 0; k < c.Region.Length; k++) junctions.Add((c.Region[k], c.Region[(k + 1) % c.Region.Length]));
+        }
+        return (new PlaneSet(planes, planeOf, junctions, RoofOpenings.Of(roof).Any(), holes), null);
     }
 
     static readonly RevisionCache<Layout?> Cache = new();
@@ -81,12 +133,13 @@ public static class RoofPanels
     /// <summary>The layout of <paramref name="roof"/> in <paramref name="profile"/>; an <see cref="ArgumentException"/> says why it does not lay.</summary>
     public static Layout Lay(Entity roof, IModelView m, PanelProfile profile, string? color)
     {
-        var (planes, problem, openings) = Planes(roof, m);
-        if (problem != null) throw new ArgumentException(problem);
-        var (faces, edges) = RoofFaces.Read(planes, profile.ValleyGap / 1000.0);
+        var (set, problem) = Planes(roof, m);
+        if (set == null) throw new ArgumentException(problem ?? "The roof cannot be solved.");
+        var (faces, edges) = RoofFaces.Read(set.Planes, profile.ValleyGap / 1000.0, set.Junctions, set.PlaneOf);
         if (faces.Count == 0) throw new ArgumentException("The roof has no sloped plane to lay panels on.");
         var warnings = new List<string>();
-        if (openings) warnings.Add("Roof windows and dormers are not cut out of the panels yet: the layout covers the whole slopes.");
+        if (set.Openings) warnings.Add("Roof windows and dormers are not cut out of the panels yet: the layout covers the whole slopes.");
+        if (set.Holes) warnings.Add("Where another roof stands inside a slope, the panels are not cut round it yet.");
         var diagonal = edges.Where(e => e.Kind is EdgeKinds.Valley or EdgeKinds.Hip).SelectMany(e => e.Faces).ToHashSet();
         foreach (var f in faces)
         {
@@ -102,6 +155,7 @@ public static class RoofPanels
 
     static double R(double v, int d = 4) => Math.Round(v, d);
     static JsonArray P3(Vec3 p) => [R(p.X), R(p.Y), R(p.Z)];
+    static JsonArray Uv(IEnumerable<Vec2> pts) => new([.. pts.Select(v => (JsonNode)new JsonArray(R(v.X), R(v.Y)))]);
 
     /// <summary>The layout as the interface and scripts read it (the Panotaj Bilka report's fields, in English).</summary>
     public static JsonObject ToJson(Layout l)
@@ -119,6 +173,8 @@ public static class RoofPanels
             {
                 ["id"] = f.Id, ["plane"] = f.Plane, ["pitch"] = R(f.PitchDegrees, 2), ["eave"] = R(f.Eave, 5),
                 ["area"] = R(Clip.Area(f.Poly), 5), ["coverage"] = R(Clip.Area(f.Target), 5), ["slopeLength"] = R(Clip.MaxY(f.Poly), 5),
+                // Laid flat (u along the eave, v up the slope, m) and in plan: what the layout dialog draws.
+                ["outline"] = Uv(f.Poly), ["planOutline"] = new JsonArray([.. f.World.Select(w => (JsonNode)new JsonArray(R(w.X), R(w.Y)))]),
             })]),
             ["edges"] = new JsonArray([.. l.Edges.Select(e =>
             {
@@ -143,6 +199,7 @@ public static class RoofPanels
                     ["donor"] = donor.Donor, ["shift"] = donor.Donor == null ? null : donor.Shift,
                     ["donatesTo"] = donates.GetValueOrDefault(x.Id),
                     ["plan"] = new JsonArray([.. x.Net.Select(v => { var w = x.Face.Xyz(v); return (JsonNode)new JsonArray(R(w.X), R(w.Y)); })]),
+                    ["net"] = Uv(x.Net),
                 };
             })]),
             ["purchase"] = new JsonObject([.. l.Purchase.Select(kv => KeyValuePair.Create(kv.Key.ToString(CultureInfo.InvariantCulture), (JsonNode?)kv.Value))]),

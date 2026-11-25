@@ -154,6 +154,8 @@ Selectează acoperișul ca să-l schimbi în panoul de proprietăți:
 
 ![Proprietățile unui acoperiș](shots/roof-properties.webp)
 
+**Țiglă metalică și panouri.** Secțiunea **Panouri** a unui acoperiș îl învelește cu un profil de țiglă metalică sau de panou: Lapin așază panourile pe ape, spune ce se cumpără pe lungimi și le desenează ca învelitoare. Vezi [Panouri de acoperiș](roof-panels.md).
+
 ![Un acoperiș plat în secțiune: placa de beton și învelitoarea peste ea, fiecare hașurată după materialul ei](shots/roof-deck-section.webp)
 
 **Configuratorul de acoperiș** (butonul de lângă stil, sau **Architecture → Roof configurator** cu un acoperiș selectat) adună totul într-un loc: stilurile în stânga, apoi forma și laturile, învelitoarea și apele, șarpanta și golurile, deasupra unui plan al acoperișului (clic pe o latură o face auto, streașină sau fronton) și, la șarpantă, o secțiune peste coamă cu ferma sau perechea de căpriori de la mijloc. Pornești de la un stil și schimbi orice câmp de mână; **Apply** face totul un singur pas de Undo. **Salvează ca stil…** păstrează acoperișul așa cum e configurat ca stil al proiectului, listat la **Project** deasupra celor din catalog (și în lista din panoul de proprietăți), pentru alte acoperișuri și pentru cele noi; **Actualizează stilul** salvează din nou schimbările în el, iar toate acoperișurile stilului le preiau. Un stil al proiectului se poate redenumi sau șterge; acoperișurile lui rămân cum sunt.

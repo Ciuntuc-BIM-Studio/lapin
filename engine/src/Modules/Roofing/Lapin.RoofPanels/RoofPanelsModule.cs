@@ -6,7 +6,7 @@ using Lapin.Platform;
 namespace Lapin.RoofPanels;
 
 /// <summary>
-/// The roof panel layout module (docs/plan-roof-panels.md, decision 848), stage 1: metal tiles and standing-seam panels laid
+/// The roof panel layout module (docs/plan-roof-panels.md, decisions 848 and 855), stages 1–2: metal tiles and standing-seam panels laid
 /// out on the architecture module's roofs. A roof names its profile (<c>roofpanels.setRoofPanels</c>, one undo step); the
 /// layout, the edges' kinds and the quantities are a query (<c>roofpanels.layout</c>), worked out from the roof's planes
 /// on every ask; the panels are parts a field schedule lists (<c>roofPanels</c>). The built-in profiles are published as
@@ -21,6 +21,9 @@ public sealed class RoofPanelsModule : ILapinModule
     {
         r.Catalog("profiles", PanelProfiles.Catalog());
         r.Service<IPartSource>(new Parts());
+        // Stage S2: the panels as the covering's geometry, and the Roof panels schedule (a field schedule of the parts).
+        r.Service<IGeometryFilter>(new PanelBodies());
+        r.Service(ShippedScheduleTemplate.Of("roofPanels", "Roof panels", null, ScheduleFields));
 
         // {id (a roof), profile (a profile's id, or a profile of its own; null: none), color, maxLength (a made-to-order profile's longest panel, mm)}.
         r.Command("setRoofPanels", "Roof panels", (ctx, a) =>
@@ -45,6 +48,7 @@ public sealed class RoofPanelsModule : ILapinModule
                 if (color != null) o["color"] = color;
                 if (Json.Number(a["maxLength"]) is { } max && (int)max != profile.Lengths[^1]) o["maxLength"] = (int)max;
                 attrs[RoofPanels.Key] = o;
+                RoofPanels.EnsureMaterial(ctx, profile, color ?? profile.Colors.FirstOrDefault()?.Code);
             }
             ctx.Replace(roof.With(attrs: attrs));
             return null;
@@ -70,6 +74,29 @@ public sealed class RoofPanelsModule : ILapinModule
         });
     }
 
+    /// <summary>
+    /// The Roof panels schedule as shipped (plan §4): a row per roof, profile, colour, length and whether it is bought or an
+    /// offcut reused, with the pieces, their length and the sheet bought (each panel's nominal length by its whole width).
+    /// </summary>
+    public const string ScheduleFields = """
+        {
+          "source": "roofPanels",
+          "filter": { "classes": ["IfcRoof"] },
+          "groupBy": ["name", "panelProfile", "panelColor", "panelLength", "panelBought"], "groupColumns": false, "count": false,
+          "sort": ["name", { "field": "panelBought", "desc": true }, { "field": "panelLength", "desc": true }],
+          "columns": [
+            { "field": "name", "heading": "Roof", "aggregate": "first" },
+            { "field": "panelProfile", "heading": "Profile", "aggregate": "first" },
+            { "field": "panelColor", "heading": "Colour", "aggregate": "first" },
+            { "field": "panelLength", "heading": "Length (mm)", "aggregate": "first", "decimals": 0 },
+            { "field": "panelBought", "heading": "Bought", "aggregate": "first" },
+            { "field": "panelLength", "heading": "Pieces", "aggregate": "rows" },
+            { "field": "panelRun", "heading": "Total length (m)", "aggregate": "sum", "decimals": 2 },
+            { "field": "panelSheet", "heading": "Sheet bought (m²)", "aggregate": "sum", "decimals": 2 }
+          ]
+        }
+        """;
+
     /// <summary>The panels of a roof (<c>roofPanels</c>), each a part: its code, plane, length, whether it is bought or an offcut reused.</summary>
     sealed class Parts : IPartSource
     {
@@ -79,6 +106,7 @@ public sealed class RoofPanelsModule : ILapinModule
         [
             ("panelCode", "Panel code"), ("panelProfile", "Profile"), ("panelColor", "Colour"), ("panelFace", "Roof plane"),
             ("panelLength", "Length (mm)"), ("panelBought", "Bought"), ("panelDonor", "Cut from"), ("panelArea", "Area cut (m²)"),
+            ("panelRun", "Length (m)"), ("panelSheet", "Sheet bought (m²)"),
         ];
 
         public IEnumerable<ElementPart> PartsOf(IQueryContext q, Entity e)
@@ -89,7 +117,8 @@ public sealed class RoofPanelsModule : ILapinModule
                 var donor = l.Result.Reuse.TryGetValue(p.Id, out var d) ? d.Donor : "";
                 return ElementPart.Of(p.Id, ("panelCode", p.Id), ("panelProfile", l.Profile.Name), ("panelColor", l.Color ?? ""),
                     ("panelFace", p.Face.Id), ("panelLength", (double)p.Length), ("panelBought", donor.Length == 0), ("panelDonor", donor),
-                    ("panelArea", Math.Round(Clip.Area(p.Poly), 4))) with
+                    ("panelArea", Math.Round(Clip.Area(p.Poly), 4)), ("panelRun", p.Length / 1000.0),
+                    ("panelSheet", donor.Length == 0 ? p.Length * l.Profile.GrossWidth / 1e6 : 0.0)) with
                 { Points = [.. p.Net.Select(v => p.Face.Xyz(v))] };
             });
         }

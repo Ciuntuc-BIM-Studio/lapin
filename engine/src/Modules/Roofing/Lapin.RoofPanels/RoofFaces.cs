@@ -31,6 +31,8 @@ public sealed class RoofFace
     public required IReadOnlyList<Vec2> Poly { get; init; }
     public List<Vec2> Target { get; set; } = [];
     public double Eave { get; set; }
+    /// <summary>Where along u its eaves run (from, to): one span from 0 on a whole plane, several on one another roof cuts into.</summary>
+    public List<(double From, double To)> EaveSpans { get; } = [];
 
     public double PitchDegrees => Math.Acos(Math.Clamp(N.Z, -1, 1)) * 180 / Math.PI;
 
@@ -53,8 +55,14 @@ public sealed record RoofEdge(string Kind, IReadOnlyList<string> Faces, Vec3 A, 
 /// </summary>
 public static class RoofFaces
 {
-    /// <summary>The faces and edges of a roof's planes (each counter-clockwise from above); <paramref name="valleyGap"/> metres left along valleys.</summary>
-    public static (List<RoofFace> Faces, List<RoofEdge> Edges) Read(IReadOnlyList<IReadOnlyList<Vec3>> planes, double valleyGap)
+    /// <summary>
+    /// The faces and edges of a roof's planes (each counter-clockwise from above); <paramref name="valleyGap"/> metres left along
+    /// valleys. <paramref name="junctions"/>: lines in plan where another roof at this one's height takes it away (decision 847):
+    /// a free edge along one is a valley with that roof, the panels kept the gap from it. <paramref name="planeOf"/>: each
+    /// plane's index in the roof's shape (its own place in the list when not given).
+    /// </summary>
+    public static (List<RoofFace> Faces, List<RoofEdge> Edges) Read(IReadOnlyList<IReadOnlyList<Vec3>> planes, double valleyGap,
+        IReadOnlyList<(Vec2 A, Vec2 B)>? junctions = null, IReadOnlyList<int>? planeOf = null)
     {
         // One point for corners within 2 µm of each other: the planes' shared corners, computed plane by plane.
         var verts = new List<Vec3>();
@@ -95,7 +103,7 @@ public static class RoofFaces
             if (y.Z <= 0) throw new ArgumentException("A roof plane's slope cannot be told.");
             faces.Add(new RoofFace
             {
-                Id = $"A{faces.Count + 1:00}", Plane = index, Origin = e0, X = x, Y = y, N = n, World = w,
+                Id = $"A{faces.Count + 1:00}", Plane = planeOf != null && index < planeOf.Count ? planeOf[index] : index, Origin = e0, X = x, Y = y, N = n, World = w,
                 Poly = [.. w.Select(p => { var d = p - e0; return new Vec2(Vec3.Dot(d, x), Vec3.Dot(d, y)); })],
             });
         }
@@ -140,7 +148,19 @@ public static class RoofFaces
             {
                 var r = rs[0];
                 var side = InwardHeight(r, a, b);
-                if (horizontal && side > 1e-5) { kind = EdgeKinds.Eave; r.Eave += length; }
+                if (junctions != null && OnJunction(a.Xy, b.Xy, junctions))
+                {
+                    // Where another roof at its height takes it away: a valley between the two roofs, the panels short of it.
+                    kind = EdgeKinds.Valley;
+                    TrimValley(r, a, b, valleyGap, strict: false);
+                }
+                else if (horizontal && side > 1e-5)
+                {
+                    kind = EdgeKinds.Eave;
+                    r.Eave += length;
+                    var (ua, ub) = (r.Uv(a).X, r.Uv(b).X);
+                    r.EaveSpans.Add((Math.Min(ua, ub), Math.Max(ua, ub)));
+                }
                 else if (horizontal) kind = EdgeKinds.TopEdge;
                 else kind = EdgeKinds.Verge;
             }
@@ -160,20 +180,59 @@ public static class RoofFaces
                     kind = Vec3.Dot(own - a, second.N) > 0 ? EdgeKinds.Valley : horizontal ? EdgeKinds.Ridge : EdgeKinds.Hip;
                 }
                 if (kind == EdgeKinds.Valley)
-                    foreach (var r in rs)
-                    {
-                        var (aa, bb) = (r.Uv(a), r.Uv(b));
-                        var d = bb - aa;
-                        var inward = new Vec2(-d.Y, d.X) * (1 / d.Length);
-                        var mean = new Vec2(r.Poly.Average(v => v.X), r.Poly.Average(v => v.Y));
-                        if (Vec2.Dot(mean - aa, inward) < 0) inward = -inward;
-                        if (r.Poly.Min(v => Vec2.Dot(v - aa, inward)) < -1e-5) throw new ArgumentException("A valley crosses a roof plane where the layout cannot follow it.");
-                        r.Target = Clip.Trim(r.Target, inward, Vec2.Dot(aa, inward) + valleyGap);
-                    }
+                    foreach (var r in rs) TrimValley(r, a, b, valleyGap, strict: true);
             }
             edges.Add(new RoofEdge(kind, [.. rs.Select(r => r.Id)], a, b));
         }
         return (faces, edges);
+    }
+
+    /// <summary>
+    /// The face's target less the gap along a valley a–b. A valley the face lies wholly on one side of (its own roof's);
+    /// with <paramref name="strict"/> off (a valley with another roof, along a plane trimmed by it) a face reaching past the
+    /// line's run keeps its target there whole rather than lose what lies beyond.
+    /// </summary>
+    static void TrimValley(RoofFace r, Vec3 a, Vec3 b, double gap, bool strict)
+    {
+        var (aa, bb) = (r.Uv(a), r.Uv(b));
+        var d = bb - aa;
+        var inward = new Vec2(-d.Y, d.X) * (1 / d.Length);
+        var mean = new Vec2(r.Poly.Average(v => v.X), r.Poly.Average(v => v.Y));
+        if (Vec2.Dot(mean - aa, inward) < 0) inward = -inward;
+        if (r.Poly.Min(v => Vec2.Dot(v - aa, inward)) >= -1e-5)
+        {
+            r.Target = Clip.Trim(r.Target, inward, Vec2.Dot(aa, inward) + gap);
+            return;
+        }
+        if (strict) throw new ArgumentException("A valley crosses a roof plane where the layout cannot follow it.");
+        // A plane another roof cuts a notch into (a wing's valleys in the main slope): the gap taken along the valley's run
+        // only, on the side the plane lies, the rest of the plane as it is.
+        var mid = (aa + bb) * 0.5;
+        if (!Polygon2.Contains(r.Poly, mid + inward * 1e-4)) inward = -inward;
+        var along = d * (1 / d.Length) * gap;
+        Vec2[] strip = [aa - along, bb + along, bb + along + inward * gap, aa - along + inward * gap];
+        var (rings, _) = PlanTrim.Difference(r.Target, [strip]);
+        if (rings.Count > 0) r.Target = rings.MaxBy(Clip.Area)!;
+    }
+
+    /// <summary>Whether a–b (in plan) runs along one of the lines, over most of its length.</summary>
+    static bool OnJunction(Vec2 a, Vec2 b, IReadOnlyList<(Vec2 A, Vec2 B)> lines)
+    {
+        var mid = (a + b) * 0.5;
+        var d = b - a;
+        if (d.Length < 1e-6) return false;
+        foreach (var (p, q) in lines)
+        {
+            var e = q - p;
+            var len = e.Length;
+            if (len < 1e-6) continue;
+            var axis = e * (1 / len);
+            if (Math.Abs(Vec2.Cross(axis, d.Normalized())) > 1e-3) continue;
+            if (Math.Abs(Vec2.Cross(axis, mid - p)) > 2e-4) continue;
+            var t = Vec2.Dot(mid - p, axis);
+            if (t > 1e-4 && t < len - 1e-4) return true;
+        }
+        return false;
     }
 
     static IEnumerable<(Vec3 A, Vec3 B)> Pairs(IReadOnlyList<Vec3> p)

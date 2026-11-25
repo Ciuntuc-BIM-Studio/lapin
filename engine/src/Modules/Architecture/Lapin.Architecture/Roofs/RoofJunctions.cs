@@ -44,6 +44,8 @@ public static class RoofJunctions
     /// <summary>A region of a roof's plan taken away where it meets another roof: convex, counter-clockwise, on its plane <see cref="Plane"/> (−1 flat) whose slope's cosine is <see cref="Cos"/>.</summary>
     public sealed record Cut(int Plane, Vec2[] Region, double Cos)
     {
+        /// <summary>Taken by a roof over this one (its underside, soffit or fascia); otherwise by one at its height, where their tops cross (a valley between them).</summary>
+        public bool Under { get; init; }
         public double ProjectedArea => Math.Abs(Polygon2.SignedArea(Region));
         public double Area => ProjectedArea / Cos;
     }
@@ -72,7 +74,7 @@ public static class RoofJunctions
                     if (both.Count < 3) continue;
                     var keep = over ? a.Top - b.Bottom : b.Top - a.Top;
                     var region = Polygon2.ClipHalf(both, p => keep.At(p) - Tol);
-                    if (region.Count >= 3 && Math.Abs(Polygon2.SignedArea(region)) > 1e-6) o.Add(new Cut(a.Plane, region.ToArray(), a.Cos));
+                    if (region.Count >= 3 && Math.Abs(Polygon2.SignedArea(region)) > 1e-6) o.Add(new Cut(a.Plane, region.ToArray(), a.Cos) { Under = over });
                 }
         }
         return o;
