@@ -19,7 +19,7 @@ namespace Lapin.Engine.Tests;
 /// bodies are a test class of this file's own (<see cref="BodiesModule"/>): profiles in the x–z plane swept across y, so
 /// an underside is exactly the plane the plan names (the sloped body: z = 3.00 + 0.20·x over x 0..6, y −1..1).
 /// </summary>
-public class AttachColumnTests(ITestOutputHelper output)
+public class AttachColumnTests
 {
     static Fixture F() => new(new ArchitectureModule(), new StructureModule(), new RebarModule(), new DraftingModule(), new StudioModule(), new BodiesModule());
     static double Vol(Fixture f, string id) => f.Session.Geometry(id)!.Parts.Sum(p => Measure.Volume(p.Solid));
@@ -335,73 +335,83 @@ public class AttachColumnTests(ITestOutputHelper output)
 
     // ------------------------------------------------------------ speed
 
-    // Measured on 18.11.2026 (Debug, an Apple-silicon Mac, the full suite's machine): 400 columns attached under one slab and
-    // built in 66 ms, built again after the slab moved in 54 ms; under 60 bodies of 14 400 triangles, 837 ms. The limits are
-    // about thirty and twenty times that, for a slower machine or a busy test run.
-    const double LIMIT = 2_000, LIMIT_MANY = 15_000;
-
-    [Fact]
-    public void Four_hundred_columns_under_one_slab_read_its_triangles_once_a_revision()
+    /// <summary>
+    /// The attachment's speed, timed apart from the parallel tests (<see cref="Scaling.Serial"/>): among them, the full run's load made
+    /// the first build take from 365 ms to 2 320 ms on one Linux machine, past its limit (issue #122).
+    /// </summary>
+    [Collection(Scaling.Serial)]
+    public sealed class Speed(ITestOutputHelper output)
     {
-        var f = F();
-        var slab = Floor(f, -1, -1, 20, 20);
-        var ids = new List<string>();
-        // Their own 2.50 stays under the slab: no column cuts it, so what is timed is the attachment, not the slab's 400 holes.
-        var type = (string)f.Run("structure.createColumnType", new JsonObject { ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.3, ["depth"] = 0.3 }, ["height"] = 2.5 })!["id"]!;
-        var watch = Stopwatch.StartNew();
-        for (var i = 0; i < 20; i++)
-            for (var j = 0; j < 20; j++)
-                ids.Add((string)f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["x"] = i, ["y"] = j, ["typeId"] = type })!["id"]!);
-        foreach (var id in ids) _ = f.Session.Geometry(id);
-        var setup = watch.Elapsed.TotalMilliseconds;
-        var reads = BodySampler.Reads(slab);
-        watch.Restart();
-        f.Run("element.attachTo", Attach("top", "both", slab, [.. ids]));
-        foreach (var id in ids) _ = f.Session.Geometry(id);
-        var first = watch.Elapsed.TotalMilliseconds;
-        Assert.All(ids, id => Assert.Equal(2.78, f.Bounds(id).Max.Z, 9));
-        // Once for the revision; columns built at once on several threads may each work it out before the first is kept.
-        var once = BodySampler.Reads(slab) - reads;
-        Assert.InRange(once, 1, Environment.ProcessorCount);
-        // The slab lowered 0.10: every column follows, the slab's triangles worked out again, once for the revision.
-        reads = BodySampler.Reads(slab);
-        watch.Restart();
-        f.Session.Edit("lower", e => { var s = e.Model.Get(slab)!; var a = s.CloneAttrs(); a["offset"] = -0.1; e.Replace(s.With(attrs: a)); });
-        foreach (var id in ids) _ = f.Session.Geometry(id);
-        var again = watch.Elapsed.TotalMilliseconds;
-        Assert.All(ids, id => Assert.Equal(2.68, f.Bounds(id).Max.Z, 9));
-        var twice = BodySampler.Reads(slab) - reads;
-        Assert.InRange(twice, 1, Environment.ProcessorCount);
-        output.WriteLine($"400 columns under one slab: placed and built {setup:0} ms; attached and built {first:0} ms (slab read {once}x); slab moved, rebuilt {again:0} ms (read {twice}x)");
-        Assert.True(first < LIMIT, $"attached and built in {first:0} ms");
-        Assert.True(again < LIMIT, $"rebuilt in {again:0} ms");
-    }
+        // Measured on 18.11.2026 (Debug, an Apple-silicon Mac, the full suite's machine): 400 columns attached under one slab and
+        // built in 66 ms, built again after the slab moved in 54 ms; under 60 bodies of 14 400 triangles, 837 ms. The limits are
+        // about thirty and twenty times that, for a slower machine or a busy test run.
+        const double LIMIT = 2_000, LIMIT_MANY = 15_000;
 
-    [Fact]
-    public void Four_hundred_columns_under_a_body_of_many_triangles()
-    {
-        // A Bloc-P-4-sized target stands in: a sloped soffit of 60 × 60 strips, 21 600 triangles, over 400 columns.
-        var f = F();
-        var parts = new List<JsonArray>();
-        for (var i = 0; i < 60; i++)
+        [Fact]
+        public void Four_hundred_columns_under_one_slab_read_its_triangles_once_a_revision()
         {
-            var (x0, x1) = (-1 + i * 22.0 / 60, -1 + (i + 1) * 22.0 / 60);
-            parts.Add(new JsonArray(P(x0, 3 + 0.05 * x0), P(x1, 3 + 0.05 * x1), P(x1, 6), P(x0, 6)));
+            var f = F();
+            var slab = Floor(f, -1, -1, 20, 20);
+            var ids = new List<string>();
+            // Their own 2.50 stays under the slab: no column cuts it, so what is timed is the attachment, not the slab's 400 holes.
+            var type = (string)f.Run("structure.createColumnType", new JsonObject { ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.3, ["depth"] = 0.3 }, ["height"] = 2.5 })!["id"]!;
+            var watch = Stopwatch.StartNew();
+            for (var i = 0; i < 20; i++)
+                for (var j = 0; j < 20; j++)
+                    ids.Add((string)f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["x"] = i, ["y"] = j, ["typeId"] = type })!["id"]!);
+            foreach (var id in ids) _ = f.Session.Geometry(id);
+            var setup = watch.Elapsed.TotalMilliseconds;
+            var reads = BodySampler.Reads(slab);
+            watch.Restart();
+            f.Run("element.attachTo", Attach("top", "both", slab, [.. ids]));
+            foreach (var id in ids) _ = f.Session.Geometry(id);
+            var first = watch.Elapsed.TotalMilliseconds;
+            Assert.All(ids, id => Assert.Equal(2.78, f.Bounds(id).Max.Z, 9));
+            // Once for the revision; columns built at once on several threads may each work it out before the first is kept: at most once
+            // for each building thread, the pool's and this one, which are more than the cores once the parallel tests have grown the pool.
+            var builders = Math.Max(Environment.ProcessorCount, ThreadPool.ThreadCount + 1);
+            var once = BodySampler.Reads(slab) - reads;
+            Assert.InRange(once, 1, builders);
+            // The slab lowered 0.10: every column follows, the slab's triangles worked out again, once for the revision.
+            reads = BodySampler.Reads(slab);
+            watch.Restart();
+            f.Session.Edit("lower", e => { var s = e.Model.Get(slab)!; var a = s.CloneAttrs(); a["offset"] = -0.1; e.Replace(s.With(attrs: a)); });
+            foreach (var id in ids) _ = f.Session.Geometry(id);
+            var again = watch.Elapsed.TotalMilliseconds;
+            Assert.All(ids, id => Assert.Equal(2.68, f.Bounds(id).Max.Z, 9));
+            var twice = BodySampler.Reads(slab) - reads;
+            Assert.InRange(twice, 1, builders);
+            output.WriteLine($"400 columns under one slab: placed and built {setup:0} ms; attached and built {first:0} ms (slab read {once}x); slab moved, rebuilt {again:0} ms (read {twice}x); {builders} building threads at most");
+            Assert.True(first < LIMIT, $"attached and built in {first:0} ms");
+            Assert.True(again < LIMIT, $"rebuilt in {again:0} ms");
         }
-        var bodies = Enumerable.Range(0, 60).Select(j => Body(f, -1 + j * 22.0 / 60, -1 + (j + 1) * 22.0 / 60, [.. parts.Select(p => (JsonArray)p.DeepClone())])).ToList();
-        var ids = new List<string>();
-        var type = (string)f.Run("structure.createColumnType", new JsonObject { ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.3, ["depth"] = 0.3 } })!["id"]!;
-        for (var i = 0; i < 20; i++)
-            for (var j = 0; j < 20; j++)
-                ids.Add((string)f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["x"] = i + 0.4, ["y"] = j + 0.4, ["typeId"] = type })!["id"]!);
-        foreach (var id in ids) _ = f.Session.Geometry(id);
-        var watch = Stopwatch.StartNew();
-        f.Run("element.attachTo", new JsonObject { ["ids"] = new JsonArray([.. ids.Select(x => (JsonNode)x)]), ["end"] = "top", ["targets"] = new JsonArray([.. bodies.Select(x => (JsonNode)x)]) });
-        foreach (var id in ids) _ = f.Session.Geometry(id);
-        var ms = watch.Elapsed.TotalMilliseconds;
-        output.WriteLine($"400 columns under 60 bodies of 60 parts ({BodySampler.TrianglesOf(f.Model.Get(bodies[0])!, f.Model, Services(f), true).Count * 60} triangles): attached and built {ms:0} ms");
-        Assert.Equal(3 + 0.05 * 0.4, Length(f, ids[0]), 6);
-        Assert.True(ms < LIMIT_MANY, $"{ms:0} ms");
+
+        [Fact]
+        public void Four_hundred_columns_under_a_body_of_many_triangles()
+        {
+            // A Bloc-P-4-sized target stands in: a sloped soffit of 60 × 60 strips, 21 600 triangles, over 400 columns.
+            var f = F();
+            var parts = new List<JsonArray>();
+            for (var i = 0; i < 60; i++)
+            {
+                var (x0, x1) = (-1 + i * 22.0 / 60, -1 + (i + 1) * 22.0 / 60);
+                parts.Add(new JsonArray(P(x0, 3 + 0.05 * x0), P(x1, 3 + 0.05 * x1), P(x1, 6), P(x0, 6)));
+            }
+            var bodies = Enumerable.Range(0, 60).Select(j => Body(f, -1 + j * 22.0 / 60, -1 + (j + 1) * 22.0 / 60, [.. parts.Select(p => (JsonArray)p.DeepClone())])).ToList();
+            var ids = new List<string>();
+            var type = (string)f.Run("structure.createColumnType", new JsonObject { ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.3, ["depth"] = 0.3 } })!["id"]!;
+            for (var i = 0; i < 20; i++)
+                for (var j = 0; j < 20; j++)
+                    ids.Add((string)f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["x"] = i + 0.4, ["y"] = j + 0.4, ["typeId"] = type })!["id"]!);
+            foreach (var id in ids) _ = f.Session.Geometry(id);
+            var watch = Stopwatch.StartNew();
+            f.Run("element.attachTo", new JsonObject { ["ids"] = new JsonArray([.. ids.Select(x => (JsonNode)x)]), ["end"] = "top", ["targets"] = new JsonArray([.. bodies.Select(x => (JsonNode)x)]) });
+            foreach (var id in ids) _ = f.Session.Geometry(id);
+            var ms = watch.Elapsed.TotalMilliseconds;
+            output.WriteLine($"400 columns under 60 bodies of 60 parts ({BodySampler.TrianglesOf(f.Model.Get(bodies[0])!, f.Model, Services(f), true).Count * 60} triangles): attached and built {ms:0} ms");
+            Assert.Equal(3 + 0.05 * 0.4, Length(f, ids[0]), 6);
+            Assert.True(ms < LIMIT_MANY, $"{ms:0} ms");
+        }
     }
 
     // ------------------------------------------------------------ the test bodies
