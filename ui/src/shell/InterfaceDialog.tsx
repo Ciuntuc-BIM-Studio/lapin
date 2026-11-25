@@ -30,6 +30,7 @@ const PARTS: { key: keyof InterfaceParts; label: string; choices: Record<string,
   { key: 'keyPlan', label: 'Key plan', choices: { shown: 'Shown', button: 'A button' } },
   { key: 'panels', label: 'Panels', choices: { docked: 'Docked', browserRail: 'Browser folds to a rail', bothRail: 'Both fold', hidden: 'Hidden' } },
   { key: 'rows', label: 'Property rows', choices: { normal: 'Normal', dense: 'Dense (22 px)' } },
+  { key: 'keyTips', label: 'Keys on tools', choices: { alt: 'While Alt is held', always: 'Always' } },
 ];
 
 /** Where the project browser and the properties stand (View → Panels offers the same). */

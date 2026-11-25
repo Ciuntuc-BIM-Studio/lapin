@@ -227,6 +227,11 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .check-line input { margin: 0; width: auto; flex: none; }
 /* A tab wider than the window scrolls sideways; its groups never squeeze below their tools (their labels would run into each other). */
 .band { display: flex; height: 86px; padding: 4px 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+/* The sideways scrollbar takes its own room under the labels (never over them): the large band grows by it (a thin one, 8 px) only when it shows. */
+.band:not(.icons) { height: auto; min-height: 86px; }
+.band::-webkit-scrollbar { height: 8px; }
+.band::-webkit-scrollbar-thumb { background: var(--rule-strong); border-radius: 4px; }
+.band::-webkit-scrollbar-track { background: transparent; }
 .group { display: flex; flex-direction: column; flex-shrink: 0; padding: 0 8px; border-right: 1px solid var(--rule); }
 .group-tools { flex: 1; display: flex; gap: 2px; }
 .group-label { text-align: center; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted); padding-bottom: 2px; }
@@ -1411,8 +1416,8 @@ button.mode-chip:hover { color: var(--accent); }
 /* Interface modes (View → Interface…): Comfortable is the layout above; Compact and Focus tighten it. */
 .tool { position: relative; }
 .tool-key { position: absolute; top: 1px; right: 2px; padding: 0 3px; border: 0; background: none; font-size: 8.5px; line-height: 1.2; color: var(--ink-muted); opacity: 0.8; display: none; }
-/* Key tips: the large tools' shortcuts show while Alt is held down alone (shell/Ribbon.tsx). */
-.topbar.keytips .tool-key { display: block; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 2px; color: var(--ink); opacity: 1; font-size: 10px; }
+/* Key tips: the large tools' shortcuts show while Alt (or always, View → Interface → Keys on tools) is held down alone (shell/Ribbon.tsx). */
+.topbar.keytips .tool-key, .topbar.keys-always .tool-key { display: block; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 2px; color: var(--ink); opacity: 1; font-size: 10px; }
 /* A band wider than the window: the small tools keep their icons, their names stay in the tooltips. */
 .band.tight .tool.small > span { display: none; }
 .band.tight .tool.small { padding: 3px 6px; }

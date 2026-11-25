@@ -18,6 +18,17 @@ describe('the interface modes', () => {
     expect(initialSettings({ ...old, rev: 2 }, { web: false, height: 900 }).parts.quickTools).toBe('floating');
   });
 
+  it('shows the tools\' keys while Alt is held by default; Always is a part of its own, and a setting kept before it still reads', () => {
+    for (const p of Object.values(PRESETS)) expect(p.keyTips).toBe('alt');
+    const always = withPart(withPreset('comfortable'), 'keyTips', 'always');
+    expect(always).toMatchObject({ preset: 'custom', parts: { keyTips: 'always' } });
+    expect(initialSettings(JSON.parse(JSON.stringify(always)), { web: false, height: 900 }).parts.keyTips).toBe('always');
+    expect(withPart(always, 'keyTips', 'alt').preset).toBe('comfortable');
+    const { keyTips: _gone, ...before } = PRESETS.comfortable;
+    expect(initialSettings({ chosen: true, parts: before }, { web: false, height: 900 })).toMatchObject({ preset: 'comfortable', parts: { keyTips: 'alt' } });
+    expect(initialSettings({ chosen: true, parts: { ...before, keyTips: 'sometimes' } }, { web: false, height: 900 }).parts.keyTips).toBe('alt');
+  });
+
   it('sets every part from a preset; a part changed on its own makes it custom, and back', () => {
     const compact = withPreset('compact');
     expect(compact.parts.ribbon).toBe('icons');

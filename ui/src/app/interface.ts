@@ -35,12 +35,14 @@ export interface InterfaceParts {
   panels: 'docked' | 'browserRail' | 'bothRail' | 'hidden';
   /** The properties' rows: normal, or dense (22 px). */
   rows: 'normal' | 'dense';
+  /** The large tools' shortcut keys: shown while Alt is held (Office's key tips), or always. */
+  keyTips: 'alt' | 'always';
 }
 
 export const PRESETS: Record<InterfacePreset, InterfaceParts> = {
-  comfortable: { ribbon: 'large', quickTools: 'docked', commandLine: 'own', hud: 'over', prompt: 'banner', keyPlan: 'shown', panels: 'docked', rows: 'normal' },
-  compact: { ribbon: 'icons', quickTools: 'docked', commandLine: 'status', hud: 'status', prompt: 'commandLine', keyPlan: 'button', panels: 'browserRail', rows: 'dense' },
-  focus: { ribbon: 'dropdown', quickTools: 'docked', commandLine: 'status', hud: 'status', prompt: 'commandLine', keyPlan: 'button', panels: 'hidden', rows: 'dense' },
+  comfortable: { ribbon: 'large', quickTools: 'docked', commandLine: 'own', hud: 'over', prompt: 'banner', keyPlan: 'shown', panels: 'docked', rows: 'normal', keyTips: 'alt' },
+  compact: { ribbon: 'icons', quickTools: 'docked', commandLine: 'status', hud: 'status', prompt: 'commandLine', keyPlan: 'button', panels: 'browserRail', rows: 'dense', keyTips: 'alt' },
+  focus: { ribbon: 'dropdown', quickTools: 'docked', commandLine: 'status', hud: 'status', prompt: 'commandLine', keyPlan: 'button', panels: 'hidden', rows: 'dense', keyTips: 'alt' },
 };
 
 /** Each part's choices, in the order the dialog shows them. */
@@ -53,6 +55,7 @@ export const CHOICES: { [K in keyof InterfaceParts]: readonly InterfaceParts[K][
   keyPlan: ['shown', 'button'],
   panels: ['docked', 'browserRail', 'bothRail', 'hidden'],
   rows: ['normal', 'dense'],
+  keyTips: ['alt', 'always'],
 };
 
 /** A workspace: the tabs of a discipline, every tab, or the user's own. */

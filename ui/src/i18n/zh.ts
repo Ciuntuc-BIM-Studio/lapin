@@ -1787,7 +1787,7 @@ export const ZH: Record<string, string> = {
   'Quick tools': '快捷工具', 'Floating at the bottom': '浮动在底部', 'Docked on the left edge': '停靠在左边缘', 'Off (the number keys still work)': '关闭（数字键仍然有效）',
   'Command line': '命令行', 'Its own line': '独立一行', 'In the status line': '在状态行中', 'HUD': 'HUD', 'Over the view': '覆盖在视图上', 'Off': '关闭',
   'Tool prompt and inputs': '工具提示与输入', 'Banner over the view': '视图上方横幅', 'In the command line': '在命令行中', 'A button': '按钮',
-  'Docked': '停靠', 'Browser folds to a rail': '浏览器折叠为侧栏', 'Both fold': '两者均折叠', 'Property rows': '属性行', 'Normal': '常规', 'Dense (22 px)': '紧密（22 px）', 'Tabs': '选项卡', 'A hidden tab\'s tools stay in Commands… and the keyboard shortcuts.': '隐藏选项卡中的工具仍可在“命令…”和键盘快捷键中使用。', 'Always shown: Interface… is here': '始终显示：“界面…”在此',
+  'Docked': '停靠', 'Browser folds to a rail': '浏览器折叠为侧栏', 'Both fold': '两者均折叠', 'Property rows': '属性行', 'Normal': '常规', 'Dense (22 px)': '紧密（22 px）', 'Keys on tools': '工具上的按键', 'While Alt is held': '按住 Alt 时', 'Always': '始终', 'Tabs': '选项卡', 'A hidden tab\'s tools stay in Commands… and the keyboard shortcuts.': '隐藏选项卡中的工具仍可在“命令…”和键盘快捷键中使用。', 'Always shown: Interface… is here': '始终显示：“界面…”在此',
   'The side panels fold in every mode: the button on their header, a double-click on their edge, or the keyboard.': '侧面板在所有模式下均可折叠：使用标题上的按钮、双击其边缘或使用键盘。',
   'This dialog:': '此对话框：', 'Keyboard shortcuts…': '键盘快捷键…', 'Keyboard shortcuts': '键盘快捷键', 'Find a command or a key': '查找命令或按键',
   'Catalog': '目录', 'No types yet: the first is made as you place one.': '尚无类型：放置时会创建第一个。', 'A click places it; drag a card onto a quick slot to keep it there.': '单击即可放置；将卡片拖到快捷槽即可固定在那里。', 'This edition places no typed elements.': '此版本不放置带类型的构件。',

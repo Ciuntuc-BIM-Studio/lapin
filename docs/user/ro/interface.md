@@ -41,7 +41,7 @@ Arată, ascunde sau mută un tab la **Tabs**, în același dialog, și alegerea 
 
 ![Concentrare: selecția într-o fișă](shots/interface-focus.webp)
 
-Uneltele mari ale panglicii își arată literele de la tastatură cât ții apăsat <kbd>Alt</kbd> singur, ca indicațiile de taste din Office; indicațiile lor (tooltip) le au mereu. În Confortabil, o bandă mai lată decât fereastra arată uneltele mici doar ca pictograme, cu numele în indicații, până când fereastra e din nou destul de lată. Panoul **Grup**, după **Modifică** pe taburile care îl au, ține **Creează grup**, **Fă componentă**, **Fă tip de apartament**, **Adaugă în setul de detalii**, **Degrupează**, **Editează grupul** și **Scoate din grup**.
+Uneltele mari ale panglicii își arată literele de la tastatură cât ții apăsat <kbd>Alt</kbd> singur, ca indicațiile de taste din Office; indicațiile lor (tooltip) le au mereu. **View → Interface → Taste pe unelte** le poate arăta **Mereu**, în loc de **Cât ții apăsat Alt**, cum e implicit. În Confortabil, o bandă mai lată decât fereastra arată uneltele mici doar ca pictograme, cu numele în indicații, până când fereastra e din nou destul de lată. Panoul **Grup**, după **Modifică** pe taburile care îl au, ține **Creează grup**, **Fă componentă**, **Fă tip de apartament**, **Adaugă în setul de detalii**, **Degrupează**, **Editează grupul** și **Scoate din grup**.
 
 În orice mod, bara de sus păstrează **Anulează** și **Refă** la capătul din dreapta: cu numele lor în Confortabil, ca două săgeți în Compact și Concentrare (<kbd>Ctrl</kbd> <kbd>Z</kbd> și <kbd>Ctrl</kbd> <kbd>Y</kbd>; indicația lor spune ce anulează).
 
