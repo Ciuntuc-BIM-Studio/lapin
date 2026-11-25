@@ -17,6 +17,7 @@ import { WallReferenceField } from './WallReferenceField';
 import { openTypeDialog } from '../../shell/typeToEdit';
 import { WRAP_TIP, WrapEndsField, wrapOf } from './WrapEndsField';
 import { WallLeanFields } from './WallLeanFields';
+import { WallTaperFields } from './WallTaperFields';
 
 /** The finished floor field's tip, one phrase for the translations. */
 export const FLOOR_TIP = 'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.';
@@ -97,6 +98,8 @@ export function WallLayers({ node }: { node: NodeDto }) {
           onChange={(v) => void execute('architecture.updateWall', { id: node.id, wrapEnds: v })} /></dd>
         {/* In-app report #191: its lean from vertical (several walls at once); empty: its type's. A straight wall's only. */}
         {straight && <WallLeanFields node={node} type={type} />}
+        {/* Its thickness at the top (plan-wall-lean-taper, L2), one face plumb, one layer taking the change; several walls at once. */}
+        {straight && <WallTaperFields node={node} type={type} layers={layers.map((l) => l.name ?? materialName(model, l.material))} />}
         <dt>Layers run</dt><dd>{usage ? (usage.negative ? 'flipped' : 'as drawn') : '—'}</dd>
         {/* The line it keeps besides its axis (forum topic 159, decision 685). */}
         <WallReferenceField node={node} layers={layers} name={(l) => l.name ?? materialName(model, l.material)} />

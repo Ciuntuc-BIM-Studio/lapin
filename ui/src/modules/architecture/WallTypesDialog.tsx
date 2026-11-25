@@ -10,6 +10,7 @@
  */
 
 import { leanValues, NO_LEAN, TypeLeanFields, type LeanValues } from './WallLeanFields';
+import { NO_TAPER, taperValues, TypeTaperFields, type TaperValues } from './WallTaperFields';
 import { WRAP_TIP, WrapEndsField, wrapOf, type WrapEnds } from './WrapEndsField';
 import { confirmAction } from '../../shell/prompts';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -87,7 +88,7 @@ const EXTEND_TIP = 'Whether the layer goes on into the floors\' layers ranked un
 const blank = (): Row[] => [layer('Render', 0.02), layer('Brick', 0.25, true), layer('Plaster', 0.015)];
 
 /** The editor as it is, kept while Materials is open (forum #45) and taken back when the dialog opens again. */
-interface Kept { editing: string | null; name: string; rows: Row[]; zones: ZoneRow[]; lintels: Rule; sweeps: TypeSweepRow[]; params?: Param[]; finishedFloor?: number | null; wrapEnds?: WrapEnds | null; lean?: LeanValues }
+interface Kept { editing: string | null; name: string; rows: Row[]; zones: ZoneRow[]; lintels: Rule; sweeps: TypeSweepRow[]; params?: Param[]; finishedFloor?: number | null; wrapEnds?: WrapEnds | null; lean?: LeanValues; taper?: TaperValues }
 
 export function WallTypesDialog() {
   const nodes = useSession((s) => s.nodes);
@@ -113,6 +114,8 @@ export function WallTypesDialog() {
   const [wrapEnds, setWrapEnds] = useState<WrapEnds | null>(k0?.wrapEnds ?? null);
   // Its walls' lean (plan-wall-lean-taper, L1): degrees from vertical, the level that stays put, how their openings stand.
   const [lean, setLean] = useState<LeanValues>(k0?.lean ?? NO_LEAN);
+  // Its walls' taper (plan-wall-lean-taper, L2): the thickness at the top, the face that stays plumb, the layer that tapers.
+  const [taper, setTaper] = useState<TaperValues>(k0?.taper ?? NO_TAPER);
   // A new type's parameters (issue #32), sent with Create type; a saved type's are edited in its own Parameters section.
   const [draft, setDraft] = useState<Param[]>(k0?.params ?? []);
   // The layer whose row the mouse is over: lit in the preview's plan, section and 3D.
@@ -136,10 +139,11 @@ export function WallTypesDialog() {
     const t = editing ? model.nodes.get(editing) : undefined;
     setDraft([]);
     setPensOpen(new Set());
-    if (!t) { setName(''); setRows(blank()); setZones([]); setLintels(DEFAULT_RULE); setSweeps([]); setFinishedFloor(null); setWrapEnds(null); setLean(NO_LEAN); return; }
+    if (!t) { setName(''); setRows(blank()); setZones([]); setLintels(DEFAULT_RULE); setSweeps([]); setFinishedFloor(null); setWrapEnds(null); setLean(NO_LEAN); setTaper(NO_TAPER); return; }
     setFinishedFloor(typeof t.props.finishedFloor === 'number' ? t.props.finishedFloor : null);
     setWrapEnds(wrapOf(t.props.wrapEnds));
     setLean(leanValues(t.props));
+    setTaper(taperValues(t.props));
     setSweeps(sweepRows(t.props.sweeps, (id) => materialName(model, id)));
     setLintels((t.props.lintels as unknown as Rule | undefined) ?? DEFAULT_RULE);
     setName(t.name);
@@ -159,7 +163,7 @@ export function WallTypesDialog() {
     if (confirmAction(t('Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.'))) setRows(reverseLayers(rows));
   };
   // Opening a material in Manage → Materials keeps all of this for the way back.
-  const hatchFrom = { kind: 'wallTypes', snapshot: (): Kept => ({ editing, name, rows, zones, lintels, sweeps, params: draft, finishedFloor, wrapEnds, lean }) };
+  const hatchFrom = { kind: 'wallTypes', snapshot: (): Kept => ({ editing, name, rows, zones, lintels, sweeps, params: draft, finishedFloor, wrapEnds, lean, taper }) };
   const total = rows.reduce((s, r) => s + r.thickness, 0);
   // A layer's own height (report #44): from and up to, over the wall's base; empty, the whole height.
   const height = (v: number | null) => (v != null && v > 0 ? v : null);
@@ -183,9 +187,9 @@ export function WallTypesDialog() {
 
   const save = async () => {
     const sweepList = sweeps.map(sweepJson);
-    if (editing) await execute('architecture.updateWallType', { id: editing, name, layers, zones: zoneJson, lintels, sweeps: sweepList, finishedFloor, wrapEnds: wrapEnds === 'none' ? null : wrapEnds, ...lean });
+    if (editing) await execute('architecture.updateWallType', { id: editing, name, layers, zones: zoneJson, lintels, sweeps: sweepList, finishedFloor, wrapEnds: wrapEnds === 'none' ? null : wrapEnds, ...lean, ...taper });
     else {
-      const r = await execute('architecture.createWallType', { name, layers, zones: zoneJson, lintels, sweeps: sweepList, ...(finishedFloor != null && { finishedFloor }), ...(wrapEnds && wrapEnds !== 'none' && { wrapEnds }), ...(lean.lean != null && lean), ...(draft.length ? { params: draftJson(draft) } : {}) }) as { id?: string } | null;
+      const r = await execute('architecture.createWallType', { name, layers, zones: zoneJson, lintels, sweeps: sweepList, ...(finishedFloor != null && { finishedFloor }), ...(wrapEnds && wrapEnds !== 'none' && { wrapEnds }), ...(lean.lean != null && lean), ...(taper.thicknessTop != null && taper), ...(draft.length ? { params: draftJson(draft) } : {}) }) as { id?: string } | null;
       if (r?.id) { setDraft([]); setEditing(r.id); useUi.setState({ wallTypeId: r.id }); }
     }
     // The sweeps as saved, with the keys the engine gave the new ones: saved again, the walls keep the same sweeps.
@@ -222,6 +226,8 @@ export function WallTypesDialog() {
             <label className="field-line"><span className="eyebrow" title={WRAP_TIP}>Wrap at free ends</span><WrapEndsField value={wrapEnds} onChange={setWrapEnds} /></label>
             {/* In-app report #191: its walls' lean (each wall may have its own). */}
             <TypeLeanFields value={lean} onChange={setLean} />
+            {/* Its walls' thickness at the top (L2), one face plumb. */}
+            <TypeTaperFields value={taper} onChange={setTaper} layers={rows.map((r) => r.material)} />
             {/* The type's mark (forum topic 177), as a door's or window's type has it. */}
             <TypeMarkField typeId={editing} />
             {/* Duplicate, and the type's place in every list of wall types (forum #71). */}
