@@ -361,6 +361,33 @@ putJson('folder/layout.json', {
     `refs/tags/issue/1-P01/00000001-${tagIssue}-local-9f2b6c1d0e8a4b7c.ref`].map(f => `${P}/${f}`),
 });
 
+// ---------------------------------------------------------------- tree paths (§4.2)
+
+// The names that are never parts of a project state (§4.2, B14), compared without case on the first segment, and the generic
+// rules. `references` was added with the reference documents (docs/plan-cde-references.md, decision 874).
+putJson('paths/tree-paths.json', {
+  title: 'Paths a tree may name (§4.2): valid ones, and refused ones with why. The first segment is compared without case.',
+  never: ['manifest.json', 'versions', 'issues', 'references', 'history', 'derived', 'journal'],
+  valid: ['model/core/IfcWall/_.arrow', 'model/relations.arrow', 'project/document.json', 'scripts/hello.py', 'dag/graph.json',
+    'reference/notes.txt', 'models/references.json', 'model/core/LapinReference/_.arrow'],
+  refused: [
+    { path: 'manifest.json', why: 'never a part' },
+    { path: 'versions/index.json', why: 'never a part' },
+    { path: 'issues/blobs/' + '0'.repeat(64), why: 'never a part' },
+    { path: 'references/index.json', why: 'never a part' },
+    { path: 'references/blobs/' + 'a'.repeat(64), why: 'never a part' },
+    { path: 'References/blobs/x', why: 'never a part (without case)' },
+    { path: 'history/objects/x', why: 'never a part' },
+    { path: 'derived/x', why: 'never a part' },
+    { path: 'journal/x', why: 'never a part' },
+    { path: '', why: 'empty' },
+    { path: 'a//b', why: 'an empty segment' },
+    { path: '../a', why: 'a dot segment' },
+    { path: 'a/./b', why: 'a dot segment' },
+    { path: 'a\\b', why: 'a backslash' },
+  ],
+});
+
 // ---------------------------------------------------------------- the index of ids
 
 const ids = {

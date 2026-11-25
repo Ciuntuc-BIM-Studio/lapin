@@ -23,7 +23,7 @@ public sealed record ForeignPart(string Path, byte[] Bytes, DateTimeOffset Modif
 public sealed class PackageForeign
 {
     /// <summary>The top-level names Lapin owns: written by it, or kept for what it will write (the layout in docs/format-lapin.md). An entry under one of them is never kept.</summary>
-    public static readonly IReadOnlyList<string> Owned = ["manifest.json", "project", "model", "versions", "issues", "journal", "derived", "analytics", "history"];
+    public static readonly IReadOnlyList<string> Owned = ["manifest.json", "project", "model", "versions", "issues", "references", "journal", "derived", "analytics", "history"];
 
     /// <summary>
     /// The project's history (docs/spec-lapin-remote.md §6), read with the file's other entries and written back with every save: like

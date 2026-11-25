@@ -119,7 +119,7 @@ A **part** is `{path: string, sha256: id, size: integer, module?: string}`; `mod
 Path rules (the rules of `PackageForeign.Keeps`, plus Lapin's own names):
 
 - relative, `/`-separated, 1 to 1024 bytes of UTF-8; no `\`, no NUL; no empty, `.` or `..` segment; no leading or trailing `/`;
-- the first segment, compared without case, MUST NOT be one of `manifest.json`, `versions`, `issues`, `history`, `derived`, `journal` (they are never parts of a project state);
+- the first segment, compared without case, MUST NOT be one of `manifest.json`, `versions`, `issues`, `references`, `history`, `derived`, `journal` (they are never parts of a project state; `references` holds the files of the reference documents, docs/plan-cde-references.md; the vector is `paths/tree-paths.json`);
 - no two parts with the same path (compared ordinally).
 
 Example: `vectors/objects/T2.json` (707 bytes, id `941f7c834ec70c7171289afba2fc9d5042cab97306759b2c9979f34be04a7c26`):
@@ -908,5 +908,5 @@ The plan (`docs/plan-atrium-cde.md`, decision 793) left these open or implicit; 
 - **B11. `GET {base}/capabilities`** (anonymous) and `GET`/`POST {base}/projects` are added: the client must know the limits before signing in, and must list (and, where allowed, create) projects (plan §6, "alegerea sau crearea proiectului").
 - **B12. JSON on the wire is camelCase,** like Lapin's package and the plan's examples, not BCF's snake_case; errors keep Foundation's `message` and add `code`.
 - **B13. 1.x stays at `/lapin-remote/1.0/`;** the exact minor is in the capabilities.
-- **B14. Tree paths**: the server checks the generic rules and refuses the names that are never project parts (`manifest.json`, `versions`, `issues`, `history`, `derived`, `journal`), instead of a whitelist, so a later Lapin can add a top-level folder without a server update.
+- **B14. Tree paths**: the server checks the generic rules and refuses the names that are never project parts (`manifest.json`, `versions`, `issues`, `references`, `history`, `derived`, `journal`; `references` since decision 874), instead of a whitelist, so a later Lapin can add a top-level folder without a server update.
 - **B15. Clients name themselves** `lapin-desktop`, `lapin-web` and `atrium` as OAuth2 `client_id`.

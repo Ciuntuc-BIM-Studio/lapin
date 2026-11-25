@@ -293,6 +293,8 @@ public interface ICommandContext : IEdit
     IQueryContext Query { get; }
     /// <summary>Where a result worked out in the background goes once ready (<see cref="IDeliveries"/>); null where there is no session.</summary>
     IDeliveries? Deliveries => null;
+    /// <summary>The bytes of the project's reference documents (docs/plan-cde-references.md): the project's file's, through the host; null where there is no session.</summary>
+    Cde.References.IReferenceFiles? ReferenceFiles => null;
 }
 
 public interface IQueryContext
@@ -326,6 +328,8 @@ public interface IQueryContext
     CancellationToken Cancellation => default;
     /// <summary>Where a result worked out in the background goes once ready (<see cref="IDeliveries"/>); null where there is no session.</summary>
     IDeliveries? Deliveries => null;
+    /// <summary>The bytes of the project's reference documents (docs/plan-cde-references.md): the project's file's, through the host; null where there is no session.</summary>
+    Cde.References.IReferenceFiles? ReferenceFiles => null;
     /// <summary>Something that went wrong beside a call that still went through (a module that could not draw on a sheet), for the reply to tell (<see cref="Session.TakeWarnings"/>).</summary>
     void Warn(string message) { }
 }

@@ -213,7 +213,7 @@ public sealed class PackageHistory
 
     static string? Id(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) && ObjectIds.Valid(s) ? s : null;
 
-    /// <summary>The blobs the package holds outside history/: its live parts, versions/blobs/, issues/blobs/.</summary>
+    /// <summary>The blobs the package holds outside history/: its live parts, versions/blobs/, issues/blobs/, references/blobs/.</summary>
     static HashSet<string> Where(ZipArchive zip)
     {
         var o = new HashSet<string>(StringComparer.Ordinal);
@@ -223,6 +223,7 @@ public sealed class PackageHistory
         {
             if (e.FullName.StartsWith(LapinPackage.BlobsPrefix, StringComparison.Ordinal)) o.Add(e.FullName[LapinPackage.BlobsPrefix.Length..]);
             else if (e.FullName.StartsWith(PackageIssues.Prefix, StringComparison.Ordinal)) o.Add(e.FullName[PackageIssues.Prefix.Length..]);
+            else if (e.FullName.StartsWith(PackageIssues.ReferencesPrefix, StringComparison.Ordinal)) o.Add(e.FullName[PackageIssues.ReferencesPrefix.Length..]);
         }
         return o;
     }
@@ -318,6 +319,7 @@ public sealed class PackageHistory
             yield return _live!.GetValueOrDefault(id);
             yield return LapinPackage.BlobsPrefix + id;
             yield return PackageIssues.Prefix + id;
+            yield return PackageIssues.ReferencesPrefix + id;
             yield return ObjectsPrefix + id;
         }
 

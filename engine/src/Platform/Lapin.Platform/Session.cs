@@ -393,6 +393,12 @@ public sealed partial class Session
     /// <summary>Who the edits being made now are by: the computer's own user, or the shared session's guest whose call this is (the host sets it per call).</summary>
     public string Author { get; set; } = History.Me;
 
+    /// <summary>
+    /// Where the reference documents' bytes are kept (docs/plan-cde-references.md §3.5): in memory for a session on its own, the
+    /// project's file's store when a host's dispatcher holds the session (it sets this).
+    /// </summary>
+    public Cde.References.IReferenceFiles ReferenceFiles { get; set; } = new Cde.References.MemoryReferenceFiles();
+
     /// <summary>A command made by <paramref name="author"/> (a guest of a shared session: their participant id).</summary>
     public Diff Execute(string command, JsonObject args, string author, out JsonNode? result)
     {
@@ -1463,6 +1469,7 @@ public sealed partial class Session
         public IReadOnlyList<QuantitySet> Quantities(string id) => s.Quantities(id);
         public ClassDescriptor? Describe(string ifcClass) => s._catalog.Class(ifcClass);
         public IDeliveries Deliveries => s.Deliveries;
+        public Cde.References.IReferenceFiles ReferenceFiles => s.ReferenceFiles;
         public Action<string, int, int>? Progress => s.Progress;
         public CancellationToken Cancellation => s.Cancellation;
         public void Warn(string message) => s.Warn(message);
@@ -1485,6 +1492,7 @@ sealed class CommandContext(IEdit edit, ModuleCatalog catalog, IQueryContext que
     public string NewId() => edit.NewId();
     public ClassDescriptor? Describe(string ifcClass) => catalog.Class(ifcClass);
     public IDeliveries? Deliveries => query.Deliveries;
+    public Cde.References.IReferenceFiles? ReferenceFiles => query.ReferenceFiles;
 
     void EnsureEditable(Entity e)
     {

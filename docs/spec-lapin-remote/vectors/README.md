@@ -23,6 +23,7 @@ Change the vectors only by changing the script, then run it and commit both. Eve
 | `session/errors/` | 400 `hash_mismatch` (the bad hash), 422 `object_missing` (an incomplete closure), 403, 401, 404 for a non-member, 413, 400 `batch_too_large`, 409 `offset_mismatch`, 422 `tag_immutable`. |
 | `folder/fork-detection.json` | The folder remote's append-only ref log: two entries with the same `seq` and `old`, which one wins, what stays reachable. |
 | `folder/layout.json` | The files a folder remote holds after the push. |
+| `paths/tree-paths.json` | The paths a tree may name (§4.2): valid ones, and refused ones with why (the names that are never parts, `references` among them, compared without case; empty and dot segments; a backslash). |
 
 The objects tell one story: `c1` (tree `T1`: a document and the relations) is on the server; Mihai (owner) commits `c2` (tree `T2`: walls and a script added) and issues it (`tag-issue`, file `issue.pdf`); Ana (editor) committed `c3` on `c1` meanwhile and is refused; `c4` (tree `T4`) names `missing.py`, which is never uploaded. `walls.arrow` and `relations.arrow` stand in for Arrow tables: the protocol never reads a part, so any bytes do.
 

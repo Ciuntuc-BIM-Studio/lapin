@@ -45,7 +45,7 @@ public sealed class CoreModule : ILapinModule
     static readonly HashSet<string> PlatformClasses =
     [
         IfcClass.Project, IfcClass.Site, IfcClass.Building, IfcClass.BuildingStorey,
-        IfcClass.Material, IfcClass.MaterialLayerSet, IfcClass.MaterialLayerSetUsage, Views.Class, Sheets.Class, Links.Class, StoredBodies.SharedClass, IfcSource.RecordClass, Cde.CdeIssues.Class, Cde.Remarks.Remarks.Class, Documents.Documents.Class,
+        IfcClass.Material, IfcClass.MaterialLayerSet, IfcClass.MaterialLayerSetUsage, Views.Class, Sheets.Class, Links.Class, StoredBodies.SharedClass, IfcSource.RecordClass, Cde.CdeIssues.Class, Cde.Remarks.Remarks.Class, Cde.References.References.Class, Documents.Documents.Class,
     ];
 
     public static bool Owns(string ifcClass) => PlatformClasses.Contains(ifcClass) || ifcClass.StartsWith("IfcRel", StringComparison.Ordinal);

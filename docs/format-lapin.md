@@ -80,6 +80,8 @@ versions/index.json                versiunile proiectului: fiecare un manifest a
 versions/blobs/<sha256>            o parte numită de o versiune pe care proiectul viu nu o mai are, o singură dată
 issues/index.json                  emiterile și fișierele lor, de citit fără Lapin (sursa e înregistrarea LapinIssue din model)
 issues/blobs/<sha256>              un fișier făcut de o emitere (PDF, borderou, CSV, manifest, DXF, IFC la cerere), o singură dată
+references/index.json              documentele de referință și fișierele lor, de citit fără Lapin (sursa e înregistrarea LapinReference)
+references/blobs/<sha256>          fișierul unui document de referință (CU, aviz, studiu), o singură dată; peste limita de păstrare doar hash-ul
 analytics/*.parquet                tabele pentru BI, doar la versiuni sau la export
 scripts/<nume>.py                  scripturile proiectului ca text (modulul scripting, decizia 489; Lapin citește entitatea LapinScript), părți ale modulului în manifest
 <orice altceva>                    intrările altor unelte (dag/, source/…, un fișier al lor în scripts/), păstrate octet cu octet („Părți străine”, mai jos)

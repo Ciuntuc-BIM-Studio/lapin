@@ -92,7 +92,7 @@ public static class RemoteObjects
         return manifest;
     }
 
-    static readonly string[] NeverParts = ["manifest.json", "versions", "issues", "history", "derived", "journal"];
+    static readonly string[] NeverParts = ["manifest.json", "versions", "issues", "references", "history", "derived", "journal"];
 
     /// <summary>A part's path as §4.2 allows it: relative, plain segments, 1–1024 bytes, not under a name that is never a part.</summary>
     public static bool TreePath(string? path)

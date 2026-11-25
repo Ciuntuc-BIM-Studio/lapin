@@ -73,7 +73,7 @@ public static class ClashReports
     public static readonly string[] States = [Open, Fixed, Ignored];
 
     /// <summary>What is not the model a clash report checks: its own report, remarks, views, sheets, annotations, issues.</summary>
-    static readonly HashSet<string> NotModel = [Class, Cde.Remarks.Remarks.Class, "LapinSheetRemark", Views.Class, Sheets.Class, "LapinIssue", IfcClass.Annotation, "LapinViewBoundary", "LapinInset", "LapinImage", "LapinSchedule", "LapinVersion", "LapinClashTest", "LapinSearchSet"];
+    static readonly HashSet<string> NotModel = [Class, Cde.Remarks.Remarks.Class, "LapinSheetRemark", Views.Class, Sheets.Class, "LapinIssue", "LapinReference", IfcClass.Annotation, "LapinViewBoundary", "LapinInset", "LapinImage", "LapinSchedule", "LapinVersion", "LapinClashTest", "LapinSearchSet"];
 
     /// <summary>
     /// The model's state as a clash check sees it: a SHA-256 over every element, type, material and relation (sorted by

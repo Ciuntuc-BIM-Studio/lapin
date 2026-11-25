@@ -313,7 +313,7 @@ public sealed class PdfDocument
 
     // ------------------------------------------------------------ streams
 
-    /// <summary>A stream's data decoded: FlateDecode (with a PNG or TIFF predictor), none, or null with a warning for a filter the reader does not have.</summary>
+    /// <summary>A stream's data decoded: FlateDecode (with a PNG or TIFF predictor), ASCIIHex, ASCII85, none, or null with a warning for a filter the reader does not have.</summary>
     public byte[]? Decoded(PdfStream s)
     {
         var filters = Resolve(s.Dict["Filter"]) switch { PdfName n => [n.Value], PdfArray a => a.Items.Select(x => Name(x) ?? "").ToList(), _ => new List<string>() };
@@ -329,6 +329,8 @@ public sealed class PdfDocument
                     data = Inflate(data);
                     if (parm != null) data = Predict(data, parm);
                     break;
+                case "ASCIIHexDecode" or "AHx": data = AsciiHex(data); break;
+                case "ASCII85Decode" or "A85": data = Ascii85(data); break;
                 case "": break;
                 default:
                     Warnings.Add($"A stream uses the filter {f}, which the reader does not decode.");
@@ -336,6 +338,52 @@ public sealed class PdfDocument
             }
         }
         return data;
+    }
+
+    /// <summary>ASCIIHexDecode (§7.4.2): pairs of hex digits up to '>', whitespace ignored.</summary>
+    public static byte[] AsciiHex(byte[] data)
+    {
+        var o = new List<byte>(data.Length / 2);
+        var pending = -1;
+        foreach (var c in data)
+        {
+            if (c == '>') break;
+            int v = c is >= (byte)'0' and <= (byte)'9' ? c - '0' : c is >= (byte)'a' and <= (byte)'f' ? c - 'a' + 10 : c is >= (byte)'A' and <= (byte)'F' ? c - 'A' + 10 : -1;
+            if (v < 0) continue;
+            if (pending < 0) pending = v; else { o.Add((byte)((pending << 4) | v)); pending = -1; }
+        }
+        if (pending >= 0) o.Add((byte)(pending << 4));
+        return [.. o];
+    }
+
+    /// <summary>ASCII85Decode (§7.4.3): groups of five characters '!'–'u' as four bytes, 'z' for four zeros, up to '~>'.</summary>
+    public static byte[] Ascii85(byte[] data)
+    {
+        var o = new List<byte>(data.Length * 4 / 5);
+        var group = new int[5];
+        var n = 0;
+        for (var i = 0; i < data.Length; i++)
+        {
+            var c = data[i];
+            if (c == '~') break;
+            if (PdfLexer.IsWhite(c)) continue;
+            if (c == 'z' && n == 0) { o.AddRange([0, 0, 0, 0]); continue; }
+            if (c < '!' || c > 'u') continue;
+            group[n++] = c - '!';
+            if (n == 5)
+            {
+                long v = 0; for (var k = 0; k < 5; k++) v = v * 85 + group[k];
+                o.AddRange([(byte)(v >> 24), (byte)(v >> 16), (byte)(v >> 8), (byte)v]);
+                n = 0;
+            }
+        }
+        if (n > 1)
+        {
+            for (var k = n; k < 5; k++) group[k] = 84;
+            long v = 0; for (var k = 0; k < 5; k++) v = v * 85 + group[k];
+            for (var k = 0; k < n - 1; k++) o.Add((byte)(v >> (24 - 8 * k)));
+        }
+        return [.. o];
     }
 
     /// <summary>zlib data inflated; raw deflate when the header is missing; a corrupt tail keeps what was read.</summary>

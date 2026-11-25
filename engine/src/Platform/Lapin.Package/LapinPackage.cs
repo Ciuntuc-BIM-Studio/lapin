@@ -38,6 +38,8 @@ public sealed class PackageWriteReport
     public List<string> Warnings { get; } = [];
     /// <summary>The issued files written, by hash, with their size: those the new package holds.</summary>
     public Dictionary<string, long> Issues { get; } = new(StringComparer.Ordinal);
+    /// <summary>The reference documents' files written (<c>references/blobs/</c>), by hash, with their size.</summary>
+    public Dictionary<string, long> References { get; } = new(StringComparer.Ordinal);
     /// <summary>Why the package must not replace an existing file (it would lose what could not be read); null: it may.</summary>
     public string? Refuse { get; set; }
 }
@@ -56,10 +58,12 @@ public sealed record PackageBuild(PackageManifest Manifest, IReadOnlyList<(Packa
 /// versions/blobs/&lt;sha256&gt;               a version's part the live project no longer has
 /// issues/index.json                      the project's issues and their files, for whoever opens the zip (the record is the model's)
 /// issues/blobs/&lt;sha256&gt;                 a file an issue made, kept in the project (docs/plan-cde.md), once however many issues share it
+/// references/index.json                  the project's reference documents and their files, for whoever opens the zip (docs/plan-cde-references.md)
+/// references/blobs/&lt;sha256&gt;             a reference document's file (a certificate, a permit), once however many documents name it
 /// scripts/&lt;name&gt;.py                      a project's script as text (the scripting module's, decision 489; its LapinScript entity is what Lapin reads)
 /// &lt;anything else&gt;                        another tool's entries (dag/, source/…, a file of its own in scripts/), kept byte for byte (<see cref="PackageForeign"/>)
 /// </code>
-/// A package without <c>issues/</c> (older, or a project never issued) reads as before; an older Lapin skips the folder it does not know.
+/// A package without <c>issues/</c> or <c>references/</c> (older, or a project never issued) reads as before; an older Lapin skips the folders it does not know.
 /// Writing goes to a temporary file first, then replaces the target: a crash
 /// while saving never leaves half a project.
 /// </summary>
@@ -237,18 +241,21 @@ public static class LapinPackage
                 report.Warnings.Add($"{missing.Count} part(s) of version {string.Join(", ", hit)} could not be carried over ({missing.Values.First()}): those versions can no longer be restored.");
             }
         }
-        if (issues is { Keep.Count: > 0 })
+        void Blobs(IssueFiles files, Dictionary<string, long> into)
         {
-            if (issues.Index is { } index) Entry(PackageIssues.IndexPath, index);
+            if (files.Index is { } index) Entry(files.Store.IndexName, index);
             // Compressed quickly: a PDF is compressed already, an IFC (text) shrinks well either way, and a save with many issues stays fast.
-            var written = issues.Store.CopyTo(issues.Written, (sha, bytes) =>
+            var written = files.Store.CopyTo(files.Written, (sha, bytes) =>
             {
                 elsewhere.Add(sha);
-                using var s = zip.CreateEntry(PackageIssues.Prefix + sha, CompressionLevel.Fastest).Open();
+                using var s = zip.CreateEntry(files.Store.BlobPrefix + sha, CompressionLevel.Fastest).Open();
                 bytes.CopyTo(s);
             }, report);
-            foreach (var (sha, size) in written) report.Issues[sha] = size;
+            foreach (var (sha, size) in written) into[sha] = size;
         }
+        if (issues is { Keep.Count: > 0 }) Blobs(issues, report.Issues);
+        // The reference documents (docs/plan-cde-references.md §3.5): their index whenever the project has any, the files their records hold.
+        if (issues?.References is { } references && (references.Keep.Count > 0 || references.Index != null)) Blobs(references, report.References);
         // The project's history (docs/spec-lapin-remote.md §6): its commits, trees and the blobs no other place in the file holds.
         if (foreign?.History is { } history)
         {

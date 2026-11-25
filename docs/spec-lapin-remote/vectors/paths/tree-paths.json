@@ -1,0 +1,80 @@
+{
+  "title": "Paths a tree may name (§4.2): valid ones, and refused ones with why. The first segment is compared without case.",
+  "never": [
+    "manifest.json",
+    "versions",
+    "issues",
+    "references",
+    "history",
+    "derived",
+    "journal"
+  ],
+  "valid": [
+    "model/core/IfcWall/_.arrow",
+    "model/relations.arrow",
+    "project/document.json",
+    "scripts/hello.py",
+    "dag/graph.json",
+    "reference/notes.txt",
+    "models/references.json",
+    "model/core/LapinReference/_.arrow"
+  ],
+  "refused": [
+    {
+      "path": "manifest.json",
+      "why": "never a part"
+    },
+    {
+      "path": "versions/index.json",
+      "why": "never a part"
+    },
+    {
+      "path": "issues/blobs/0000000000000000000000000000000000000000000000000000000000000000",
+      "why": "never a part"
+    },
+    {
+      "path": "references/index.json",
+      "why": "never a part"
+    },
+    {
+      "path": "references/blobs/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "why": "never a part"
+    },
+    {
+      "path": "References/blobs/x",
+      "why": "never a part (without case)"
+    },
+    {
+      "path": "history/objects/x",
+      "why": "never a part"
+    },
+    {
+      "path": "derived/x",
+      "why": "never a part"
+    },
+    {
+      "path": "journal/x",
+      "why": "never a part"
+    },
+    {
+      "path": "",
+      "why": "empty"
+    },
+    {
+      "path": "a//b",
+      "why": "an empty segment"
+    },
+    {
+      "path": "../a",
+      "why": "a dot segment"
+    },
+    {
+      "path": "a/./b",
+      "why": "a dot segment"
+    },
+    {
+      "path": "a\\b",
+      "why": "a backslash"
+    }
+  ]
+}

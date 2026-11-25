@@ -136,6 +136,16 @@ public sealed class RemoteVectorTests : IDisposable
     }
 
     [Fact]
+    public void Tree_paths_follow_the_vector_references_among_the_names_never_parts()
+    {
+        var v = (JsonObject)JsonNode.Parse(File.ReadAllText(Path.Combine(Vectors, "paths", "tree-paths.json")))!;
+        Assert.Contains("references", v["never"]!.AsArray().Select(x => (string?)x));
+        foreach (var name in v["never"]!.AsArray()) Assert.False(RemoteObjects.TreePath($"{(string)name!}/x"), (string)name!);
+        foreach (var path in v["valid"]!.AsArray()) Assert.True(RemoteObjects.TreePath((string)path!), (string)path!);
+        foreach (var r in v["refused"]!.AsArray()) Assert.False(RemoteObjects.TreePath((string)r!["path"]!), (string)r["path"]!);
+    }
+
+    [Fact]
     public void Ref_names_follow_the_grammar()
     {
         Assert.True(RefNames.Valid("refs/heads/main"));
