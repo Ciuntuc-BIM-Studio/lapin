@@ -81,6 +81,9 @@ public static class Combinations
     static (List<Combination> Combinations, List<string> Notes) Generated(LoadsReport report, CombinationSettings settings)
     {
         var (gSup, gInf, gQ) = (settings.GammaGSup, settings.GammaGInf, settings.GammaQ);
+        // γd of the safety class (1 without one): on the unfavourable actions of the ultimate combinations; the favourable
+        // permanent ones (the wind's uplift) keep γG,inf, and the serviceability ones are as they are.
+        var gd = settings.GammaD;
         var notes = new List<string>();
         var used = new List<LoadCase>();
         foreach (var c in report.Cases)
@@ -133,20 +136,20 @@ public static class Combinations
             // 6.10a: the permanent actions with γG,sup, every variable one at its combination value; 6.10b: ξ γG,sup, each lead in turn.
             if (q.Count > 0)
                 foreach (var others in Choices(null))
-                    Add("uls/6.10a", "uls", null, others, gSup, 0, c => gQ * c.Psi.Psi0);
+                    Add("uls/6.10a", "uls", null, others, gd * gSup, 0, c => gd * gQ * c.Psi.Psi0);
             foreach (var lead in q)
                 foreach (var others in Choices(lead))
-                    Add($"uls/{lead.Id}", "uls", lead, others, settings.Xi * gSup, gQ, c => gQ * c.Psi.Psi0);
+                    Add($"uls/{lead.Id}", "uls", lead, others, gd * settings.Xi * gSup, gd * gQ, c => gd * gQ * c.Psi.Psi0);
         }
         else
             foreach (var lead in q)
                 foreach (var others in Choices(lead))
-                    Add($"uls/{lead.Id}", "uls", lead, others, gSup, gQ, c => gQ * c.Psi.Psi0);
-        if (g.Count > 0) o.Add(Make("uls/permanent", "uls", g.Select(c => new Factor(c, gSup))));
+                    Add($"uls/{lead.Id}", "uls", lead, others, gd * gSup, gd * gQ, c => gd * gQ * c.Psi.Psi0);
+        if (g.Count > 0) o.Add(Make("uls/permanent", "uls", g.Select(c => new Factor(c, gd * gSup))));
         // Wind with the permanent actions favourable: the uplift; a wind case of the roofs' pressure set lifts nothing.
         var winds = q.Where(c => c.Wind && c.RoofCpe != "max").ToList();
         foreach (var wind in winds)
-            o.Add(Make(winds.Count == 1 ? "uls/wind-uplift" : $"uls/wind-uplift/{wind.Id}", "uls", g.Select(c => new Factor(c, gInf)).Append(new Factor(wind, gQ))));
+            o.Add(Make(winds.Count == 1 ? "uls/wind-uplift" : $"uls/wind-uplift/{wind.Id}", "uls", g.Select(c => new Factor(c, gInf)).Append(new Factor(wind, gd * gQ))));
         foreach (var lead in q)
             foreach (var others in Choices(lead))
                 Add($"slsc/{lead.Id}", "sls-characteristic", lead, others, 1, 1, c => c.Psi.Psi0);
@@ -161,12 +164,24 @@ public static class Combinations
             notes.Add($"The arrangements of the snow and the directions of the wind are alternatives: each combination takes one of them ({o.Count} combinations).");
 
         var own = settings.OwnGammaGSup != null || settings.OwnGammaGInf != null || settings.OwnGammaQ != null || settings.OwnPsi.Count > 0;
-        if (settings.Set == CombinationSettings.En && !own)
+        if (settings.MissingSet != null)
+            notes.Add($"The rules in use have no set of factors „{settings.MissingSet}”: the combinations take {settings.Factors.Label}.");
+        if (settings.Set == CombinationSettings.En && !own && settings.BuiltinFactors)
             notes.Add("Indicative: EN 1990 Annex A1, the recommended values (γG 1.35, γQ 1.5, ψ by Table A1.1, snow for sites up to 1000 m).");
-        else if (settings.Set == CombinationSettings.Cr0 && !own)
+        else if (settings.Set == CombinationSettings.Cr0 && !own && settings.BuiltinFactors)
             notes.Add("Indicative: CR 0-2012 (γG 1.35, γQ 1.5 by its Table 7.2, ψ by its Table 7.1: snow 0.7, 0.5, 0.4; wind 0.7, 0.2, 0).");
+        else if (!own)
+            notes.Add($"Indicative: {settings.Factors.Label}, the rules' values: γG,sup {N(gSup)}, γG,inf {N(gInf)}, γQ {N(gQ)}; yours to check against the edition in force.");
         else
             notes.Add($"Indicative: {settings.Factors.Label}, with the project's own factors: γG,sup {N(gSup)}, γG,inf {N(gInf)}, γQ {N(gQ)}.");
+        if (settings.SafetyClass != null)
+            notes.Add(settings.Factors.SafetyClasses.ContainsKey(settings.SafetyClass)
+                ? $"Safety class {settings.SafetyClass}: γd {N(gd)} on the unfavourable actions of the ultimate combinations (the favourable permanent ones keep γG,inf)."
+                : $"The set has no safety class „{settings.SafetyClass}”: γd 1.");
+        if (settings.SnowZone is { } zone)
+            notes.Add($"ψ of snow by the site's s0,k {N(settings.SnowS0k ?? 0)} kN/m² (the set's zone from {N(zone.From)}): {N(zone.Psi.Psi0)}, {N(zone.Psi.Psi1)}, {N(zone.Psi.Psi2)}.");
+        else if (settings.Factors.SnowZones.Count > 0 && settings.SnowS0k == null)
+            notes.Add("The set gives ψ of snow by the site's s0,k: with no snow given for the site, its table's value is taken.");
         if (settings.Split)
             notes.Add(settings.Set == CombinationSettings.Cr0
                 ? $"Expressions 6.10a and 6.10b (EN 1990), ξ = {N(settings.Xi)}: the project's choice; CR 0-2012 itself has only its expression 6.9 (EN's 6.10)."

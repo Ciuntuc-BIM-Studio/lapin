@@ -46,6 +46,8 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
         ], "#c2410c", Kind: "resource"));
         UserLoads.Register(r);
         r.Service<INewProject>(new CombinationSettings.NewProject());
+        // The loads of a rule pack (docs/plan-national-packs.md N1): the factor sets and the imposed loads as data.
+        r.Service<IRuleSection>(LoadRuleSection.Instance);
         r.Service<IElementUpdate>(this);
         r.Service<IDeletion>(this);
         r.Service<IViewAnnotations>(this);
@@ -158,7 +160,7 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
             var own = Categories.Overrides(q.Model);
             return new JsonArray(Categories.All.Select(c => (JsonNode)new JsonObject
             {
-                ["key"] = c.Key, ["label"] = c.Label, ["qk"] = own.TryGetValue(c.Key, out var v) ? v : c.Qk, ["default"] = c.Qk, ["overridden"] = own.ContainsKey(c.Key),
+                ["key"] = c.Key, ["label"] = c.Label, ["qk"] = own.TryGetValue(c.Key, out var v) ? v : Categories.PackQk(q.Model, c.Key) ?? c.Qk, ["default"] = Categories.PackQk(q.Model, c.Key) ?? c.Qk, ["overridden"] = own.ContainsKey(c.Key),
             }).ToArray());
         });
 
@@ -176,8 +178,9 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
 
         // ── Combinations (§13) ──
 
-        // {set?: en | cr0, gammaGSup?, gammaGInf?, gammaQ?, psi?: {category: {0, 1, 2} | null}, expression?: 6.10 | 6.10ab, xi?}:
-        // the project's combination factors; null back to the set's. One undo step.
+        // {set?: en | cr0 | a set of the rule pack's, gammaGSup?, gammaGInf?, gammaQ?, psi?: {category: {0, 1, 2} | null},
+        // expression?: 6.10 | 6.10ab, xi?, safetyClass?: a class of the set's (its γd) | null}: the project's combination factors;
+        // null back to the set's. One undo step.
         r.Command("setCombinationOptions", "Combination factors", (ctx, a) => { CombinationSettings.Write(ctx, a); return null; });
 
         // {key, enabled}: a combination switched off (left out of results, envelopes, checks and export) or on again. One undo step.
