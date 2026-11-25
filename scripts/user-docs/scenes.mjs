@@ -1729,12 +1729,10 @@ export const scenes = [
       t.expect(await width.count() === 1 && await t.page.locator('aside.props [data-field=joinery-height]').count() === 1, 'a door\'s width and height are fields of its own');
       await width.fill('950');
       await width.press('Enter');
-      await t.wait(400);
-      const sized = (await t.nodes()).find((n) => n.id === door.id);
-      t.expect(Math.abs((sized?.props.width ?? 0) - 0.95) < 1e-6, `the door 950 wide of its own (${sized?.props.width})`);
+      // Polled, not waited for: a machine at work on other scenes answers late.
+      await t.until(async () => Math.abs(((await t.nodes()).find((n) => n.id === door.id)?.props.width ?? 0) - 0.95) < 1e-6, 'the door 950 wide of its own');
       await t.page.locator('aside.props [data-action=joinery-type-size]').click();
-      await t.wait(400);
-      t.expect((await t.nodes()).find((n) => n.id === door.id)?.props.width == null, 'Type\'s size gives its own width up');
+      await t.until(async () => (await t.nodes()).find((n) => n.id === door.id)?.props.width == null, 'Type\'s size gives its own width up');
       await t.tool('architecture.joineryTypes');
       // The 3D preview under the drawings (report #108), drawn once the engine's meshes come.
       t.expect(await t.page.locator('[data-testid=joinery-preview-3d] canvas').count() === 1, 'the configurator shows its 3D preview');
@@ -14317,6 +14315,9 @@ export const scenes = [
       await t.ui({ dialog: 'rebarSettings' });
       await t.wait(1000);
       t.expect(await page.locator('[data-field=notation-rebar]').count() === 1, 'Rebar settings has its Notation block');
+      // The dialog scrolls: in a language with longer texts the block starts below the window.
+      await page.locator('[data-field=notation-rebar]').scrollIntoViewIfNeeded();
+      await t.wait(300);
       await t.shot('rebar-notation', { of: '[data-field=notation-rebar]', pad: 6 });
       await t.ui({ dialog: null, keyPlan: true });
     },
@@ -17962,6 +17963,8 @@ export const scenes = [
       const s = await t.storey();
       const a = (37 * Math.PI) / 180;
       const wall = (await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 0, x2: 4 * Math.cos(a), y2: 4 * Math.sin(a) })).id;
+      // The key plan's thumbnail would sit over the wall's end once it is fitted.
+      await t.ui({ keyPlan: false });
       await t.fit();
       await select(t, wall);
       await t.wait(800);
@@ -17975,15 +17978,16 @@ export const scenes = [
       await page.mouse.move(tx, ty, { steps: 4 });
       await t.wait(300);
       t.expect(await page.locator('[data-testid=angle-lock-hint]').count() > 0, 'the live box says Ctrl/⌘ keeps the angle');
+      // The change in length typed: 1500 mm longer, on the side of the cursor (typed before the key: Ctrl+digit is a shortcut; what is typed stays).
+      for (const k of ['1', '5', '0', '0']) await page.keyboard.press(k);
       await page.keyboard.down('Control');
       await page.mouse.move(tx + 2, ty - 2, { steps: 2 });
       await t.wait(300);
       t.expect(await page.locator('[data-testid=angle-lock]').count() > 0, 'the live box shows the angle is kept');
-      // The change in length typed: 1500 mm longer, on the side of the cursor.
-      for (const k of ['1', '5', '0', '0']) await page.keyboard.press(k);
-      await t.wait(300);
       await t.shot('grip-angle-lock', { clip: { x: 250, y: 120, width: 1190, height: 700 } });
       await page.keyboard.press('Enter');
+      await t.wait(300);
+      await page.mouse.up();
       await page.keyboard.up('Control');
       await t.wait(800);
       const w = (await t.nodes()).find((n) => n.id === wall);
