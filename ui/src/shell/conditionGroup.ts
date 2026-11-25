@@ -21,6 +21,8 @@ export const OP_LABELS: Record<UOp, string> = {
 export const FACETS: [string, string][] = [
   ['@class', 'IFC class'], ['@category', 'Category'], ['@type', 'Type'], ['@name', 'Name'], ['@material', 'Material'], ['@storey', 'Storey'],
   ['@group', 'Group'], ['@link', 'Linked file'], ['@phase', 'Phase created'], ['@demolished', 'Phase demolished'], ['@predefinedType', 'Predefined type'],
+  // Whether it bears load, yes or no (the Structural tick, else the rule; docs/plan-structural-usage.md).
+  ['@structural', 'Structural'],
 ];
 export const TEXT_FACET = '@text:';
 export const isTextFacet = (field: string) => field.startsWith(TEXT_FACET);

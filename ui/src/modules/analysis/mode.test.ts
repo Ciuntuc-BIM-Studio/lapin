@@ -97,7 +97,7 @@ describe('the notes', () => {
       'Bars as Timoshenko beams, their shear areas from the section (EN 1993-1-1 §6.2.6(3) for steel, 5/6·A for a rectangle).',
       '„Q1”: 2 kN of 1 load find nothing under them (no bar, slab or wall within reach) and are left out: Load 1.',
       'Bars as Timoshenko beams, their shear areas from the section (EN 1993-1-1 §6.2.6(3) for steel, 5/6·A for a rectangle).',
-      'Walls that say nothing of their load taken as load-bearing (masonry or concrete, a core of 10 cm or more): Wall 1. Set Pset_WallCommon.LoadBearing to false on a partition to leave it out.',
+      'Walls that say nothing of their load taken as load-bearing (masonry or concrete, a core of 10 cm or more): Wall 1. Clear Structural in a partition\'s properties to leave it out.',
     ]);
     expect(o.notes).toHaveLength(3);
     expect(o.warnings).toBe(2);

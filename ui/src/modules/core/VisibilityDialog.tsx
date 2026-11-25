@@ -528,6 +528,8 @@ function FiltersTab({ target, rows, fields, hatches, defs, counts, editing, setE
           </select>
         )}
         <button type="button" className="btn" data-testid="vv-new-filter" onClick={() => void execute('viewFilter.create', { name: 'New filter', rules: [{ field: 'category', op: 'equals', value: 'walls' }] }).then((x) => { const r = x as { id?: string } | null; if (r?.id) { setEditing(r.id); save([...used, { id: r.id, hidden: true }]); } })}><Plus size={13} />New filter</button>
+        <button type="button" className="btn" data-testid="vv-structural-preset" title="A filter of what is not structural, drawn halftone in this view: the load-bearing elements stand out"
+          onClick={() => void structuralPreset(defs, used, save)}>Structural usage</button>
         <span className="muted small">The first filter in the list that takes an element decides whether it is shown.</span>
       </div>
       {edited && (
@@ -544,6 +546,22 @@ function FiltersTab({ target, rows, fields, hatches, defs, counts, editing, setE
       )}
     </div>
   );
+}
+
+/**
+ * The built-in preset "Structural usage" (docs/plan-structural-usage.md): the project's filter of what is not structural (made
+ * once, by its rule), shown halftone in the view; what bears load stays drawn in full.
+ */
+async function structuralPreset(defs: ViewFilter[], used: FilterRow[], save: (next: FilterRow[]) => void) {
+  const isIt = (d: ViewFilter) => d.rules.length === 1 && d.rules[0].field === 'structural' && d.rules[0].op === 'equals' && d.rules[0].value === 'no';
+  let id = defs.find(isIt)?.id;
+  if (!id) {
+    const made = await execute('viewFilter.create', { name: 'Not structural', rules: [{ field: 'structural', op: 'equals', value: 'no' }] }) as { id?: string } | null;
+    id = made?.id;
+  }
+  if (!id) return;
+  const rest = used.filter((r) => r.id !== id);
+  save([...rest, { ...(used.find((r) => r.id === id) ?? { id }), hidden: false, halftone: true }]);
 }
 
 /** A filter's hatch: not set (the view's own), none, or a pattern. */

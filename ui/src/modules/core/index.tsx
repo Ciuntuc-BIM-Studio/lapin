@@ -6,7 +6,7 @@ import { StoreySection } from './StoreySection';
 import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
 import { calibrateTool } from './cloudCalibrate';
-import { Aperture, AlignStartVertical, ArrowLeftRight, CornerDownRight, CopyPlus, Slash, Scale, Braces, Tags, Pin, PinOff, Printer, PackageOpen, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, ListFilter, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, Shapes, SlidersHorizontal, Square, Table2, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2, ListChecks } from 'lucide-react';
+import { Aperture, AlignStartVertical, Columns3, Columns3Cog, ArrowLeftRight, CornerDownRight, CopyPlus, Slash, Scale, Braces, Tags, Pin, PinOff, Printer, PackageOpen, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, ListFilter, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, Shapes, SlidersHorizontal, Square, Table2, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2, ListChecks } from 'lucide-react';
 import { openTempDimProperties, TEMP_DIM_DIALOG } from '../../viewport/tempDimProps';
 import { AngleDims } from '../../viewport/AngleTempDims';
 import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
@@ -42,6 +42,8 @@ import { hasModule } from '../../platform/brand';
 import { openDocuments } from './documents/documents';
 import { convertToNative } from './convertTools';
 import { pinSelection } from './pinTools';
+import { StructuralSection } from './StructuralSection';
+import { markSelection, STRUCTURAL_CLASSES, STRUCTURAL_TYPES } from './structural';
 import { MatchOptions, matchProperties } from './matchTool';
 import { arraySelection } from './arrayTool';
 import { GroupSection } from './GroupSection';
@@ -237,6 +239,9 @@ const core: LapinModule = {
       // Pinned where it is, as Revit pins (decision 449): not moved, turned, mirrored nor deleted until unpinned.
       { id: 'modify.pin', label: 'Pin', icon: Pin, run: () => void pinSelection(true) },
       { id: 'modify.unpin', label: 'Unpin', icon: PinOff, shortcut: 'UP', run: () => void pinSelection(false) },
+      // The Structural tick on the selection (docs/plan-structural-usage.md): said load-bearing, or said not.
+      { id: 'modify.structural', label: 'Structural', icon: Columns3, run: () => void markSelection(true) },
+      { id: 'modify.notStructural', label: 'Not structural', icon: Columns3Cog, run: () => void markSelection(false) },
       { id: 'modify.similar', label: 'Create similar', icon: CopyCheck, shortcut: 'CS', enabled: canCreateSimilar, run: createSimilar },
       { id: 'modify.match', label: 'Match properties', icon: Pipette, shortcut: 'MA', run: () => void startCommand('MATCHPROP') },
       { id: 'modify.moveToStorey', label: 'Move to storey', icon: MoveToStoreyIcon, run: () => useUi.setState({ dialog: 'moveToStorey' }) },
@@ -477,6 +482,8 @@ const core: LapinModule = {
     { id: 'thermal', label: 'Thermal', classes: THERMAL_CLASSES, component: ThermalSection },
     { id: 'array', label: 'Array', classes: ['*'], shows: (n) => arrayOf(n, useSession.getState().nodes) !== null, component: ArraySection },
     // Each end joining automatically or not (the forum's topic #50, decision 546).
+    // Structural (load-bearing), ticked, cleared or by rule (docs/plan-structural-usage.md, decision 866).
+    { id: 'structural', label: 'Structural', classes: [...STRUCTURAL_CLASSES, ...STRUCTURAL_TYPES], component: StructuralSection },
     { id: 'autoJoin', label: 'Joins', classes: ['IfcWall', 'IfcBeam', 'IfcFooting'], shows: (n) => isPathElement(n.props), component: AutoJoinSection },
     { id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection, fieldKeys: butDiscipline('LapinSheet') },
     { id: 'storeyLevels', label: 'Levels', classes: ['IfcBuildingStorey'], component: StoreySection, replacesFields: () => true },
