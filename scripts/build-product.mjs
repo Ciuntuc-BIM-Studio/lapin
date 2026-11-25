@@ -76,7 +76,7 @@ if (!rid) { console.error(`No .NET runtime id for ${triple}`); process.exit(1); 
 const exe = triple.includes('windows') ? '.exe' : '';
 
 const commits = spawnSync('git', ['rev-list', '--count', 'HEAD'], { cwd: root, encoding: 'utf8' }).stdout?.trim();
-const version = process.env.LAPIN_VERSION ?? (commits ? `0.1.${commits}` : null);
+const version = process.env.LAPIN_VERSION || (commits ? `0.1.${commits}` : null);
 if (!version || !/^\d+\.\d+\.\d+$/.test(version)) { console.error(`No version: set LAPIN_VERSION (x.y.z), or build from a git checkout (${version ?? 'no commit count'}).`); process.exit(1); }
 console.log(`▸ ${product.name} ${version}`);
 
@@ -140,6 +140,11 @@ if (mac) console.log(identity ? `▸ signing as ${identity}` : '▸ no Developer
 // signed with the app's identity and the hardened runtime, as notarization asks of every executable inside the app.
 sh('node', [join(root, 'scripts/fetch-oidn.mjs'), '--rid', rid]);
 cpSync(join(root, 'engine/native', rid, 'oidn'), join(res, 'oidn'), { recursive: true, dereference: true });
+// Linux: TBB's NUMA binding (libtbbbind*) left out. It needs hwloc (libhwloc.so.15), which the build machine and many
+// systems lack, so linuxdeploy refused the AppImage ("Could not find dependency: libhwloc.so.15", since S4 on 22.11.2026);
+// TBB loads it only when it is there, and without it the denoiser runs the same, its threads unpinned.
+if (rid === 'linux-x64')
+  for (const f of readdirSync(join(res, 'oidn', 'lib'))) if (/^libtbbbind/.test(f)) rmSync(join(res, 'oidn', 'lib', f), { force: true });
 if (mac && identity)
   for (const dir of ['bin', 'lib'])
     for (const f of readdirSync(join(res, 'oidn', dir)))
@@ -157,7 +162,7 @@ if (mac && identity)
 // (Fedora, RHEL, openSUSE) uses the system's WebKitGTK like the .deb, not the older one the AppImage carries.
 // Only here: on macOS and Windows a file association would register .lapin before the app handles a file opened so.
 const mimeXml = { [`/usr/share/mime/packages/${id}.xml`]: 'linux/lapin-project.xml' };
-// LAPIN_LINUX_BUNDLES=deb,rpm leaves a package out (23.11.2026: the AppImage tools' "continuous" plugin stopped running);
+// LAPIN_LINUX_BUNDLES=deb,rpm leaves a package out (23.11.2026 to 25.11.2026 the AppImage failed on OIDN's libtbbbind, above);
 // empty or unset, all three.
 const linuxTargets = (process.env.LAPIN_LINUX_BUNDLES ?? '').split(',').map((s) => s.trim()).filter((s) => ['deb', 'rpm', 'appimage'].includes(s));
 const linuxBundle = {
@@ -192,7 +197,8 @@ const bundleDir = join(releaseDir, 'bundle');
 rmSync(bundleDir, { recursive: true, force: true }); // never ship another product's leftovers
 // Notarization is done below with the keychain profile, never by Tauri from passwords in the environment.
 if (mac) for (const k of ['APPLE_ID', 'APPLE_PASSWORD', 'APPLE_TEAM_ID', 'APPLE_API_KEY', 'APPLE_API_ISSUER', 'APPLE_API_KEY_PATH']) delete process.env[k];
-sh('pnpm', ['tauri', 'build', '--config', join(tauriDir, 'tauri.product.json'), ...(cross ? ['--runner', 'cargo-xwin', '--target', triple] : [])],
+// LAPIN_TAURI_VERBOSE=1 shows what the bundlers print (linuxdeploy's own errors for the AppImage).
+sh('pnpm', ['tauri', 'build', '--config', join(tauriDir, 'tauri.product.json'), ...(cross ? ['--runner', 'cargo-xwin', '--target', triple] : []), ...(process.env.LAPIN_TAURI_VERBOSE ? ['--verbose'] : [])],
   { cwd: join(root, 'desktop'), env: cross ? { XWIN_ACCEPT_LICENSE: '1' } : {} });
 
 // Windows: besides the installer, a portable zip (the app, its engine and resources in one folder), as testers unpack and run it.
