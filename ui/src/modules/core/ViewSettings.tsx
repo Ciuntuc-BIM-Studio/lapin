@@ -28,6 +28,7 @@ import { useMaterialGraphicsSets } from './materialGraphicsSets';
 import { BeyondFields, BeyondStyleCells } from './ViewDepth';
 import { materialSetChoice, materialSetPatch, ENTOURAGE_FILLS, parseMinSpacing, ENTOURAGE_MODES, FINISH_FIELDS, LOD_HELP, LODS, STRUCTURE_MODES, structureLabel, styleStructure, useViewStyles, VEGETATION_HELP, VEGETATION_MODES, type EntourageMode, type LayerMode, type VegetationMode, type ViewStyle } from './viewStyles';
 import { frontView } from '../../viewport/frontView';
+import { VIEW_LEVEL_MODES, viewDatumChoice, viewDatumPatch } from '../../shell/levelDatum';
 import { storeys } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
 import { PlanStoreysEditor } from './PlanStoreys';
@@ -121,6 +122,15 @@ function ViewSettingsEditor({ view }: { view: NodeDto }) {
           </select><Reset field="materialGraphicsSet" />
           <Edit label="Edit sets…" dialog="materialGraphicsSets" />
         </dd>
+        {!threeD && <>
+          <dt title="How the view writes its levels: relative to ±0.00, as altitudes or both; the project's (Manage → Location) unless it says its own">Levels</dt>
+          <dd>
+            <select data-testid="view-level-datum" value={viewDatumChoice(view.props.levelDatum)} onChange={(e) => void execute('view.levelDatum', viewDatumPatch({ id: view.id }, e.target.value))}>
+              <option value="">as the project's</option>
+              {VIEW_LEVEL_MODES.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+            </select>
+          </dd>
+        </>}
         <dt title={VEGETATION_HELP}>Vegetation</dt>
         <dd>
           <select data-testid="view-vegetation" value={state.resolved.vegetation ?? 'coloured'} onChange={(e) => set({ vegetation: e.target.value })}>

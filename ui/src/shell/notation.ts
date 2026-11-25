@@ -14,6 +14,14 @@ export interface NotationDomain { id: string; label: string; preset: string | nu
 /** The symbols offered beside free text: the diameter's in Europe (Ø, ⌀, φ), the UK's grades (H, T, Y, R), the US's bar size (#). */
 export const SYMBOLS = ['Ø', '⌀', 'φ', 'ϕ', 'H', 'T', 'Y', 'R', 'B', '#'];
 
+/** A level's signs (decision 867): the zero's ±, a plus, a true minus or a hyphen. */
+export const LEVEL_SYMBOLS = ['±', '+', '−', '-'];
+
+/** The symbols offered for a domain's symbol keys. */
+export function symbolsOf(domain: string): string[] {
+  return domain === 'levels' ? LEVEL_SYMBOLS : SYMBOLS;
+}
+
 /** A domain's notation as the project has it, read again after every change. */
 export function useNotation(domain: string): NotationDomain | null {
   const nodes = useSession((s) => s.nodes);

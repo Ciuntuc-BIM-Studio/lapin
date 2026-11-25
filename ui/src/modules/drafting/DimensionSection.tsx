@@ -14,6 +14,7 @@ import { select, useUi } from '../../app/store';
 import { startCommand } from '../../viewport/cad/session';
 import type { DimensionInfo } from '../../viewport/dimensionEdit';
 import { LengthField, NumberField } from '../../shell/cells';
+import { VIEW_LEVEL_MODES, viewDatumChoice } from '../../shell/levelDatum';
 
 export function DimensionSection({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
@@ -48,6 +49,10 @@ export function DimensionSection({ node }: { node: NodeDto }) {
       <dt>Kind</dt><dd>{string ? `${kind} · ${values.length} segments` : kind}</dd>
       {kind === 'slope' && <><dt>Written as</dt><dd><select value={String(node.props.format ?? 'auto')} onChange={(e) => set({ format: e.target.value })}>
         <option value="auto">auto (% under 15 %, else degrees)</option><option value="%">%</option><option value="deg">degrees</option><option value="ratio">1:n</option>
+      </select></dd></>}
+      {kind === 'level' && <><dt title="Relative to ±0.00, as an altitude or both, over the view's">Written as</dt><dd><select data-field="dimension-level-datum" value={viewDatumChoice(node.props.datum)} onChange={(e) => set({ datum: e.target.value || null })}>
+        <option value="">as the view's</option>
+        {VIEW_LEVEL_MODES.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
       </select></dd></>}
       {values.map((v, i) => (
         <SegmentRow key={`${i}:${v}`} label={unit ? (string ? `Segment ${i + 1} (${unit})` : `Value (${unit})`) : string ? <>Segment {i + 1}</> : 'Value'}

@@ -7,6 +7,56 @@ import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { LengthField, NumberField } from '../../shell/cells';
 import { PendingDialog } from './PendingDialog';
+import { NotationFields } from '../../shell/NotationFields';
+import { LEVEL_MODES, levelDatumPatch, type LevelDatumDto } from '../../shell/levelDatum';
+import { storeys } from '../../engine/model';
+
+/**
+ * How levels are written (decision 867): relative to ±0.00, as altitudes or both; the storey ±0.00 is at; the tie „±0.00 = 650.00”,
+ * which sets the base point's elevation (the model does not move); a terrain whose datum differs, taken in one click; the notation.
+ */
+function LevelsBlock() {
+  const nodes = useSession((s) => s.nodes);
+  const [d, setD] = useState<LevelDatumDto | null>(null);
+  useEffect(() => {
+    let live = true;
+    void query<LevelDatumDto>('project.levelDatum').then((r) => { if (live) setD(r); });
+    return () => { live = false; };
+  }, [nodes]);
+  if (!d) return null;
+  const put = (change: Parameters<typeof levelDatumPatch>[0]) => void execute('project.levelDatum', levelDatumPatch(change));
+  const levels = storeys(useSession.getState());
+  return (
+    <div data-field="level-datum">
+      <h4>Levels</h4>
+      <label className="row"><span className="muted small loc-label">Levels written as</span>
+        <select data-field="level-datum-mode" value={d.mode} onChange={(e) => put({ mode: e.target.value as LevelDatumDto['mode'] })}>
+          {LEVEL_MODES.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+        </select>
+      </label>
+      <label className="row"><span className="muted small loc-label">Zero storey</span>
+        <select data-field="level-datum-storey" value={d.zeroStorey ?? ''} title="The storey whose level is ±0.00 on drawings; the model does not move" onChange={(e) => put({ zeroStorey: e.target.value || null })}>
+          <option value="">None: the model's 0.00</option>
+          {levels.map((s) => <option key={s.id} value={s.id} data-no-i18n>{s.name}</option>)}
+        </select>
+      </label>
+      <label className="row"><span className="muted small loc-label" data-no-i18n>±0.00 =</span>
+        <NumberField testId="level-datum-tie" value={Math.round(d.zeroAltitude * 1000) / 1000} suffix="m" title="The altitude of ±0.00: it sets the base point's elevation; the model does not move" onCommit={(v) => { if (v != null) put({ tie: v }); }} />
+        <span className="muted small num" data-no-i18n> {d.tie}</span>
+      </label>
+      {d.terrains.length > 0 && <div className="row small" data-field="level-datum-terrains">
+        <span className="error-text">Terrains with another datum:</span>
+        {d.terrains.map((t) => (
+          <span key={t.id} className="row">
+            <span data-no-i18n>{`${t.name} (${t.datum.toFixed(2)})`}</span>
+            <button type="button" className="btn small" onClick={() => put({ fromTerrain: t.id })}>Use the terrain's datum as the project's altitude</button>
+          </span>
+        ))}
+      </div>}
+      <NotationFields domain="levels" formula={null} />
+    </div>
+  );
+}
 
 type P = Record<string, number>;
 interface Loc { base?: P; survey?: P; tie?: P; show?: boolean; crs?: string }
@@ -62,6 +112,7 @@ export function LocationDialog() {
             {field('survey', 'x', 'x')}{field('survey', 'y', 'y')}{field('survey', 'easting', 'Easting', 'map')}{field('survey', 'northing', 'Northing', 'map')}{field('survey', 'elevation', 'Elevation')}
             <button type="button" className="btn" onClick={() => void execute('project.location', { survey: null })}>Remove the survey point</button>
           </> : <button type="button" className="btn" onClick={() => void execute('project.location', { survey: { x: 0, y: 0, easting: 0, northing: 0, elevation: 0 } })}>Add a survey point</button>}
+          <LevelsBlock />
         </div>
         <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}<span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>
