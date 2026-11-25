@@ -142,7 +142,8 @@ public static class Walls
         var end = End(wall);
         if ((end - start).Length < MinLength || PathCurve.Of(wall) is { IsArc: true }) return null;
         var paths = services?.Get<IPathElements>();
-        var ends = Joins.WithOwnEnds(paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2], wall, Frame(wall, m));
+        var joined = paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
+        var ends = Joins.WithOwnEnds(joined, wall, Frame(wall, m));
         if (ends[0] is { } s) start = s.Point;
         if (ends[1] is { } e) end = e.Point;
         var startCut = ends[0]?.Cut ?? EndCut.Square;
@@ -161,9 +162,11 @@ public static class Walls
         Func<Entity, int?> ranked = x => cutOrder?.PriorityOf(x, m);
         var corners = paths != null ? LayerCorners(m, wall, paths, start, dir, length, bands, ranked) : new Func<Band, (double From, double To)>?[2];
         var crossings = paths != null ? LayerCrossings(m, wall, paths, start, dir, bands, ranked) : _ => [];
-        double BaseReach(int end, Band b, bool atFrom) =>
-            corners[end] is { } f ? (atFrom ? f(b).From : f(b).To) : At(end == 0 ? startCut : endCut, atFrom ? b.From : b.To) + (ends[end] == null ? LayerEnd(wall, b.Index, end, atFrom) : 0);
         var extents = LayerExtents.Effective(wall, m);
+        // A finish wrapped round the free ends (report #192): the other layers stop its thickness short there.
+        var wrap = WallEndWraps.Of(m, wall, bands, joined, corners, extents, length, (k, y) => k == 0 ? -At(startCut, y) : length + At(endCut, y), P);
+        double BaseReach(int end, Band b, bool atFrom) =>
+            corners[end] is { } f ? (atFrom ? f(b).From : f(b).To) : At(end == 0 ? startCut : endCut, atFrom ? b.From : b.To) + (ends[end] == null ? LayerEnd(wall, b.Index, end, atFrom) : 0) - (wrap?.Short(end, b) ?? 0);
         // A layer's own extent short of an end (forum topic 89); one past it is a piece of its own (ExtentPieces).
         double Reach(int end, Band b, bool atFrom) => BaseReach(end, b, atFrom) + LayerExtents.Short(extents, b.Index, end == 0 ? LayerExtents.Start : LayerExtents.End);
         var fills = paths != null ? new[] { NodeFill(m, wall, 0, ranked), NodeFill(m, wall, 1, ranked) } : new (int Band, Vec2[] Insert)?[2];
@@ -175,6 +178,7 @@ public static class Walls
                 P(length + Reach(1, band, false), band.To), P(-Reach(0, band, false), band.To),
             ];
             return Pieces(WithFill(whole, band, fills), [.. crossings(band).Select(g => g.Lines)], start, dir, length);
+            return Pieces(WithFill(whole, band, fills, wrap), crossings(band), start, dir, length);
         }
         return new Layout(start, end, dir, length, z, HeightOf(m, wall), bands, Footprints, BaseReach);
     }
@@ -270,7 +274,8 @@ public static class Walls
         if (WallTops.Problem(m, wall, services) is { } attachProblem) problems.Add(attachProblem);
         var paths = services?.Get<IPathElements>();
         // Its ends where its joins put them; a free end cut at its own angle (startAngle, endAngle).
-        var ends = Joins.WithOwnEnds(paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2], wall, Frame(wall, m));
+        var joinedEnds = paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
+        var ends = Joins.WithOwnEnds(joinedEnds, wall, Frame(wall, m));
         if (ends[0] is { } s) start = s.Point;
         if (ends[1] is { } e) end = e.Point;
         var startCut = ends[0]?.Cut ?? EndCut.Square;
@@ -298,8 +303,10 @@ public static class Walls
         // A layer's own extents short of the wall's edges (forum topic 89): at its ends, over its base, under its top. Those past
         // them are pieces of their own (ExtentPieces), added after the cut priorities, which would take them back.
         var extents = LayerExtents.Effective(wall, m);
+        // A finish wrapped round the free ends (report #192): it caps each, the other layers stop its thickness short.
+        var wrap = WallEndWraps.Of(m, wall, bands, joinedEnds, corners, extents, length, (k, y) => k == 0 ? -At(startCut, y) : length + At(endCut, y), P);
         double Reach(int end, Band b, bool atFrom) =>
-            (corners[end] is { } f ? (atFrom ? f(b).From : f(b).To) : At(end == 0 ? startCut : endCut, atFrom ? b.From : b.To) + (ends[end] == null ? LayerEnd(wall, b.Index, end, atFrom) : 0))
+            (corners[end] is { } f ? (atFrom ? f(b).From : f(b).To) : At(end == 0 ? startCut : endCut, atFrom ? b.From : b.To) + (ends[end] == null ? LayerEnd(wall, b.Index, end, atFrom) : 0) - (wrap?.Short(end, b) ?? 0))
             + LayerExtents.Short(extents, b.Index, end == 0 ? LayerExtents.Start : LayerExtents.End);
 
         var zones = TypeOf(m, wall.Id) is { } type ? WallZones.Bands(WallZones.Of(type), height) : [];
@@ -377,6 +384,9 @@ public static class Walls
                 .Select(g => (Body: GapBody(g, band, start, dir, length, z, built), g.Z0, g.Z1)).Where(g => g.Body != null).Select(g => (g.Body!, g.Z0, g.Z1))];
             // The band in the pieces the walls meeting this one leave of it (one, when none interrupts it).
             var bandPieces = Pieces(WithFill(whole, band, fills), [.. crossing.Where(g => g.Whole || booleans == null).Select(g => g.Lines)], start, dir, length);
+            var planPieces = Pieces(WithFill(planWhole, band, fills, wrap), crossings(band), start, dir, length);
+            // The band in the pieces the walls meeting this one leave of it (one, when none interrupts it).
+            var bandPieces = Pieces(WithFill(whole, band, fills, wrap), crossings(band), start, dir, length);
             for (var pi = 0; pi < bandPieces.Count; pi++)
             {
                 var footprint = bandPieces[pi];
@@ -904,16 +914,22 @@ public static class Walls
         return (pool.OrderByDescending(b => b.To - b.From).First().Index, insert.ToArray());
     }
 
-    /// <summary>A band's outline (start From, end From, end To, start To) with a node's gap put in at either end (<see cref="NodeFill"/>).</summary>
-    static Vec2[] WithFill(Vec2[] whole, Band band, (int Band, Vec2[] Insert)?[] fills)
+    /// <summary>
+    /// A band's outline (start From, end From, end To, start To) with a node's gap put in at either end (<see cref="NodeFill"/>),
+    /// and the wrapping band's turned round the free ends it wraps (<see cref="WallEndWraps"/>).
+    /// </summary>
+    static Vec2[] WithFill(Vec2[] whole, Band band, (int Band, Vec2[] Insert)?[] fills, WallEndWraps.Wrapping? wrap = null)
     {
         if (fills[0] is not { } f0 || f0.Band != band.Index) f0 = default;
         if (fills[1] is not { } f1 || f1.Band != band.Index) f1 = default;
-        if (f0.Insert == null && f1.Insert == null) return whole;
-        var o = new List<Vec2> { whole[0], whole[1] };
+        var wrapped = wrap != null && wrap.Band == band.Index;
+        if (f0.Insert == null && f1.Insert == null && !wrapped) return whole;
+        var c = wrapped ? wrap!.Corners(whole, band) : [.. whole.Select(p => new List<Vec2> { p })];
+        var o = new List<Vec2>(c[0]);
+        o.AddRange(c[1]);
         if (f1.Insert != null) o.AddRange(f1.Insert);
-        o.Add(whole[2]);
-        o.Add(whole[3]);
+        o.AddRange(c[2]);
+        o.AddRange(c[3]);
         if (f0.Insert != null) o.AddRange(f0.Insert);
         // No point twice in a row (a band that is the whole core starts and ends the gap at its own corners).
         var clean = new List<Vec2>();
