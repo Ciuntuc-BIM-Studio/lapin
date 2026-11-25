@@ -13165,6 +13165,7 @@ export const EL: Record<string, string> = {
   'Hold X in 3D to look through in X-ray': 'Κρατήστε το X σε 3D για να βλέπετε διαμέσου με ακτίνες Χ',
   'Drag a field’s unit to change its value': 'Σύρετε τη μονάδα ενός πεδίου για να αλλάξετε την τιμή του',
   'Role cards on the start screen': 'Κάρτες ρόλων στην αρχική οθόνη',
+  'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight': 'Εργαλεία ακρίβειας: κάψουλα δρομέα 3D, μαγνήτες ίσων αποστάσεων, κινούμενες υποδείξεις εργαλείων, πτήση με δεξί κλικ + WASD',
   'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).': 'Πρώτα η χωρική προβολή: αιωρούμενα γρήγορα εργαλεία 1–9 στο κάτω μέρος, αναδιπλωμένες πλευρικές μπάρες, αναπτυσσόμενη κορδέλα και τα πρόσθετα Flow (Προτιμήσεις → Γενικά).',
   '1 model health issue: click to inspect': '1 πρόβλημα υγείας μοντέλου: κάντε κλικ για έλεγχο',
   '1 issue': '1 πρόβλημα',
@@ -13194,6 +13195,11 @@ export const EL: Record<string, string> = {
   "LoadBearing in each element's Pset_…Common also where nothing says it, from the rule: a wall unless it is a partition, floors, roofs, columns, beams and footings; the elements whose Structural tick or LoadBearing property says it are written so either way": "LoadBearing στο Pset_…Common κάθε στοιχείου και εκεί όπου τίποτα δεν το δηλώνει, κατά τον κανόνα: ένας τοίχος εκτός αν είναι χώρισμα, πλάκες, στέγες, υποστυλώματα, δοκοί και θεμέλια· τα στοιχεία των οποίων η επιλογή Φέρων ή η ιδιότητα LoadBearing το δηλώνει γράφονται έτσι ούτως ή άλλως",
   "Write derived LoadBearing": "Εγγραφή παραγόμενου LoadBearing",
   "The Structural tick (or Pset_WallCommon.LoadBearing) on the wall or its type": "Η επιλογή Φέρων (ή Pset_WallCommon.LoadBearing) στον τοίχο ή στον τύπο του",
+  // Game-like UX Phase 4 (docs/plan-ux-game-like.md).
+  'Click start → Click end or type length': 'Κλικ αρχή → Κλικ τέλος ή πληκτρολόγησε μήκος',
+  'Click corner → Opposite corner or W,H': 'Κλικ γωνία → Απέναντι γωνία ή Π,Υ',
+  'Click a snapped point on the plan or 3D': 'Κλικ σε σημείο snap στην κάτοψη ή 3D',
+  'Click to run on model or selection': 'Κλικ για εκτέλεση στο μοντέλο ή την επιλογή',
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

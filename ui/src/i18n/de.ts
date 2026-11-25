@@ -7004,6 +7004,7 @@ export const DE: Record<string, string> = {
   'Hold X in 3D to look through in X-ray': 'X in 3D gedrückt halten, um im Röntgenmodus hindurchzusehen',
   'Drag a field’s unit to change its value': 'Die Einheit eines Feldes ziehen, um seinen Wert zu ändern',
   'Role cards on the start screen': 'Rollenkarten auf dem Startbildschirm',
+  'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight': 'Präzisionswerkzeuge: 3D-Cursor-Pille, Magnete für gleiche Abstände, animierte Werkzeugtipps, Rechtsklick + WASD-Flug',
   'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).': 'Zuerst die räumliche Ansicht: schwebende Schnellwerkzeuge 1–9 unten, eingeklappte Seitenleisten, ein Dropdown-Ribbon und die Flow-Extras (Einstellungen → Allgemein).',
   '1 model health issue: click to inspect': '1 Modellproblem: zum Prüfen klicken',
   '1 issue': '1 Problem',
@@ -7033,6 +7034,11 @@ export const DE: Record<string, string> = {
   "LoadBearing in each element's Pset_…Common also where nothing says it, from the rule: a wall unless it is a partition, floors, roofs, columns, beams and footings; the elements whose Structural tick or LoadBearing property says it are written so either way": "LoadBearing im Pset_…Common jedes Elements auch dort, wo nichts es angibt, nach der Regel: eine Wand, außer sie ist eine Trennwand, Decken, Dächer, Stützen, Träger und Fundamente; Elemente, deren Tragwerk-Häkchen oder Eigenschaft LoadBearing es angibt, werden ohnehin so geschrieben",
   "Write derived LoadBearing": "Abgeleitetes LoadBearing schreiben",
   "The Structural tick (or Pset_WallCommon.LoadBearing) on the wall or its type": "Das Tragwerk-Häkchen (oder Pset_WallCommon.LoadBearing) an der Wand oder ihrem Typ",
+  // Game-like UX Phase 4 (docs/plan-ux-game-like.md).
+  'Click start → Click end or type length': 'Start klicken → Ende klicken oder Länge eingeben',
+  'Click corner → Opposite corner or W,H': 'Ecke klicken → Gegenüberliegende Ecke oder B,H',
+  'Click a snapped point on the plan or 3D': 'Auf einen Fangpunkt in Grundriss oder 3D klicken',
+  'Click to run on model or selection': 'Klicken zum Ausführen auf Modell oder Auswahl',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

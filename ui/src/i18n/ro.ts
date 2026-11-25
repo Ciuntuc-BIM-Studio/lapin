@@ -7000,6 +7000,7 @@ export const RO: Record<string, string> = {
   'Hold X in 3D to look through in X-ray': 'Ține apăsat X în 3D ca să privești prin obiecte în raze X',
   'Drag a field’s unit to change its value': 'Trage unitatea unui câmp ca să-i schimbi valoarea',
   'Role cards on the start screen': 'Cărți de rol pe ecranul de start',
+  'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight': 'Unelte de precizie: pastila cursorului 3D, magneți de distanțe egale, indicii animate ale uneltelor, zbor cu clic dreapta + WASD',
   'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).': 'Vederea spațială mai întâi: unelte rapide 1–9 plutitoare jos, bare laterale pliate, o panglică derulantă și extra Flow (Preferințe → General).',
   '1 model health issue: click to inspect': '1 problemă de stare a modelului: dă clic pentru a inspecta',
   '1 issue': '1 problemă',
@@ -7029,6 +7030,11 @@ export const RO: Record<string, string> = {
   "LoadBearing in each element's Pset_…Common also where nothing says it, from the rule: a wall unless it is a partition, floors, roofs, columns, beams and footings; the elements whose Structural tick or LoadBearing property says it are written so either way": "LoadBearing în Pset_…Common al fiecărui element și acolo unde nimic nu-l spune, după regulă: un perete dacă nu e despărțitor, planșeele, acoperișurile, stâlpii, grinzile și fundațiile; elementele a căror bifă Structural sau proprietate LoadBearing îl spune sunt scrise așa oricum",
   "Write derived LoadBearing": "Scrie LoadBearing dedus",
   "The Structural tick (or Pset_WallCommon.LoadBearing) on the wall or its type": "Bifa Structural (sau Pset_WallCommon.LoadBearing) pe perete sau pe tipul lui",
+  // Game-like UX Phase 4 (docs/plan-ux-game-like.md).
+  'Click start → Click end or type length': 'Click început → Click capăt sau tastează lungimea',
+  'Click corner → Opposite corner or W,H': 'Click colț → Colțul opus sau L,H',
+  'Click a snapped point on the plan or 3D': 'Click pe un punct de snap în plan sau 3D',
+  'Click to run on model or selection': 'Click pentru a aplica pe model sau selecție',
 };
 
 /** Phrases with a number or a name in them. */

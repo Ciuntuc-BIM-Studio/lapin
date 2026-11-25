@@ -7008,6 +7008,7 @@ export const FR: Record<string, string> = {
   'Hold X in 3D to look through in X-ray': 'Maintenez X en 3D pour voir à travers en rayons X',
   'Drag a field’s unit to change its value': 'Faites glisser l’unité d’un champ pour changer sa valeur',
   'Role cards on the start screen': 'Cartes de rôle sur l’écran d’accueil',
+  'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight': 'Outils de précision : pastille du curseur 3D, aimants d’espacement égal, info-bulles animées, vol par clic droit + WASD',
   'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).': 'Vue spatiale d’abord : outils rapides 1–9 flottants en bas, barres latérales repliées, un ruban déroulant et les extras Flow (Préférences → Général).',
   '1 model health issue: click to inspect': '1 problème d’état du modèle : cliquez pour inspecter',
   '1 issue': '1 problème',
@@ -7037,6 +7038,11 @@ export const FR: Record<string, string> = {
   "LoadBearing in each element's Pset_…Common also where nothing says it, from the rule: a wall unless it is a partition, floors, roofs, columns, beams and footings; the elements whose Structural tick or LoadBearing property says it are written so either way": "LoadBearing dans le Pset_…Common de chaque élément aussi là où rien ne le dit, selon la règle : un mur sauf s'il est une cloison, planchers, toitures, poteaux, poutres et fondations ; les éléments dont la case Structurel ou la propriété LoadBearing le dit sont écrits ainsi de toute façon",
   "Write derived LoadBearing": "Écrire LoadBearing déduit",
   "The Structural tick (or Pset_WallCommon.LoadBearing) on the wall or its type": "La case Structurel (ou Pset_WallCommon.LoadBearing) sur le mur ou son type",
+  // Game-like UX Phase 4 (docs/plan-ux-game-like.md).
+  'Click start → Click end or type length': 'Clic début → Clic fin ou saisissez la longueur',
+  'Click corner → Opposite corner or W,H': 'Clic coin → Coin opposé ou L,H',
+  'Click a snapped point on the plan or 3D': 'Cliquez un point accroché en plan ou 3D',
+  'Click to run on model or selection': 'Cliquez pour appliquer au modèle ou à la sélection',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

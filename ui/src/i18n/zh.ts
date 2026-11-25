@@ -7043,6 +7043,7 @@ export const ZH: Record<string, string> = {
   'Hold X in 3D to look through in X-ray': '在 3D 中按住 X 以 X 光透视',
   'Drag a field’s unit to change its value': '拖动字段的单位以更改其值',
   'Role cards on the start screen': '起始屏幕上的角色卡片',
+  'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight': '精确工具：3D 光标胶囊、等距磁吸、动画工具提示、右键 + WASD 飞行',
   'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).': '空间视图优先：底部浮动的 1–9 号快捷工具、折叠的侧栏、下拉式功能区，以及 Flow 附加功能（偏好设置 → 常规）.',
   '1 model health issue: click to inspect': '1 个模型健康问题：点击查看',
   '1 issue': '1 个问题',
@@ -7072,6 +7073,11 @@ export const ZH: Record<string, string> = {
   "LoadBearing in each element's Pset_…Common also where nothing says it, from the rule: a wall unless it is a partition, floors, roofs, columns, beams and footings; the elements whose Structural tick or LoadBearing property says it are written so either way": "在每个元素的 Pset_…Common 中写入 LoadBearing，即使没有任何指定也按规则：墙（隔墙除外）、楼板、屋顶、柱、梁和基础；其结构勾选或 LoadBearing 属性已指定的元素无论如何都按此写入",
   "Write derived LoadBearing": "写入推导的 LoadBearing",
   "The Structural tick (or Pset_WallCommon.LoadBearing) on the wall or its type": "墙或其类型上的结构勾选（或 Pset_WallCommon.LoadBearing）",
+  // Game-like UX Phase 4 (docs/plan-ux-game-like.md).
+  'Click start → Click end or type length': '点击起点 → 点击终点或输入长度',
+  'Click corner → Opposite corner or W,H': '点击角点 → 对角点或 宽,高',
+  'Click a snapped point on the plan or 3D': '在平面或 3D 中点击捕捉点',
+  'Click to run on model or selection': '点击以应用于模型或选中项',
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

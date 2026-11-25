@@ -22,6 +22,7 @@ import { useCamera, type Vec3 } from './camera';
 import { claimValue } from '../app/valueOwner';
 import { add, alongLine, boxEdges3, cancelAxisDrag, commitAxisDrag, endAxisDrag, snapDistance, useAxisDrag } from './axisDrag';
 import { formatLength, parseLength } from './liveInput';
+import { PrecisionPill } from './PrecisionPill';
 
 type Pt = { x: number; y: number };
 const ADD = '#2f9e6a', CUT = '#d33f2f', PLANE = '#d99a1e';
@@ -205,17 +206,23 @@ export function AxisDrag3D({ camera, canvas }: { camera: React.RefObject<THREE.C
         {arrows}
       </svg>
       {labelAt && (
-        <div className="axis-drag-value" style={{ left: labelAt.x + 18, top: labelAt.y - 14 }}>
-          <input ref={input} value={text} placeholder={shown} aria-label={`${spec.title}: distance`} spellCheck={false}
-            className={typedValue == null && text ? 'bad' : undefined}
-            onChange={(e) => useAxisDrag.setState({ text: e.target.value })}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); commitTyped(); }
-              else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); cancelAxisDrag(); }
-              else if (e.key === 'Tab' && spec.axes.length > 1) { e.preventDefault(); if (e.repeat) return; useAxisDrag.setState((s) => ({ axis: (s.axis + 1) % spec.axes.length, distance: 0 })); }
-            }} />
-          {spec.axes[axis]?.name && <span className="axis-drag-axis" style={{ color: spec.axes[axis].color }}>{spec.axes[axis].name}</span>}
-        </div>
+        <PrecisionPill
+          x={labelAt.x + 18}
+          y={labelAt.y - 14}
+          inputRef={input}
+          text={text}
+          placeholder={shown}
+          bad={Boolean(typedValue == null && text)}
+          badge={spec.axes[axis]?.name ?? null}
+          badgeColor={spec.axes[axis]?.color ?? null}
+          ariaLabel={`${spec.title}: distance`}
+          onChange={(v) => useAxisDrag.setState({ text: v })}
+          onEnter={commitTyped}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); cancelAxisDrag(); }
+            else if (e.key === 'Tab' && spec.axes.length > 1) { e.preventDefault(); if (e.repeat) return; useAxisDrag.setState((s) => ({ axis: (s.axis + 1) % spec.axes.length, distance: 0 })); }
+          }}
+        />
       )}
       <div className="axis-drag-chip mode-chip">
         <span>{spec.title}</span>

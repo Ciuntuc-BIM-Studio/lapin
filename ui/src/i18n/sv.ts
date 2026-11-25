@@ -13163,6 +13163,7 @@ export const SV: Record<string, string> = {
   'Hold X in 3D to look through in X-ray': 'Håll ned X i 3D för att se igenom i röntgen',
   'Drag a field’s unit to change its value': 'Dra i ett fälts enhet för att ändra dess värde',
   'Role cards on the start screen': 'Rollkort på startskärmen',
+  'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight': 'Precisionsverktyg: 3D-markörpiller, magneter för lika avstånd, animerade verktygstips, högerklick + WASD-flygning',
   'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).': 'Rumslig vy först: svävande snabbverktyg 1–9 längst ned, hopfällda sidopaneler, ett rullgardinsband och Flow-extrafunktionerna (Inställningar → Allmänt).',
   '1 model health issue: click to inspect': '1 modellhälsoproblem: klicka för att granska',
   '1 issue': '1 problem',
@@ -13192,6 +13193,11 @@ export const SV: Record<string, string> = {
   "LoadBearing in each element's Pset_…Common also where nothing says it, from the rule: a wall unless it is a partition, floors, roofs, columns, beams and footings; the elements whose Structural tick or LoadBearing property says it are written so either way": "LoadBearing i varje elements Pset_…Common även där inget anger det, enligt regeln: en vägg om den inte är en mellanvägg, bjälklag, tak, pelare, balkar och grundläggning; element vars Bärande-bock eller egenskap LoadBearing anger det skrivs så i alla fall",
   "Write derived LoadBearing": "Skriv härlett LoadBearing",
   "The Structural tick (or Pset_WallCommon.LoadBearing) on the wall or its type": "Bärande-bocken (eller Pset_WallCommon.LoadBearing) på väggen eller dess typ",
+  // Game-like UX Phase 4 (docs/plan-ux-game-like.md).
+  'Click start → Click end or type length': 'Klicka start → Klicka slut eller skriv längd',
+  'Click corner → Opposite corner or W,H': 'Klicka hörn → Motsatt hörn eller B,H',
+  'Click a snapped point on the plan or 3D': 'Klicka på en fästpunkt i plan eller 3D',
+  'Click to run on model or selection': 'Klicka för att köra på modell eller markering',
 };
 
 /** Phrases with a number or a name in them. */

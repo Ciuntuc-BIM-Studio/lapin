@@ -54,6 +54,7 @@ const FLOW_EXTRA_LABELS: Record<FlowExtra, string> = {
   xrayPeek: 'Hold X in 3D to look through in X-ray',
   scrubFields: 'Drag a field’s unit to change its value',
   roleCards: 'Role cards on the start screen',
+  precisionTools: 'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight',
 };
 
 /** Preferences → General → Flow extras: each off until chosen here or by the Flow preset; tactile sounds and the role's quick tools on their own. */
