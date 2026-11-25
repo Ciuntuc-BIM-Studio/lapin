@@ -2619,7 +2619,7 @@ export const scenes = [
       for (const l of answers) t.page.on('dialog', l);
       const project = (await t.nodes()).find((n) => n.type === 'IfcProject');
       t.expect(project?.props?.roofStyles?.[0]?.label === 'Our truss roof', `the roof saved as a project style (${project?.props?.roofStyles?.[0]?.label})`);
-      t.expect(await conf.locator('.roof-own').count() === 1, 'the configurator lists the project style');
+      t.expect(await conf.locator('.roof-own', { hasText: 'Our truss roof' }).count() === 1, 'the configurator lists the project style');
       // The downpipes made elements of their own (decision 235), each tied to its gutter.
       await t.cmd('architecture.makeDownpipes', { id: roof.id });
       await t.wait(800);
@@ -9609,7 +9609,8 @@ export const scenes = [
         return p;
       };
       const offset = () => page.evaluate(() => {
-        const dt = [...document.querySelectorAll('aside.props dt')].find((x) => x.textContent?.trim() === 'Offset from level');
+        // A beam's offset is from the level above, and says so (forum topic 190).
+        const dt = [...document.querySelectorAll('aside.props dt')].find((x) => ['Offset from level', 'Top offset (from the level above)'].includes(x.textContent?.trim() ?? ''));
         const input = dt?.nextElementSibling?.querySelector('input');
         return input ? input.value : null;
       });
@@ -13663,7 +13664,8 @@ export const scenes = [
       const issued = await t.page.locator('[data-testid=cde-issued]').innerText();
       t.expect(issued.includes('Issue 1 · P01 S2 · Shared') && issued.includes('HOUSE-CBS-ZZ-00-DR-A-0101_S2_P01.pdf'), 'the dialog shows the issue as issued, its own names');
       t.expect(!issued.includes('0002'), 'not the next issue\'s names');
-      t.expect(!(await t.page.locator('.panel-title', { hasText: 'House' }).first().innerText()).includes('•'), 'the project is saved after the issue');
+      // The window's title names the project, with a dot while it holds unsaved changes (forum topic 257).
+      t.expect(/House/.test(await t.page.title()) && !(await t.page.title()).includes('•'), `the project is saved after the issue (${await t.page.title()})`);
       await t.shot('cde-issued', { of: '.dialog', pad: 0 });
       await t.button('Done', { exact: true });
       await t.tool('manage.projectFolder');
