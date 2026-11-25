@@ -19,12 +19,7 @@ namespace Lapin.Engine.Tests;
 /// </summary>
 public class SplatSheetTests
 {
-    static SplatSheetTests()
-    {
-        var dir = Path.Combine(Path.GetTempPath(), "lapin-pointcloud-tests");
-        Directory.CreateDirectory(dir);
-        Environment.SetEnvironmentVariable("LAPIN_POINTCLOUD_CACHE", dir);
-    }
+    static SplatSheetTests() => PointCloudSamples.UseOwnCache();
 
     /// <summary>Looking north (+y) from y = −10, x to the right, z up.</summary>
     static readonly SplatRaster.Projection North = new(new Vec3(0, -10, 0), new Vec3(1, 0, 0), new Vec3(0, 0, 1), new Vec3(0, 1, 0), true);

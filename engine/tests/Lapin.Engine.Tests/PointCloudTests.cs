@@ -13,12 +13,7 @@ namespace Lapin.Engine.Tests;
 /// </summary>
 public class PointCloudTests
 {
-    static PointCloudTests()
-    {
-        var dir = Path.Combine(Path.GetTempPath(), "lapin-pointcloud-tests");
-        Directory.CreateDirectory(dir);
-        Environment.SetEnvironmentVariable("LAPIN_POINTCLOUD_CACHE", dir);
-    }
+    static PointCloudTests() => PointCloudSamples.UseOwnCache();
 
     static List<PointBatch> All(IPointReader r) => r.Read(500).Select(b => Copy(b)).ToList();
     static PointBatch Copy(PointBatch b)

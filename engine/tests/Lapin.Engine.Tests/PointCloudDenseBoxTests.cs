@@ -14,12 +14,7 @@ namespace Lapin.Engine.Tests;
 /// </summary>
 public class PointCloudDenseBoxTests
 {
-    static PointCloudDenseBoxTests()
-    {
-        var dir = Path.Combine(Path.GetTempPath(), "lapin-pointcloud-tests");
-        Directory.CreateDirectory(dir);
-        Environment.SetEnvironmentVariable("LAPIN_POINTCLOUD_CACHE", dir);
-    }
+    static PointCloudDenseBoxTests() => PointCloudSamples.UseOwnCache();
 
     static string TempDir() { var d = Path.Combine(Path.GetTempPath(), "lapin-pc-" + Guid.NewGuid().ToString("N")[..8]); Directory.CreateDirectory(d); return d; }
 

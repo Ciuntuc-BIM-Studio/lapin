@@ -19,12 +19,7 @@ namespace Lapin.Engine.Tests;
 /// </summary>
 public class SplatTests
 {
-    static SplatTests()
-    {
-        var dir = Path.Combine(Path.GetTempPath(), "lapin-pointcloud-tests");
-        Directory.CreateDirectory(dir);
-        Environment.SetEnvironmentVariable("LAPIN_POINTCLOUD_CACHE", dir);
-    }
+    static SplatTests() => PointCloudSamples.UseOwnCache();
 
     /// <summary>A Gaussian as a trainer writes it: centre, f_dc, opacity logit, log scales, quaternion w x y z, f_rest channel by channel.</summary>
     public sealed record G(double X, double Y, double Z, double[] Dc, double Opacity, double[] LogScale, double[] Rot, double[]? Rest = null);

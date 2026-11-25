@@ -9,6 +9,27 @@ namespace Lapin.Engine.Tests;
 /// <summary>Tiny point clouds written by the tests themselves, after the formats' specifications (never large files in the repo).</summary>
 static class PointCloudSamples
 {
+    /// <summary>
+    /// The folder this run's indexes are made in, its own, removed when the run ends. In one folder for every run, an index an earlier
+    /// run had left was found ready at once, so the tests' indexing in the background was tried only on a machine's first run, and
+    /// runs at the same time remade each other's indexes (issue #122).
+    /// </summary>
+    static readonly string Cache = NewCache();
+
+    static string NewCache()
+    {
+        var dir = Directory.CreateTempSubdirectory("lapin-pointcloud-tests-").FullName;
+        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+        {
+            try { Directory.Delete(dir, recursive: true); }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        };
+        return dir;
+    }
+
+    /// <summary>The indexes kept in this run's folder (<c>LAPIN_POINTCLOUD_CACHE</c> is the process's): a test class's static constructor calls it.</summary>
+    public static void UseOwnCache() => Environment.SetEnvironmentVariable("LAPIN_POINTCLOUD_CACHE", Cache);
+
     /// <summary>How long a linked cloud's index is waited for: a few thousand points, made in milliseconds.</summary>
     static readonly TimeSpan IndexLimit = TimeSpan.FromSeconds(10);
 

@@ -17,12 +17,7 @@ namespace Lapin.Engine.Tests;
 /// </summary>
 public class SplatCalibrateCropTests
 {
-    static SplatCalibrateCropTests()
-    {
-        var dir = Path.Combine(Path.GetTempPath(), "lapin-pointcloud-tests");
-        Directory.CreateDirectory(dir);
-        Environment.SetEnvironmentVariable("LAPIN_POINTCLOUD_CACHE", dir);
-    }
+    static SplatCalibrateCropTests() => PointCloudSamples.UseOwnCache();
 
     static Fixture F() => new(new ArchitectureModule());
 

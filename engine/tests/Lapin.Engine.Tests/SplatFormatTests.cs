@@ -22,12 +22,7 @@ namespace Lapin.Engine.Tests;
 /// </summary>
 public class SplatFormatTests
 {
-    static SplatFormatTests()
-    {
-        var dir = Path.Combine(Path.GetTempPath(), "lapin-pointcloud-tests");
-        Directory.CreateDirectory(dir);
-        Environment.SetEnvironmentVariable("LAPIN_POINTCLOUD_CACHE", dir);
-    }
+    static SplatFormatTests() => PointCloudSamples.UseOwnCache();
 
     const int N = 600;
     const int Rest = 45;
