@@ -86,6 +86,8 @@ public sealed class CoreModule : ILapinModule
         TypePreviews.Register(r);
         // The project's notations: each domain's symbols, prefixes and suffixes as templates (decision 864).
         Notations.Register(r);
+        // Levels relative to ±0.00, as altitudes or both (decision 867), their notation the domain "levels".
+        LevelDatum.Register(r);
         r.Service<IProjectUpgrade>(new StoreyPlans.DefaultPlanUpgrade());
         r.Service<IProjectUpgrade>(new ViewDetail.LevelUpgrade());
         r.Service<IProjectUpgrade>(new MaterialHatchUpgrade());

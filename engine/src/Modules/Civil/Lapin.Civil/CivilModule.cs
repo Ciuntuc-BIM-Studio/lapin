@@ -17,6 +17,8 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
     {
         // A terrain moved to another storey with it rises or falls by the levels' difference (its heights are absolute, below its datum).
         r.Service<IStoreyDatum>(new TerrainDatum());
+        // An absolute view draws the contours at round altitudes (decision 867).
+        r.Service<IPlanInView>(new TerrainContoursInView());
         r.Class(new(IfcClass.GeographicElement, "Terrain",
         [
             new("datum", "Datum (±0.00 =)", "length"),
@@ -139,7 +141,9 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             var t = new Entity(ctx.NewId(), IfcClass.GeographicElement, name, attrs, Terrains.Predefined);
             ctx.Add(t);
             Spatial.Contain(ctx, storeyId, t.Id);
-            return new JsonObject { ["id"] = t.Id, ["points"] = pts.Count };
+            var made = new JsonObject { ["id"] = t.Id, ["points"] = pts.Count };
+            if (Terrains.AdoptAltitude(ctx, attrs["datum"] is { } dv ? Json.Number(dv) ?? 0 : 0) is { } note) made["note"] = note;
+            return made;
         });
 
         r.Command("updateTerrain", "Change terrain", (ctx, a) =>
@@ -193,7 +197,9 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 Spatial.Contain(ctx, storeyId, t.Id);
                 ids.Add((JsonNode)t.Id);
             }
-            return new JsonObject { ["ids"] = ids };
+            var result = new JsonObject { ["ids"] = ids };
+            if (ids.Count > 0 && Terrains.AdoptAltitude(ctx, Json.Number(a["datum"]) ?? 0) is { } note) result["note"] = note;
+            return result;
         });
 
         // A breakline the terrain must keep (a kerb, a ditch's bottom): surveyed points [[x, y, z], …]; remove: its index.
@@ -362,6 +368,9 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         foreach (var mk in GradingMarks(c, storey)) yield return mk;
         // The channels (T6): their fall, their inverts at the ends, their gullies and low points.
         foreach (var mk in ChannelMarks(c, storey, text)) yield return mk;
+        // The view's datum (decision 867): an absolute view labels its contours at round altitudes.
+        var datum = LevelDatum.Of(c);
+        var altitude = datum.Mode == LevelDatum.Absolute ? datum.Altitude : 0;
         foreach (var e in c.Model.OfClass(IfcClass.GeographicElement))
         {
             // A site plan shows every terrain; any other plan its own storey's.
@@ -380,13 +389,14 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 .Where(p => p.Outer.Count >= 3).ToList();
             if (e.Attrs["contourLabels"] is not JsonValue clv || !clv.TryGetValue<bool>(out var showLabels) || showLabels)
             {
-                foreach (var z in t.Levels(interval * major))
+                var shift = Terrains.ContourShift(altitude, interval * major);
+                foreach (var z in shift == 0 ? t.Levels(interval * major) : t.Levels(interval * major, shift))
                 {
                     foreach (var line in Terrains.ChainedContours(t, z, padAreas))
                     {
                         if (MidpointTangent(line) is not { } mid || mid.Length < Math.Max(1.5, text.Height * 4)) continue;
                         var angle = -Standards.ReadableDeg(-Math.Atan2(mid.Dir.Y, mid.Dir.X) * 180 / Math.PI);
-                        mk.Text(new PenText(mid.Pos, Standards.FormatLevel(z, c.Book), text.Height * 0.8, angle, "middle", "middle", true, text.Font), "#5d7a3e");
+                        mk.Text(new PenText(mid.Pos, datum.Text(z, c.Book), text.Height * 0.8, angle, "middle", "middle", true, text.Font), "#5d7a3e");
                     }
                 }
             }
@@ -395,7 +405,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 var o = ArcOutline.BuiltOf(pad);
                 if (o.Count < 3) continue;
                 var mid = new Vec2(o.Average(p => p.X), o.Average(p => p.Y));
-                mk.Text(new PenText(mid, $"{pad.Name} {Standards.FormatLevel(pad.Num("elevation"), c.Book)}", text.Height, 0, "middle", "middle", true, text.Font), "#000000");
+                mk.Text(new PenText(mid, $"{pad.Name} {LevelDatum.Text(c, pad.Num("elevation"))}", text.Height, 0, "middle", "middle", true, text.Font), "#000000");
             }
             // Feature lines crossing at different heights (Î7): a red cross at each, the height that holds and the other's.
             foreach (var (cl, _, _) in FeatureLines.Clashes(e))
@@ -404,7 +414,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 var at = cl.At;
                 mk.Line(at + new Vec2(-rr, -rr), at + new Vec2(rr, rr), "LEVELS", Pens.Default.Cut, "#c0392b");
                 mk.Line(at + new Vec2(-rr, rr), at + new Vec2(rr, -rr), "LEVELS", Pens.Default.Cut, "#c0392b");
-                mk.Text(new PenText(at + new Vec2(rr * 1.3, rr * 0.4), $"{Standards.FormatLevel(cl.Held, c.Book)} / {Standards.FormatLevel(cl.Other, c.Book)}", text.Height * 0.8, 0, "start", "bottom", false, text.Font), "#c0392b");
+                mk.Text(new PenText(at + new Vec2(rr * 1.3, rr * 0.4), $"{LevelDatum.Text(c, cl.Held)} / {LevelDatum.Text(c, cl.Other)}", text.Height * 0.8, 0, "start", "bottom", false, text.Font), "#c0392b");
                 mk.Snaps.Add(at);
             }
             // Spot levels: a cross and the designed ground's height beside it.
@@ -414,7 +424,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 if (designed.At(p) is not { } z) continue;
                 mk.Line(p - new Vec2(r, 0), p + new Vec2(r, 0), "LEVELS", Pens.Default.Seen, "#000000");
                 mk.Line(p - new Vec2(0, r), p + new Vec2(0, r), "LEVELS", Pens.Default.Seen, "#000000");
-                mk.Text(new PenText(p + new Vec2(r * 1.2, r * 0.3), Standards.FormatLevel(z, c.Book), text.Height * 0.8, 0, "start", "bottom", false, text.Font), "#000000");
+                mk.Text(new PenText(p + new Vec2(r * 1.2, r * 0.3), LevelDatum.Text(c, z), text.Height * 0.8, 0, "start", "bottom", false, text.Font), "#000000");
                 mk.Snaps.Add(p);
             }
             // Slope tags: point gradient arrow or two-point grade line.
@@ -565,14 +575,14 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 var dir = spec.Grade >= 0 ? spec.Down : -spec.Down;
                 var len = 6.0 * c.Mm;
                 DrawSlopeArrow(label, mid - dir * (len * 0.5), mid + dir * (len * 0.5), c.Mm, $"{Math.Abs(spec.Grade) * 100:0.0} %", text.Height, text.Font);
-                label.Text(new PenText(mid + new Vec2(0, -text.Height * c.Mm * 1.8), Standards.FormatLevel(top.At(mid), c.Book), text.Height * 0.8, 0, "middle", "middle", false, text.Font), "#000000");
+                label.Text(new PenText(mid + new Vec2(0, -text.Height * c.Mm * 1.8), LevelDatum.Text(c, top.At(mid)), text.Height * 0.8, 0, "middle", "middle", false, text.Font), "#000000");
             }
             else if (top.Planar)
-                label.Text(new PenText(mid, Standards.FormatLevel(top.At(mid), c.Book), text.Height * 0.8, 0, "middle", "middle", false, text.Font), "#000000");
+                label.Text(new PenText(mid, LevelDatum.Text(c, top.At(mid)), text.Height * 0.8, 0, "middle", "middle", false, text.Font), "#000000");
             else
                 // By its corners: each corner's level beside it.
                 foreach (var i in top.CornerIndex)
-                    label.Text(new PenText(top.Points[i] + (mid - top.Points[i]).Normalized() * (2.5 * c.Mm), Standards.FormatLevel(top.Z[i], c.Book), text.Height * 0.7, 0, "middle", "middle", false, text.Font), "#000000");
+                    label.Text(new PenText(top.Points[i] + (mid - top.Points[i]).Normalized() * (2.5 * c.Mm), LevelDatum.Text(c, top.Z[i]), text.Height * 0.7, 0, "middle", "middle", false, text.Font), "#000000");
             label.Snaps.Add(mid);
             yield return label;
         }
@@ -685,14 +695,14 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             {
                 var p = ch.PointAt(st);
                 var d = ch.DirectionAt(st) * (st == 0 ? -1 : 1);
-                mk.Text(new PenText(p + d * (2.5 * c.Mm), $"{DrawingWords.Of("IL", c.Book.DrawingLang)} {Standards.FormatLevel(l.Invert[at], c.Book)}", text.Height * 0.8, -Standards.ReadableDeg(-Math.Atan2(d.Y, d.X) * 180 / Math.PI), "middle", "middle", false, text.Font), color);
+                mk.Text(new PenText(p + d * (2.5 * c.Mm), $"{DrawingWords.Of("IL", c.Book.DrawingLang)} {LevelDatum.Text(c, l.Invert[at])}", text.Height * 0.8, -Standards.ReadableDeg(-Math.Atan2(d.Y, d.X) * 180 / Math.PI), "middle", "middle", false, text.Font), color);
                 mk.Snaps.Add(p);
             }
             // Its gullies: their invert; a low point with none ringed red.
             foreach (var st in l.Outlets)
             {
                 var p = ch.PointAt(st);
-                mk.Text(new PenText(p + new Vec2(0, -(half + 3 * c.Mm)), $"{DrawingWords.Of("IL", c.Book.DrawingLang)} {Standards.FormatLevel(l.InvertAt(st), c.Book)}", text.Height * 0.8, 0, "middle", "middle", false, text.Font), color);
+                mk.Text(new PenText(p + new Vec2(0, -(half + 3 * c.Mm)), $"{DrawingWords.Of("IL", c.Book.DrawingLang)} {LevelDatum.Text(c, l.InvertAt(st))}", text.Height * 0.8, 0, "middle", "middle", false, text.Font), color);
                 mk.Snaps.Add(p);
             }
             foreach (var st in l.Lows.Where(s => !l.Outlets.Any(o => Math.Abs(o - s) < 0.5)))
@@ -701,7 +711,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
                 var r = Math.Max(half * 1.5, 1.5 * c.Mm);
                 var ring = Enumerable.Range(0, 24).Select(i => p + new Vec2(Math.Cos(i * Math.PI / 12), Math.Sin(i * Math.PI / 12)) * r).ToList();
                 for (var i = 0; i < ring.Count; i++) mk.Line(ring[i], ring[(i + 1) % ring.Count], "LEVELS", Pens.Default.Seen, "#c0392b");
-                mk.Text(new PenText(p + new Vec2(r * 1.2, r * 0.3), $"{DrawingWords.Of("Low point", c.Book.DrawingLang)} {Standards.FormatLevel(l.InvertAt(st), c.Book)}", text.Height * 0.8, 0, "start", "bottom", false, text.Font), "#c0392b");
+                mk.Text(new PenText(p + new Vec2(r * 1.2, r * 0.3), $"{DrawingWords.Of("Low point", c.Book.DrawingLang)} {LevelDatum.Text(c, l.InvertAt(st))}", text.Height * 0.8, 0, "start", "bottom", false, text.Font), "#c0392b");
             }
             yield return mk;
         }
@@ -765,6 +775,31 @@ sealed class CivilArrayPaths : IArrayPaths
         if (SiteLines.Followable(e) && SiteLines.Of(m, e) is { Plan.Count: >= 2 } l)
             return ArrayPath.Polyline(l.Plan, l.Z, l.Closed);
         return null;
+    }
+}
+
+/// <summary>
+/// A terrain's contours as a view draws them (decision 867): a relative view at round model heights (the terrain's own plan); an
+/// absolute one at round altitudes, the contours laid again by the project's altitude (650.37 would otherwise label every line).
+/// </summary>
+sealed class TerrainContoursInView : IPlanInView
+{
+    public bool Handles(Entity e) => Terrains.IsTerrain(e);
+
+    public IReadOnlyList<PlanItem> PlanIn(IModelView m, Entity view, Entity e, IReadOnlyList<PlanItem> items)
+    {
+        var datum = LevelDatum.Of(m, view);
+        if (datum.Mode != LevelDatum.Absolute || datum.Altitude == 0) return items;
+        var t = Terrains.Of(e);
+        var interval = Terrains.DrawnInterval(e, t);
+        var major = Math.Max(1, (int)Math.Round(e.NumOrNull("majorEvery") ?? Terrains.Defaults.MajorEvery));
+        if (Terrains.ContourShift(datum.Altitude, interval) == 0 && Terrains.ContourShift(datum.Altitude, interval * major) == 0) return items;
+        var padAreas = Terrains.Pads(m, e.Id)
+            .Select(p => (Outer: ArcOutline.BuiltOf(p), Holes: (IReadOnlyList<IReadOnlyList<Vec2>>)OutlineHoles.Built(p)))
+            .Where(p => p.Outer.Count >= 3)
+            .Concat(FeatureLines.CoveringAreas(e).Select(a => (Outer: (IReadOnlyList<Vec2>)a, Holes: (IReadOnlyList<IReadOnlyList<Vec2>>)[])))
+            .ToList();
+        return [.. items.Where(i => i.Kind is not ("contour" or "contourMajor")), .. Terrains.ContourItems(e, t, padAreas, datum.Altitude)];
     }
 }
 

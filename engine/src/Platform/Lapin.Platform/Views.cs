@@ -621,8 +621,10 @@ public static class Views
                 foreach (var p in g.Parts)
                     if (!bySymbol && Measure.Bounds(p.Solid) is { } b && b.Max.Z > SitePlans.Underground && ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key) && Detailed(e, p))
                         parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, MaterialOf(e, p), CutInPlan: true) { Smooth = smooth });
+                // What a module draws of it by the view (a terrain's contours at round altitudes in an absolute view, decision 867).
+                var sitePlan = bySymbol && inView.Count > 0 && inView.FirstOrDefault(x => x.Handles(e)) is { } siteIn ? siteIn.PlanIn(m, view, e, g.Plan!) : g.Plan;
                 if (bySymbol)
-                    foreach (var item0 in g.Plan!)
+                    foreach (var item0 in sitePlan!)
                     {
                         if (!item0.At(detail) || !item0.In(entourage)) continue;
                         var item = item0.OnPaper(paperScale);
@@ -1359,7 +1361,8 @@ public static class Views
             // The other sections' markers where their planes cut this view (decision 223).
             foreach (var trace in SectionMarkers.Traces(c)) yield return trace;
             var (x0, x1) = (bounds.Min.X - 1.0 * k, bounds.Max.X + 1.5 * k);
-            // The levels across a drawing whose up is the model's (not on a level or a leaning work plane).
+            // The levels across a drawing whose up is the model's (not on a level or a leaning work plane), as the view's datum writes them.
+            var datum = LevelDatum.Of(c);
             foreach (var storey in Math.Abs(c.Frame.Up.Z) > 0.999 ? Spatial.Storeys(m) : [])
             {
                 var z = storey.Num("elevation");
@@ -1379,12 +1382,15 @@ public static class Views
                 if (SymbolSlots.SymbolFor(m, "levelHead", storey) is { } levelSymbol)
                 {
                     var levelName = storey.Name;
-                    var levelText = Standards.FormatLevel(z, c.Book);
+                    var levelText = datum.Text(z, c.Book);
                     SymbolSlots.Draw(c, mk, levelSymbol, apex, new Vec2(0, 1), false, size / DefaultLevelMarkSize, "LEVEL", ink, key => key switch
                     {
                         "level.name" or "attr.name" => (true, levelName),
                         "level.elevation" or "attr.level" => (true, levelText),
                         "level.z" => (true, z.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)),
+                        "level.altitude" => (true, datum.AltitudeOf(z, c.Book)),
+                        "level.relative" => (true, datum.LevelOf(z, c.Book)),
+                        "level.tie" => (true, datum.Tie(c.Book)),
                         _ => (false, null),
                     });
                     yield return mk;
@@ -1397,7 +1403,7 @@ public static class Views
                     case "half": mk.Fills.Add(([new[] { apex, left, mid }], ink)); mk.Polyline([apex, left, right], true, "LEVEL", Pens.Default.Seen, ink); mk.Line(apex, mid, "LEVEL", Pens.Default.Seen, ink); break;
                     default: mk.Polyline([apex, left, right], true, "LEVEL", Pens.Default.Seen, ink); break;
                 }
-                mk.Text(new PenText(new Vec2(x1 + w + 1.0 * c.Mm, y + t * 0.2), $"{storey.Name} {Standards.FormatLevel(z, c.Book, plusAtZero: true)}", text.Height, Anchor: "start", Font: text.Font), "#555555");
+                mk.Text(new PenText(new Vec2(x1 + w + 1.0 * c.Mm, y + t * 0.2), $"{storey.Name} {datum.Text(z, c.Book, plusAtZero: true)}", text.Height, Anchor: "start", Font: text.Font), "#555555");
                 yield return mk;
             }
         }

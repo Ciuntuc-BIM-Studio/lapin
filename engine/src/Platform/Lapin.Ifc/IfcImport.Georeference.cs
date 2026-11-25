@@ -109,6 +109,8 @@ public static partial class IfcImport
         {
             if (o.ReferenceOnly || locationFromIntent) return;
             var tie = TieOf(f);
+            // Without a map conversion, the height of ±0.00 above the sea the building or the site gives (decision 867).
+            if (tie == null) RefHeight(edit);
             var place = tie == null ? PlaceOf(f) : null;
             if (tie == null && place == null) return;
             static string F(double v) => v.ToString("0.###", CultureInfo.InvariantCulture);
@@ -143,6 +145,43 @@ public static partial class IfcImport
             else return;
             loc["base"] = basePoint;
             attrs["location"] = loc;
+            edit.Replace(project.With(attrs: attrs));
+        }
+
+        /// <summary>
+        /// The file's altitude of its ±0.00, when it has no map conversion (decision 867): IfcBuilding's ElevationOfRefHeight, else
+        /// IfcSite's RefElevation, into the base point's elevation of a project that has none yet; the model does not move.
+        /// </summary>
+        void RefHeight(IEdit edit)
+        {
+            var height = f.OfType("IFCBUILDING").Select(b => b.Args.Count > 9 ? b[9] : null).FirstOrDefault(v => v is double or long or StepTyped)
+                ?? f.OfType("IFCSITE").Select(s => s.Args.Count > 11 ? s[11] : null).FirstOrDefault(v => v is double or long or StepTyped);
+            if (height == null) return;
+            var h = Length(height);
+            if (Math.Abs(h) < 1e-9 || !double.IsFinite(h)) return;
+            var project = Spatial.Project(edit.Model);
+            if (project == null) { Spatial.EnsureBuilding(edit); project = Spatial.Project(edit.Model)!; }
+            if (Math.Abs(Location.Base(edit.Model).Elevation) > 1e-12) return;
+            var attrs = project.CloneAttrs();
+            var loc = (attrs["location"] as JsonObject)?.DeepClone() as JsonObject ?? new JsonObject();
+            var basePoint = loc["base"] as JsonObject ?? new JsonObject();
+            basePoint["elevation"] = h;
+            loc["base"] = basePoint.DeepClone();
+            attrs["location"] = loc;
+            edit.Replace(project.With(attrs: attrs));
+            notes.Add($"The project's ±0.00 is at the file's altitude, {h.ToString("0.###", CultureInfo.InvariantCulture)} m (Manage → Location).");
+        }
+
+        /// <summary>The project's ±0.00 storey (its level datum, decision 867) as the file names it, by its GlobalId: the storey it became.</summary>
+        void ZeroStorey(IEdit edit)
+        {
+            if (o.ReferenceOnly || Spatial.Project(edit.Model) is not { } project || project.Attrs[LevelDatum.Key] is not JsonObject d || (string?)d["zeroStorey"] is not { } gid) return;
+            if (edit.Model.Get(gid) is { Class: IfcClass.BuildingStorey }) return;
+            var st = f.OfType("IFCBUILDINGSTOREY").FirstOrDefault(x => IfcModel.Str(x[0]) == gid);
+            var attrs = project.CloneAttrs();
+            var o2 = (JsonObject)d.DeepClone();
+            if (st != null && storeyOf.TryGetValue(st.Id, out var id)) o2["zeroStorey"] = id; else o2.Remove("zeroStorey");
+            if (o2.Count > 0) attrs[LevelDatum.Key] = o2; else attrs.Remove(LevelDatum.Key);
             edit.Replace(project.With(attrs: attrs));
         }
     }

@@ -672,7 +672,17 @@ public static partial class IfcExport
             var units = f.Add("IFCUNITASSIGNMENT", L(unitList));
             projectRef = f.Add("IFCPROJECT", Gid(project.Id), Null, S(project.Name), Null, Null, S(project.Str("longName")), S(project.Str("phase")), L(new[] { model }), units);
             // What the project itself holds that an import rebuilds: its location and its phases (the drafting standards and views stay in .lapin).
-            Define(projectRef, IntentOf(project, Gid(project.Id, IntentKey), null, only: ProjectIntent), Gid(project.Id, "intent-rel"));
+            // Its level datum's ±0.00 storey by the storey's GlobalId (decision 867), which an import finds again.
+            var intentProject = project;
+            if (project.Attrs[LevelDatum.Key] is System.Text.Json.Nodes.JsonObject ld && (string?)ld["zeroStorey"] is { } zs)
+            {
+                var pa = project.CloneAttrs();
+                var lo = (System.Text.Json.Nodes.JsonObject)ld.DeepClone();
+                lo["zeroStorey"] = GlobalIdOf(zs);
+                pa[LevelDatum.Key] = lo;
+                intentProject = project.With(attrs: pa);
+            }
+            Define(projectRef, IntentOf(intentProject, Gid(project.Id, IntentKey), null, only: ProjectIntent), Gid(project.Id, "intent-rel"));
             // The project's information and the user's own parameters of it (decision 340): Lapin's own set, never a Pset_.
             if (ProjectInformation() is { Count: > 0 } info)
                 Define(projectRef, f.Add("IFCPROPERTYSET", Gid(project.Id, ProjectInfoSetName), Null, S(ProjectInfoSetName), Null, L(info)), Gid(project.Id, ProjectInfoSetName + "-rel"));
@@ -696,7 +706,9 @@ public static partial class IfcExport
             refIdOf[siteRef] = siteId;
             var buildingPlace = Place(sitePlace, 0);
             var buildingId = building?.Id ?? project.Id;
-            buildingRef = f.Add("IFCBUILDING", building != null ? Gid(building.Id) : Gid(project.Id, "building"), Null, S(building?.Name ?? "Building"), Null, Null, buildingPlace, Null, Null, E("ELEMENT"), Null, Null, Null);
+            buildingRef = f.Add("IFCBUILDING", building != null ? Gid(building.Id) : Gid(project.Id, "building"), Null, S(building?.Name ?? "Building"), Null, Null, buildingPlace, Null, Null, E("ELEMENT"),
+                // ElevationOfRefHeight: the altitude of the model's 0 (decision 867), when the project has one.
+                Math.Abs(basePoint.Elevation) > 1e-12 ? R(basePoint.Elevation) : Null, Null, Null);
             f.Add("IFCRELAGGREGATES", SpatialGid(project.Id, IfcClass.RelAggregates, site?.Id ?? "", project.Id, "aggregates"), Null, Null, Null, projectRef, L(new[] { siteRef }));
             f.Add("IFCRELAGGREGATES", SpatialGid(siteId, IfcClass.RelAggregates, building?.Id ?? "", siteId, "aggregates/building"), Null, Null, Null, siteRef, L(new[] { buildingRef }));
 
@@ -2318,7 +2330,7 @@ public static partial class IfcExport
         string IntentOf(Entity e, string gid, Kind? kind, IReadOnlyList<(string Name, string Value)>? extra = null, IReadOnlySet<string>? only = null) =>
             f.Add("IFCPROPERTYSET", gid, Null, S(IntentSetName), Null, L(IntentProperties(e, kind, extra, only)));
 
-        static readonly HashSet<string> ProjectIntent = ["location", "phases", "lengthUnit", "longName", "phase", "crs"];
+        static readonly HashSet<string> ProjectIntent = ["location", "phases", "lengthUnit", "longName", "phase", "crs", LevelDatum.Key];
 
         List<string> IntentProperties(Entity e, Kind? kind, IReadOnlyList<(string Name, string Value)>? extra = null, IReadOnlySet<string>? only = null)
         {

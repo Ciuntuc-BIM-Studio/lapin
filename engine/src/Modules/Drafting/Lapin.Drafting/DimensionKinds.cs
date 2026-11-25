@@ -160,14 +160,20 @@ public static class DimensionKinds
 
     /// <summary>
     /// A level dimension's value (follow-up to forum #81): as the project's levels are written (their decimals and trailing
-    /// zeros), unless the dimension says its own (levelDecimals, levelZeros); in feet and inches when its style's unit is.
+    /// zeros), unless the dimension says its own (levelDecimals, levelZeros); in feet and inches when its style's unit is. Read
+    /// from the view's datum (decision 867: relative, absolute or both), or the dimension's own (<c>datum</c>).
     /// </summary>
-    public static string LevelText(StyleBook book, Entity dim, double value, string unit)
+    public static string LevelText(StyleBook book, Entity dim, double value, string unit, LevelDatum? datum = null)
     {
-        if (Standards.IsImperial(unit)) return Standards.FormatLevel(value, unit);
-        var decimals = dim.NumOrNull("levelDecimals") is { } d ? (int)Math.Round(d) : book.LevelDecimals;
-        var zeros = dim.Str("levelZeros") switch { "keep" => false, "suppress" => true, _ => Standards.SuppressesLevelZeros(book) };
-        return Standards.FormatLevel(value, decimals, zeros);
+        Func<double, string> number;
+        if (Standards.IsImperial(unit)) number = v => LevelDatum.InUnits(v, unit);
+        else
+        {
+            var decimals = dim.NumOrNull("levelDecimals") is { } d ? (int)Math.Round(d) : book.LevelDecimals;
+            var zeros = dim.Str("levelZeros") switch { "keep" => false, "suppress" => true, _ => Standards.SuppressesLevelZeros(book) };
+            number = v => LevelDatum.Number(v, decimals, zeros);
+        }
+        return datum is { } dd ? dd.As(dim.Str("datum")).TextWith(value, number) : number(value);
     }
 
     /// <summary>
@@ -313,7 +319,7 @@ public static class DimensionKinds
                     mk.Polyline([a, a + new Vec2(-s * 0.6, s), a + new Vec2(s * 0.6, s)], true, "DIMENSION", w, lineColor);
                     var end = a + new Vec2(side * Math.Max(Math.Abs(at.X - a.X), 12 * mm), s);
                     mk.Line(a + new Vec2(side * s * 0.6, s), end, "DIMENSION", w, lineColor);
-                    Label(a + new Vec2(side * s, s + style.TextGap * mm), LevelText(c.Book, dim, value, style.Unit), 0, side > 0 ? "start" : "end");
+                    Label(a + new Vec2(side * s, s + style.TextGap * mm), LevelText(c.Book, dim, value, style.Unit, LevelDatum.Of(c)), 0, side > 0 ? "start" : "end");
                     mk.Snaps.Add(a);
                     break;
                 }
@@ -409,6 +415,8 @@ public static class DimensionKinds
                 // Its own decimals and trailing zeros over the project's levels' (follow-up to forum #81).
                 if (a["decimals"] is { } dn) attrs["levelDecimals"] = Standards.LevelDecimalsOf(dn) ?? throw new CommandException($"A level is written with 0 to {Standards.MaxLevelDecimals} decimals.");
                 if ((string?)a["zeros"] is { } zs && zs != "project") attrs["levelZeros"] = zs is "keep" or "suppress" ? zs : throw new CommandException("A level's trailing zeros are kept, suppressed or as the project's.");
+                // Its own datum over the view's (decision 867): relative, absolute or both.
+                if ((string?)a["datum"] is { } levelDatum && levelDatum != LevelDatum.Project) attrs["datum"] = LevelDatum.ModeOf(levelDatum) ?? throw new CommandException("A level is written relative to ±0.00, as an altitude or both.");
                 break;
             case "ordinate":
                 if (a["a"] is null) throw new CommandException("An ordinate needs its point.");

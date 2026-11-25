@@ -8,7 +8,9 @@ namespace Lapin.Platform.Documents;
 /// <summary>
 /// The platform's fields for documents (docs/plan-documents.md, Câmpurile): the project's information (<c>project.*</c>), its own
 /// parameters (<c>param.&lt;Name&gt;</c>), the site (<c>site.*</c>), today's date, the CDE's codes and last issue (<c>cde.*</c>),
-/// the number of storeys; the collections <c>storeys</c> ({{storey.*}}: id, name, elevation, height), <c>sheets</c> ({{sheet.*}}:
+/// the number of storeys; the altitude of ±0.00 and the tie note (<c>project.altitude</c>,
+/// <c>project.levelTie</c>); the collections <c>storeys</c> ({{storey.*}}: id, name, elevation as the project's datum writes it,
+/// altitude, level relative to ±0.00, height), <c>sheets</c> ({{sheet.*}}:
 /// id, number, title, scale, revision, status) and <c>documents</c> ({{doc.*}}: id, name, revision, status, template).
 /// </summary>
 public sealed class CoreDocumentFields : IDocumentFields
@@ -28,6 +30,10 @@ public sealed class CoreDocumentFields : IDocumentFields
         yield return new("site.landBook", "Land book", ProjectInfo.Get(m, "landBook"));
         var crs = Location.Crs(m);
         yield return new("site.crs", "Coordinate system", crs == null ? null : GeoRef.Get(crs)?.Name ?? crs);
+        // The altitude of ±0.00 and the tie note (decision 867), as the drawings write them.
+        var datum = f.Datum ?? LevelDatum.Of(m);
+        yield return new("project.altitude", "Altitude of ±0.00", DocNumbers.Level(datum.Zero, f with { Datum = datum }, LevelDatum.Absolute));
+        yield return new("project.levelTie", "Tie note (±0.00 = 650.00)", datum.Tie(f.Book).Replace(".", DocNumbers.FormatOf(f).NumberDecimalSeparator));
         yield return new("date.today", "Today's date", DocNumbers.Date(DateTime.Now, f));
         var naming = CdeHooks.Naming?.Invoke(CdeNaming.Of(m)) ?? CdeNaming.Of(m);
         yield return new("cde.project", "CDE project code", naming.Project);
@@ -74,7 +80,8 @@ public sealed class CoreDocumentFields : IDocumentFields
             case "storeys":
                 return Spatial.Storeys(m).Select(s => (IReadOnlyDictionary<string, string>)new Dictionary<string, string>
                 {
-                    ["id"] = s.Id, ["name"] = s.Name, ["elevation"] = DocNumbers.Level(s.Num("elevation"), f), ["height"] = DocNumbers.Length(s.Num("height", 3), f),
+                    ["id"] = s.Id, ["name"] = s.Name, ["elevation"] = DocNumbers.Level(s.Num("elevation"), f),
+                    ["altitude"] = DocNumbers.Level(s.Num("elevation"), f, LevelDatum.Absolute), ["level"] = DocNumbers.Level(s.Num("elevation"), f, LevelDatum.Relative), ["height"] = DocNumbers.Length(s.Num("height", 3), f),
                 }).ToList();
             case "sheets":
                 return m.OfClass(Sheets.Class).Select(s =>

@@ -366,7 +366,7 @@ public static class FloorSlopes
                 var t = 0.9 * c.Mm;
                 mk.Line(at + new Vec2(-t, 0), at + new Vec2(t, 0), Layer, Pens.Default.Hatch, Green);
                 mk.Line(at + new Vec2(0, -t), at + new Vec2(0, t), Layer, Pens.Default.Hatch, Green);
-                mk.Text(new PenText(at + new Vec2(1.2 * c.Mm, 0.6 * c.Mm), Standards.FormatLevel(b.Top + h, c.Book), text.Height * 0.75, 0, "start", "bottom", false, text.Font), Green);
+                mk.Text(new PenText(at + new Vec2(1.2 * c.Mm, 0.6 * c.Mm), LevelDatum.Text(c, b.Top + h), text.Height * 0.75, 0, "start", "bottom", false, text.Font), Green);
                 mk.Snaps.Add(at);
             }
             if (mk.Lines.Count > 0 || mk.Texts.Count > 0) yield return mk;

@@ -41,13 +41,14 @@ public static class DocNumbers
     }
 
     /// <summary>
-    /// A level as the drawings write it (<see cref="Lapin.Drawing.Standards.FormatLevel(double, Lapin.Drawing.StyleBook, bool)"/>:
-    /// the project's decimals and zeros, a true minus, feet and inches in an imperial project), its decimal point the document's
-    /// language's: ±0,00, +3,00, −1,50 (m) in Romanian.
+    /// A level as the drawings write it (<see cref="LevelDatum"/>: the project's datum, relative, absolute or both; the project's
+    /// decimals and zeros, a true minus, feet and inches in an imperial project), its decimal point the document's language's:
+    /// ±0,00, +3,00, −1,50 (m) in Romanian. <paramref name="mode"/>: relative, absolute or both over the project's.
     /// </summary>
-    public static string Level(double z, DocFormat f)
+    public static string Level(double z, DocFormat f, string? mode = null)
     {
-        var text = f.Book is { } book ? Lapin.Drawing.Standards.FormatLevel(z, book) : Lapin.Drawing.Standards.FormatLevel(z, f.Units);
+        Func<double, string> number = f.Book is { } book ? v => LevelDatum.Number(v, book) : v => LevelDatum.InUnits(v, f.Units);
+        var text = f.Datum is { } datum ? datum.As(mode).TextWith(z, number) : number(z);
         return text.Contains('"') ? text : text.Replace(".", FormatOf(f).NumberDecimalSeparator);
     }
 
