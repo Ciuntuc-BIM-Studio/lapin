@@ -49,7 +49,7 @@ Selectează o încăpere: proprietățile ei au o secțiune **Încărcare utilă
 
 ## Tabelul încărcărilor utile
 
-Fila **Încărcări utile** enumeră fiecare categorie cu folosința ei și **qk** în kN/m², cum recomandă EN 1991-1-1. Scrie în câmp valoarea anexei tale naționale; **Modificat** revine la valoarea implicită.
+Fila **Încărcări utile** enumeră fiecare categorie cu folosința ei și **qk** în kN/m², cum recomandă EN 1991-1-1. Scrie în câmp valoarea anexei tale naționale; **Modificat** revine la valoarea implicită, care e cea a pachetului de reguli în uz (al lui Lapin: cea din EN 1991-1-1; a unui pachet propriu, în fila lui Încărcări, vezi [Reguli](rules.md)).
 
 ![Fila Încărcări utile](shots/loads-imposed.webp)
 
@@ -92,7 +92,8 @@ Fila **Combinații** enumeră combinațiile cazurilor, așa cum le scrie norma, 
 
 Secțiunea **Coeficienți** din capul filei stabilește coeficienții parțiali γ și coeficienții de combinare ψ pe care îi folosesc combinațiile. Sunt ai tăi de verificat: seturile livrate de Lapin sunt orientative.
 
-- **Set de coeficienți.** Un proiect nou ia **CR 0-2012 (România)**; un proiect făcut înainte de această setare rămâne cu **EN 1990 Anexa A1, valori recomandate**, deci combinațiile lui nu se schimbă. Cele două diferă prin ψ: CR 0-2012 ia zăpada cu 0,7, 0,5, 0,4, vântul cu 0,7, 0,2, 0 și acoperișurile (categoria H) cu ψ0 0,7, acolo unde EN are 0,5, 0,2, 0 la zăpadă, 0,6, 0,2, 0 la vânt și 0 la acoperișuri.
+- **Set de coeficienți.** Un proiect nou ia **CR 0-2012 (România)**; un proiect făcut înainte de această setare rămâne cu **EN 1990 Anexa A1, valori recomandate**, deci combinațiile lui nu se schimbă. Cele două diferă prin ψ: CR 0-2012 ia zăpada cu 0,7, 0,5, 0,4, vântul cu 0,7, 0,2, 0 și acoperișurile (categoria H) cu ψ0 0,7, acolo unde EN are 0,5, 0,2, 0 la zăpadă, 0,6, 0,2, 0 la vânt și 0 la acoperișuri. Lista oferă și seturile pachetului de reguli în uz (Gestionare → Reguli…, fila lui Încărcări): un set al țării tale, cu γ, ψ, expresia și ξ proprii. Un pachet le poate schimba și pe cele două ale lui Lapin; cu pachetul lui Lapin, sau cu o copie lăsată neschimbată, ele dau exact combinațiile pe care le-au dat mereu. Un proiect care numește un set pe care pachetul în uz nu-l are ia setul EN, iar notele spun asta.
+- **Clasa de siguranță.** Apare când setul dă γd pe clase de siguranță: alege clasa proiectului, iar γd-ul ei înmulțește acțiunile nefavorabile ale combinațiilor ultime (acțiunile permanente cu γG,sup, cele variabile cu γQ, în 6.10 sau în 6.10a și 6.10b); acțiunile permanente favorabile ale ridicării din vânt își păstrează γG,inf, iar combinațiile de serviciu nu se schimbă. **Niciuna (γd 1)** lasă coeficienții așa cum sunt. Când setul dă ψ al zăpezii după s0,k, îl alege s0,k al amplasamentului (Zăpadă și vânt), iar notele spun care.
 - **γG,sup, γG,inf, γQ.** Fiecare câmp arată valoarea în vigoare. Scrie valoarea ta și câmpul e marcat cu **Resetează**, care readuce valoarea setului.
 - **Expresia.** **6.10** (implicit) sau **6.10a și 6.10b**: două expresii, a doua cu ξ (0,85 recomandat, între 0,5 și 1) pe acțiunile permanente. CR 0-2012 are doar expresia ei 6.9 (6.10 din EN), așa că 6.10a și 6.10b rămân alegerea ta.
 - **ψ pe categorii.** Deschide tabelul ca să dai ψ0, ψ1 și ψ2 pentru o categorie (categoriile încărcărilor utile, zăpada, vântul); un rând gol ia valorile setului. ψ-ul propriu al unui caz (în fila Cazuri) are prioritate față de cel al categoriei.

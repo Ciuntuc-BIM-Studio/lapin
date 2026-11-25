@@ -16448,6 +16448,44 @@ export const scenes = [
     },
   },
   {
+    // Loads in a rule pack (docs/plan-national-packs.md N1): a copy of Lapin's pack with a set of factors of the user's (an example,
+    // the values typed as a user would: 6.10a and 6.10b, γd by safety class, ψ of snow by s0,k); the pack's country, edition and
+    // sources; the Loads tab shows the set; the project takes it with safety class 2 and its combinations carry γd.
+    id: 'rules-loads',
+    touches: ['core', 'analysis'],
+    async run(t) {
+      await t.fresh();
+      const { page } = t;
+      const listed = await t.call('doc.query', { name: 'rules.list', args: {} });
+      const builtin = listed.items.find((i) => i.builtin);
+      const mine = (await t.cmd('rules.create', { from: builtin.id, name: 'Sweden (example)', activate: true })).id;
+      await t.cmd('rules.update', { id: mine, country: 'SE', edition: 'Example: the edition you follow', language: 'sv', sources: ['The regulation you read the values from'] });
+      const pack = await t.call('doc.query', { name: 'rules.get', args: { id: mine } });
+      const loads = structuredClone(pack.sections.loads);
+      loads.sets['se-example'] = {
+        ...loads.sets.en, label: 'Sweden, example (your values)', expression: '6.10ab', xi: 0.89,
+        safetyClasses: { 1: 0.83, 2: 0.91, 3: 1 },
+        snowPsi: [{ from: 0, psi: { 0: 0.6, 1: 0.3, 2: 0.1 } }, { from: 2, psi: { 0: 0.7, 1: 0.4, 2: 0.2 } }],
+      };
+      await t.cmd('rules.update', { id: mine, section: 'loads', values: loads });
+      await t.cmd('analysis.setCombinationOptions', { set: 'se-example', safetyClass: '2' });
+      const options = (await t.call('doc.query', { name: 'analysis.combinations', args: {} })).options;
+      t.expect(options.gammaD === 0.91 && options.expression === '6.10ab', 'the project takes the pack\'s set with γd 0.91');
+      await t.button('Manage', { exact: true });
+      await t.tool('manage.rules');
+      await page.waitForSelector('[data-dialog=rules]', { timeout: 10_000 });
+      await page.locator(`[data-rules-pack="${mine}"]`).click();
+      await page.locator('[data-rules-section=loads]').click();
+      await t.until(async () => (await page.locator('[data-testid=rules-loads]').count()) === 1, 'the Loads tab is shown');
+      await page.locator('[data-load-set="se-example"]').click();
+      await t.until(async () => (await page.locator('[data-testid=rules-safety-classes] tbody tr').count()) === 3, 'the set\'s three safety classes are listed');
+      t.expect(await page.locator('[data-testid=rules-meta]').count() === 1, 'the pack\'s country, edition and sources are shown');
+      await t.wait(500);
+      await t.shot('rules-loads', { of: '[data-dialog=rules]', pad: 8 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     // Classifications (docs/plan-user-extensibility.md §7.3): a system with items, a code on a wall in Properties, the office's keynotes, a shared parameter.
     id: 'classifications',
     touches: ['core'],

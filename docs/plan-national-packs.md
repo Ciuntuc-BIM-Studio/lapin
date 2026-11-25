@@ -3,7 +3,9 @@
 Asked on 25.11.2026 in forum topic 261 (Slawomir: automating the design of houses to Swedish building standards; the same topic asked for Swedish, now added, and for a SpaceMouse, see docs/plan-3d-mouse.md).
 
 **Order: 5 of 6** (angle lock, structural usage, level datums, leaning walls, national packs, 3D mouse). Stages N0 and N1 first; N2–N7 follow their own order.
-**Status: proposed, not started.**
+**Status: N0 and N1 done (25.11.2026, branch `feat/national-packs-n1`, decision 869); N2–N7 proposed.**
+
+N1 as built: the section `loads` (`Lapin.Analysis/LoadRuleSection.cs`) holds `sets` (each: `label`, `gammaGSup`, `gammaGInf`, `gammaQ`, `expression`, `xi`, `psi` by category, `snowPsi` zones `{from: s0,k, psi}`, `safetyClasses` `{class: γd}`) and `imposed` (qk by category); a project picks `set` and `safetyClass` with `analysis.setCombinationOptions`; γd multiplies the unfavourable ULS actions. A pack also carries `country`, `edition`, `language`, `sources`. The store schema needed no change.
 
 ## What exists today
 
