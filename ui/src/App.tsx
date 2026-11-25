@@ -27,6 +27,7 @@ import { resolveTheme, setPrefs, usePrefs } from './app/prefs';
 import { CursorCoords } from './shell/CursorCoords';
 import { NavStyleMenu } from './shell/NavStyleMenu';
 import { CdeServerStatus } from './shell/CdeStart';
+import { ReferencesStatus } from './shell/ReferencesStatus';
 import { watchLocation } from './app/location';
 import { useShortcuts } from './app/keys';
 import { useXrayPeekKeys } from './app/xrayPeek';
@@ -145,6 +146,7 @@ function StatusBar() {
         onClick={toggleTactileSounds}><Volume2 size={12} /></button>}
       <span className="status-file" title={`${projectTitle(doc?.path)}${doc?.dirty ? ' · unsaved' : ''}`}>{projectTitle(doc?.path)}{doc?.dirty ? ' · unsaved' : ''}</span>
       <CdeServerStatus />
+      <ReferencesStatus />
       <span>{elements} elements</span>
       <button type="button" className="status-link" title="The project's units: change them in Drafting standards → Project" onClick={() => openStandards('project')}>Units: {unitLabel(units) || units}</button>
       {!merged && <><span className="grow" /><span className="mods" title={`${productInfo.name} · ${modules.map((m) => m.id).join(' · ')}`}>{productInfo.name} · {modules.map((m) => m.id).join(' · ')}</span></>}

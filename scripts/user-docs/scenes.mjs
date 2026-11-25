@@ -17818,7 +17818,87 @@ export const scenes = [
       }
     },
   },
+  {
+    // Reference documents (docs/plan-cde-references.md, stage R2): Manage → Reference documents… with the urbanism certificate dropped in as a
+    // PDF, Suggest reading its number, date, issuer and validity from the text, the certificate's checklist of permits (one answered by a
+    // permit, one asked for, one still missing), and the status bar's counter for a permit about to expire.
+    id: 'reference-documents',
+    async run(t) {
+      const day = (n) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+      const dotted = (iso) => iso.split('-').reverse().join('.');
+      await t.fresh();
+      await t.tool('manage.references');
+      await t.page.waitForSelector('[data-testid=refs]', { timeout: 15_000 });
+      t.expect(await t.page.locator('[data-testid=refs-tree] .refs-folder').count() > 8, 'the folder tree shows its folders');
+      t.expect(await t.page.locator('[data-folder=issued-sheets].derived').count() === 1, 'the issued drawings folder is derived, greyed');
+      // The certificate dropped in as a file: one document, in the certificate's folder once Suggest has found what it is.
+      const certificate = referencePdf(['PRIMARIA MUNICIPIULUI HUSI', 'CERTIFICAT DE URBANISM', 'Nr. 1234 din 15.03.2026', 'In scopul: construire locuinta P+1', 'Valabil pana la 15.03.2027']);
+      await t.page.setInputFiles('[data-testid=refs-file]', { name: 'Urbanism certificate 1234.pdf', mimeType: 'application/pdf', buffer: certificate });
+      await t.page.waitForSelector('[data-testid=refs-list] tbody tr', { timeout: 15_000 });
+      await t.page.waitForSelector('[data-testid=refs-preview] canvas', { timeout: 20_000 });
+      t.expect((await t.page.locator('[data-testid=refs-outcome]').innerText()).includes('1'), 'the dialog says one document was added');
+      await t.page.locator('[data-testid=refs-suggest]').click();
+      await t.page.waitForSelector('[data-testid=refs-suggestion]', { timeout: 10_000 });
+      const suggested = await t.page.locator('[data-testid=refs-suggestion]').innerText();
+      t.expect(suggested.includes('1234') && suggested.includes('2026-03-15') && suggested.includes('2027-03-15'), `Suggest reads the number and the dates from the text (${suggested.replace(/\s+/g, ' ')})`);
+      await t.shot('reference-suggest', { of: '.dialog', pad: 0 });
+      await t.page.getByRole('button', { name: 'Apply', exact: true }).click();
+      await t.wait(600);
+      t.expect((await t.page.locator('[data-testid=refs-detail] input[aria-label=Number]').inputValue()) === '1234', 'the confirmed number is in the form');
+      // The permits: one received (about to expire), as the engine takes them from a person who has the file.
+      const permit = referencePdf(['INSPECTORATUL PENTRU SITUATII DE URGENTA', 'AVIZ DE SECURITATE LA INCENDIU', 'Nr. 77', `Data: ${dotted(day(-350))}`, `Valabil pana la ${dotted(day(12))}`]);
+      const added = await t.cmd('references.add', { files: [{ name: 'Fire safety permit 77.pdf', data: permit.toString('base64') }], title: 'Fire safety permit', type: 'aviz', issuer: 'ISU', number: '77', date: day(-350), validUntil: day(12), folder: 'permits-fire' });
+      await t.cmd('references.add', { title: 'Land-book extract', type: 'cf', number: '9001' });
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=refs-list] tbody tr').count() === 3, 'the list shows the certificate, the permit and the request');
+      // The certificate's checklist.
+      await t.page.locator('[data-testid=refs-list] tbody tr', { hasText: 'Urbanism certificate 1234' }).click();
+      await t.page.locator('[data-testid=refs-tab-checklist]').click();
+      await t.page.waitForSelector('[data-testid=refs-checklist]', { timeout: 10_000 });
+      for (const key of ['fire', 'water', 'sewerage']) { await t.page.locator(`[data-option=${key}]`).click(); await t.wait(500); }
+      await t.page.locator('[data-item=fire] select[aria-label="Answered by"]').selectOption({ label: 'Fire safety permit' });
+      await t.wait(600);
+      await t.page.locator('[data-item=water] [data-testid=refs-request]').click();
+      await t.wait(900);
+      const state = async (k) => t.page.locator(`[data-item=${k}]`).getAttribute('data-state');
+      t.expect(await state('fire') === 'expiring' || await state('fire') === 'received', 'the permit answers the fire safety item');
+      t.expect(await state('water') === 'requested', 'a requested document stands for the water item');
+      t.expect(await state('sewerage') === 'missing', 'the sewerage item is still missing');
+      await t.shot('reference-checklist', { of: '.dialog', pad: 0 });
+      // The list, with the permit's badge.
+      await t.page.locator('[data-testid=refs-tab-details]').click();
+      await t.page.locator('[data-folder=permits]').first().locator('button.refs-name').click();
+      await t.wait(500);
+      t.expect((await t.page.locator('[data-testid=refs-list] tbody').innerText()).includes('Fire safety permit'), 'the permits folder lists the permit');
+      await t.shot('reference-documents', { of: '.dialog', pad: 0 });
+      await t.page.getByRole('button', { name: 'Done', exact: true }).click();
+      await t.wait(500);
+      t.expect(await t.page.locator('[data-testid=refs-expiring]').count() === 1, 'the status bar counts the permit that expires within 30 days');
+      await t.shot('reference-expiring', { of: 'footer.status', pad: 0 });
+      void added;
+    },
+  },
 ];
+
+/** A one-page PDF whose page shows the lines given, in Helvetica, one under the other (text a reader can extract). */
+function referencePdf(lines) {
+  const esc = (s) => s.replace(/[\\()]/g, (c) => `\\${c}`);
+  const stream = `BT /F1 12 Tf 72 790 Td 16 TL\n${lines.map((l) => `(${esc(l)}) Tj T*`).join('\n')}\nET\n`;
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
+    `<< /Length ${Buffer.byteLength(stream, 'latin1')} >>\nstream\n${stream}endstream`,
+  ];
+  let out = '%PDF-1.4\n';
+  const offsets = [];
+  objects.forEach((o, i) => { offsets.push(Buffer.byteLength(out, 'latin1')); out += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+  const xref = Buffer.byteLength(out, 'latin1');
+  out += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.map((o) => `${String(o).padStart(10, '0')} 00000 n \n`).join('')}`;
+  out += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(out, 'latin1');
+}
 
 /** A zip of stored entries (name, text), enough for a BCF file: the local headers, the central directory and its end, with CRC-32. */
 export function bcfZip(entries) {

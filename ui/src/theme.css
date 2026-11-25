@@ -3504,3 +3504,73 @@ body.panel-dragging, body.panel-dragging * { cursor: grabbing !important; user-s
 /* Build Replay floating timeline bar. */
 .replay-bar { position: fixed; left: 50%; bottom: 48px; transform: translateX(-50%); z-index: 45; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid var(--rule-strong); border-radius: 999px; background: var(--hud); backdrop-filter: blur(6px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16); }
 .replay-bar input[type=range] { width: 180px; accent-color: var(--accent); }
+
+/* Reference documents (Manage → Reference documents…, docs/plan-cde-references.md). */
+.dialog.refs { min-width: min(1180px, calc(100vw - 32px)); position: relative; }
+.refs-body { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.refs-bar { flex-wrap: wrap; gap: 6px; }
+.refs-grid { display: grid; grid-template-columns: 200px minmax(0, 1fr) 390px; gap: 10px; min-height: 380px; height: 56vh; }
+.refs-tree, .refs-list, .refs-detail { border: 1px solid var(--rule); border-radius: 4px; overflow: auto; min-height: 0; }
+.refs-tree { padding: 4px 0; font-size: 12px; }
+.refs-list { display: flex; flex-direction: column; padding: 6px; }
+.refs-detail { padding: 8px; font-size: 12px; }
+.refs-folder { display: flex; align-items: center; gap: 4px; padding: 2px 6px; cursor: pointer; width: 100%; box-sizing: border-box; background: none; border: 0; color: var(--ink); text-align: left; font: inherit; }
+.refs-folder:hover { background: var(--hover, rgba(127, 127, 127, 0.12)); }
+.refs-folder.on { background: var(--accent-soft, rgba(60, 120, 220, 0.16)); }
+.refs-folder.derived { color: var(--ink-muted); font-style: italic; opacity: 0.7; cursor: default; }
+.refs-folder.over { outline: 2px dashed var(--accent); outline-offset: -2px; }
+.refs-name { flex: 1; min-width: 0; text-align: left; background: none; border: 0; color: inherit; font: inherit; padding: 0; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.refs-twisty { display: inline-block; width: 18px; flex: none; }
+.refs-count { color: var(--ink-muted); font-variant-numeric: tabular-nums; font-size: 11px; }
+.refs-unfiled { padding: 4px 8px; }
+.refs-filters { flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
+.refs-filters input[type=search] { min-width: 160px; }
+.refs-days { width: 54px; }
+.refs-table-wrap { overflow: auto; min-height: 0; flex: 1; }
+.refs-table th .link { color: var(--ink-muted); font-weight: 500; }
+.refs-table tbody tr { cursor: pointer; }
+.refs-table tbody tr:hover { background: var(--hover, rgba(127, 127, 127, 0.12)); }
+.refs-table tbody tr.on { background: var(--accent-soft, rgba(60, 120, 220, 0.16)); }
+.refs-table tbody tr.picked { outline: 1px solid var(--accent); outline-offset: -1px; }
+.refs-table tbody tr.refs-off td:not(:last-child) { color: var(--ink-muted); text-decoration: line-through; }
+.refs-empty { padding: 12px; text-align: center; }
+.refs-badges { display: inline-flex; gap: 4px; align-items: center; white-space: nowrap; }
+.refs-badge { display: inline-flex; align-items: center; gap: 2px; padding: 0 6px; border-radius: 999px; font-size: 10px; line-height: 16px; border: 1px solid var(--rule-strong); color: var(--ink-muted); }
+.refs-badge.ok { border-color: #2f855a; color: #2f855a; }
+.refs-badge.warn { border-color: #c2410c; color: #c2410c; }
+.refs-badge.bad { border-color: #c0392b; color: #c0392b; background: rgba(192, 57, 43, 0.08); }
+.refs-form { display: grid; gap: 6px; margin: 8px 0; }
+.refs-field { display: grid; gap: 2px; }
+.refs-field input, .refs-field select { width: 100%; box-sizing: border-box; }
+.refs-two { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.refs-files { list-style: none; margin: 0 0 6px; padding: 0; }
+.refs-files li { display: flex; align-items: center; gap: 4px; padding: 2px 0; }
+.refs-files li.on code { color: var(--accent); }
+.refs-preview { margin: 8px 0; border: 1px solid var(--rule); border-radius: 4px; padding: 4px; max-height: 340px; overflow: auto; }
+.refs-preview canvas, .refs-preview img { max-width: 100%; height: auto; display: block; }
+.refs-text { max-height: 200px; overflow: auto; white-space: pre-wrap; }
+.refs-suggest { border: 1px solid var(--accent); border-radius: 4px; padding: 6px; margin: 6px 0; display: grid; gap: 4px; }
+.refs-sug { display: grid; grid-template-columns: auto 1fr; gap: 2px 6px; align-items: start; }
+.refs-evidence { grid-column: 2; font-style: italic; }
+.refs-related { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin: 6px 0; }
+.refs-chip { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--rule-strong); border-radius: 999px; padding: 0 6px; font-size: 11px; margin: 0 4px 2px 0; }
+.refs-end { margin-top: 10px; }
+.btn.danger { color: #c0392b; border-color: #c0392b; }
+.refs-outcome { border: 1px solid var(--rule); border-radius: 4px; padding: 4px 8px; position: relative; }
+.refs-outcome > .icon { position: absolute; top: 2px; right: 2px; }
+.refs-panel { border: 1px solid var(--rule); border-radius: 4px; padding: 8px; }
+.refs-edit-row { display: flex; align-items: center; gap: 2px; margin: 1px 0; }
+.refs-items { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 6px; }
+.refs-items li { border: 1px solid var(--rule); border-radius: 4px; padding: 4px 6px; display: grid; gap: 3px; }
+.refs-options { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.refs-options .chip { cursor: pointer; background: none; text-transform: none; letter-spacing: 0; font-size: 11px; margin: 0; }
+.refs-options .chip:hover { background: var(--accent-soft, rgba(60, 120, 220, 0.16)); }
+.refs-drop-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(60, 120, 220, 0.14); border: 2px dashed var(--accent); border-radius: 6px; pointer-events: none; font-size: 18px; color: var(--accent); }
+.status-link.status-warn { color: #c2410c; }
+@media (max-width: 960px) { .refs-grid { grid-template-columns: 1fr; height: auto; } }
+
+.refs-detail { overflow-x: hidden; }
+.refs-detail .row, .refs-items .row { flex-wrap: wrap; min-width: 0; }
+.refs-detail select, .refs-detail input { max-width: 100%; min-width: 0; }
+.refs-items li { min-width: 0; }
+.refs-table td { overflow-wrap: anywhere; }
