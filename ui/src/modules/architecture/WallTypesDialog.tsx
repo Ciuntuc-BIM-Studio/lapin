@@ -47,6 +47,7 @@ import { DraftParams } from '../../shell/DraftParams';
 import { draftJson } from '../../shell/typeParamDraft';
 import type { Param } from '../../shell/params';
 import { TypeMarkField } from '../core/MarkField';
+import { TypeStructuralField } from '../core/StructuralSection';
 import { typeToEdit } from '../../shell/typeToEdit';
 
 /** A layer as the editor holds it: lengths in metres; from and to null for the whole height. */
@@ -230,6 +231,8 @@ export function WallTypesDialog() {
             <TypeTaperFields value={taper} onChange={setTaper} layers={rows.map((r) => r.material)} />
             {/* The type's mark (forum topic 177), as a door's or window's type has it. */}
             <TypeMarkField typeId={editing} />
+            {/* The Structural tick on the type (docs/plan-structural-usage.md): its elements that say nothing take it. */}
+            <TypeStructuralField typeId={editing} />
             {/* Duplicate, and the type's place in every list of wall types (forum #71). */}
             <TypeListActions id={editing} onDuplicated={setEditing} {...endsOf(types, editing)} />
             <p className="muted small" data-testid="wall-face-note">Layers 1 to n from the R face (right of the drawn direction) to the L face, as in the picture. Wall drawn anticlockwise: R is the exterior, L the interior. The core carries the wall's axis.</p>

@@ -48,3 +48,18 @@ export function viewDatumChoice(value: unknown): string {
 export function viewDatumPatch(target: { id: string } | { sheet: string }, choice: string): Record<string, unknown> {
   return { ...target, datum: choice || 'project' };
 }
+
+/**
+ * The spot levels' own datum as a terrain's select shows it: the one they all say, else '' (the view's; also when they
+ * differ). Each spot is stored as [x, y] or [x, y, datum].
+ */
+export function spotDatumChoice(spots: unknown): string {
+  if (!Array.isArray(spots) || spots.length === 0) return '';
+  const own = spots.map((s) => (Array.isArray(s) ? viewDatumChoice(s[2]) : ''));
+  return own.every((d) => d === own[0]) ? own[0] : '';
+}
+
+/** What `civil.setSpotDatum` is sent for every spot level of a terrain: '' back to the view's. */
+export function spotDatumPatch(terrain: string, choice: string): Record<string, unknown> {
+  return { id: terrain, all: true, datum: choice || null };
+}

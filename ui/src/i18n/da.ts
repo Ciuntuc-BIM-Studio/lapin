@@ -6875,6 +6875,8 @@ export const DA: Record<string, string> = {
   "Relative level": "Relativ kote",
   "Altitude": "Højde",
   "Level and altitude": "Kote og højde",
+  "not a level": "ikke en kote",
+  "Its values are levels, written as the drawings write them: as the project's, relative to ±0.00, as altitudes or both": "Dens værdier er koter, skrevet som tegningerne skriver dem: som projektets, relativt til ±0.00, som højder eller begge",
   "Tie note": "Tilknytningsnote",
   "Zero sign": "Nultegn",
   "Plus sign": "Plustegn",

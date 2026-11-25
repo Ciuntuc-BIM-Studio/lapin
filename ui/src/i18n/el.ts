@@ -12999,6 +12999,8 @@ export const EL: Record<string, string> = {
   "Relative level": "Σχετική στάθμη",
   "Altitude": "Υψόμετρο",
   "Level and altitude": "Στάθμη και υψόμετρο",
+  "not a level": "όχι στάθμη",
+  "Its values are levels, written as the drawings write them: as the project's, relative to ±0.00, as altitudes or both": "Οι τιμές της είναι στάθμες, γραμμένες όπως τις γράφουν τα σχέδια: όπως του έργου, σχετικές με το ±0.00, ως υψόμετρα ή και τα δύο",
   "Tie note": "Σημείωση σύνδεσης",
   "Zero sign": "Σύμβολο μηδενός",
   "Plus sign": "Σύμβολο συν",

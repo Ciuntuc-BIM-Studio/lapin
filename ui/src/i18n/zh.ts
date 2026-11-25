@@ -6877,6 +6877,8 @@ export const ZH: Record<string, string> = {
   "Relative level": "相对标高",
   "Altitude": "海拔",
   "Level and altitude": "标高和海拔",
+  "not a level": "非标高",
+  "Its values are levels, written as the drawings write them: as the project's, relative to ±0.00, as altitudes or both": "其值为标高，按图纸的写法：按项目的、相对于 ±0.00、按海拔或两者",
   "Tie note": "关联注释",
   "Zero sign": "零号",
   "Plus sign": "加号",

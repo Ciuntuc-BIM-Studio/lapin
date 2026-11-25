@@ -12994,6 +12994,8 @@ export const SV: Record<string, string> = {
   "Relative level": "Relativ nivå",
   "Altitude": "Höjd",
   "Level and altitude": "Nivå och höjd",
+  "not a level": "inte en nivå",
+  "Its values are levels, written as the drawings write them: as the project's, relative to ±0.00, as altitudes or both": "Dess värden är nivåer, skrivna som ritningarna skriver dem: som projektets, relativt ±0.00, som höjder eller båda",
   "Tie note": "Anslutningsnot",
   "Zero sign": "Nolltecken",
   "Plus sign": "Plustecken",

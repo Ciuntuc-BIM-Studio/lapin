@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { levelDatumPatch, viewDatumChoice, viewDatumPatch } from './levelDatum';
+import { levelDatumPatch, spotDatumChoice, spotDatumPatch, viewDatumChoice, viewDatumPatch } from './levelDatum';
 
 describe('level datums (decision 867)', () => {
   it('sends the project\'s mode, zero storey, tie and terrain', () => {
@@ -19,5 +19,14 @@ describe('level datums (decision 867)', () => {
     expect(viewDatumPatch({ id: 'v' }, 'absolute')).toEqual({ id: 'v', datum: 'absolute' });
     expect(viewDatumPatch({ id: 'v' }, '')).toEqual({ id: 'v', datum: 'project' });
     expect(viewDatumPatch({ sheet: 's' }, 'relative')).toEqual({ sheet: 's', datum: 'relative' });
+  });
+
+  it('reads the spot levels\' own datum, the view\'s when they differ or say none, and sets them all', () => {
+    expect(spotDatumChoice([[1, 2, 'absolute'], [3, 4, 'absolute']])).toBe('absolute');
+    expect(spotDatumChoice([[1, 2, 'absolute'], [3, 4]])).toBe('');
+    expect(spotDatumChoice([[1, 2]])).toBe('');
+    expect(spotDatumChoice(undefined)).toBe('');
+    expect(spotDatumPatch('t', 'both')).toEqual({ id: 't', all: true, datum: 'both' });
+    expect(spotDatumPatch('t', '')).toEqual({ id: 't', all: true, datum: null });
   });
 });

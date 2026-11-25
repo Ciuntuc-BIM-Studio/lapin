@@ -6834,6 +6834,8 @@ export const RO: Record<string, string> = {
   "Relative level": "Cotă relativă",
   "Altitude": "Altitudine",
   "Level and altitude": "Cotă și altitudine",
+  "not a level": "nu e cotă",
+  "Its values are levels, written as the drawings write them: as the project's, relative to ±0.00, as altitudes or both": "Valorile ei sunt cote, scrise cum le scriu planșele: ca proiectul, relative la ±0.00, ca altitudini sau ambele",
   "Tie note": "Nota de legare",
   "Zero sign": "Semnul zero",
   "Plus sign": "Semnul plus",

@@ -12994,6 +12994,8 @@ export const TH: Record<string, string> = {
   "Relative level": "ระดับสัมพัทธ์",
   "Altitude": "ความสูง",
   "Level and altitude": "ระดับและความสูง",
+  "not a level": "ไม่ใช่ระดับ",
+  "Its values are levels, written as the drawings write them: as the project's, relative to ±0.00, as altitudes or both": "ค่าของคอลัมน์นี้เป็นระดับ เขียนแบบเดียวกับในแบบ: ตามโครงการ สัมพัทธ์กับ ±0.00 เป็นความสูงจากระดับน้ำทะเล หรือทั้งสองอย่าง",
   "Tie note": "หมายเหตุการผูก",
   "Zero sign": "เครื่องหมายศูนย์",
   "Plus sign": "เครื่องหมายบวก",
