@@ -13225,6 +13225,13 @@ export const EL: Record<string, string> = {
   'Click corner → Opposite corner or W,H': 'Κλικ γωνία → Απέναντι γωνία ή Π,Υ',
   'Click a snapped point on the plan or 3D': 'Κλικ σε σημείο snap στην κάτοψη ή 3D',
   'Click to run on model or selection': 'Κλικ για εκτέλεση στο μοντέλο ή την επιλογή',
+  'Lean from: as the type': 'Κλίση από: όπως ο τύπος',
+  'Lean from: base': 'Κλίση από: βάση',
+  'Lean from: top': 'Κλίση από: κορυφή',
+  'Lean from: mid-height': 'Κλίση από: μέσο ύψους',
+  'Openings: as the type': 'Ανοίγματα: όπως ο τύπος',
+  'Openings: leaning with the wall': 'Ανοίγματα: κεκλιμένα με τον τοίχο',
+  'Openings: plumb': 'Ανοίγματα: κατακόρυφα',
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

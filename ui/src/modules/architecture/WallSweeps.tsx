@@ -51,6 +51,32 @@ function SweepOptions({ mode }: { mode: Mode }) {
   );
 }
 
+/**
+ * The Properties panel while a sweep tool is active: the profile the next one is made with, with its preview, chosen before
+ * the click (the same choice as the command line's bar; forum topic 268).
+ */
+function SweepProps({ mode }: { mode: Mode }) {
+  const nodes = useSession((s) => s.nodes);
+  const prefs = useSweepPrefs();
+  const value = mode === 'cut' ? prefs.revealProfile : prefs.sweepProfile;
+  const shape = (value ? nodes.get(value)?.props.profile : undefined) as unknown as ProfileJson | undefined;
+  return (
+    <div className="pad new-element" data-field="sweep-tool-profile">
+      <div className="row" style={{ gap: 8, alignItems: 'flex-start' }}>
+        <ProfilePreview shape={shape} size={64} />
+        <div className="grow">
+          <label className="type-pick"><span className="eyebrow">Profile</span>
+            <ProfilePicker use={mode === 'cut' ? 'reveal' : 'sweep'} value={value} testId="sweep-profile-panel"
+              onPick={(id) => useSweepPrefs.setState(mode === 'cut' ? { revealProfile: id } : { sweepProfile: id })} /></label>
+          <p className="small muted">{mode === 'cut' ? 'A reveal: taken out of the wall.' : 'A sweep: added to the wall\'s face.'}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+const SweepPropsAdd = () => <SweepProps mode="add" />;
+const SweepPropsCut = () => <SweepProps mode="cut" />;
+
 const SweepBar = () => <SweepOptions mode="add" />;
 const RevealBar = () => <SweepOptions mode="cut" />;
 
@@ -68,13 +94,13 @@ function onFace(mode: Mode): ToolDef['complete'] {
 
 /** A sweep on the wall face picked: a cornice, a band, a plinth, a sill. */
 export const wallSweep: ToolDef = {
-  id: 'architecture.wallSweep', label: 'Wall sweep', icon: WallSweepIcon, shortcut: 'WB', options: SweepBar,
+  id: 'architecture.wallSweep', label: 'Wall sweep', icon: WallSweepIcon, shortcut: 'WB', options: SweepBar, properties: SweepPropsAdd,
   gesture: { kind: 'face', types: ['IfcWall'] }, complete: onFace('add'),
 };
 
 /** A reveal in the wall face picked: a groove taken out of the wall's layers. */
 export const wallReveal: ToolDef = {
-  id: 'architecture.wallReveal', label: 'Wall reveal', icon: WallRevealIcon, shortcut: 'RV', options: RevealBar,
+  id: 'architecture.wallReveal', label: 'Wall reveal', icon: WallRevealIcon, shortcut: 'RV', options: RevealBar, properties: SweepPropsCut,
   gesture: { kind: 'face', types: ['IfcWall'] }, complete: onFace('cut'),
 };
 

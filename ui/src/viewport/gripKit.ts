@@ -21,7 +21,18 @@ export function alongOf(from: Vec2, end: Vec2): { from: Vec2; dir: Vec2 } | unde
   return d < 1e-9 ? undefined : { from, dir: { x: dx / d, y: dy / d } };
 }
 
-const keepLine = (along: ReturnType<typeof alongOf>): { along?: NonNullable<ReturnType<typeof alongOf>> } => (along ? { along } : {});
+/**
+ * The line a vertex of an open chain (a polyline, a railing, a run, a section line) is kept on: the segment before it, the first
+ * vertex's the one after it. None when that segment is curved (`arcs[i]` is the rise of segment i) or has no length.
+ */
+export function alongOfChain(pts: Vec2[], i: number, arcs?: number[]): { from: Vec2; dir: Vec2 } | undefined {
+  if (pts.length < 2 || i < 0 || i >= pts.length) return undefined;
+  const j = i > 0 ? i - 1 : 1;
+  if (Math.abs(arcs?.[Math.min(i, j)] ?? 0) > 1e-6) return undefined;
+  return alongOf(pts[j], pts[i]);
+}
+
+export const keepLine = (along: ReturnType<typeof alongOf>): { along?: NonNullable<ReturnType<typeof alongOf>> } => (along ? { along } : {});
 
 export function axisGrips(a: Vec2, b: Vec2, step: (start: Vec2, end: Vec2) => GripStep): Grip[] {
   const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };

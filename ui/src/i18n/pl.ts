@@ -7107,6 +7107,13 @@ export const PL: Record<string, string> = {
   'Click corner → Opposite corner or W,H': 'Kliknij narożnik → Przeciwległy narożnik lub S,W',
   'Click a snapped point on the plan or 3D': 'Kliknij punkt przyciągania na rzucie lub w 3D',
   'Click to run on model or selection': 'Kliknij, aby zastosować do modelu lub zaznaczenia',
+  'Lean from: as the type': 'Pochylenie od: jak typ',
+  'Lean from: base': 'Pochylenie od: podstawa',
+  'Lean from: top': 'Pochylenie od: góra',
+  'Lean from: mid-height': 'Pochylenie od: połowa wysokości',
+  'Openings: as the type': 'Otwory: jak typ',
+  'Openings: leaning with the wall': 'Otwory: pochylone razem ze ścianą',
+  'Openings: plumb': 'Otwory: pionowe',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

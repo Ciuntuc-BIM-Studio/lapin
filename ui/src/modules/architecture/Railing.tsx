@@ -9,7 +9,7 @@
 import type { NodeDto } from '../../engine/protocol';
 import type { Grip, GripStep, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { RailingIcon } from '../../icons';
-import { nearestOnSegment, pt } from '../../viewport/gripKit';
+import { alongOfChain, keepLine, nearestOnSegment, pt } from '../../viewport/gripKit';
 import { arcLength, axisLine, isArc, middle, pointAt, project, riseThrough, type Arc } from '../../viewport/arc';
 
 export const railing: ToolDef = {
@@ -65,6 +65,7 @@ export function railingGrips(node: NodeDto): Grip[] {
   const grips: Grip[] = pts.map((p, i) => ({
     key: `v${i}`, kind: 'vertex', at: p, title: 'Drag: the railing\'s point',
     step: (to) => send(pts.map((q, k) => (k === i ? to : q))),
+    ...keepLine(alongOfChain(pts, i, arcs)),
     remove: pts.length > 2 ? () => { const r = removePoint(pts, arcs, i); return send(r.pts, r.arcs); } : undefined,
     ...(i > 0 && i < pts.length - 1 ? {
       corner: {

@@ -3,11 +3,11 @@
 Asked on 25.11.2026 in forum topic 260 (Andras: "stretch an element along the original angle it was drawn": a modifier that jumps to / locks the angle, the typed or clicked distance lengthens or shortens the element along it; Revit and ArchiCAD have it).
 
 **Order: 1 of 6** (the six plans of 25.11.2026: angle lock, structural usage, level datums, leaning walls, national packs, 3D mouse).
-**Status: stages A, B and D done (25.11.2026, branch `feat/grip-angle-lock`); stage C partly (outline vertices); the rest of C proposed.** UI only, no engine change.
+**Status: stages A, B and D done (25.11.2026, branch `feat/grip-angle-lock`); stage C done except the 3D grips (outline vertices first; polylines, section lines, railings and MEP runs and the command-line hint on `feat/ui-leftovers`, decision 875).** UI only, no engine change.
 
 - A done: `Grip.along` (`gripKit.ts`), Ctrl/⌘ read while dragging (pointermove and keydown/keyup), `liveInput` lock (`liveLock`, `alongPoint`; typed value = change, `=` total), the "Angle kept" tag and the hint in the live box.
 - B done: `resolveAim` `along` (point snap projected, line snap intersected, Ctrl over Shift, guide kind `own`, soft guide with polar on).
-- C: outline and polygon vertices lock to the edge before them (`outlineGrips`). Not done: polyline vertices of drafted shapes, section lines, MEP runs, railings and the 3D grips (Move3D); each module gives its grips `along` with `alongOf(from, end)`.
+- C: outline and polygon vertices lock to the edge before them (`outlineGrips`). Then (decision 875): polyline vertices of drafted shapes, section lines, railings and MEP runs and carriers through `alongOfChain` (gripKit), and the prompt hint in the command line. Not done: the 3D grips (Move3D).
 - D done: guide (walls.md, drafting.md, interface.md, EN and RO), scene `grip-angle-lock`, strings in all languages, plan-direct-editing.md E1/E5.
 
 ## What exists today
@@ -57,7 +57,7 @@ None: the result is an ordinary move of an axis end. Joins, quantities and drawi
 |---|---|---|
 | A (done) | `along`, the Ctrl/⌘ lock, live input, hints | S |
 | B (done) | Snaps on the line, the soft own guide, ortho/polar interplay | M |
-| C (partly) | End vertices of polylines and outlines (lock to the adjacent segment), section lines, MEP runs, railings, 3D grips (Move3D) | M |
+| C (done, 3D grips left) | End vertices of polylines and outlines (lock to the adjacent segment), section lines, MEP runs, railings, 3D grips (Move3D) | M |
 | D (done) | Guide (walls.md, drafting.md, interface.md, EN and RO), scene (a wall at 37° stretched with ⌘, its typed length shown), strings in all languages; add the rule to plan-direct-editing.md E1/E5 | S |
 
 ## The user's answers (25.11.2026)

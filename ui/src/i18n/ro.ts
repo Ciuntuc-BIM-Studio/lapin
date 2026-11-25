@@ -7060,6 +7060,13 @@ export const RO: Record<string, string> = {
   'Click corner → Opposite corner or W,H': 'Click colț → Colțul opus sau L,H',
   'Click a snapped point on the plan or 3D': 'Click pe un punct de snap în plan sau 3D',
   'Click to run on model or selection': 'Click pentru a aplica pe model sau selecție',
+  'Lean from: as the type': 'Înclinare față de: ca tipul',
+  'Lean from: base': 'Înclinare față de: bază',
+  'Lean from: top': 'Înclinare față de: partea de sus',
+  'Lean from: mid-height': 'Înclinare față de: mijlocul înălțimii',
+  'Openings: as the type': 'Goluri: ca tipul',
+  'Openings: leaning with the wall': 'Goluri: înclinate cu peretele',
+  'Openings: plumb': 'Goluri: verticale',
 };
 
 /** Phrases with a number or a name in them. */

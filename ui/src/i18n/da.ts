@@ -7101,6 +7101,13 @@ export const DA: Record<string, string> = {
   'Click corner → Opposite corner or W,H': 'Klik hjørne → Modsatte hjørne eller B,H',
   'Click a snapped point on the plan or 3D': 'Klik på et snap-punkt i plan eller 3D',
   'Click to run on model or selection': 'Klik for at køre på model eller markering',
+  'Lean from: as the type': 'Hældning fra: som typen',
+  'Lean from: base': 'Hældning fra: bund',
+  'Lean from: top': 'Hældning fra: top',
+  'Lean from: mid-height': 'Hældning fra: midt på højden',
+  'Openings: as the type': 'Åbninger: som typen',
+  'Openings: leaning with the wall': 'Åbninger: skråner med væggen',
+  'Openings: plumb': 'Åbninger: lodrette',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

@@ -13223,6 +13223,13 @@ export const TH: Record<string, string> = {
   'Click corner → Opposite corner or W,H': 'คลิกมุม → มุมตรงข้าม หรือ กว้าง,สูง',
   'Click a snapped point on the plan or 3D': 'คลิกจุดสแนปบนแปลนหรือ 3D',
   'Click to run on model or selection': 'คลิกเพื่อใช้งานกับโมเดลหรือส่วนที่เลือก',
+  "Lean from: as the type": "เอียงจาก: ตามชนิด",
+  "Lean from: base": "เอียงจาก: ฐาน",
+  "Lean from: top": "เอียงจาก: ยอด",
+  "Lean from: mid-height": "เอียงจาก: กึ่งกลางความสูง",
+  "Openings: as the type": "ช่องเปิด: ตามชนิด",
+  "Openings: leaning with the wall": "ช่องเปิด: เอียงตามผนัง",
+  "Openings: plumb": "ช่องเปิด: ตั้งฉาก",
 };
 
 /** Phrases with a number or a name in them. */
