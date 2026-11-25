@@ -154,7 +154,7 @@ public static class RoofPanels
     }
 
     static double R(double v, int d = 4) => Math.Round(v, d);
-    static JsonArray P3(Vec3 p) => [R(p.X), R(p.Y), R(p.Z)];
+    static JsonArray P3(Vec3 p) => new(R(p.X), R(p.Y), R(p.Z));
     static JsonArray Uv(IEnumerable<Vec2> pts) => new([.. pts.Select(v => (JsonNode)new JsonArray(R(v.X), R(v.Y)))]);
 
     /// <summary>The layout as the interface and scripts read it (the Panotaj Bilka report's fields, in English).</summary>
