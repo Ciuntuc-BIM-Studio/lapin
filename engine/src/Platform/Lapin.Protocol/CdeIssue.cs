@@ -123,7 +123,8 @@ public static class CdeIssue
         if (model)
         {
             using var ms = new MemoryStream();
-            var options = new IfcExportOptions((string?)p["schema"] ?? "IFC4", (string?)p["detail"] ?? "group", (string?)p["phase"]);
+            // An issue for a BIM check: LoadBearing on every element that may bear load, from the rule where nothing says (docs/plan-structural-usage.md).
+            var options = new IfcExportOptions((string?)p["schema"] ?? "IFC4", (string?)p["detail"] ?? "group", (string?)p["phase"], DerivedLoadBearing: p["derivedLoadBearing"] is not JsonValue dv || !dv.TryGetValue<bool>(out var d) || d);
             IfcExport.Write(session, ms, (string)names["model"]!, options);
             Put((string)names["model"]!, ms.ToArray(), "ifc", null);
         }

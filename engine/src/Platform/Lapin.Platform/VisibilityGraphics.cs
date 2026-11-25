@@ -174,8 +174,12 @@ public sealed class VisibilityGraphics
     {
         if (Discipline == null || e.Class is IfcClass.Annotation or IfcClass.Grid or IfcClass.BuildingStorey || e.Str("viewId") != null) return false;
         var category = ReferenceLayers.CategoryOf(e);
-        if (category != null && Discipline.Contains(category)) return false;
         if (CategoryRow(e) is { } row && (row["halftone"] is JsonValue || (string?)row["lineColor"] is { Length: > 0 })) return false;
+        // A structural view's own kinds drawn in full only when they bear load (docs/plan-structural-usage.md): a partition,
+        // a wall or floor whose Structural tick is cleared, halftone as what is not of the discipline.
+        if (category != null && Discipline.Contains(category))
+            return ReferenceEquals(Discipline, DisciplineCategories["Structure"]) && StructuralUsage.Classes.Contains(e.Class) && !StructuralUsage.ForViews(m, e).Effective
+                && Spatial.StoreyOf(m, e.Id) != null;
         return Spatial.StoreyOf(m, e.Id) != null;
     }
 

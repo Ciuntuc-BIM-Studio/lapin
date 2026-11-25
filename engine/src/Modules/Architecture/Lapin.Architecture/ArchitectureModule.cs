@@ -452,6 +452,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             }
             else (pts, arcs) = Slabs.OutlineArg(a["arcs"], Points(a));
             var slab = Slabs.Add(ctx, storeyId, pts, Json.Number(a["offset"]) ?? 0, type, arcs);
+            // Drawn as structural (the Structure tab's Floor, docs/plan-structural-usage.md): its Structural tick, in the same step.
+            if (a[StructuralUsage.Key] is JsonValue lbs && lbs.TryGetValue<bool>(out var bearsS)) { var la = slab.CloneAttrs(); la[StructuralUsage.Key] = bearsS; ctx.Replace(slab = slab.With(attrs: la)); }
             // Its elliptical edges (audit S4, {ellipses: [{c, m, ratio, ccw} | null…]}) and its holes ({holes: [[[x, y]…]…], holeArcs?}).
             if (a[OutlineHoles.Key] != null || a[EllipseEdge.Key] != null)
             {
@@ -518,6 +520,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var type = (string?)a["typeId"] is { } typeId ? Spatial.Require(ctx.Model, typeId, IfcClass.SlabType) : null;
             var traced = Traced(ctx.Model, ctx.Services, storeyId, a["at"]);
             var slab = Slabs.Add(ctx, storeyId, traced.Corners, Json.Number(a["offset"]) ?? 0, type, traced.Rises);
+            if (a[StructuralUsage.Key] is JsonValue lbs && lbs.TryGetValue<bool>(out var bearsS)) { var la = slab.CloneAttrs(); la[StructuralUsage.Key] = bearsS; ctx.Replace(slab = slab.With(attrs: la)); }
             return new JsonObject { ["id"] = slab.Id };
         });
 
@@ -1240,6 +1243,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 Walls.Flip(ctx, wall);
                 wall = ctx.Model.Get(wall.Id) ?? wall;
             }
+            // Drawn as structural (the Structure tab's Wall, docs/plan-structural-usage.md): its Structural tick, in the same step.
+            if (a[StructuralUsage.Key] is JsonValue lbw && lbw.TryGetValue<bool>(out var bearsW)) { var la = wall.CloneAttrs(); la[StructuralUsage.Key] = bearsW; ctx.Replace(wall = wall.With(attrs: la)); }
             if (!unjoined) Joins.Auto(ctx, Paths(ctx), wall.Id, Style(a["joinStyle"]) ?? JoinStyle.Mitre);
             return new JsonObject { ["id"] = wall.Id };
         });

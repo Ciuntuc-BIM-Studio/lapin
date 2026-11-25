@@ -198,9 +198,15 @@ public static class CdeChecks
                 {
                     var set = StandardPsets.All.FirstOrDefault(s => StandardPsets.AppliesTo(s, e.Class) && s.Properties.ContainsKey(name));
                     if (set == null) continue;
+                    // LoadBearing is said by the Structural tick too (docs/plan-structural-usage.md), which the export writes into the set.
+                    if (name == "LoadBearing" && StructuralUsage.Said(c.Model, e) != null) continue;
                     if (!HasParam(c.Model, e, set.Name, name))
                         o.Add(new CdeFinding("psetCommon", CdeFinding.Warn, $"{Label(e)}: {set.Name}.{name} is empty.", e.Id));
                 }
+            // The Structural tick and a Pset value that disagree: the tick wins, said so.
+            foreach (var e in c.Model.Entities.Where(e => StructuralUsage.Applies(e.Class)))
+                if (StructuralUsage.SaidOf(c.Model, e) is { Conflict: true, Value: var v })
+                    o.Add(new CdeFinding("psetCommon", CdeFinding.Warn, $"{Label(e)}: its Structural tick ({(v ? "on" : "off")}) and its LoadBearing property disagree; the tick wins.", e.Id));
             return o;
         }),
     ];

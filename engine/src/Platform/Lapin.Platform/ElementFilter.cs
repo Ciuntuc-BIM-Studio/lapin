@@ -228,13 +228,13 @@ public sealed record ConditionGroup(bool Any, IReadOnlyList<FieldCondition> Cond
 /// (with its name without Ifc and its label), its drawing category, its type's name (a reference's file type too), its name,
 /// its materials' names, its storey's name (a door's or a window's on its wall's, <see cref="Spatial.StoreyOf(IModelView, Entity, bool)"/>),
 /// its group's, its link's, the phase it is created in (its id and name; the default one when it has none) and demolished
-/// in, its predefined type; and <c>@text:&lt;field&gt;</c>, a field read as a tag writes it (<see cref="TagText.Value"/>, in
+/// in, its predefined type, whether it is structural (yes or no, <see cref="StructuralUsage.FieldValue"/>); and <c>@text:&lt;field&gt;</c>, a field read as a tag writes it (<see cref="TagText.Value"/>, in
 /// the project's units) with the element's own attribute of that name (an object's member too) as it is stored.
 /// </summary>
 public static class ElementFacets
 {
     public const string TextPrefix = "@text:";
-    public static readonly string[] Names = ["class", "category", "type", "name", "material", "storey", "group", "link", "phase", "demolished", "predefinedType"];
+    public static readonly string[] Names = ["class", "category", "type", "name", "material", "storey", "group", "link", "phase", "demolished", "predefinedType", "structural"];
 
     public static bool Is(string field) => field.StartsWith('@');
     public static bool Known(string field) =>
@@ -267,6 +267,8 @@ public static class ElementFacets
             case "phase": return ctx.PhaseNames(e.Str("phaseCreated") ?? ctx.DefaultPhase);
             case "demolished": return e.Str("phaseDemolished") is { } d ? ctx.PhaseNames(d) : [];
             case "predefinedType": return One(e.PredefinedType);
+            // Whether it bears load, yes or no (docs/plan-structural-usage.md: the Structural tick, else the views' rule); none for a door, a stair.
+            case "structural": return One(StructuralUsage.FieldValue(m, e));
         }
         return [];
     }

@@ -19,7 +19,7 @@ public static class ViewFilters
     public const string Key = "viewFilters";
 
     /// <summary>What a rule reads of an element; <c>param</c> and <c>field</c> name a field in <c>name</c>.</summary>
-    public static readonly string[] Fields = ["class", "category", "type", "name", "material", "storey", "group", "link", "phase", "demolished", "predefinedType", "param", "field"];
+    public static readonly string[] Fields = ["class", "category", "type", "name", "material", "storey", "group", "link", "phase", "demolished", "predefinedType", "structural", "param", "field"];
     public static readonly string[] Ops = ["equals", "notEquals", "contains", "notContains", "beginsWith", "greater", "less", "atLeast", "atMost", "between", "oneOf", "noneOf", "hasValue", "hasNoValue"];
 
     /// <summary>A rule: a field, an operator, its value (a range "min..max"), or its list (<c>oneOf</c>, <c>noneOf</c>), and the field's name for <c>param</c> and <c>field</c>.</summary>

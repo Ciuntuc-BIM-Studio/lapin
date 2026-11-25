@@ -125,7 +125,7 @@ public sealed class IdsCalls(Session session, Action<string, int, int> ReportPro
             var versions = docs.SelectMany(d => d.Doc.Specifications).SelectMany(s => s.IfcVersions).ToHashSet();
             var schema = !versions.Contains("IFC4") && versions.Contains("IFC4X3_ADD2") ? "IFC4X3_ADD2" : "IFC4";
             ReportProgress("Writing the model as IFC", 0, 0);
-            var (exported, _) = IfcExport.Bytes(session, "model.ifc", new IfcExportOptions(Schema: schema, Geometry: "faceset"));
+            var (exported, _) = IfcExport.Bytes(session, "model.ifc", new IfcExportOptions(Schema: schema, Geometry: "faceset", DerivedLoadBearing: true));
             stop.ThrowIfCancellationRequested();
             ifc = StepFile.Read(exported);
             source = "model";

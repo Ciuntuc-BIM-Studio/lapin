@@ -128,6 +128,7 @@ public sealed class CoreModule : ILapinModule
         Attachments.Register(r);
         OutlineSplits.Register(r);
         HatchOrigins.Register(r);
+        StructuralUsage.Register(r);
         Components.Register(r);
         // The wholes an element is a part of, for drill-down picking.
         Assemblies.Register(r);

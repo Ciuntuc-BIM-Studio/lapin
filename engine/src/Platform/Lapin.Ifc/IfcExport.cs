@@ -24,8 +24,12 @@ namespace Lapin.Ifc;
 /// <summary><paramref name="Voids"/>: the openings also as solid voids (IfcBuildingElementProxy PROVISIONFORVOID, decision 289), of the kinds asked, their sides moved by the offset; off by default.</summary>
 public sealed record IfcExportOptions(string Schema = "IFC4", string Detail = "group", string? Phase = null, string Geometry = "brep", double Tolerance = 0, IReadOnlySet<string>? Exclude = null,
     bool Voids = false, IReadOnlySet<string>? VoidKinds = null, double VoidOffset = 0, bool BonsaiStyles = false, bool Structural = false, bool TypePropertiesOnOccurrences = false, bool SpaceBrep = false,
-    bool AdvancedBrep = false)
+    bool AdvancedBrep = false, bool DerivedLoadBearing = false)
 {
+    // DerivedLoadBearing (docs/plan-structural-usage.md, the user's answer 4): Pset_…Common.LoadBearing also on the elements nothing
+    // says it of, from the views' rule (StructuralUsage.ForViews: a wall unless a partition, floors, roofs, columns, beams); off by
+    // default, on for a CDE issue and an IDS check. Off: written only where it is said (the Structural tick, a Pset value), and on
+    // columns, beams and footings (true), as before.
     // AdvancedBrep (docs/plan-studio-freeform.md §9, F2c): a body known exactly (IIfcExactBodies: a Studio cylinder, a revolution, a smooth
     // loft, a SubD's regular patches) written as an IfcAdvancedBrep on its exact surfaces instead of its facets. Off: every body as it was.
     // TypePropertiesOnOccurrences (issue #30, decision 667): the type's own properties (its property sets, not its instance defaults) also
@@ -2088,7 +2092,11 @@ public static partial class IfcExport
             var common = new List<(string Name, string Value)>();
             // Its type's reference in the project (as Pset_…Common defines it, "type 'A-1'"): the type's mark (its own, else its category's rule's, decision 737), else its name (forum topic 177).
             if (type != null) common.Add(("Reference", Typed("IFCIDENTIFIER", S(MarkRules.TypeMark(m, type) is { Length: > 0 } typeMark ? typeMark : type.Name))));
-            if (kind.Class is IfcClass.Column or IfcClass.Beam or IfcClass.Footing) common.Add(("LoadBearing", Typed("IFCBOOLEAN", True)));
+            // LoadBearing: what the element or its type says (the Structural tick, a Pset value; the user's own value in the set still
+            // wins below), else true on columns, beams and footings as before, else the views' rule when asked (DerivedLoadBearing).
+            if (StructuralUsage.Classes.Contains(e.Class) && StructuralUsage.SaidOf(m, e) is { } said) common.Add(("LoadBearing", Typed("IFCBOOLEAN", said.Value ? True : False)));
+            else if (kind.Class is IfcClass.Column or IfcClass.Beam or IfcClass.Footing) common.Add(("LoadBearing", Typed("IFCBOOLEAN", True)));
+            else if (o.DerivedLoadBearing && StructuralUsage.Classes.Contains(e.Class)) common.Add(("LoadBearing", Typed("IFCBOOLEAN", StructuralUsage.ForViews(m, e).Effective ? True : False)));
             if (e.Class is IfcClass.Door or IfcClass.Window && type?.Attrs["spec"] is JsonObject spec && spec["isExternal"] is JsonValue ext && ext.TryGetValue<bool>(out var isExternal))
                 common.Add(("IsExternal", Typed("IFCBOOLEAN", isExternal ? True : False)));
             // A stair's numbers, as Pset_StairCommon names them: the whole stair's risers and treads, its riser and tread.
