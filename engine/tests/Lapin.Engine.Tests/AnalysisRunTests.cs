@@ -377,6 +377,42 @@ public class AnalysisRunTests
         Assert.True((bool)Run(t.F)["ok"]!);
     }
 
+    /// <summary>
+    /// Issue #121, finding 4: Lapin's own default „Reinforced concrete” names no class, so its bars take an indicative Ecm, C25/30's
+    /// (31 GPa, EN 1992-1-1 Table 3.1), and ν = 0.2: they are analysed. Its slabs and walls do not (the material still has no E of
+    /// its own, so they stay out of the shells as before). No fck is assumed, so the checks still ask for it; a class or an fck of
+    /// its own comes first, and any other concrete naming no class has no indicative E.
+    /// </summary>
+    [Fact]
+    public void The_default_reinforced_concrete_gives_its_bars_an_indicative_Ecm_but_no_fck()
+    {
+        var t = Frame6x4(beamMaterial: "Reinforced concrete");
+        var mat = StructuralMaterials.Of(t.F.Model, t.F.Model.OfClass(IfcClass.Material).Single(m => m.Name == "Reinforced concrete"));
+        Assert.Equal("concrete", mat.Kind);
+        Assert.Null(mat.E);
+        var bar = mat.ForBars();
+        Assert.Equal(31e9, bar.E!.Value, 1e-3);
+        Assert.StartsWith("indicative", bar.E.Source);
+        Assert.Contains("C25/30", bar.E.Source);
+        Assert.Equal(0.2, bar.Poisson!.Value, 9);
+        Assert.Null(bar.Fc);
+        Assert.Null(bar.Grade);
+        var run = Run(t.F);
+        Assert.True((bool)run["ok"]!);
+        Assert.Equal(4, Results(t.F, new JsonObject { ["case"] = "G1" })["frames"]!.AsArray().Count(x => t.Beams.Contains((string?)x!["sourceId"])));
+        Assert.Contains(BeamCheck(t)["notes"]!.AsArray(), n => ((string)n!).StartsWith("No fck"));
+
+        // Its own fck comes first: Ecm by Table 3.1's formula from it.
+        Give(t.F, "Reinforced concrete", P("Compressive strength", 30.0));
+        mat = StructuralMaterials.Of(t.F.Model, t.F.Model.OfClass(IfcClass.Material).Single(m => m.Name == "Reinforced concrete"));
+        Assert.Equal(22e9 * Math.Pow((30 + 8) / 10.0, 0.3), mat.E!.Value, 1e3);
+        Assert.Same(mat.E, mat.ForBars().E);
+
+        // Any other concrete naming no class and no fck: no E, for its bars neither.
+        var f = LoadCaseTests.F();
+        Assert.Null(StructuralMaterials.Of(f.Model, StructuralMaterials.EntityOf(f.Model, "Concrete")).ForBars().E);
+    }
+
     /// <summary>Spanish words for concrete (hormigón) make a concrete as concrete and beton do; names the rules knew keep what they gave.</summary>
     [Theory]
     [InlineData("Hormigón armado", "concrete", null)]

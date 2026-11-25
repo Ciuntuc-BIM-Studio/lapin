@@ -139,7 +139,8 @@ public sealed partial class StructuralProblem
         {
             var props = SectionProperties.Of(f.Source.Section.Shape);
             if (props is not { Area: > 0 }) { refused.Add(new(f, $"its section „{f.Source.Section.Name}” gives no properties")); continue; }
-            var mat = MaterialOf(f.Source.MaterialId);
+            // A bar takes its material's E, else its indicative one (Lapin's default „Reinforced concrete”, issue #121).
+            var mat = MaterialOf(f.Source.MaterialId)?.ForBars();
             if (mat?.E is not { } e) { refused.Add(new(f, f.Source.MaterialId == null ? "its type names no material" : NoE(mat, f.Source.MaterialId))); continue; }
             var g = StructuralMaterials.ShearModulus(mat, e.Value, out var basis);
             if (basis == "timber") timberG.Add(mat.Name);

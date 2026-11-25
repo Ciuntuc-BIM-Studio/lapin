@@ -13,7 +13,17 @@ public sealed record MaterialValue(double Value, string Source);
 /// density, each with its source, null when the project and the standard named say nothing. The note says what is missing.
 /// </summary>
 public sealed record StructuralMaterial(string Id, string Name, string Kind, MaterialValue? E, MaterialValue? Poisson, MaterialValue? Fy, MaterialValue? Fc,
-    MaterialValue? Density, string? Grade, string? Standard, IReadOnlyList<string> Sources);
+    MaterialValue? Density, string? Grade, string? Standard, IReadOnlyList<string> Sources)
+{
+    /// <summary>
+    /// An indicative E (and ν) a bar takes when the material gives no E of its own (Lapin's default „Reinforced concrete”); its
+    /// slabs and walls do not (they stay out of the shells, as without an E). Null for every other material.
+    /// </summary>
+    public (MaterialValue E, MaterialValue Poisson)? BarDefault { get; init; }
+
+    /// <summary>The material as a bar (a column, a beam, a member) takes it: its own E, else <see cref="BarDefault"/>'s.</summary>
+    public StructuralMaterial ForBars() => E == null && BarDefault is { } d ? this with { E = d.E, Poisson = Poisson ?? d.Poisson } : this;
+}
 
 /// <summary>
 /// A material's mechanical values (docs/jg-structures.md, Materials): first the project's own, IFC's standard sets
@@ -33,6 +43,9 @@ public static partial class StructuralMaterials
         ["C40/50"] = (40, 35), ["C45/55"] = (45, 36), ["C50/60"] = (50, 37), ["C55/67"] = (55, 38), ["C60/75"] = (60, 39), ["C70/85"] = (70, 41),
         ["C80/95"] = (80, 42), ["C90/105"] = (90, 44),
     };
+
+    /// <summary>The material Lapin's tools make when none is chosen (slabs, walls, beams, an IFC element with no material).</summary>
+    public const string DefaultConcrete = "Reinforced concrete";
 
     /// <summary>EN 1993-1-1 Table 3.1 (EN 10025-2, -4): fy (MPa) for a nominal thickness t ≤ 40 mm.</summary>
     static readonly Dictionary<string, double> Steel = new() { ["S235"] = 235, ["S275"] = 275, ["S355"] = 355, ["S420"] = 420, ["S450"] = 440, ["S460"] = 460 };
@@ -171,11 +184,19 @@ public static partial class StructuralMaterials
             e = new(ecm * 1e9, $"EN 1992-1-1:2004 Table 3.1: Ecm = 22 (fcm/10)^0.3 = {ecm.ToString("0.#", CultureInfo.InvariantCulture)} GPa, fcm = fck + 8 MPa, from fck = {mpa.ToString("0.#", CultureInfo.InvariantCulture)} MPa");
             nu ??= new(0.2, "EN 1992-1-1:2004 §3.1.3(4): ν = 0.2 for uncracked concrete");
         }
+        // Lapin's own default material names no class (issue #121): its bars take an indicative Ecm, C25/30's, so they are
+        // analysed; its slabs and walls do not (they stay out of the shells, as before). No fck is assumed, so the checks still ask
+        // for it. Any other concrete naming no class keeps no E until it is given one.
+        (MaterialValue, MaterialValue)? barDefault = null;
+        if (kind == "concrete" && e == null && string.Equals(name.Trim(), DefaultConcrete, StringComparison.OrdinalIgnoreCase))
+            barDefault = (new(Concrete["C25/30"].Ecm * 1e9, $"indicative: „{DefaultConcrete}”, Lapin's default, names no class: Ecm of C25/30 = {Concrete["C25/30"].Ecm} GPa " +
+                    "(EN 1992-1-1:2004 Table 3.1) for its bars; name its class or give its fck in Manage → Materials → Data for its own"),
+                nu ?? new(0.2, "EN 1992-1-1:2004 §3.1.3(4): ν = 0.2 for uncracked concrete"));
         if (density == null && kind == "steel")
             density = new(7850, "EN 1993-1-1:2005 §3.2.6: ρ = 7850 kg/m³");
         if (density == null && kind == "concrete" && (lower.Contains("reinforced") || lower.Contains("armat")))
             density = new(25000 / Units.G, "EN 1991-1-1:2002 Table A.1: reinforced normal-weight concrete 25 kN/m³");
-        return new(material.Id, name, kind, e, nu, fy, fc, density, grade, standard, sources);
+        return new(material.Id, name, kind, e, nu, fy, fc, density, grade, standard, sources) { BarDefault = barDefault };
     }
 
     /// <summary>The names a user gives Young's modulus in a material's own parameters (Manage → Materials → Data), squashed as <see cref="TagText.Squash"/> does.</summary>
