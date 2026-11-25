@@ -49,7 +49,7 @@ Select a room: its properties have an **Imposed load** section. Its **Category**
 
 ## The imposed loads table
 
-The **Imposed loads** tab lists each category with its use and its **qk** in kN/m², as EN 1991-1-1 recommends. Type your national annex's value in the field; **Overridden** goes back to the default.
+The **Imposed loads** tab lists each category with its use and its **qk** in kN/m², as EN 1991-1-1 recommends. Type your national annex's value in the field; **Overridden** goes back to the default, which is the value of the rule pack in use (Lapin's: EN 1991-1-1's; a pack's own in its Loads tab, see [Rules](rules.md)).
 
 ![The Imposed loads tab](shots/loads-imposed.webp)
 
@@ -92,7 +92,8 @@ The **Combinations** tab lists the combinations of the cases, as the standard wr
 
 The **Factors** section at the top sets the partial factors γ and the combination factors ψ the combinations use. They are yours to check: the sets Lapin ships are indicative.
 
-- **Set of factors.** A new project takes **CR 0-2012 (Romania)**; a project made before this setting keeps **EN 1990 Annex A1, recommended**, so its combinations do not change. The two differ in ψ: CR 0-2012 takes snow at 0.7, 0.5, 0.4, wind at 0.7, 0.2, 0 and roofs (category H) at ψ0 0.7, where EN has 0.5, 0.2, 0 for snow, 0.6, 0.2, 0 for wind and 0 for roofs.
+- **Set of factors.** A new project takes **CR 0-2012 (Romania)**; a project made before this setting keeps **EN 1990 Annex A1, recommended**, so its combinations do not change. The two differ in ψ: CR 0-2012 takes snow at 0.7, 0.5, 0.4, wind at 0.7, 0.2, 0 and roofs (category H) at ψ0 0.7, where EN has 0.5, 0.2, 0 for snow, 0.6, 0.2, 0 for wind and 0 for roofs. The list also offers the sets of the rule pack in use (Manage → Rules…, its Loads tab): a set of your country's, with its own γ, ψ, expression and ξ. A pack may change Lapin's two as well; with Lapin's pack, or a copy left as it is, they give exactly the combinations they always gave. A project naming a set the pack in use lacks takes EN's, and the notes say so.
+- **Safety class.** Shown when the set gives γd by safety class: choose the project's class, and its γd multiplies the unfavourable actions of the ultimate combinations (the permanent actions with γG,sup, the variable ones with γQ, in 6.10 or 6.10a and 6.10b); the favourable permanent actions of the wind's uplift keep γG,inf and the serviceability combinations do not change. **None (γd 1)** leaves the factors as they are. When the set gives ψ of snow by s0,k, the site's s0,k (Snow and wind) picks it, and the notes say which.
 - **γG,sup, γG,inf, γQ.** Each field shows the value in force. Type your own and it is marked with **Reset**, which goes back to the set's value.
 - **Expression.** **6.10** (the default) or **6.10a and 6.10b**: two expressions, the second with ξ (0.85 recommended, 0.5 to 1) on the permanent actions. CR 0-2012 has only its expression 6.9 (EN's 6.10), so 6.10a and 6.10b stay your choice.
 - **ψ by category.** Open the table to give ψ0, ψ1 and ψ2 of a category (the imposed-load categories, snow, wind); an empty row takes the set's values. A case's own ψ (in the Cases tab) goes before the category's.

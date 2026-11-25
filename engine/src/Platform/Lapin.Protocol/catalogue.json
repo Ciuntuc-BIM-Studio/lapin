@@ -13,7 +13,7 @@
     {"name":"analysis.setAxial","module":"analysis","label":"Axial member","args":[{"name":"axial","type":"bool"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"analysis.setClimate","module":"analysis","label":"Snow and wind","args":[{"name":"snow","type":"dict"},{"name":"wind","type":"dict"}]},
     {"name":"analysis.setCombinationEnabled","module":"analysis","label":"Switch combination","args":[{"name":"key","type":"str"},{"name":"enabled","type":"bool"}]},
-    {"name":"analysis.setCombinationOptions","module":"analysis","label":"Combination factors","args":[{"name":"set","type":"str"},{"name":"expression","type":"str"},{"name":"psi","type":"dict"}]},
+    {"name":"analysis.setCombinationOptions","module":"analysis","label":"Combination factors","args":[{"name":"set","type":"str"},{"name":"safetyClass","type":"str"},{"name":"expression","type":"str"},{"name":"psi","type":"dict"}]},
     {"name":"analysis.setDesign","module":"analysis","label":"Design values","args":[{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"analysis.setImposedLoad","module":"analysis","label":"Imposed load","args":[{"name":"category","type":"str"},{"name":"qk","type":"float"}]},
     {"name":"analysis.setOccupancy","module":"analysis","label":"Category of use","args":[{"name":"category","type":"str"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},

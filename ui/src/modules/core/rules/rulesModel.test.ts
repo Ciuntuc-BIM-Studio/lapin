@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   addStairSet, addStep, addSteel, parseDiameters, removeStairSet, removeStep, removeSteel, setPitch, setStairValue, setStep, stairProblem, stepsProblem, findingsByModule,
 } from './rulesModel';
+import {
+  addLoadSet, addSnowZone, languageFrom, loadSetProblem, removeLoadSet, removeSafetyClass, removeSnowZone, setLoadSet, setPsi, setSafetyClass, setSnowZone, sourcesFrom,
+  type LoadSet, type LoadsSection,
+} from './rulesModel';
 
 describe('rule tables', () => {
   it('sets a stair value in one set only', () => {
@@ -51,5 +55,53 @@ describe('bolt grades', () => {
     expect(renameGrade(['8.8', '10.9'], 1, '8.8')).toEqual(['8.8', '10.9']);
     expect(removeGrade(['8.8'], 0)).toEqual(['8.8']);
     expect(removeGrade(['8.8', '10.9'], 0)).toEqual(['10.9']);
+  });
+});
+
+describe('loads in a rule pack (N1)', () => {
+  const en: LoadSet = {
+    label: 'EN 1990 Annex A1, recommended values', gammaGSup: 1.35, gammaGInf: 1, gammaQ: 1.5, expression: '6.10', xi: 0.85,
+    psi: { A: { '0': 0.7, '1': 0.5, '2': 0.3 }, snow: { '0': 0.5, '1': 0.2, '2': 0 } }, snowPsi: [], safetyClasses: {},
+  };
+  const loads: LoadsSection = { sets: { en, cr0: { ...en, label: 'CR 0-2012' } }, imposed: { A: 2 } };
+
+  it('starts a set of one\'s own from another and keeps Lapin\'s', () => {
+    const next = addLoadSet(loads, 'se', 'en')!;
+    expect(next.sets.se).toEqual({ ...en, label: 'se' });
+    expect(addLoadSet(loads, 'en', 'en')).toBeNull();
+    expect(addLoadSet(loads, ' ', 'en')).toBeNull();
+    expect(Object.keys(removeLoadSet(next, 'se').sets)).toEqual(['en', 'cr0']);
+    expect(removeLoadSet(next, 'en')).toBe(next);
+  });
+  it('changes one value of one set', () => {
+    const next = setLoadSet(loads, 'cr0', { gammaQ: 1.4 });
+    expect(next.sets.cr0!.gammaQ).toBe(1.4);
+    expect(next.sets.en!.gammaQ).toBe(1.5);
+    expect(setPsi(en, 'A', 2, 0.6).psi.A).toEqual({ '0': 0.7, '1': 0.5, '2': 0.6 });
+  });
+  it('gives γd by safety class and refuses one out of range', () => {
+    const s = setSafetyClass(en, '2', 0.91)!;
+    expect(s.safetyClasses).toEqual({ '2': 0.91 });
+    expect(setSafetyClass(en, '2', 3)).toBeNull();
+    expect(setSafetyClass(en, '', 1)).toBeNull();
+    expect(removeSafetyClass(s, '2').safetyClasses).toEqual({});
+  });
+  it('adds snow zones in order and finds two from the same s0,k', () => {
+    const one = addSnowZone(en);
+    expect(one.snowPsi).toEqual([{ from: 0, psi: { '0': 0.5, '1': 0.2, '2': 0 } }]);
+    const two = addSnowZone(one);
+    expect(two.snowPsi.map((z) => z.from)).toEqual([0, 1]);
+    expect(loadSetProblem(two)).toBeNull();
+    expect(loadSetProblem(setSnowZone(two, 1, { from: 0 }))).toMatch(/same s0,k/);
+    expect(setSnowZone(two, 1, { psi: { '0': 0.7, '1': 0.4, '2': 0.2 } }).snowPsi[1]!.psi['0']).toBe(0.7);
+    expect(removeSnowZone(two, 0).snowPsi).toHaveLength(1);
+    expect(loadSetProblem({ ...en, gammaQ: 5 })).toMatch(/γQ/);
+    expect(loadSetProblem(setPsi(en, 'A', 0, 1.2))).toMatch(/ψ0/);
+  });
+  it('reads the pack\'s sources one a line and its language as a code', () => {
+    expect(sourcesFrom('Boverket\n\n  A link  \n')).toEqual(['Boverket', 'A link']);
+    expect(languageFrom('sv')).toBe('sv');
+    expect(languageFrom(' ')).toBe('');
+    expect(languageFrom('Swedish')).toBeNull();
   });
 });

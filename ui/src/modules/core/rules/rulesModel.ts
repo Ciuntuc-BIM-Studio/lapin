@@ -6,9 +6,11 @@
  */
 
 export type Section = Record<string, unknown>;
-export interface PackItem { id: string; name: string; builtin: boolean; active: boolean; description?: string | null }
+/** What a pack says of itself: the country, the edition of the rules it follows, its language, its sources (one a line). */
+export interface PackMeta { country?: string; edition?: string; language?: string; sources?: string[] }
+export interface PackItem { id: string; name: string; builtin: boolean; active: boolean; description?: string | null; meta?: PackMeta }
 export interface RulesList { items: PackItem[]; active: string; sections: { key: string; label: string }[] }
-export interface RulePack { id: string; name: string; builtin: boolean; indicative: boolean; sections: Record<string, Section>; defaults: Record<string, Section> }
+export interface RulePack { id: string; name: string; builtin: boolean; indicative: boolean; sections: Record<string, Section>; defaults: Record<string, Section>; meta?: PackMeta }
 export interface Finding { module: string; element: string | null; severity: string; message: string }
 
 // ─── Stairs ──────────────────────────────────────────────────────────────────
@@ -149,4 +151,97 @@ export function findingsByModule(findings: Finding[]): [string, Finding[]][] {
   const by = new Map<string, Finding[]>();
   for (const f of findings) by.set(f.module, [...(by.get(f.module) ?? []), f]);
   return [...by].map(([m, l]) => [m, [...l].sort((a, b) => (rank[a.severity] ?? 3) - (rank[b.severity] ?? 3))] as [string, Finding[]]);
+}
+
+// ─── Pack metadata ───────────────────────────────────────────────────────────
+
+/** The sources typed (one a line) as rules.update takes them: blank lines left out. */
+export const sourcesFrom = (text: string): string[] => text.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0);
+
+/** A language code as a pack gives it (sv, ro, pt-BR), or empty; null when it does not read. */
+export function languageFrom(text: string): string | null {
+  const t = text.trim();
+  return t === '' || /^[a-z]{2}(-[A-Z]{2})?$/.test(t) ? t : null;
+}
+
+// ─── Loads (docs/plan-national-packs.md N1) ──────────────────────────────────
+
+export type PsiValues = Record<'0' | '1' | '2', number>;
+export interface SnowZone { from: number; psi: PsiValues }
+/** A factor set as the pack holds it: γ, the expression and ξ, ψ by category, ψ of snow by s0,k, γd by safety class. */
+export interface LoadSet {
+  label: string; gammaGSup: number; gammaGInf: number; gammaQ: number; expression: '6.10' | '6.10ab'; xi: number;
+  psi: Record<string, PsiValues>; snowPsi: SnowZone[]; safetyClasses: Record<string, number>;
+}
+export interface LoadsSection { sets: Record<string, LoadSet>; imposed: Record<string, number> }
+
+/** Lapin's own sets: a pack may change them; a set of the user's comes and goes. */
+export const BUILTIN_LOAD_SETS = ['en', 'cr0'];
+
+/** Each number of a set, its label and its range (as the engine checks it). */
+export const LOAD_SET_FIELDS: { key: 'gammaGSup' | 'gammaGInf' | 'gammaQ' | 'xi'; label: string; min: number; max: number }[] = [
+  { key: 'gammaGSup', label: 'γG,sup', min: 1, max: 2 }, { key: 'gammaGInf', label: 'γG,inf', min: 0, max: 1.5 },
+  { key: 'gammaQ', label: 'γQ', min: 1, max: 2 }, { key: 'xi', label: 'ξ', min: 0.5, max: 1 },
+];
+
+export function setLoadSet(loads: LoadsSection, name: string, patch: Partial<LoadSet>): LoadsSection {
+  return { ...loads, sets: { ...loads.sets, [name]: { ...loads.sets[name]!, ...patch } } };
+}
+
+/** A set of one's own started as a copy of another; null when the name is empty, too long or taken. */
+export function addLoadSet(loads: LoadsSection, name: string, from: string): LoadsSection | null {
+  const n = name.trim();
+  if (!n || n.length > 32 || n in loads.sets || !loads.sets[from]) return null;
+  return { ...loads, sets: { ...loads.sets, [n]: { ...loads.sets[from]!, label: n } } };
+}
+
+export function removeLoadSet(loads: LoadsSection, name: string): LoadsSection {
+  if (BUILTIN_LOAD_SETS.includes(name) || Object.keys(loads.sets).length <= 1) return loads;
+  const { [name]: _gone, ...rest } = loads.sets;
+  return { ...loads, sets: rest };
+}
+
+/** One ψ of a category set (ψ0, ψ1 or ψ2). */
+export function setPsi(set: LoadSet, category: string, i: 0 | 1 | 2, value: number): LoadSet {
+  const had = set.psi[category] ?? { '0': 0, '1': 0, '2': 0 };
+  return { ...set, psi: { ...set.psi, [category]: { ...had, [String(i)]: value } as PsiValues } };
+}
+
+/** A safety class given its γd (added or changed); null when the name is empty or too long, or γd out of 0.5–1.5. */
+export function setSafetyClass(set: LoadSet, name: string, gammaD: number): LoadSet | null {
+  const n = name.trim();
+  if (!n || n.length > 32 || !(gammaD >= 0.5 && gammaD <= 1.5)) return null;
+  return { ...set, safetyClasses: { ...set.safetyClasses, [n]: gammaD } };
+}
+
+export function removeSafetyClass(set: LoadSet, name: string): LoadSet {
+  const { [name]: _gone, ...rest } = set.safetyClasses;
+  return { ...set, safetyClasses: rest };
+}
+
+/** The snow zones in order of their s0,k; a new one starts 1 kN/m² past the last with its ψ. */
+export function addSnowZone(set: LoadSet): LoadSet {
+  const zones = [...set.snowPsi].sort((a, b) => a.from - b.from);
+  const last = zones[zones.length - 1];
+  const psi = last?.psi ?? set.psi.snow ?? { '0': 0.5, '1': 0.2, '2': 0 };
+  return { ...set, snowPsi: [...zones, { from: last ? last.from + 1 : 0, psi: { ...psi } }] };
+}
+
+export function setSnowZone(set: LoadSet, at: number, patch: Partial<SnowZone>): LoadSet {
+  return { ...set, snowPsi: set.snowPsi.map((z, i) => (i === at ? { ...z, ...patch, psi: { ...z.psi, ...(patch.psi ?? {}) } } : z)) };
+}
+
+export function removeSnowZone(set: LoadSet, at: number): LoadSet {
+  return { ...set, snowPsi: set.snowPsi.filter((_, i) => i !== at) };
+}
+
+/** What the engine would refuse in a set, found before sending: two zones from the same s0,k, a value out of range. */
+export function loadSetProblem(set: LoadSet): string | null {
+  for (const f of LOAD_SET_FIELDS) if (!(set[f.key] >= f.min && set[f.key] <= f.max)) return `${f.label} is between ${f.min} and ${f.max}`;
+  const froms = set.snowPsi.map((z) => z.from);
+  if (new Set(froms).size !== froms.length) return 'two snow zones start at the same s0,k';
+  if (froms.some((f) => !(f >= 0 && f <= 20))) return "a snow zone's s0,k is between 0 and 20 kN/m²";
+  const psis = [...Object.values(set.psi), ...set.snowPsi.map((z) => z.psi)];
+  if (psis.some((p) => [p['0'], p['1'], p['2']].some((v) => !(v >= 0 && v <= 1)))) return 'ψ0, ψ1 and ψ2 are between 0 and 1';
+  return null;
 }
