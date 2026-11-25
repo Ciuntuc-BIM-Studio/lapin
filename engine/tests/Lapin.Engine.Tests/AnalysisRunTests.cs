@@ -399,8 +399,14 @@ public class AnalysisRunTests
         Assert.Null(bar.Grade);
         var run = Run(t.F);
         Assert.True((bool)run["ok"]!);
+        Assert.Contains(run["notes"]!.AsArray(), n => (string)n! == "Bars of „Reinforced concrete” (no class named): indicative Ecm of C25/30 = 31 GPa, ν = 0.2; " +
+            "name its class or give its fck in Manage → Materials → Data.");
         Assert.Equal(4, Results(t.F, new JsonObject { ["case"] = "G1" })["frames"]!.AsArray().Count(x => t.Beams.Contains((string?)x!["sourceId"])));
         Assert.Contains(BeamCheck(t)["notes"]!.AsArray(), n => ((string)n!).StartsWith("No fck"));
+
+        // Bars whose material has its own E (Concrete C25/30): no indicative note.
+        var own = Frame6x4();
+        Assert.DoesNotContain(Run(own.F)["notes"]!.AsArray(), n => ((string)n!).StartsWith("Bars of"));
 
         // Its own fck comes first: Ecm by Table 3.1's formula from it.
         Give(t.F, "Reinforced concrete", P("Compressive strength", 30.0));

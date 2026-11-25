@@ -79,6 +79,7 @@ export const ENGINE_NOTES = [
   'No wind derived on Roof 1, Roof 2: hipped roofs and roofs of more than two planes (EN 1991-1-4 Table 7.5) are not made yet.',
   'Not derived yet: the internal pressure cpi, friction, canopies and free-standing walls, the dynamic factor of tall or slender buildings.',
   '2 bars are refused, the analysis does not start: Beam 1: its type names no material; Beam 2: its material „Oak” has no E.',
+  'Bars of „Reinforced concrete” (no class named): indicative Ecm of C25/30 = 31 GPa, ν = 0.2; name its class or give its fck in Manage → Materials → Data.',
   'Timber (C24): G = E0,mean / 16, as EN 338\'s tables give it (no Poisson ratio for an orthotropic material).',
   '182 bars of an unsymmetric section (a T, a channel, an angle): their axis through the centroid, joined to the box centre\'s nodes by rigid arms.',
   'No shear area for My outline: Euler–Bernoulli there (shear deformation left out).',
