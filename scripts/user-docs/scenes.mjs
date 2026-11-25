@@ -1849,6 +1849,33 @@ export const scenes = [
     },
   },
   {
+    // Tapered walls (in-app report #191, plan-wall-lean-taper L2): a 500 mm concrete wall joined at a corner to a plumb one, 300 mm typed
+    // in Thickness at top in its properties; its exterior (first layer's) face stays plumb, the core tapers, the corner follows the
+    // faces. Seen in 3D.
+    id: 'wall-taper',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const type = (await t.cmd('architecture.createWallType', { name: 'Retaining wall 500', layers: [{ material: 'Concrete', thickness: 0.5, core: true }] })).id;
+      const a = (await t.cmd('architecture.addWall', { storeyId: s, typeId: type, x1: 0, y1: 0, x2: 8, y2: 0, height: 3 })).id;
+      await t.cmd('architecture.addWall', { storeyId: s, typeId: type, x1: 8, y1: 0, x2: 8, y2: 6, height: 3 });
+      await t.ui({ view: 'plan', keyPlan: false, selection: a, selected: [a] });
+      await t.wait(800);
+      const field = t.page.locator('[data-field=wall-thickness-top]');
+      await field.fill('300');
+      await field.press('Enter');
+      await t.until(async () => (await t.nodes()).some((n) => n.id === a && Math.abs(Number(n.props.thicknessTop) - 0.3) < 1e-9), 'the wall is 300 mm at its top');
+      t.expect((await t.page.locator('[data-testid=wall-plumb-face]').count()) === 1, 'Face that stays plumb shows once the wall tapers');
+      t.expect((await t.page.locator('[data-testid=wall-taper-layer]').count()) === 1, 'Layer that tapers shows once the wall tapers');
+      await t.shot('wall-taper-properties', { of: 'aside.props', pad: 0, maxHeight: 620 });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.4, pitch: -0.35, distance: 16, target: { x: 5, y: 2, z: 1.5 } }, false));
+      await t.wait(1500);
+      await t.shot('wall-taper-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
     // Tracing over a PDF (a tester's wish, #89, decision 371): a page drawn by Lapin itself (a plan sheet as PDF) brought back
     // into an empty plan at 1:100, its lines as drafting and as one group.
     id: 'trace-pdf',

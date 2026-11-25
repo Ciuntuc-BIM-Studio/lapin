@@ -189,6 +189,18 @@ Un plan taie peretele la înălțimea lui de tăiere, deci conturul de acolo e m
 
 ![Cei doi pereți înclinați la colțul lor, ușa înclinată cu peretele ei](shots/wall-lean-3d.webp)
 
+### Un perete cu grosime variabilă pe înălțime
+
+Un perete drept poate fi mai subțire (sau mai gros) sus decât la bază, ca un zid de sprijin sau de fundație. **Grosimea la partea de sus**, în proprietățile lui, primește grosimea pe care o are sus; ea se schimbă uniform de la bază, care păstrează grosimea dată de straturile tipului. O față rămâne verticală, cealaltă se înclină: **Fața care rămâne verticală** alege **Fața stratului 1 (R)** (implicit: dreapta peretelui în sensul desenării, de obicei exteriorul) sau **Fața ultimului strat (L)**. **Stratul care se îngustează** spune care strat preia toată schimbarea: miezul, dacă nu alegeți altul. Celelalte straturi își păstrează grosimea măsurată pe fața lor și o urmează: un finisaj pe fața verticală rămâne vertical, unul pe fața înclinată se înclină cu ea. Un miez pe zone se îngustează cu toate zonele lui. Selectați mai mulți pereți și scrieți grosimea o dată: se schimbă toți, într-un singur pas de anulare; gol îi dă fiecăruia înapoi valoarea tipului, iar un tip de perete are aceleași trei câmpuri în Tipuri de pereți.
+
+Colțurile urmează linia unde se taie fețele, cu un perete vertical, cu unul înclinat sau cu altul cu grosime variabilă, așa că pereții se îmbină fără gol și fără suprapunere. Ușile și ferestrele trec prin tot peretele și stau la mijlocul lui la jumătatea înălțimii lor; buiandrugii rămân în miez. Un plan taie peretele la înălțimea lui de tăiere și desenează linia bazei feței înclinate unde e în afara tăieturii. Cantitățile dau **Lățime** ca grosimea medie, fiecărui strat grosimea lui (celui care se îngustează media) și volumul solidului. Exportul IFC scrie corpul adevărat al peretelui, cu setul de straturi de la bază și grosimea variabilă în intenția Lapin, așa că Lapin îl citește înapoi ca același perete.
+
+Încă nu: ce nu se poate înclina nu poate avea nici grosime variabilă (pereți curbi, un perete cu profil propriu al părții de sus, sub un acoperiș sau atașat de el, prelungiri de strat, finisaj întors la capete), nici o grosime care lasă stratul care se îngustează sub 10 mm; un perete cu grosime variabilă nu se și înclină. Aceștia își păstrează grosimea, iar panoul Probleme spune de ce. Grosimea variabilă în lungul peretelui vine mai târziu.
+
+![Un perete selectat, 300 mm scris la Grosimea la partea de sus, fața verticală și stratul care se îngustează lângă](shots/wall-taper-properties.webp)
+
+![Zidul de sprijin cu grosime variabilă la colțul lui, văzut din interior: fața interioară se înclină, exteriorul rămâne vertical](shots/wall-taper-3d.webp)
+
 ### Conturul și barele unui perete cortină
 
 **Profil…** din proprietățile unui perete cortină îi desenează conturul în același fel, pe o schiță proprie: un fronton, o pantă, trepte sau orice contur, cu același formular lateral (un perete cortină curb păstrează dialogul de profil, cu puncte de tras și un tabel în milimetri). Peretele urcă până la cel mai înalt punct. Grila lui primește o linie unde se frânge conturul (o frângere la mai puțin de un montant și jumătate de o linie a grilei e mutată pe ea); fiecare travee păstrează traversele care încap sub punctul ei cel mai de jos; panoul de deasupra ultimei umple până la contur, iar o bară de margine îi urmează linia, înclinată; montanții sunt tăiați după el. Setările tipului rămân, iar **Profil…** deschide din nou conturul ca să-l schimbi, fără reconstruire; **Vârf drept** dă dreptunghiul înapoi. Se vede în 3D, fațade și secțiuni, extrasele măsoară panourile și barele așa cum sunt desenate, iar IFC-ul le poartă ca piese.

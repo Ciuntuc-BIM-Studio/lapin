@@ -74,6 +74,21 @@ public static partial class Walls
             }
             if (Measure.Volume(box) > 1e-9) lintelBoxes.Add((r.Piece.Lintel, r.Piece.Piece, Leaned(box)));
         }
+        // A tapered wall's lintels (L2): the base's boxes kept inside its core as it tapers (its leaning face would leave them sticking out).
+        if (lean == null && booleans != null && lintelBoxes.Count > 0 && WallTaper.Of(m, wall) != null && bottom.Bands.ToList().FindIndex(b => b.Core) is var ci and >= 0)
+        {
+            var cores = Pairs(ci).Select(p => WallLean.Loft(p.A, z, p.B, z + height, "core")).OfType<Solid>().ToList();
+            for (var i = 0; i < lintelBoxes.Count; i++)
+            {
+                var (l, piece, box) = lintelBoxes[i];
+                try
+                {
+                    var kept = cores.Select(c => booleans.Intersection(box, c, box.Tag)).OfType<Solid>().MaxBy(Measure.Volume);
+                    if (kept != null && Measure.Volume(kept) > 1e-9) lintelBoxes[i] = (l, piece, kept);
+                }
+                catch (InvalidOperationException ex) { problems.Add($"A lintel could not follow the wall's taper ({ex.Message})."); }
+            }
+        }
         GeometryPart Cut(GeometryPart part, double z0, double z1, bool isCore = false)
         {
             if (booleans == null) return part;
@@ -145,6 +160,16 @@ public static partial class Walls
                 plan.Add(new PlanItem("outline", false, Edge(bottom, reach0, highBase, false)));
                 plan.Add(new PlanItem("overhead", false, Edge(top, reach1, lowTop, true)));
             }
+        }
+        // A tapered wall's leaning face where it lies outside the cut: its base line seen below when it thins upwards, its top edge overhead when it thickens.
+        if (lean == null && WallTaper.Of(m, wall) is { } taper && bottom.BaseReach is { } tReach0 && top.BaseReach is { } tReach1)
+        {
+            var (l, r, b, atFrom) = taper.Top < taper.Bottom
+                ? (bottom, tReach0, taper.LeansAtMax ? bottom.Bands.MaxBy(x => x.To) : bottom.Bands.MinBy(x => x.From), !taper.LeansAtMax)
+                : (top, tReach1, taper.LeansAtMax ? top.Bands.MaxBy(x => x.To) : top.Bands.MinBy(x => x.From), !taper.LeansAtMax);
+            var y = atFrom ? b.From : b.To;
+            plan.Add(new PlanItem(taper.Top < taper.Bottom ? "outline" : "overhead", false,
+                [l.Start + l.Dir * -r(0, b, atFrom) + l.Dir.Perp * y, l.Start + l.Dir * (l.Length + r(1, b, atFrom)) + l.Dir.Perp * y]));
         }
         parts = CutPriorities.Apply(wall, m, services, parts, problems);
         if (booleans != null)

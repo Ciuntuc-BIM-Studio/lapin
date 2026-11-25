@@ -58,6 +58,8 @@ public static class WallLean
         if (wall.Class != IfcClass.Wall) return null;
         var deg = Angle(m, wall);
         if (Math.Abs(deg) < 1e-9 || Math.Abs(deg) > Max + 1e-9) return null;
+        // A tapered wall (stage L2) does not lean as well yet.
+        if (WallTaper.Wanted(m, wall)) return null;
         if (ambient is { } a && a.Cache.TryGetValue(wall.Id, out var known)) return known;
         Lean? o = null;
         // Worked out with no level in force: what the refusal reads of the wall is the wall as it is.
@@ -78,20 +80,21 @@ public static class WallLean
         return o;
     }
 
-    /// <summary>Why stage 1 cannot lean this wall; null when it can (or it has no lean).</summary>
-    public static string? Refusal(IModelView m, Entity wall, IServices? services)
+    /// <summary>Why stage 1 cannot lean this wall (stage 2 taper it, <paramref name="taper"/>); null when it can (or it has no lean).</summary>
+    public static string? Refusal(IModelView m, Entity wall, IServices? services, bool taper = false)
     {
-        if (PathCurve.Of(wall).IsArc) return "A curved wall cannot lean yet (leaning walls, stage 1): it stands plumb.";
-        if (wall.Attrs[WallTops.TopProfileKey] is JsonArray { Count: >= 2 }) return "A wall with a top profile of its own cannot lean yet: it stands plumb.";
-        if (WallEndWraps.Of(m, wall) != WallEndWraps.None) return "A wall that wraps a finish round its free ends cannot lean yet: it stands plumb (Wrap at free ends: none).";
+        var (verb, stays) = taper ? ("taper", "it keeps its thickness") : ("lean", "it stands plumb");
+        if (PathCurve.Of(wall).IsArc) return taper ? "A curved wall cannot taper yet (tapered walls, stage 2): it keeps its thickness." : "A curved wall cannot lean yet (leaning walls, stage 1): it stands plumb.";
+        if (wall.Attrs[WallTops.TopProfileKey] is JsonArray { Count: >= 2 }) return $"A wall with a top profile of its own cannot {verb} yet: {stays}.";
+        if (WallEndWraps.Of(m, wall) != WallEndWraps.None) return $"A wall that wraps a finish round its free ends cannot {verb} yet: {stays} (Wrap at free ends: none).";
         var bands = Walls.SectionPlumb(m, wall);
         if (LayerExtents.Effective(wall, m).Count > 0 || bands.Any(b => b.ExtendDown || b.ExtendUp))
-            return "A wall whose layers have extents of their own, or go on into the floors, cannot lean yet: it stands plumb.";
+            return $"A wall whose layers have extents of their own, or go on into the floors, cannot {verb} yet: {stays}.";
         var (a, b) = (Walls.Start(wall), Walls.End(wall));
         if ((b - a).Length < 1e-9) return null;
-        if (wall.Str("roofTop") == "attach") return "A wall attached to a roof or a body cannot lean yet: it stands plumb (Top under a roof: none).";
+        if (wall.Str("roofTop") == "attach") return $"A wall attached to a roof or a body cannot {verb} yet: {stays} (Top under a roof: none).";
         var axis = new RoofTop.WallAxis(a, (b - a).Normalized(), (b - a).Length, Spatial.Base(m, wall), Walls.HeightOf(m, wall), bands.Max(x => x.To) - bands.Min(x => x.From));
-        if (WallTops.Profile(wall, axis, m, services) != null) return "A wall that rises to a roof cannot lean yet: it stands plumb (Top under a roof: none).";
+        if (WallTops.Profile(wall, axis, m, services) != null) return $"A wall that rises to a roof cannot {verb} yet: {stays} (Top under a roof: none).";
         return null;
     }
 
@@ -101,18 +104,23 @@ public static class WallLean
         var deg = Angle(m, wall);
         if (Math.Abs(deg) < 1e-9) return null;
         if (Math.Abs(deg) > Max + 1e-9) return $"A wall leans at most {Max}°: it stands plumb.";
+        if (WallTaper.Wanted(m, wall)) return "A tapered wall cannot lean as well yet: its lean is ignored (Thickness at top, or Lean, empty).";
         return Refusal(m, wall, services);
     }
 
-    /// <summary>Whether the wall is built by lofting: it leans, or a wall joined to it does (its joined ends follow that wall's faces).</summary>
+    /// <summary>Whether the wall leans or tapers (stage L2) as it is built.</summary>
+    public static bool Shaped(IModelView m, Entity wall) => Of(m, wall) != null || WallTaper.Of(m, wall) != null;
+
+    /// <summary>Whether the wall is built by lofting: it leans or tapers, or a wall joined to it does (its joined ends follow that wall's faces).</summary>
     public static bool Touches(IModelView m, Entity wall)
     {
-        if (Math.Abs(Angle(m, wall)) > 1e-9) return Of(m, wall) != null;
-        // A plumb wall: lofted only when a leaning wall is joined to it (and it has nothing stage 1 cannot loft).
-        var leaning = false;
+        if (Shaped(m, wall)) return true;
+        if (Math.Abs(Angle(m, wall)) > 1e-9 || WallTaper.Wanted(m, wall)) return false;
+        // A plumb wall: lofted only when a leaning or tapered wall is joined to it (and it has nothing stage 1 cannot loft).
+        var shaped = false;
         foreach (var r in Joins.Of(m, wall.Id))
-            if (m.Get(Joins.Other(r, wall.Id)) is { } other && Math.Abs(Angle(m, other)) > 1e-9 && Of(m, other) != null) { leaning = true; break; }
-        return leaning && Refusal(m, wall, null) == null;
+            if (m.Get(Joins.Other(r, wall.Id)) is { } other && (Math.Abs(Angle(m, other)) > 1e-9 || WallTaper.Wanted(m, other)) && Shaped(m, other)) { shaped = true; break; }
+        return shaped && Refusal(m, wall, null) == null;
     }
 
     // ------------------------------------------------------------ the level the layouts are worked out at
@@ -121,6 +129,28 @@ public static class WallLean
     {
         public readonly double Z = z;
         public readonly Dictionary<string, Lean?> Cache = [];
+        public readonly Dictionary<string, WallTaper.Taper?> Tapers = [];
+    }
+
+    /// <summary>A wall's taper as the level in force has worked it out already.</summary>
+    internal static bool Cached(string id, out WallTaper.Taper? taper)
+    {
+        taper = null;
+        return ambient is { } a && a.Tapers.TryGetValue(id, out taper);
+    }
+
+    internal static void Remember(string id, WallTaper.Taper? taper)
+    {
+        if (ambient is { } a) a.Tapers[id] = taper;
+    }
+
+    /// <summary>Worked out with no level in force: what is read of the wall is the wall as it is.</summary>
+    internal static T Unleveled<T>(Func<T> f)
+    {
+        var saved = ambient;
+        ambient = null;
+        try { return f(); }
+        finally { ambient = saved; }
     }
 
     [ThreadStatic] static Level? ambient;
@@ -145,7 +175,9 @@ public static class WallLean
     /// <summary>The wall's bands as the level in force has them (<see cref="At"/>); as they are with none, or for a plumb wall.</summary>
     internal static IReadOnlyList<Walls.Band> Sectioned(IModelView m, Entity wall, IReadOnlyList<Walls.Band> bands)
     {
-        if (ambient is not { } level || Of(m, wall) is not { } lean) return bands;
+        if (ambient is not { } level) return bands;
+        if (WallTaper.Of(m, wall) is { } taper) return taper.At(bands, level.Z - Spatial.Base(m, wall));
+        if (Of(m, wall) is not { } lean) return bands;
         var h = level.Z - Spatial.Base(m, wall);
         return [.. bands.Select(b => b with { From = lean.At(b.From, h), To = lean.At(b.To, h) })];
     }
@@ -223,10 +255,17 @@ public static class WallLean
             var unit = normal.Length > 0 ? normal * (1 / normal.Length) : outward;
             var flat = new[] { a, b, c, d }.All(k => Math.Abs(Vec3.Dot(verts[k] - verts[a], unit)) < 1e-9);
             if (flat) faces.Add(new FaceInput([a, b, c, d], null, outward, "side"));
-            else
+            // A twisted side (a mitred end between a tapered or leaning wall and another): split on the diagonal through its
+            // lowest corner (by x, then y, then z), so the two walls sharing it split it the same way and leave no gap between them.
+            else if (new[] { a, b, c, d }.MinBy(k => (verts[k].X, verts[k].Y, verts[k].Z)) is var low && (low == a || low == c))
             {
                 faces.Add(new FaceInput([a, b, c], null, Vec3.Cross(verts[b] - verts[a], verts[c] - verts[a]), "side"));
                 faces.Add(new FaceInput([a, c, d], null, Vec3.Cross(verts[c] - verts[a], verts[d] - verts[a]), "side"));
+            }
+            else
+            {
+                faces.Add(new FaceInput([a, b, d], null, Vec3.Cross(verts[b] - verts[a], verts[d] - verts[a]), "side"));
+                faces.Add(new FaceInput([b, c, d], null, Vec3.Cross(verts[c] - verts[b], verts[d] - verts[b]), "side"));
             }
         }
         var s = SolidBuilder.Make(verts, faces, tag);
@@ -242,7 +281,10 @@ public static class WallLean
     public static ElementGeometry? Follow(IModelView m, Entity fill, ElementGeometry? g, double? planCut = null)
     {
         if (g == null || Openings.OpeningOf(m, fill.Id) is not { } opening || Openings.WallOf(m, opening.Id) is not { Class: IfcClass.Wall } wall) return g;
-        if (CurtainCells.SeatOf(m, fill) != null || Of(m, wall) is not { } lean) return g;
+        if (CurtainCells.SeatOf(m, fill) != null) return g;
+        // In a tapered wall (stage L2): on the middle of its thickness at the opening's mid-height.
+        if (WallTaper.Wanted(m, wall)) return WallTaper.Follow(m, wall, Openings.Place(m, opening), g);
+        if (Of(m, wall) is not { } lean) return g;
         var (origin, dir) = (Walls.Start(wall), (Walls.End(wall) - Walls.Start(wall)).Normalized());
         var z = Spatial.Base(m, wall);
         var p = Openings.Place(m, opening);

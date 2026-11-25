@@ -191,6 +191,18 @@ Not yet: a curved wall, a wall with its own top profile, a wall rising to a roof
 
 ![The two walls leaning at their corner, the door leaning with its wall](shots/wall-lean-3d.webp)
 
+### A tapered wall
+
+A straight wall can be thinner (or thicker) at its top than at its base, as a retaining or foundation wall is. **Thickness at top** in its properties takes the thickness it has at its top; it changes evenly from the base, which keeps the thickness its type's layers give it. One face stays plumb and the other leans: **Face that stays plumb** picks **Layer 1's face (R)** (the default: the wall's right as drawn, usually its exterior) or **Last layer's face (L)**. **Layer that tapers** says which layer takes the whole change: the core unless you choose another. Every other layer keeps its thickness measured across its face and follows it: a finish on the plumb face stays plumb, one on the leaning face leans with it. A zoned core tapers with all its zones. Select several walls and type the thickness once: they all change, in one undo step; empty gives each its type's back, and a wall type has the same three fields in Wall types.
+
+Corners follow the line where the faces cross, with a plumb wall, a leaning wall or another tapered one, so the walls meet with no gap and no overlap. Doors and windows go right through and stand on the middle of the wall at their mid-height; lintels stay inside the core. A plan cuts the wall at its cut height and draws the leaning face's base line where it lies outside the cut. The quantities give **Width** as the mean thickness, each layer its own thickness (the tapering one its mean), and the volume of the solid. An IFC export writes the wall's true body with its layer set at the base and the taper in Lapin's intent, so Lapin reads it back as the same tapered wall.
+
+Not yet: what cannot lean cannot taper either (curved walls, a wall with its own top profile, under or attached to a roof, layer extents, wrapped ends), nor a taper that leaves its tapering layer thinner than 10 mm; a tapered wall does not lean as well. Those keep their thickness and the Problems panel says why. A taper along the wall's length comes later.
+
+![A wall selected, 300 mm typed in Thickness at top, the plumb face and the tapering layer beside it](shots/wall-taper-properties.webp)
+
+![The tapered retaining wall at its corner, seen from inside: its inner face leans, its exterior stays plumb](shots/wall-taper-3d.webp)
+
 ### A curtain wall's boundary and members
 
 **Profile…** in a curtain wall's properties draws its boundary the same way, on a sketch of its own: a gable, a slope, steps, or any outline, with the same side form (a curved curtain wall keeps the profile dialog, with points to drag and a table in millimetres). The wall rises to its highest point. Its grid gains a line where the boundary bends (a bend within a mullion and a half of a grid line is moved onto it); each bay keeps the transoms that fit under its lowest point; the panel above the last one fills up to the boundary, and an edge member follows it, sloped; the mullions are cut to it. The type's settings stay, and **Profile…** opens the boundary again to change it, with no rebuilding; **Flat top** gives the rectangle back. It shows in 3D, elevations and sections, the schedules measure the panels and members as drawn, and the IFC carries them as parts.
