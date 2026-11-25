@@ -177,8 +177,7 @@ public static class Walls
                 P(-Reach(0, band, true), band.From), P(length + Reach(1, band, true), band.From),
                 P(length + Reach(1, band, false), band.To), P(-Reach(0, band, false), band.To),
             ];
-            return Pieces(WithFill(whole, band, fills), [.. crossings(band).Select(g => g.Lines)], start, dir, length);
-            return Pieces(WithFill(whole, band, fills, wrap), crossings(band), start, dir, length);
+            return Pieces(WithFill(whole, band, fills, wrap), [.. crossings(band).Select(g => g.Lines)], start, dir, length);
         }
         return new Layout(start, end, dir, length, z, HeightOf(m, wall), bands, Footprints, BaseReach);
     }
@@ -379,14 +378,11 @@ public static class Walls
             // finds it, the body in one piece over it with the gap taken out under it (the whole height without the boolean library).
             var crossing = crossings(band);
             var planCut = PlanCutAbove(m, wall);
-            var planPieces = Pieces(WithFill(planWhole, band, fills), [.. crossing.Where(g => g.At(planCut)).Select(g => g.Lines)], start, dir, length);
+            var planPieces = Pieces(WithFill(planWhole, band, fills, wrap), [.. crossing.Where(g => g.At(planCut)).Select(g => g.Lines)], start, dir, length);
             List<(Solid Body, double Z0, double Z1)> gapBodies = booleans == null ? [] : [.. crossing.Where(g => !g.Whole)
                 .Select(g => (Body: GapBody(g, band, start, dir, length, z, built), g.Z0, g.Z1)).Where(g => g.Body != null).Select(g => (g.Body!, g.Z0, g.Z1))];
             // The band in the pieces the walls meeting this one leave of it (one, when none interrupts it).
-            var bandPieces = Pieces(WithFill(whole, band, fills), [.. crossing.Where(g => g.Whole || booleans == null).Select(g => g.Lines)], start, dir, length);
-            var planPieces = Pieces(WithFill(planWhole, band, fills, wrap), crossings(band), start, dir, length);
-            // The band in the pieces the walls meeting this one leave of it (one, when none interrupts it).
-            var bandPieces = Pieces(WithFill(whole, band, fills, wrap), crossings(band), start, dir, length);
+            var bandPieces = Pieces(WithFill(whole, band, fills, wrap), [.. crossing.Where(g => g.Whole || booleans == null).Select(g => g.Lines)], start, dir, length);
             for (var pi = 0; pi < bandPieces.Count; pi++)
             {
                 var footprint = bandPieces[pi];
