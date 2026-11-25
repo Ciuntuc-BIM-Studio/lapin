@@ -36,11 +36,19 @@ A tab for each part of the pack the project's modules read:
 
 ![The Loads tab of a pack](shots/rules-loads.webp)
 
+- **Climate.** A list of regions, for Sweden the kommun, for another country its county or locality: **The regions are** names them (Kommun, County), and each row gives a region's **sk** (the characteristic ground snow load, kN/m²) and **vb,0** (the basic wind velocity, m/s; qb = ½ · 1.25 kg/m³ · vb,0² is shown beside it) or, where your rules give the pressure, its **qb** (kN/m²). Add a region with **New region's name**, or **Paste a list…** of lines copied from a spreadsheet (name, sk, vb,0, the columns split by tabs or semicolons; a header line is left out, a region already listed takes the pasted values). A project picks its region in Loads → Snow and wind (see [Loads](loads.md)). Lapin's own pack lists no regions.
+
+![The Climate tab of a pack](shots/rules-climate.webp)
+
+- **Accessibility.** The least clear width of a door (inside its frame, as its tags write `{clearWidth}`), the least width of a corridor (a room of the functions **Corridors are rooms of the functions** names, Circulation by default, at its narrowest, to its finishes), the **Turning circle, diameter** a room of the functions named must hold (living rooms, bedrooms, kitchens, baths, WCs and corridors by default), and whether **Ramps** are checked against the stairs' set ramp (its steepest slope and least width, so the limit is written once). An empty value is not checked: Lapin's own pack checks none of these, so a project's check stays as it was until a pack's values say otherwise.
+
+![The Accessibility tab of a pack](shots/rules-accessibility.webp)
+
 - **Bolts.** The bolt grades a steel connection can be given (Lapin's 4.6, 5.6, 8.8 and 10.9; yours, such as A325 or A490, added to the pack). The tab lists the grades as a column of names: change a name in place, **Take this grade off the list** with the × (one grade always stays), or type a **New grade** and press Enter or **Add the grade**. A steel connection's grade list, in its properties and in the hall's connections, is this list (a grade a connection already holds stays offered for it). Lapin's own pack is read only: Duplicate it to change the grades.
 
 ## Check the project
 
-**Check the project** lists what the project has that differs from the rules in use, grouped by module: a stair type whose riser is not the pack's, a bar of a steel the pack does not offer, a roof under its least pitch, a steel connection with a bolt grade the pack lacks. Click a line to select the element it speaks of. The check changes nothing.
+**Check the project** lists what the project has that differs from the rules in use, grouped by module: a stair type whose riser is not the pack's, a bar of a steel the pack does not offer, a roof under its least pitch, a steel connection with a bolt grade the pack lacks, and, when the pack's Accessibility says so, a door narrower than its least clear width, a ramp steeper (or narrower) than the ramp set, a corridor narrower than its least width, a room that cannot hold the turning circle. Click a line to select the element it speaks of. The check changes nothing.
 
 ## Apply to stair types
 
@@ -53,8 +61,8 @@ A stair type keeps the rules it was made with, so a change to the pack does not 
 Lapin ships one pack, Romania's, and its values are indicative. To work to another country's rules, make a pack of them:
 
 1. **Duplicate** *Romania (indicative)* and name the copy after the country and the edition, such as *Sweden, EKS 11*. Fill in its **Country**, **Edition of the rules**, **Language** and **Sources, one a line** (the regulation, its year, a link).
-2. Change the tabs to your rules: the stair, ramp and entrance sets, the steels, diameters and hooks, the roofs' least pitches, the bolt grades and the loads (a set of factors of your own with its γd by safety class and its ψ of snow by s0,k, the imposed loads).
-3. **Use in this project**, then choose the new set of factors in Loads → Combinations, and **Check the project**.
+2. Change the tabs to your rules: the stair, ramp and entrance sets, the steels, diameters and hooks, the roofs' least pitches, the bolt grades, the loads (a set of factors of your own with its γd by safety class and its ψ of snow by s0,k, the imposed loads), the climate (sk and vb,0 by kommun) and accessibility (door and corridor widths, the turning circle, ramps checked).
+3. **Use in this project**, then choose the new set of factors in Loads → Combinations and the site's region in Loads → Snow and wind, and **Check the project**.
 
 Type the values yourself, one by one, from the edition in force. Do not copy a norm's text or whole tables into a pack: some authorities' regulations are free to quote, but standards (EN and their national editions) are copyrighted, and a pack stays small, with its sources named. A pack is always marked indicative: its values are yours to check.
 

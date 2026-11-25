@@ -3,9 +3,13 @@
 Asked on 25.11.2026 in forum topic 261 (Slawomir: automating the design of houses to Swedish building standards; the same topic asked for Swedish, now added, and for a SpaceMouse, see docs/plan-3d-mouse.md).
 
 **Order: 5 of 6** (angle lock, structural usage, level datums, leaning walls, national packs, 3D mouse). Stages N0 and N1 first; N2–N7 follow their own order.
-**Status: N0 and N1 done (25.11.2026, branch `feat/national-packs-n1`, decision 869); N2–N7 proposed.**
+**Status: N0 and N1 done (25.11.2026, branch `feat/national-packs-n1`, decision 869); N2 and N3 done (25.11.2026, branch `feat/national-packs-n2-n3`, decision 869); N4–N7 proposed.**
 
 N1 as built: the section `loads` (`Lapin.Analysis/LoadRuleSection.cs`) holds `sets` (each: `label`, `gammaGSup`, `gammaGInf`, `gammaQ`, `expression`, `xi`, `psi` by category, `snowPsi` zones `{from: s0,k, psi}`, `safetyClasses` `{class: γd}`) and `imposed` (qk by category); a project picks `set` and `safetyClass` with `analysis.setCombinationOptions`; γd multiplies the unfavourable ULS actions. A pack also carries `country`, `edition`, `language`, `sources`. The store schema needed no change.
+
+N2 as built: the section `climate` (`Lapin.Analysis/ClimateRuleSection.cs`) holds `regionLabel` (Kommun, County) and `regions` (each `name`, `sk`, `vb0` or `qb`, `note`; at most 500); qb = ½ · 1.25 kg/m³ · vb,0². `analysis.setClimate {region}` fills s0,k and qb from the region, keeping Ce, Ct, the terrain and the importance factors, and stores `climate.region`, named while the values are still the region's. Loads → Snow and wind shows "Pick from the pack's list" when the pack lists regions. Lapin's pack lists none.
+
+N3 as built: the section `accessibility` (`Lapin.Architecture/AccessibilityRuleSection.cs`) holds `doorClearWidth`, `corridorWidth`, `turningDiameter` (each null: not checked), `checkRamps` (against the stairs' set `ramp`: its `maxSlope` and `minWidth`), `corridorFunctions` (default Circulation) and `turningFunctions` (default living, bedroom, kitchen, bath, WC, circulation). Its check: a door's clear width (`Joinery.ClearOpening`), a corridor's least width at its narrowest to its finishes (`RoomWidths.Least`: from points along every wall of 0.3 m or more straight across), the largest circle a room holds (`RoomWidths.LargestCircle`, polylabel), a ramp's slope and width. Lapin's pack checks nothing, so no project changes and no upgrade is needed.
 
 ## What exists today
 

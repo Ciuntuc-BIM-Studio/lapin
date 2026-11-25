@@ -62,6 +62,10 @@ Fila **Zăpadă și vânt** are clima amplasamentului. Lapin nu livrează hărț
 - **Zăpada**: **Încărcarea din zăpadă pe sol s0,k (kN/m²)**, **Expunerea Ce** (completă 0,8, parțială 1,0, redusă 1,2), **Coeficientul termic Ct** (1,0, în afară de cazul unui acoperiș vitrat care pierde căldură) și **Factorul de importanță γIs** (1,0 pentru clădirile obișnuite). **Aplică zăpada**.
 - **Vântul**: **Presiunea de referință a vântului qb (kN/m²)**, **Categoria de teren** (de la 0 la IV, de la mare până în centrul unui oraș) și **Factorul de importanță γIw**. **Aplică vântul**.
 
+Când pachetul de reguli folosit are regiuni (Gestionare → Reguli → Climă, pentru Suedia comunele), deasupra apare **Alege din lista pachetului**: scrie sau alege regiunea și **Folosește regiunea**. Lapin completează s0,k al amplasamentului din sk al regiunii și qb din vb,0 al ei (qb = ½ · 1.25 kg/m³ · vb,0²), păstrează expunerea, coeficientul termic, terenul și factorii de importanță și face cazurile, într-un singur pas de anulare. Fila spune apoi că valorile amplasamentului sunt ale regiunii; scrie o valoare peste ele și regiunea nu mai e numită. Valorile regiunilor sunt ale pachetului, orientative: verifică-le cu ediția în vigoare.
+
+![Alegerea regiunii amplasamentului](shots/loads-climate-region.webp)
+
 Aplicarea lor face cazurile în care intră încărcările:
 
 - **S**, zăpada netroienită, și **S+X**, **S-X**, **S+Y**, **S-Y**, zăpada troienită de un vânt care suflă spre fiecare latură: pe un acoperiș în două ape, panta dinspre vânt ia jumătate. Un troian care nu schimbă nimic aici (nicio pantă nu e expusă acelui vânt) e lăsat pe dinafară, iar Rezumatul spune asta.

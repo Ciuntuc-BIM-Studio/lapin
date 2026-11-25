@@ -16539,6 +16539,65 @@ export const scenes = [
     },
   },
   {
+    // Climate and accessibility in rule packs (docs/plan-national-packs.md N2, N3): regions with sk and vb,0, picked in Loads →
+    // Snow and wind; a door's, a corridor's, the turning circle's limits and ramps checked, the check's findings.
+    id: 'rules-climate-access',
+    touches: ['core', 'analysis', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const { page } = t;
+      const s = await t.storey();
+      const listed = await t.call('doc.query', { name: 'rules.list', args: {} });
+      const builtin = listed.items.find((i) => i.builtin);
+      const mine = (await t.cmd('rules.create', { from: builtin.id, name: 'Sweden (example)', activate: true })).id;
+      await t.cmd('rules.update', {
+        id: mine, section: 'climate',
+        values: { regionLabel: 'Kommun', regions: [{ name: 'Kiruna', sk: 5.5, vb0: 22 }, { name: 'Luleå', sk: 3.5, vb0: 23 }, { name: 'Malmö', sk: 1.0, vb0: 26 }, { name: 'Stockholm', sk: 2.0, vb0: 24 }] },
+      });
+      await t.cmd('rules.update', { id: mine, section: 'accessibility', values: { doorClearWidth: 0.8, corridorWidth: 1.3, turningDiameter: 1.5, checkRamps: true } });
+      // A door of 900 (780 clear) and a corridor 1.0 m wide, for the check.
+      const wall = (await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: -3, x2: 6, y2: -3 })).id;
+      await t.cmd('architecture.addDoor', { wallId: wall, along: 1.5 });
+      await t.cmd('architecture.addRoom', { storeyId: s, points: [[0, 0], [6, 0], [6, 1], [0, 1]], name: 'Corridor', function: 'Circulation' });
+      await t.button('Manage', { exact: true });
+      await t.tool('manage.rules');
+      await page.waitForSelector('[data-dialog=rules]', { timeout: 10_000 });
+      await page.locator(`[data-rules-pack="${mine}"]`).click();
+      await page.locator('[data-rules-section=climate]').click();
+      await t.until(async () => (await page.locator('[data-testid=rules-regions] tbody tr').count()) === 4, 'the four regions are listed');
+      await t.wait(400);
+      await t.shot('rules-climate', { of: '[data-dialog=rules]', pad: 8 });
+      await page.locator('[data-rules-section=accessibility]').click();
+      await t.until(async () => (await page.locator('[data-testid=rules-accessibility]').count()) === 1, 'the Accessibility tab is shown');
+      await page.locator('[data-field=rules-check]').click();
+      await t.until(async () => (await page.locator('[data-testid=rules-findings] li').count()) >= 2, 'the check lists the narrow door and corridor');
+      await t.wait(400);
+      await t.shot('rules-accessibility', { of: '[data-dialog=rules]', pad: 8 });
+      await t.ui({ dialog: null });
+      // Loads → Snow and wind: the region picked fills s0,k and qb.
+      await t.tool('analysis.cases');
+      const dialog = page.locator('.dialog');
+      await dialog.getByRole('tab', { name: 'Snow and wind' }).click();
+      await t.until(async () => (await dialog.locator('[data-testid=climate-region]').count()) === 1, 'the tab offers the pack\'s regions');
+      // Typed until the button takes it (the tab may draw again as the climate is read).
+      const picked = async () => (await t.call('doc.query', { name: 'analysis.climate', args: {} }))?.region === 'Luleå';
+      await t.until(async () => {
+        if (await picked()) return true;
+        await dialog.locator('[data-testid=climate-region]').fill('Luleå');
+        await t.wait(150);
+        if (await dialog.locator('[data-testid=climate-region-apply]').isEnabled()) await dialog.locator('[data-testid=climate-region-apply]').click({ timeout: 2000 }).catch(() => {});
+        return picked();
+      }, 'the region typed is one of the pack\'s, and used');
+      await t.until(async () => (await t.call('doc.query', { name: 'analysis.climate', args: {} }))?.region === 'Luleå', 'the site takes Luleå\'s values');
+      const climate = await t.call('doc.query', { name: 'analysis.climate', args: {} });
+      t.expect(climate.snow?.s0k === 3.5 && Math.abs(climate.wind?.qb - 0.3306) < 1e-4, `s0,k 3.5 and qb 0.3306 from the region (${climate.snow?.s0k}, ${climate.wind?.qb})`);
+      await t.until(async () => (await dialog.locator('[data-testid=climate-region-current]').count()) === 1, 'the tab says the values are the region\'s');
+      await t.wait(400);
+      await t.shot('loads-climate-region', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     // Classifications (docs/plan-user-extensibility.md §7.3): a system with items, a code on a wall in Properties, the office's keynotes, a shared parameter.
     id: 'classifications',
     touches: ['core'],

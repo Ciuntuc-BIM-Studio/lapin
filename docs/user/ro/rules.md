@@ -36,11 +36,19 @@ Câte un tab pentru fiecare parte a pachetului pe care o citesc modulele proiect
 
 ![Fila Încărcări a unui pachet](shots/rules-loads.webp)
 
+- **Climă.** O listă de regiuni, pentru Suedia comuna (kommun), pentru altă țară județul sau localitatea: **Regiunile sunt** le dă numele (Kommun, County), iar fiecare rând dă pentru o regiune **sk** (încărcarea caracteristică din zăpadă pe sol, kN/m²) și **vb,0** (viteza de bază a vântului, m/s; alături se arată qb = ½ · 1.25 kg/m³ · vb,0²) sau, acolo unde regulile tale dau presiunea, **qb** (kN/m²). Adaugi o regiune la **Numele noii regiuni** sau cu **Lipește o listă…** din rânduri copiate dintr-un tabel (nume, sk, vb,0, coloanele separate prin tab-uri sau punct și virgulă; un rând de antet e lăsat deoparte, o regiune deja în listă preia valorile lipite). Un proiect își alege regiunea în Încărcări → Zăpadă și vânt (vezi [Încărcări](loads.md)). Pachetul lui Lapin nu are regiuni.
+
+![Fila Climă a unui pachet](shots/rules-climate.webp)
+
+- **Accesibilitate.** Lățimea liberă minimă a unei uși (în interiorul tocului, cum o scriu etichetele ei cu `{clearWidth}`), lățimea minimă a unui coridor (o încăpere cu funcțiunile date la **Coridoarele sunt încăperile cu funcțiunile**, implicit Circulation, în locul cel mai îngust, până la finisaje), **Cerc de girație, diametru** pe care trebuie să-l cuprindă o încăpere cu funcțiunile numite (implicit camere de zi, dormitoare, bucătării, băi, WC-uri și coridoare) și dacă **Rampele** se verifică după setul ramp din fila Scări (panta lui maximă și lățimea minimă, ca limita să fie scrisă o singură dată). O valoare goală nu se verifică: pachetul lui Lapin nu verifică nimic din acestea, așa că verificarea unui proiect rămâne cum era până când valorile unui pachet spun altfel.
+
+![Fila Accesibilitate a unui pachet](shots/rules-accessibility.webp)
+
 - **Șuruburi.** Clasele de șuruburi pe care le poate primi o îmbinare metalică (4.6, 5.6, 8.8 și 10.9 ale lui Lapin; ale tale, ca A325 sau A490, adăugate pachetului). Tabul listează clasele ca o coloană de nume: schimbi un nume direct în câmp, **Scoate această clasă din listă** cu ×-ul (o clasă rămâne mereu), sau scrii o **Clasă nouă** și apeși Enter ori **Adaugă clasa**. Lista de clase a unei îmbinări metalice, în proprietățile ei și în îmbinările halei, este aceasta (o clasă pe care o îmbinare o are deja rămâne oferită pentru ea). Pachetul lui Lapin e doar pentru citire: Duplică-l ca să schimbi clasele.
 
 ## Verifică proiectul
 
-**Verifică proiectul** listează ce are proiectul diferit de regulile în uz, pe module: un tip de scară a cărui contratreaptă nu e a pachetului, o bară de un oțel pe care pachetul nu-l oferă, un acoperiș sub panta minimă, o îmbinare metalică cu o clasă de șuruburi pe care pachetul n-o are. Dă clic pe un rând ca să selectezi elementul despre care vorbește. Verificarea nu schimbă nimic.
+**Verifică proiectul** listează ce are proiectul diferit de regulile în uz, pe module: un tip de scară a cărui contratreaptă nu e a pachetului, o bară de un oțel pe care pachetul nu-l oferă, un acoperiș sub panta minimă, o îmbinare metalică cu o clasă de șuruburi pe care pachetul n-o are și, când Accesibilitatea pachetului o cere, o ușă mai îngustă decât lățimea liberă minimă, o rampă mai abruptă (sau mai îngustă) decât setul ramp, un coridor mai îngust decât lățimea minimă, o încăpere care nu cuprinde cercul de girație. Dă clic pe un rând ca să selectezi elementul despre care vorbește. Verificarea nu schimbă nimic.
 
 ## Aplică la tipurile de scări
 
@@ -53,8 +61,8 @@ Un tip de scară își păstrează regulile cu care a fost făcut, așa că o sc
 Lapin livrează un singur pachet, al României, iar valorile lui sunt orientative. Ca să lucrezi după regulile altei țări, fă-ți un pachet cu ele:
 
 1. **Duplică** *Romania (indicative)* și numește copia după țară și ediție, de pildă *Sweden, EKS 11*. Completează **Țară**, **Ediția normelor**, **Limba** și **Surse, câte una pe rând** (reglementarea, anul ei, o adresă).
-2. Schimbă filele după regulile tale: seturile de scări, rampe și intrări, oțelurile, diametrele și ciocurile, pantele minime ale acoperișurilor, clasele de șuruburi și încărcările (un set de coeficienți al tău, cu γd pe clase de siguranță și ψ al zăpezii după s0,k, încărcările utile).
-3. **Folosește în acest proiect**, apoi alege noul set de coeficienți în Încărcări → Combinații și **Verifică proiectul**.
+2. Schimbă filele după regulile tale: seturile de scări, rampe și intrări, oțelurile, diametrele și ciocurile, pantele minime ale acoperișurilor, clasele de șuruburi, încărcările (un set de coeficienți al tău, cu γd pe clase de siguranță și ψ al zăpezii după s0,k, încărcările utile), clima (sk și vb,0 pe comune) și accesibilitatea (lățimile ușilor și coridoarelor, cercul de girație, rampele verificate).
+3. **Folosește în acest proiect**, apoi alege noul set de coeficienți în Încărcări → Combinații și regiunea amplasamentului în Încărcări → Zăpadă și vânt, și **Verifică proiectul**.
 
 Scrie valorile tu, una câte una, din ediția în vigoare. Nu copia într-un pachet textul unei norme sau tabele întregi: reglementările unor autorități se pot cita liber, dar standardele (EN și edițiile lor naționale) sunt protejate de drepturi de autor, iar un pachet rămâne mic, cu sursele numite. Un pachet e mereu marcat orientativ: valorile lui sunt ale tale de verificat.
 

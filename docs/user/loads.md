@@ -62,6 +62,10 @@ The **Snow and wind** tab holds the site's climate. Lapin does not ship the nati
 - **Snow**: the **ground snow load s0,k** (kN/m²), the **exposure Ce** (full 0.8, partial 1.0, sheltered 1.2), the **thermal coefficient Ct** (1.0 unless the roof is glazed and loses heat) and the **importance factor γIs** (1.0 for ordinary buildings). **Apply the snow**.
 - **Wind**: the **reference wind pressure qb** (kN/m²), the **terrain category** (0 to IV, from the sea to a town centre) and the **importance factor γIw**. **Apply the wind**.
 
+When the rule pack in use lists regions (Manage → Rules → Climate, for Sweden the kommuns), **Pick from the pack's list** is shown above: type or choose the region and **Use the region**. Lapin fills the site's s0,k from the region's sk and qb from its vb,0 (qb = ½ · 1.25 kg/m³ · vb,0²), keeps the exposure, the thermal coefficient, the terrain and the importance factors, and makes the cases, in one step of undo. The tab then says the site's values are the region's; type a value over them and the region is no longer named. The regions' values are the pack's, indicative: check them against the edition in force.
+
+![Picking the site's region](shots/loads-climate-region.webp)
+
 Applying them makes the cases their loads go in:
 
 - **S**, the undrifted snow, and **S+X**, **S-X**, **S+Y**, **S-Y**, the snow drifted by a wind blowing towards each side: on a roof of two slopes, the slope facing the wind takes half. A drift that changes nothing here (no slope faces that wind) is left out, and the Summary says so.

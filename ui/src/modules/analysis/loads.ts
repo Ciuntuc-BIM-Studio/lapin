@@ -156,6 +156,10 @@ export interface ClimateDto {
   snow: { s0k: number; ce: number; ct: number; importance: number } | null;
   wind: { qb: number; terrain: string; importance: number } | null;
   terrains: { key: string; z0: number; zmin: number; label: string }[];
+  /** The rule pack's regions (none in Lapin's), their label (Kommun, County) and the one the site's values were picked from. */
+  regions?: ClimateRegionDto[];
+  regionLabel?: string;
+  region?: string | null;
 }
 
 /** CR 1-1-3/2012 Table 4.1: the exposure coefficient Ce of a site. */
@@ -180,4 +184,23 @@ export function windArgs(qb: string, terrain: string, importance: string): WindA
   const i = importance.trim() ? parseNumber(importance) : 1;
   if (q == null || q < 0 || q > 10 || i == null || i < 0.5 || i > 2 || !(TERRAINS as readonly string[]).includes(terrain)) return undefined;
   return { qb: q, terrain, importance: i };
+}
+
+/** A region of the rule pack's climate list (docs/plan-national-packs.md N2), as the climate query gives it. */
+export interface ClimateRegionDto { name: string; sk?: number; vb0?: number; qb?: number; qbDerived?: number; note?: string }
+
+/** The region a typed name picks from the list (any case, trimmed); undefined when the list has none of that name. */
+export function regionArgs(name: string, regions: ClimateRegionDto[]): { region: string } | undefined {
+  const n = name.trim().toLowerCase();
+  const r = n ? regions.find((x) => x.name.toLowerCase() === n) : undefined;
+  return r ? { region: r.name } : undefined;
+}
+
+/** What a region gives, in words: sk and qb (from vb,0 when it gives that). */
+export function regionSummary(r: ClimateRegionDto): string {
+  const parts: string[] = [];
+  if (r.sk != null) parts.push(`sk ${formatKn(r.sk)} kN/m²`);
+  if (r.vb0 != null) parts.push(`vb,0 ${formatKn(r.vb0)} m/s`);
+  if (r.qbDerived != null) parts.push(`qb ${String(Math.round(r.qbDerived * 1e4) / 1e4)} kN/m²`);
+  return parts.join(' · ');
 }
