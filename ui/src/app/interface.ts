@@ -16,7 +16,7 @@
 
 import { create } from 'zustand';
 
-export type InterfacePreset = 'comfortable' | 'compact' | 'focus';
+export type InterfacePreset = 'comfortable' | 'compact' | 'focus' | 'flow';
 
 export interface InterfaceParts {
   /** Large tools with their names, icons only, or a band that opens from its tab. */
@@ -43,6 +43,7 @@ export const PRESETS: Record<InterfacePreset, InterfaceParts> = {
   comfortable: { ribbon: 'large', quickTools: 'docked', commandLine: 'own', hud: 'over', prompt: 'banner', keyPlan: 'shown', panels: 'docked', rows: 'normal', keyTips: 'alt' },
   compact: { ribbon: 'icons', quickTools: 'docked', commandLine: 'status', hud: 'status', prompt: 'commandLine', keyPlan: 'button', panels: 'browserRail', rows: 'dense', keyTips: 'alt' },
   focus: { ribbon: 'dropdown', quickTools: 'docked', commandLine: 'status', hud: 'status', prompt: 'commandLine', keyPlan: 'button', panels: 'hidden', rows: 'dense', keyTips: 'alt' },
+  flow: { ribbon: 'dropdown', quickTools: 'floating', commandLine: 'status', hud: 'over', prompt: 'banner', keyPlan: 'button', panels: 'bothRail', rows: 'normal', keyTips: 'alt' },
 };
 
 /** Each part's choices, in the order the dialog shows them. */

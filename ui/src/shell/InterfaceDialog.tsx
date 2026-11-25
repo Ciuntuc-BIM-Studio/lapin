@@ -19,6 +19,7 @@ const PRESET_LABELS: Record<InterfacePreset, { label: string; note: string }> = 
   comfortable: { label: 'Comfortable', note: 'The ribbon with names, a command line under each drawing, the HUD over the view.' },
   compact: { label: 'Compact', note: 'An icon band, one status line for the prompt and the command line, the quick tools on the view’s edge.' },
   focus: { label: 'Focus', note: 'The tabs and a command line: the ribbon drops from its tab, the panels hide (Tab brings them back).' },
+  flow: { label: 'Flow', note: 'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, dropdown ribbon.' },
 };
 
 const PARTS: { key: keyof InterfaceParts; label: string; choices: Record<string, string> }[] = [

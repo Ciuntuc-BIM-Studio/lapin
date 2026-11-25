@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultSlots, parseSlot, reach, readHotbars, slotOf, slotsOf, withSlot, withSlotType, withSwap } from './hotbar';
+import { defaultHotbarFor, defaultSlots, parseSlot, reach, readHotbars, slotOf, slotsOf, withSlot, withSlotType, withSwap } from './hotbar';
 
 const known = (id: string) => id !== 'gone';
 
@@ -52,5 +52,15 @@ describe('quick tools', () => {
     expect(withSlotType(slots, 5, 'x')).toBe(slots);
     const kept = { mine: ['architecture.wall|Brick 285', 'gone|X'] };
     expect(slotsOf(kept, 'mine', [], (id) => id !== 'gone').slice(0, 2)).toEqual(['architecture.wall|Brick 285', null]);
+  });
+
+  it('gives each discipline workspace its curated default hotbar, topped up from fallback', () => {
+    const knownAll = (id: string) => id !== 'structure.pad';
+    const struct = defaultHotbarFor('structure', ['architecture.wall', 'extra.tool'], knownAll);
+    expect(struct[0]).toBe('drafting.grid');
+    expect(struct).toContain('structure.column');
+    expect(struct).not.toContain('structure.pad');
+    expect(struct).toContain('extra.tool');
+    expect(defaultHotbarFor('all', ['a', 'b'], () => true)).toEqual(['a', 'b']);
   });
 });

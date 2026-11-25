@@ -8,7 +8,7 @@ import type { NodeDto } from '../engine/protocol';
 import { addModuleViews, toggleTool, useUi } from '../app/store';
 import { mergeTabs } from './ribbon';
 import { cancel, useCad } from '../viewport/cad/session';
-import { parseSlot, setSlots, slotsOf, useHotbars, withSlot, withSlotType, withSwap, type Slots } from '../app/hotbar';
+import { defaultHotbarFor, parseSlot, setSlots, slotsOf, useHotbars, withSlot, withSlotType, withSwap, type Slots } from '../app/hotbar';
 import { useSession } from '../engine/session';
 import { typeOf } from '../engine/model';
 import { useInterface } from '../app/interface';
@@ -120,9 +120,11 @@ export const allTools = (): ToolDef[] => {
 
 export const findTool = (id: string | null): ToolDef | null => (id ? allTools().find((t) => t.id === id) ?? null : null);
 
-/** The current workspace's quick tool ids, slot by slot (decision 259). */
-export const hotbarIds = (hotbars = useHotbars.getState(), workspace = useInterface.getState().workspace): Slots =>
-  slotsOf(hotbars, workspace, defaultHotbar().map((t) => t.id), (id) => findTool(id) !== null);
+/** The current workspace's quick tool ids, slot by slot (decision 259; per-role defaults from plan-ux-game-like.md). */
+export const hotbarIds = (hotbars = useHotbars.getState(), workspace = useInterface.getState().workspace): Slots => {
+  const known = (id: string) => findTool(id) !== null;
+  return slotsOf(hotbars, workspace, defaultHotbarFor(workspace, defaultHotbar().map((t) => t.id), known), known);
+};
 
 /** A quick slot as it stands: its tool, and its type by name with the project's type of that name (null when the project has none). */
 export interface QuickSlot { tool: ToolDef; typeName: string | null; typeId: string | null }
