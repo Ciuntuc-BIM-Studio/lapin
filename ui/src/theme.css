@@ -1416,7 +1416,7 @@ button.mode-chip:hover { color: var(--accent); }
 /* Interface modes (View → Interface…): Comfortable is the layout above; Compact and Focus tighten it. */
 .tool { position: relative; }
 .tool-key { position: absolute; top: 1px; right: 2px; padding: 0 3px; border: 0; background: none; font-size: 8.5px; line-height: 1.2; color: var(--ink-muted); opacity: 0.8; display: none; }
-/* Key tips: the large tools' shortcuts show while Alt (or always, View → Interface → Keys on tools) is held down alone (shell/Ribbon.tsx). */
+/* Key tips: the large tools' shortcuts show while Alt is held down alone, or always (View → Interface → Keys on tools; shell/Ribbon.tsx). */
 .topbar.keytips .tool-key, .topbar.keys-always .tool-key { display: block; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 2px; color: var(--ink); opacity: 1; font-size: 10px; }
 /* A band wider than the window: the small tools keep their icons, their names stay in the tooltips. */
 .band.tight .tool.small > span { display: none; }
