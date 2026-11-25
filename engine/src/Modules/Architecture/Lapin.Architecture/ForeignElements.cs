@@ -297,6 +297,8 @@ public sealed class ForeignElements : IIfcRecognizer
         IReadOnlyDictionary<ForeignOpening, double>? holeFloors = null;
         List<LayerSpec> layers;
         (bool Negative, double Offset) usage;
+        // A wall swept at a slant across its length (an oblique extrusion): a leaning wall (plan-wall-lean-taper, L1b), its lean from the sweep.
+        double? lean = null;
         if (OnePrismOrNull(e, p => p.Vertical) is { } prism)
         {
             if (Footprints.Axis(Footprints.Plan(prism.Outer)) is not { } fp) { ctx.Skip("a wall without a readable footprint"); return null; }
@@ -321,6 +323,38 @@ public sealed class ForeignElements : IIfcRecognizer
             // The file's footprint: its prism's, or as a boolean cuts it (ends trimmed at a corner).
             footprint = prism.Clipped ? BodyFootprint(e) ?? Footprints.Plan(prism.Outer) : Footprints.Plan(prism.Outer);
             flatTop = !prism.Clipped;
+        }
+        else if (OnePrismOrNull(e, p => !p.Vertical && p.Sweep.Z > 1e-3 && p.Outer.Count >= 3 && p.Outer.All(q => Math.Abs(q.Z - p.Outer[0].Z) < 1e-6)) is { } slanted)
+        {
+            // Its base footprint gives the axis and the thickness across it, as a plumb wall's does; its sweep, the lean, which must
+            // run straight across the wall (one swept along its length is no lean: it stays the file's). Thicknesses are normal ones.
+            var plan = Footprints.Plan(slanted.Outer);
+            if (Footprints.Axis(plan) is not { } fp || fp.Coverage < 0.5) { ctx.Skip("a slanted wall without a readable footprint"); return null; }
+            var dir = (fp.End - fp.Start).Normalized();
+            if (axis is { } ax && Math.Abs(Vec2.Cross((ax.B - ax.A).Normalized(), dir)) < 0.05) dir = (ax.B - ax.A).Normalized();
+            var across = new Vec2(slanted.Sweep.X, slanted.Sweep.Y);
+            if (Math.Abs(Vec2.Dot(across, dir)) > 1e-4 * Math.Max(1, across.Length)) { ctx.Skip("a wall swept at a slant along its length (not a lean)"); return null; }
+            var deg = Math.Atan2(Vec2.Dot(across, dir.Perp), slanted.Sweep.Z) * 180 / Math.PI;
+            if (Math.Abs(deg) > WallLean.Max) { ctx.Skip($"a wall leaning more than {WallLean.Max}°"); return null; }
+            var cos = Math.Cos(deg * Math.PI / 180);
+            if (axis is { } ax2 && Math.Abs(Vec2.Cross((ax2.B - ax2.A).Normalized(), dir)) < 1e-9)
+            {
+                (start, end) = (ax2.A, ax2.B);
+                var (nMin, nMax) = Across(plan, start, dir);
+                thickness = Math.Round((nMax - nMin) * cos, 6);
+                layers = Layers(e, thickness, e.Material ?? "Masonry");
+                usage = e.Usage is { } u && Math.Abs(e.Layers?.Sum(l => l.Thickness) - thickness ?? 1) < 0.002 ? u : (false, nMin * cos);
+            }
+            else
+            {
+                (start, end, thickness) = (fp.Start, fp.End, Math.Round(fp.Thickness * cos, 6));
+                layers = Layers(e, thickness, e.Material ?? "Masonry");
+                usage = (false, -thickness / 2);
+            }
+            baseZ = slanted.BaseZ; height = slanted.Sweep.Z;
+            footprint = plan;
+            flatTop = !slanted.Clipped;
+            lean = Math.Round(deg, 6);
         }
         else if (e.Parts is { Count: > 0 } allParts && axis is { } axP && allParts.Any(pt => pt.Extents != null))
         {
@@ -374,6 +408,7 @@ public sealed class ForeignElements : IIfcRecognizer
         if (flatTop) wallAttrs["roofTop"] = "none";
         if (topProfile != null) wallAttrs[WallTops.TopProfileKey] = WallTops.ProfileJson(topProfile);
         if (layerEnds != null) wallAttrs[Walls.LayerEndsKey] = new JsonArray([.. layerEnds.Select(x => (JsonNode)new JsonArray([.. x.Select(v => (JsonNode)v)]))]);
+        if (lean is { } leans && Math.Abs(leans) > 1e-9) wallAttrs[WallLean.Key] = leans;
         var wall = new Entity(e.GlobalId, IfcClass.Wall, e.Name ?? type.Name, wallAttrs, predefined);
         edit.Add(wall);
         if (footprint is { Count: >= 3 }) ctx.Footprints[wall.Id] = footprint;

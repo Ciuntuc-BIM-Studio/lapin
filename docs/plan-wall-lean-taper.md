@@ -3,7 +3,7 @@
 Asked on 25.11.2026 in in-app report #191 (how to make a wall of variable thickness at top and/or bottom or along its length, and a wall that is slanted, not 90° vertical).
 
 **Order: 4 of 6** (angle lock, structural usage, level datums, leaning walls, national packs, 3D mouse).
-**Status: proposed, not started.**
+**Status: L1 and L1b done (branch `feat/wall-lean`, 25.11.2026); L2–L4 not started.**
 
 ## What exists today
 
@@ -50,13 +50,20 @@ The dense join code computed at two levels can give different piece topologies (
 
 ## Stages
 
-| Stage | Content | Effort |
-|---|---|---|
-| L1 | Lean, straight walls: layers, joins, openings, plan, quantities, IFC export; guide (walls.md EN and RO), scene `wall-lean`, strings, catalogue | L |
-| L1b | IFC import of oblique walls | M |
-| L2 | Bottom/top taper, the core absorbs | M–L |
-| L3 | Taper along the length (join solver with general face lines) | L |
-| L4 | Lift the L1 refusals | M |
+| Stage | Content | Effort | Status |
+|---|---|---|---|
+| L1 | Lean, straight walls: layers, joins, openings, plan, quantities, IFC export; guide (walls.md EN and RO), scene `wall-lean`, strings, catalogue | L | Done |
+| L1b | IFC import of oblique walls | M | Done |
+| L2 | Bottom/top taper, the core absorbs | M–L | Not started: which face moves to be decided |
+| L3 | Taper along the length (join solver with general face lines) | L | Not started |
+| L4 | Lift the L1 refusals | M | Not started |
+
+### What L1 and L1b are (25.11.2026)
+
+- `WallLean.cs`: `lean`, `leanFrom` (`base`, `top`, `axis` = mid-height), `openingCut` (`wall`, `vertical`) on a wall and on its type (the wall's wins); `Refusal` names what stage 1 does not lean (curved, `topProfile`, a roof top or attach, layer extents or layers going on into the floors, wrapped ends), which then stands plumb with that problem. `WallLean.At(z)` puts a level in force: every leaning wall's `Walls.Section` is then its bands as they are at that height (each edge `y/cosθ + (z − pivot)·tanθ`), so `LayoutOf` and the joins give the layout there.
+- `WallsLean.cs` (`Walls.LeanGeometry`): the layout at the base and at the top, each band's pieces matched vertex for vertex (the top's turned to the base's start) and lofted (`WallLean.Loft`: planar sides where the corners are on a plane, else two triangles); zones and height pieces cut from the same lofts (the vertices move linearly up). A plumb wall joined to a leaning one is lofted too (its end follows the other's face); a wall touching none is built as before (byte-identical, a gate test). Openings, lintels and bare openings' linings: the plumb wall's leaned by the wall's map (the hole is the same whichever way the door stands); doors and windows lean with the wall or stand plumb (`WallLean.Follow`). Plan: the cut at the plan's height, the base line seen below and the top edge overhead on the sides outside the cut. Quantities: side areas / cosθ, Width the normal thickness, Height vertical. `Envelope` leaned.
+- IFC: `IfcSweep.Direction` (oblique `ExtrudedDirection`) and `LeaningWallBodies` write a one-layer leaning wall as an oblique `IfcExtrudedAreaSolid` where it is the body (else the B-rep); `lean` in Lapin_Intent. L1b: `ForeignElements.Wall` reads a slanted prism swept straight across its footprint as a leaning wall (normal thickness = horizontal · cosθ), through the fidelity gate; a prism swept along the wall stays a reference.
+- Not yet: room boundaries use the wall's base footprint at its normal thickness (a few mm off the floor's true one at a steep lean); hosted sweeps, skirtings and curtain walls on a leaning host; snapping and temporary dimensions measure at the base; the wall tool's option bar has no Lean yet (`architecture.addWall` takes `lean`).
 
 ## The user's answers (25.11.2026)
 

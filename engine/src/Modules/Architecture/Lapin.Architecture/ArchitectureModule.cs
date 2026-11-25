@@ -116,6 +116,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<INodeProps>(new WallReference.Props());
         // The walls' and floors' layers past their edges cutting columns, beams and footings too (forum topic 89, stage 4).
         r.Service<ILayerExtentCuts>(new LayerExtents.Cuts());
+        // A leaning wall's body in IFC: its oblique extrusion where that is its body (plan-wall-lean-taper, L1).
+        r.Service<IIfcSweptBodies>(new LeaningWallBodies());
         // Drafted linework made walls, floors, rooms and railings (docs/plan-user-extensibility.md §7.4).
         LineworkConverters.Register(r);
         JoineryOutlineBoard.Register(r);
@@ -145,6 +147,10 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             // A free end cut at an angle (a wall recognised from a file that cuts it so): shown on a wall that has one.
             new(Joins.StartAngle, "Start cut angle", "angle", Min: -Joins.MaxEndAngle, Max: Joins.MaxEndAngle, ShowIf: FieldDescriptor.When(Joins.StartAngle, "!")),
             new(Joins.EndAngle, "End cut angle", "angle", Min: -Joins.MaxEndAngle, Max: Joins.MaxEndAngle, ShowIf: FieldDescriptor.When(Joins.EndAngle, "!")),
+            // Its lean (plan-wall-lean-taper, L1): degrees from vertical, + towards its left face; empty, its type's. Set in its Wall section (several walls at once), never here.
+            new(WallLean.Key, "Lean", "angle", Min: -WallLean.Max, Max: WallLean.Max, ShowIf: FieldDescriptor.When(WallLean.Key, "\u0001never")),
+            new(WallLean.FromKey, "Lean from", "choice", Choices: WallLean.Froms, ShowIf: FieldDescriptor.When(WallLean.FromKey, "\u0001never")),
+            new(WallLean.CutKey, "Openings in a leaning wall", "choice", Choices: WallLean.Cuts, ShowIf: FieldDescriptor.When(WallLean.CutKey, "\u0001never")),
         ], "#b5654a"));
         r.Class(new(IfcClass.WallType, "Wall type", [new("mark", "Mark", "text"), new(OpeningSills.FinishedFloorKey, "Finished floor above base", "length", Min: 0, Max: 1)], "#b5654a", Kind: "type"));
         r.Class(new(IfcClass.OpeningElement, "Opening", [new("width", "Width", "length", Min: 0.01), new("height", "Height", "length", Min: 0.01)], Kind: "element"));
@@ -1182,6 +1188,13 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 WallEndWraps.Set(attrs, a["wrapEnds"]);
                 ctx.Replace(type = type.With(attrs: attrs));
             }
+            // lean, leanFrom, openingCut (plan-wall-lean-taper, L1): its walls' lean, the level that stays put, how their openings stand.
+            if (WallLean.Given(a))
+            {
+                var attrs = type.CloneAttrs();
+                WallLean.Set(attrs, a);
+                ctx.Replace(type = type.With(attrs: attrs));
+            }
             return new JsonObject { ["id"] = type.Id };
         });
 
@@ -1206,6 +1219,14 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 var current = ctx.Model.Get(type.Id)!;
                 var attrs = current.CloneAttrs();
                 WallEndWraps.Set(attrs, a["wrapEnds"]);
+                ctx.Replace(current.With(attrs: attrs));
+            }
+            // lean, leanFrom, openingCut (plan-wall-lean-taper, L1): null clears each (its walls then plumb, from the base, openings with the wall).
+            if (WallLean.Given(a))
+            {
+                var current = ctx.Model.Get(type.Id)!;
+                var attrs = current.CloneAttrs();
+                WallLean.Set(attrs, a);
                 ctx.Replace(current.With(attrs: attrs));
             }
             return null;
@@ -1248,6 +1269,13 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             }
             // Drawn as structural (the Structure tab's Wall, docs/plan-structural-usage.md): its Structural tick, in the same step.
             if (a[StructuralUsage.Key] is JsonValue lbw && lbw.TryGetValue<bool>(out var bearsW)) { var la = wall.CloneAttrs(); la[StructuralUsage.Key] = bearsW; ctx.Replace(wall = wall.With(attrs: la)); }
+            // Drawn leaning (plan-wall-lean-taper, L1): its own lean, from its base unless told.
+            if (WallLean.Given(a))
+            {
+                var attrs = wall.CloneAttrs();
+                WallLean.Set(attrs, a);
+                ctx.Replace(wall = wall.With(attrs: attrs));
+            }
             if (!unjoined) Joins.Auto(ctx, Paths(ctx), wall.Id, Style(a["joinStyle"]) ?? JoinStyle.Mitre);
             return new JsonObject { ["id"] = wall.Id };
         });
@@ -1375,6 +1403,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             if (floorGiven) OpeningSills.SetFinishedFloor(attrs, a["finishedFloor"]);
             // Its own wrap at free ends (report #192; null: its type's again).
             if (a.ContainsKey("wrapEnds")) WallEndWraps.Set(attrs, a["wrapEnds"]);
+            // Its own lean, the level that stays put, how its openings stand (plan-wall-lean-taper, L1; null: its type's again).
+            WallLean.Set(attrs, a);
             ctx.Replace(wall.With(attrs: attrs));
             if (floorGiven) OpeningSills.CheckWall(ctx.Model, ctx.Model.Get(wall.Id)!);
             var moveJoined = a["moveJoinedEnds"] is not JsonValue mj || !mj.TryGetValue<bool>(out var keep) || keep;
@@ -1875,7 +1905,7 @@ sealed class VoidShapes : IVoidShapes
     {
         if (element.Class != IfcClass.Wall) yield break;
         foreach (var (p, _) in ThroughOpenings.Into(m, element))
-            if (Openings.Cutter(Openings.FrameOf(m, element), p) is { } body) yield return (p.Opening.Id, body);
+            if (WallLean.Leaned(m, element, Openings.Cutter(Openings.FrameOf(m, element), p)) is { } body) yield return (p.Opening.Id, body);
     }
 }
 

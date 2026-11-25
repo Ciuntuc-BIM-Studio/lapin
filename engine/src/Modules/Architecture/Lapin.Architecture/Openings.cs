@@ -513,7 +513,9 @@ public static class Openings
     public static Solid? CutterIn(IModelView m, Entity wall, Placed p)
     {
         var f = FrameOf(m, wall, p.Along);
-        return PathCurve.Of(wall) is { IsArc: true } c ? ArcCutter(c, f.Base, f.YMin, f.YMax, p) : Cutter(f, p);
+        if (PathCurve.Of(wall) is { IsArc: true } c) return ArcCutter(c, f.Base, f.YMin, f.YMax, p);
+        // A leaning wall's hole leans with it (plan-wall-lean-taper, L1), as its body is cut.
+        return WallLean.Leaned(m, wall, Cutter(f, p));
     }
 
     /// <summary>
@@ -634,7 +636,10 @@ public static class Openings
         return hull.Length >= 3 ? new ElementGeometry([], [new PlanItem("hit", true, hull)]) : null;
     }
 
-    public static ElementGeometry? FillGeometry(Entity fill, IModelView m)
+    /// <remarks>In a leaning wall (plan-wall-lean-taper, L1) it leans with it, or stands plumb where the wall's middle is (<see cref="WallLean.Follow"/>).</remarks>
+    public static ElementGeometry? FillGeometry(Entity fill, IModelView m) => WallLean.Follow(m, fill, PlumbFillGeometry(fill, m));
+
+    static ElementGeometry? PlumbFillGeometry(Entity fill, IModelView m)
     {
         // A curtain wall's door (report #133): in its cell, drawn as any door is.
         if (CurtainCells.SeatOf(m, fill) is { } seat) return CurtainDoorGeometry(fill, m, seat);
@@ -666,7 +671,9 @@ public static class Openings
     /// A door's or window's plan symbols with the plan cut at <paramref name="cut"/> over its storey's level (audit 22.11.2026):
     /// its dressings and a bay's faces cut or seen as that plan has them; null when nothing of it depends on the cut.
     /// </summary>
-    public static IReadOnlyList<PlanItem>? FillPlanAt(Entity fill, IModelView m, double cut)
+    public static IReadOnlyList<PlanItem>? FillPlanAt(Entity fill, IModelView m, double cut) => WallLean.FollowPlan(m, fill, PlumbFillPlanAt(fill, m, cut), cut);
+
+    static IReadOnlyList<PlanItem>? PlumbFillPlanAt(Entity fill, IModelView m, double cut)
     {
         if (CurtainCells.SeatOf(m, fill) != null || SpecOf(m, fill.Id) is not { } spec || OpeningOf(m, fill.Id) is not { } opening || WallOf(m, opening.Id) is not { } wall) return null;
         var p = Place(m, opening);

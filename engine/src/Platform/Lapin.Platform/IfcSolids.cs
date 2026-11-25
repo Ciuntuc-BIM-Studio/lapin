@@ -16,6 +16,12 @@ public sealed record IfcSweep(IReadOnlyList<Vec2> Profile, IReadOnlyList<IReadOn
     /// and <see cref="XDir"/> stand for it as they do for <see cref="Profile"/>. Kinds IFC has no form for keep <see cref="Profile"/>.
     /// </summary>
     public Lapin.Platform.ProfileLibraries.SectionProfile? Parametric { get; init; }
+
+    /// <summary>
+    /// The way it is swept when that is not along <see cref="Axis"/> (a leaning wall's oblique extrusion, plan-wall-lean-taper L1):
+    /// a unit vector in the world, out of the profile's plane; <see cref="Depth"/> is then measured along it. Null: along the axis.
+    /// </summary>
+    public Vec3? Direction { get; init; }
 }
 
 /// <summary>A plane cutting a sweep: what lies on the side <see cref="Normal"/> points to (out of the material) is taken off.</summary>

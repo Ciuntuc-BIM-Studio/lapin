@@ -1232,13 +1232,14 @@ public static partial class IfcExport
             if (parts.Count != 1 || Measure.Bounds(parts[0].Solid) is not { } box) return false;
             var w = b.Body;
             var y = Vec3.Cross(w.Axis, w.XDir);
-            var ends = new[] { w.Origin, w.Origin + w.Axis * w.Depth };
+            var sweep = w.Direction ?? w.Axis;
+            var ends = new[] { w.Origin, w.Origin + sweep * w.Depth };
             var corners = w.Profile.SelectMany(q => ends.Select(o => o + w.XDir * q.X + y * q.Y)).ToList();
             const double Tol = 1e-4;
             bool Near(double a, double c) => Math.Abs(a - c) <= Tol;
             if (!Near(corners.Min(c => c.X), box.Min.X) || !Near(corners.Max(c => c.X), box.Max.X) || !Near(corners.Min(c => c.Y), box.Min.Y)
                 || !Near(corners.Max(c => c.Y), box.Max.Y) || !Near(corners.Min(c => c.Z), box.Min.Z) || !Near(corners.Max(c => c.Z), box.Max.Z)) return false;
-            var volume = (Math.Abs(Polygon2.SignedArea(w.Profile)) - w.Holes.Sum(h => Math.Abs(Polygon2.SignedArea(h)))) * w.Depth;
+            var volume = (Math.Abs(Polygon2.SignedArea(w.Profile)) - w.Holes.Sum(h => Math.Abs(Polygon2.SignedArea(h)))) * w.Depth * Math.Abs(Vec3.Dot(sweep, w.Axis));
             return Math.Abs(volume - Measure.Volume(parts[0].Solid)) <= Math.Max(1e-9, volume * 1e-4);
         }
 
@@ -1270,6 +1271,12 @@ public static partial class IfcExport
             else profile = Arbitrary(null);
             var o = fr.Local(w.Origin);
             var position = f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", L(new[] { R(o.X), R(o.Y), R(o.Z) })), Dir(fr.Turn(w.Axis)), Dir(fr.Turn(w.XDir)));
+            // Oblique (a leaning wall): its direction in the position's own axes (x its XDir, z its Axis).
+            if (w.Direction is { } d && Vec3.Cross(d, w.Axis).Length > 1e-9)
+            {
+                var yd = Vec3.Cross(w.Axis, w.XDir);
+                return f.Add("IFCEXTRUDEDAREASOLID", profile, position, f.Add("IFCDIRECTION", L(new[] { R(Vec3.Dot(d, w.XDir)), R(Vec3.Dot(d, yd)), R(Vec3.Dot(d, w.Axis)) })), R(w.Depth));
+            }
             return f.Add("IFCEXTRUDEDAREASOLID", profile, position, f.Add("IFCDIRECTION", "(0.,0.,1.)"), R(w.Depth));
         }
 

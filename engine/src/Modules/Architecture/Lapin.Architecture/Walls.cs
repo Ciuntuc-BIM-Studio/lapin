@@ -12,7 +12,7 @@ namespace Lapin.Architecture;
 /// type's layers, laid by the wall's own IfcMaterialLayerSetUsage with the
 /// axis on the core. A wall without layers keeps its own thickness, centred.
 /// </summary>
-public static class Walls
+public static partial class Walls
 {
     public const double DefaultHeight = 3.0;
     public const double DefaultThickness = 0.25;
@@ -108,7 +108,11 @@ public static class Walls
         bool ExtendDown = false, bool ExtendUp = false);
 
     /// <summary>The wall's section, first layer to last; one centred band for a wall without layers.</summary>
-    public static IReadOnlyList<Band> Section(IModelView m, Entity wall)
+    /// <remarks>While a level is in force (<see cref="WallLean.At"/>), a leaning wall's bands as they are at that height.</remarks>
+    public static IReadOnlyList<Band> Section(IModelView m, Entity wall) => WallLean.Sectioned(m, wall, SectionPlumb(m, wall));
+
+    /// <summary>The wall's section as its layers lay it, whatever its lean.</summary>
+    public static IReadOnlyList<Band> SectionPlumb(IModelView m, Entity wall)
     {
         if (LayerSets.BandsOf(m, wall.Id) is { } bands) return bands.Select(b => new Band(b.From, b.To, b.Material, b.Name, b.Core, b.Index, b.Z0, b.Z1, b.Parts, b.Rank, b.ExtendDown, b.ExtendUp)).ToList();
         var t = wall.NumOrNull("thickness") ?? DefaultThickness;
@@ -271,6 +275,10 @@ public static class Walls
         var problems = new List<string>();
         if (WallTop.Problem(m, wall) is { } topProblem) problems.Add(topProblem);
         if (WallTops.Problem(m, wall, services) is { } attachProblem) problems.Add(attachProblem);
+        // A leaning wall, or one joined to a leaning wall: lofted between its layouts at its base and its top (plan-wall-lean-taper, L1).
+        // One that has a lean stage 1 cannot build stands plumb and says why.
+        if (WallLean.Problem(m, wall, services) is { } leanProblem) problems.Add(leanProblem);
+        else if (WallLean.Touches(m, wall) && LeanGeometry(wall, m, services, problems) is { } leaning) return leaning;
         var paths = services?.Get<IPathElements>();
         // Its ends where its joins put them; a free end cut at its own angle (startAngle, endAngle).
         var joinedEnds = paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
@@ -1242,6 +1250,7 @@ public static class Walls
         var problems = new List<string>();
         if (WallTop.Problem(m, wall) is { } topProblem) problems.Add(topProblem);
         if (WallTops.Problem(m, wall, services) is { } attachProblem) problems.Add(attachProblem);
+        if (WallLean.Problem(m, wall, services) is { } leanProblem) problems.Add(leanProblem);
         var paths = services?.Get<IPathElements>();
         var ends = paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
         var length = c.Length;
@@ -1417,7 +1426,9 @@ public static class Walls
         var z = Spatial.Base(m, wall);
         var c = PathCurve.Of(wall);
         IReadOnlyList<Vec2> fp = c.IsArc ? c.Band(_ => 0, _ => c.Length, y0, y1) : [start + left * y0, end + left * y0, end + left * y1, start + left * y1];
-        return Prism.ExtrudeFootprint(fp, z, HeightOf(m, wall), "wall");
+        var body = Prism.ExtrudeFootprint(fp, z, HeightOf(m, wall), "wall");
+        // A leaning wall's leans with it.
+        return body != null && WallLean.Of(m, wall) is { } lean ? WallLean.Mapped(body, WallLean.Map(lean, start, (end - start).Normalized(), z)) : body;
     }
 
     /// <summary>
@@ -1511,6 +1522,8 @@ public static class Walls
         var net = volumes.Values.Sum();
         // Gross as built (audit 22.11.2026): up to the top the roofs give it (a gable included), not the eave height alone.
         var grossSide = length * MeanTop(m, wall, height, width);
+        // A leaning wall's faces are longer than its height by 1/cosθ (its height stays vertical, its width the normal one).
+        if (WallLean.Of(m, wall) is { } lean) grossSide /= lean.Cos;
         yield return new QuantitySet("Qto_WallBaseQuantities",
         [
             new("Length", length, "LENGTH"),
