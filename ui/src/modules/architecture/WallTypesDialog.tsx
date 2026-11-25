@@ -9,6 +9,7 @@
  * reveals (decision 298: WallTypeSweeps). Saving is one engine command; every wall of the type follows.
  */
 
+import { WRAP_TIP, WrapEndsField, wrapOf, type WrapEnds } from './WrapEndsField';
 import { confirmAction } from '../../shell/prompts';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, ArrowUpDown, Layers, PenLine, Plus, Trash2, X } from 'lucide-react';
@@ -85,7 +86,7 @@ const EXTEND_TIP = 'Whether the layer goes on into the floors\' layers ranked un
 const blank = (): Row[] => [layer('Render', 0.02), layer('Brick', 0.25, true), layer('Plaster', 0.015)];
 
 /** The editor as it is, kept while Materials is open (forum #45) and taken back when the dialog opens again. */
-interface Kept { editing: string | null; name: string; rows: Row[]; zones: ZoneRow[]; lintels: Rule; sweeps: TypeSweepRow[]; params?: Param[]; finishedFloor?: number | null }
+interface Kept { editing: string | null; name: string; rows: Row[]; zones: ZoneRow[]; lintels: Rule; sweeps: TypeSweepRow[]; params?: Param[]; finishedFloor?: number | null; wrapEnds?: WrapEnds | null }
 
 export function WallTypesDialog() {
   const nodes = useSession((s) => s.nodes);
@@ -107,6 +108,8 @@ export function WallTypesDialog() {
   const [sweeps, setSweeps] = useState<TypeSweepRow[]>(k0?.sweeps ?? []);
   // The finished floor over its walls' base (forum topic 192): null, the walls' own or none (0).
   const [finishedFloor, setFinishedFloor] = useState<number | null>(k0?.finishedFloor ?? null);
+  // Which face's finish wraps its walls' free ends (report #192): null, none.
+  const [wrapEnds, setWrapEnds] = useState<WrapEnds | null>(k0?.wrapEnds ?? null);
   // A new type's parameters (issue #32), sent with Create type; a saved type's are edited in its own Parameters section.
   const [draft, setDraft] = useState<Param[]>(k0?.params ?? []);
   // The layer whose row the mouse is over: lit in the preview's plan, section and 3D.
@@ -130,8 +133,9 @@ export function WallTypesDialog() {
     const t = editing ? model.nodes.get(editing) : undefined;
     setDraft([]);
     setPensOpen(new Set());
-    if (!t) { setName(''); setRows(blank()); setZones([]); setLintels(DEFAULT_RULE); setSweeps([]); setFinishedFloor(null); return; }
+    if (!t) { setName(''); setRows(blank()); setZones([]); setLintels(DEFAULT_RULE); setSweeps([]); setFinishedFloor(null); setWrapEnds(null); return; }
     setFinishedFloor(typeof t.props.finishedFloor === 'number' ? t.props.finishedFloor : null);
+    setWrapEnds(wrapOf(t.props.wrapEnds));
     setSweeps(sweepRows(t.props.sweeps, (id) => materialName(model, id)));
     setLintels((t.props.lintels as unknown as Rule | undefined) ?? DEFAULT_RULE);
     setName(t.name);
@@ -151,7 +155,7 @@ export function WallTypesDialog() {
     if (confirmAction(t('Reverse the order of the layers? Once the type is saved, its walls swap faces: what is exterior becomes interior.'))) setRows(reverseLayers(rows));
   };
   // Opening a material in Manage → Materials keeps all of this for the way back.
-  const hatchFrom = { kind: 'wallTypes', snapshot: (): Kept => ({ editing, name, rows, zones, lintels, sweeps, params: draft, finishedFloor }) };
+  const hatchFrom = { kind: 'wallTypes', snapshot: (): Kept => ({ editing, name, rows, zones, lintels, sweeps, params: draft, finishedFloor, wrapEnds }) };
   const total = rows.reduce((s, r) => s + r.thickness, 0);
   // A layer's own height (report #44): from and up to, over the wall's base; empty, the whole height.
   const height = (v: number | null) => (v != null && v > 0 ? v : null);
@@ -175,9 +179,9 @@ export function WallTypesDialog() {
 
   const save = async () => {
     const sweepList = sweeps.map(sweepJson);
-    if (editing) await execute('architecture.updateWallType', { id: editing, name, layers, zones: zoneJson, lintels, sweeps: sweepList, finishedFloor });
+    if (editing) await execute('architecture.updateWallType', { id: editing, name, layers, zones: zoneJson, lintels, sweeps: sweepList, finishedFloor, wrapEnds: wrapEnds === 'none' ? null : wrapEnds });
     else {
-      const r = await execute('architecture.createWallType', { name, layers, zones: zoneJson, lintels, sweeps: sweepList, ...(finishedFloor != null && { finishedFloor }), ...(draft.length ? { params: draftJson(draft) } : {}) }) as { id?: string } | null;
+      const r = await execute('architecture.createWallType', { name, layers, zones: zoneJson, lintels, sweeps: sweepList, ...(finishedFloor != null && { finishedFloor }), ...(wrapEnds && wrapEnds !== 'none' && { wrapEnds }), ...(draft.length ? { params: draftJson(draft) } : {}) }) as { id?: string } | null;
       if (r?.id) { setDraft([]); setEditing(r.id); useUi.setState({ wallTypeId: r.id }); }
     }
     // The sweeps as saved, with the keys the engine gave the new ones: saved again, the walls keep the same sweeps.
@@ -210,6 +214,8 @@ export function WallTypesDialog() {
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its core and thickness)" onChange={(e) => setName(e.target.value)} /></label>
             {/* Forum topic 192: its walls' finished floor over their base, for the sills measured from it. */}
             <label className="field-line"><span className="eyebrow" title={FLOOR_TIP}>Finished floor above base</span><LengthField metres={finishedFloor} min={0} max={1} blank testId="type-finished-floor" title={FLOOR_TIP} onCommit={setFinishedFloor} /></label>
+            {/* In-app report #192: the finish of one face turned round its walls' free ends. */}
+            <label className="field-line"><span className="eyebrow" title={WRAP_TIP}>Wrap at free ends</span><WrapEndsField value={wrapEnds} onChange={setWrapEnds} /></label>
             {/* The type's mark (forum topic 177), as a door's or window's type has it. */}
             <TypeMarkField typeId={editing} />
             {/* Duplicate, and the type's place in every list of wall types (forum #71). */}

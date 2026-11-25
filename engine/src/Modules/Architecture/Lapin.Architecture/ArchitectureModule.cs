@@ -1169,6 +1169,13 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 OpeningSills.SetFinishedFloor(attrs, a["finishedFloor"]);
                 ctx.Replace(type = type.With(attrs: attrs));
             }
+            // wrapEnds (report #192): which face's finish its walls wrap round their free ends (none, first, last).
+            if (a["wrapEnds"] is not null)
+            {
+                var attrs = type.CloneAttrs();
+                WallEndWraps.Set(attrs, a["wrapEnds"]);
+                ctx.Replace(type = type.With(attrs: attrs));
+            }
             return new JsonObject { ["id"] = type.Id };
         });
 
@@ -1186,6 +1193,14 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 OpeningSills.SetFinishedFloor(attrs, a["finishedFloor"]);
                 ctx.Replace(current.With(attrs: attrs));
                 OpeningSills.CheckType(ctx.Model, current);
+            }
+            // wrapEnds (report #192): none, first or last; null clears it (nothing wrapped).
+            if (a.ContainsKey("wrapEnds"))
+            {
+                var current = ctx.Model.Get(type.Id)!;
+                var attrs = current.CloneAttrs();
+                WallEndWraps.Set(attrs, a["wrapEnds"]);
+                ctx.Replace(current.With(attrs: attrs));
             }
             return null;
         });
@@ -1350,6 +1365,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             // Its own finished floor over its base (forum topic 192; null: its type's again): the sills measured from it follow.
             var floorGiven = a.ContainsKey("finishedFloor");
             if (floorGiven) OpeningSills.SetFinishedFloor(attrs, a["finishedFloor"]);
+            // Its own wrap at free ends (report #192; null: its type's again).
+            if (a.ContainsKey("wrapEnds")) WallEndWraps.Set(attrs, a["wrapEnds"]);
             ctx.Replace(wall.With(attrs: attrs));
             if (floorGiven) OpeningSills.CheckWall(ctx.Model, ctx.Model.Get(wall.Id)!);
             var moveJoined = a["moveJoinedEnds"] is not JsonValue mj || !mj.TryGetValue<bool>(out var keep) || keep;

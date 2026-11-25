@@ -15,6 +15,7 @@ import { WallTopFields } from './WallTop';
 import { openWallProfile } from './wallProfileBoard';
 import { WallReferenceField } from './WallReferenceField';
 import { openTypeDialog } from '../../shell/typeToEdit';
+import { WRAP_TIP, WrapEndsField, wrapOf } from './WrapEndsField';
 
 /** The finished floor field's tip, one phrase for the translations. */
 export const FLOOR_TIP = 'The top of the finished floor over this wall\'s base (0 to 1 m), where a window or door sill measured from the finished floor starts. Empty: its wall type\'s, else 0.';
@@ -89,6 +90,10 @@ export function WallLayers({ node }: { node: NodeDto }) {
         <dd><LengthField metres={typeof node.props.finishedFloor === 'number' ? node.props.finishedFloor : null} min={0} max={1} blank testId="wall-finished-floor" readOnly={!node.editable}
           placeholder={typeof type?.props.finishedFloor === 'number' ? lengthText(type.props.finishedFloor) : undefined} title={FLOOR_TIP}
           onCommit={(m) => void execute('architecture.updateWall', { id: node.id, finishedFloor: m })} /></dd>
+        {/* In-app report #192: which face's finish turns its free ends; empty: its type's. */}
+        <dt title={WRAP_TIP}>Wrap at free ends</dt>
+        <dd><WrapEndsField inherit value={wrapOf(node.props.wrapEnds)} disabled={!node.editable}
+          onChange={(v) => void execute('architecture.updateWall', { id: node.id, wrapEnds: v })} /></dd>
         <dt>Layers run</dt><dd>{usage ? (usage.negative ? 'flipped' : 'as drawn') : '—'}</dd>
         {/* The line it keeps besides its axis (forum topic 159, decision 685). */}
         <WallReferenceField node={node} layers={layers} name={(l) => l.name ?? materialName(model, l.material)} />
