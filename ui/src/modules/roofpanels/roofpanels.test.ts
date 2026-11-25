@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { NodeDto } from '../../engine/protocol';
 import {
-  choiceOf, colourLabel, edgeRows, faceTotals, laidFlat, lengthColours, purchaseRows, purchaseText, REUSED, reuseLinks, setArgs,
-  type LayoutDto, type PanelDto, type PanelProfileDto,
+  choiceOf, colourLabel, edgeRows, faceTotals, ITEM_GROUPS, itemRows, laidFlat, lengthColours, needText, purchaseRows, purchaseText, REUSED, reuseLinks, setArgs,
+  takeoffOptions, type LayoutDto, type PanelDto, type PanelProfileDto, type TakeoffDto,
 } from './roofpanels';
 import { roofFor } from './index';
 
@@ -141,5 +141,70 @@ describe('the roof panels in every language', () => {
         expect(translate(phrase, id), `${phrase} in ${id}`).not.toBeNull();
       expect(translate("Roof plane A01 (6.5°) is under Bilka Clasic 35's least pitch of 8°.", id), id).toContain('6.5');
     }
+  });
+
+  it('names the takeoff (S3) in each: its groups, options, the shipped profiles\' lines and units', async () => {
+    const { loadAllLanguages, translate, LANGUAGES } = await import('../../i18n');
+    const { ITEM_GROUPS } = await import('./roofpanels');
+    await loadAllLanguages();
+    // The shipped profiles' accessories, fixings and support (profiles.json), as the engine names them.
+    const profiles = (await import('../../../../engine/src/Modules/Roofing/Lapin.RoofPanels/profiles.json')).default as {
+      common: { membrane: { name: string; unit: string }; membraneTape: { name: string; unit: string }; counterBatten: { name: string }; woodFixings: { name: string; unit: string }[] };
+      profiles: { accessories: { name: string; unit: string; note?: string }[]; fixings: { name: string; unit: string }[]; support: { name: string; note: string }[] }[];
+    };
+    const c = profiles.common;
+    const shipped = [c.membrane.name, c.membrane.unit, c.membraneTape.name, c.membraneTape.unit, c.counterBatten.name, ...c.woodFixings.flatMap((w) => [w.name, w.unit]),
+      ...profiles.profiles.flatMap((p) => [...p.accessories.flatMap((a) => [a.name, a.unit, ...(a.note ? [a.note] : [])]), ...p.fixings.flatMap((x) => [x.name, x.unit]), ...p.support.flatMap((x) => [x.name, x.note])])];
+    for (const { id } of LANGUAGES.filter((l) => l.id !== 'en')) {
+      for (const phrase of [...ITEM_GROUPS.map((g) => g.label), 'Accessories and support', 'Ridge caps', 'Support fixings', 'Battens and membrane per roof plane', 'Roof panel accessories', ...shipped])
+        expect(translate(phrase, id), `${phrase} in ${id}`).not.toBeNull();
+      expect(translate("Bilka Clasic 35's ridge caps are large or small.", id), id).toContain('Bilka Clasic 35');
+    }
+  });
+});
+
+describe('the takeoff the interface reads (S3)', () => {
+  const takeoff: TakeoffDto = {
+    support: 'battens', ridge: 'large', fixing: 'nails',
+    supports: [{ id: 'battens', name: 'Batten 50 × 30 mm', kind: 'battens' }], ridges: ['large', 'small'],
+    fixings: [{ id: 'nails', name: 'Nails 4 × 100 mm' }, { id: 'screws', name: 'Wood screws 6 × 100 mm' }],
+    raftersEstimated: false, faces: [], stats: {},
+    items: [
+      { code: 'membrane', name: 'Breathable roof membrane 150 g/m²', group: 'support', quantity: 3, unit: 'roll 75 m²', need: 175.6, needUnit: 'm²', note: '' },
+      { code: 'wood-nails', name: 'Nails 4 × 100 mm', group: 'fixings', quantity: 3, unit: 'box 5 kg', need: 1000, needUnit: 'pcs', note: '' },
+      { code: 'ridge-large', name: 'Ridge cap, large (290 mm)', group: 'flashings', quantity: 7, unit: 'piece 2 m', need: 11, needUnit: 'm', note: '' },
+      { code: 'hip-end-large', name: 'Hip end cap, large', group: 'flashings', quantity: 5, unit: 'piece', need: null, needUnit: null, note: '' },
+    ],
+  };
+
+  it('groups the lines as the tables show them: flashings, fixings, then battens and membrane', () => {
+    expect(ITEM_GROUPS.map((g) => g.id)).toEqual(['flashings', 'fixings', 'support']);
+    expect(itemRows(takeoff, 'flashings').map((i) => i.code)).toEqual(['ridge-large', 'hip-end-large']);
+    expect(itemRows(takeoff, 'support').map((i) => i.code)).toEqual(['membrane']);
+    expect(itemRows(undefined, 'support')).toEqual([]);
+  });
+
+  it('says what a line is counted from, nothing for a count', () => {
+    expect(needText(takeoff.items[0])).toBe('175.6 m²');
+    expect(needText(takeoff.items[1])).toBe('1000 pcs');
+    expect(needText(takeoff.items[2])).toBe('11.0 m');
+    expect(needText(takeoff.items[3])).toBe('');
+  });
+
+  it('offers only the options with a choice: a tile its ridge caps and the fixings, never one support', () => {
+    expect(takeoffOptions(takeoff).map((o) => `${o.key}=${o.value}:${o.choices.map((c) => c.id).join('/')}`)).toEqual(['ridge=large:large/small', 'fixing=nails:nails/screws']);
+    const retroTakeoff = { ...takeoff, ridges: [], ridge: null, support: 'boards', supports: [{ id: 'boards', name: 'Board', kind: 'boards' }, { id: 'attached', name: 'Batten', kind: 'battens' }] };
+    expect(takeoffOptions(retroTakeoff).map((o) => o.key)).toEqual(['support', 'fixing']);
+    expect(takeoffOptions(undefined)).toEqual([]);
+  });
+
+  it('keeps the roof\'s options when its choice changes, those the profile has', () => {
+    const tile = { ...clasic, ridges: ['large', 'small'], support: [{ id: 'battens', name: 'Batten', kind: 'battens', section: '50x30' }] };
+    const panel = { ...retro, ridges: [], support: [{ id: 'boards', name: 'Board', kind: 'boards', section: '22x150' }, { id: 'attached', name: 'Batten', kind: 'battens', section: '50x30' }] };
+    expect(choiceOf(node({ panels: { profile: 'bilka-clasic-35', ridge: 'small', fixing: 'screws' } }))).toEqual({ profile: 'bilka-clasic-35', color: null, maxLength: null, ridge: 'small', fixing: 'screws' });
+    expect(setArgs('r1', { profile: 'bilka-clasic-35', ridge: 'small', fixing: 'screws' }, [tile, panel])).toEqual({ id: 'r1', profile: 'bilka-clasic-35', ridge: 'small', fixing: 'screws' });
+    // To Retro Panel: no ridge option there, its support kept when it has it.
+    expect(setArgs('r1', { profile: 'bilka-retro-panel', ridge: 'small', support: 'attached', fixing: 'screws' }, [tile, panel])).toEqual({ id: 'r1', profile: 'bilka-retro-panel', support: 'attached', fixing: 'screws' });
+    expect(setArgs('r1', { profile: 'bilka-clasic-35', support: 'attached' }, [tile, panel])).toEqual({ id: 'r1', profile: 'bilka-clasic-35' });
   });
 });

@@ -2,7 +2,8 @@
  * Roof panel layout (docs/plan-roof-panels.md, decision 848), stage S2: what the interface shows of the engine module
  * `roofpanels`. A roof's Panels section (its profile, colour, longest panel, what to buy, the warnings); Panel layout…
  * on the Architecture tab and in the section (the roof in plan or laid flat, the offcuts reused, the tables); the
- * Roof panels schedule (a shipped field schedule of the panels). The panels themselves are the covering's geometry,
+ * Roof panels schedule (a shipped field schedule of the panels) and, since S3, the Roof panel accessories schedule (the
+ * takeoff: flashings, fixings, battens, membrane). The panels themselves are the covering's geometry,
  * drawn by the engine in 3D, plans and sections.
  */
 
@@ -40,6 +41,13 @@ const schedule: ToolDef = {
   run: () => void execute('architecture.importSchedule', { builtin: 'roofPanels' }).then((r) => { if (r) notify('Roof panels schedule made: it is in the project browser, under Schedules.'); }),
 };
 
+// Stage S3: what else the panels need, a second schedule (the takeoff's lines, each in its unit).
+const itemSchedule: ToolDef = {
+  id: 'roofpanels.itemSchedule', label: 'Roof panel accessories', icon: Table2,
+  tooltip: 'A schedule of the roofs\' panel accessories: flashings, fixings, battens and membrane, each in its unit',
+  run: () => void execute('architecture.importSchedule', { builtin: 'roofPanelItems' }).then((r) => { if (r) notify('Roof panel accessories schedule made: it is in the project browser, under Schedules.'); }),
+};
+
 const sloped = (n: NodeDto) => !['flat', 'barrel'].includes(String(n.props.shape ?? ''));
 
 const roofpanels: LapinModule = {
@@ -48,7 +56,7 @@ const roofpanels: LapinModule = {
   summary: 'Metal tiles and standing-seam panels laid out on the roofs: what to buy by length, the offcuts reused in the valleys, the panels drawn as the covering.',
   tabs: [{
     id: 'architecture', label: 'Architecture', order: 20,
-    groups: [{ label: 'Roof panels', after: 'Build', tools: [layout], small: [schedule] }],
+    groups: [{ label: 'Roof panels', after: 'Build', tools: [layout], small: [schedule, itemSchedule] }],
   }],
   dialogs: { roofPanelLayout: PanelLayoutDialog },
   propertySections: [

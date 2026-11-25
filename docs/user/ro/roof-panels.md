@@ -1,7 +1,7 @@
 ---
 title: Panouri de acoperiș
 order: 41
-summary: Așezi țiglă metalică sau panouri cu falț pe apele acoperișului: ce se cumpără pe lungimi, resturile refolosite în dolii, panourile desenate ca învelitoare.
+summary: Așezi țiglă metalică sau panouri cu falț pe apele acoperișului: ce se cumpără pe lungimi, resturile refolosite în dolii, accesoriile, prinderile, șipcile și folia, ferestrele de acoperiș decupate, panourile desenate ca învelitoare.
 ---
 
 ## Țiglă metalică și panouri pe un acoperiș
@@ -13,8 +13,11 @@ Selectează un acoperiș în pante și deschide **Panouri** în panoul de propri
 - **Profil.** Profilul cu care e învelit acoperișul; **niciunul** păstrează învelitoarea ca un singur strat, ca înainte.
 - **Culoare.** Culorile în care se fabrică profilul (un profil cu o singură culoare o arată).
 - **Panoul cel mai lung.** La un profil la comandă care îl oferă (Retro Panel: 4000 sau 7130 mm): un panou maxim mai scurt pune îmbinări pe pantele lungi, cum recomandă ghidul producătorului.
+- **Coame.** La o țiglă care vine cu două (Balcanic, Clasic 35): coamele și coamele oblice **Mare** (290 mm) sau **Mică** (230 mm), cu banda lor de coamă.
+- **Suport.** La un profil care se poate așeza în mai multe feluri (Retro Panel): **Scânduri 150 mm** (late, la 50 mm una de alta, ghidul actual al producătorului) sau **Șipci** (ale ghidului anterior, la 300 mm, la 350 mm pe pante peste 25°).
+- **Prinderea suportului.** Cum se prind șipcile și contrașipcile de căpriori: **Cuie** 4 × 100 mm (implicit) sau **Șuruburi** 6 × 100 mm.
 
-Fiecare schimbare e un singur pas de anulare. Dedesubt secțiunea arată **De cumpărat** (panourile pe lungimi și câte), **Panouri montate**, **Resturi refolosite** (piese de dolie tăiate din ce lasă piesele de coamă oblică din panourile lor, necumpărate), **Tablă cumpărată (m²)** (fiecare panou cumpărat la lungimea lui nominală ori lățimea totală, cum se cotează panourile) și **Avertismentele**: o apă sub panta minimă a profilului, ferestrele de acoperiș și lucarnele (încă nedecupate din panouri).
+Fiecare schimbare e un singur pas de anulare. Dedesubt secțiunea arată **De cumpărat** (panourile pe lungimi și câte), **Panouri montate**, **Resturi refolosite** (piese de dolie tăiate din ce lasă piesele de coamă oblică din panourile lor, necumpărate), **Tablă cumpărată (m²)** (fiecare panou cumpărat la lungimea lui nominală ori lățimea totală, cum se cotează panourile), **Accesorii și suport** (fiecare rând al necesarului de mai jos, cu cantitatea și unitatea lui) și **Avertismentele**: o apă sub panta minimă a profilului, un acoperiș fără căpriori (contrașipcile lui estimate).
 
 ![Secțiunea Panouri a unui acoperiș: Bilka Balcanic, panourile de cumpărat și resturile refolosite](shots/roof-panels-section.webp)
 
@@ -22,13 +25,33 @@ Fiecare schimbare e un singur pas de anulare. Dedesubt secțiunea arată **De cu
 
 **Panotaj…** (în secțiunea Panouri, sau **Arhitectură → Panouri de acoperiș → Panotaj…** cu un acoperiș selectat) arată panotajul: acoperișul **În plan** sau **Desfășurat** (fiecare apă în adevărată mărime), fiecare panou colorat după lungime, resturile refolosite în **portocaliu** cu o linie punctată de la panoul din care sunt tăiate, și muchiile colorate după fel (streșini, frontoane, coame, coame oblice, dolii). Arată spre un panou ca să-i citești codul (apă, coloană, rând: A03-07-01), lungimea și din ce e tăiat.
 
-Lângă desen: **De cumpărat** (lungimi, bucăți, metri), aria acoperișului, acoperirea și tabla cumpărată, **Pe ape** (pantă, arie, panouri, cumpărate, refolosite, tablă), **Muchii** (câte, ce lungime, câte piese de accesorii de lungimea accesoriilor profilului) și **Resturi** (fiecare piesă cu donatorul ei și cât de sus pe panoul donator e tăiată).
+Lângă desen: **De cumpărat** (lungimi, bucăți, metri), aria acoperișului, acoperirea și tabla cumpărată, **Pe ape** (pantă, arie, panouri, cumpărate, refolosite, tablă), **Muchii** (câte, ce lungime, câte piese de accesorii de lungimea accesoriilor profilului), tabelele necesarului (mai jos) și **Resturi** (fiecare piesă cu donatorul ei și cât de sus pe panoul donator e tăiată).
 
 Ca să compari, alege alt **Profil** în dialog: panotajul îl arată, iar acoperișul își păstrează profilul; **Folosește acest profil** i-l dă acoperișului (un pas de anulare).
 
 ![Panotajul în plan: panourile pe lungimi, piesele de dolie tăiate din resturile de la coamele oblice în portocaliu](shots/roof-panel-layout.webp)
 
 ![Același acoperiș desfășurat, fiecare apă în adevărată mărime](shots/roof-panel-layout-flat.webp)
+
+## Accesorii, prinderi, șipci și folie
+
+Panotajul numără și ce le mai trebuie panourilor, cum spun datele profilului, pe acoperișul așa cum este:
+
+- **Tinichigerie și accesorii.** Pe fiecare muchie, piese de lungimea accesoriilor profilului (2 m), petrecute cum spune profilul: coame și coame oblice, închideri de coamă oblică unde aceasta ajunge la streașină, benzi de coamă, capace de coamă la fronton, borduri de streașină, de fronton și de semicoamă, dolii cu buretele lor de etanșare, racorduri laterale și de sus la perete, racorduri la ruperi, parazăpezi de-a lungul parazăpezilor acoperișului, câte un kit de racord pentru fiecare fereastră de acoperiș. Un panou cu falț (Retro Panel) are ale lui: coame unghiulare, suporturi de coamă, elemente de suprapunere, bandă butilică, agrafe de dolie. Nodurile de coamă, capetele de dolie și agrafele se fac din tablă plană (numărate; colile lor vin într-o etapă următoare).
+- **Prinderi.** La țiglă, șuruburile de cusătură unde fiecare petrecere laterală trece de un modul și șuruburile de prindere (zece pe m² acoperit, de-a lungul streșinilor, coamelor, frontoanelor, racordurilor și parazăpezilor); la falț, șuruburile cu cap plat pe fiecare scândură pe care o trece un panou și șuruburile cu garnitură ale accesoriilor; și cuiele sau șuruburile suportului, unul unde o șipcă trece peste un căprior și de-a lungul contrașipcilor. Fiecare cu 10 % rezervă, în ambalajul lui.
+- **Șipci și folie.** Șipcile pe fiecare apă la modulul profilului (prima la streașină, a doua cu 380 mm mai sus, apoi la 350 mm; scândurile Retro Panel la 200 mm), lungimea lor în bare; contrașipcile pe căpriorii acoperișului, la lungimea lor reală; folia pe toate apele cu petrecerile de 100 mm și 8 % pentru tăieri, în role, și banda pe petrecerile ei. Șipcile, rândurile și petrecerile foliei pe fiecare apă sunt în **Șipci și folie pe ape**. Sunt numărate, nu desenate: în 3D straturile acoperișului se văd ca înainte.
+
+Coloana **Necesar** spune din ce e numărat un rând (metri, aria, prinderile). Numerele sunt cele ale aplicației Panotaj Bilka pe aceleași acoperișuri; sunt cantități de buget, orientative: confirmă-le cu ghidul de montaj al producătorului.
+
+![Necesarul în Panotaj: accesoriile, prinderile, șipcile și folia](shots/roof-panels-takeoff.webp)
+
+## Pereți, ferestre de acoperiș și lucarne
+
+O muchie a învelitorii lângă un perete care se ridică peste ea (la cel mult 35 mm de fața lui, vârful peretelui cu cel puțin 60 mm mai sus) e un **racord la perete**: **sus** unde e orizontală (un șopron sub un perete), **lateral** unde e înclinată (un acoperiș în două ape cu frontonul lângă un perete mai înalt). La fel vârful unui acoperiș care intră sub streașina unui acoperiș mai înalt și se oprește acolo. Fiecare primește racordul lui.
+
+Ferestrele de acoperiș și lucarnele sunt **decupate din panouri**: o coloană pe care o traversează un gol e așezată sub el, lângă el și deasupra lui, fiecare porțiune pornind de la modulul profilului, ca o coloană. În jurul unei ferestre de acoperiș: **josul**, **susul** și **laturile** kitului, și un kit de racord; în jurul unei lucarne: șorțul peretelui din față (racord sus), obrajii (racorduri laterale) și doliile acoperișului ei cu apa. Un acoperiș care stă în interiorul unei ape e decupat la fel, întâlnit în dolii. Șipcile și folia lasă golurile afară.
+
+![O fereastră de acoperiș decupată din panouri](shots/roof-panels-window.webp)
 
 ## Panourile în model
 
@@ -44,6 +67,8 @@ Exportul IFC scrie încă învelitoarea ca o singură placă de acoperiș (panou
 
 ![Același acoperiș în afișarea Diagramă](shots/roof-panels-3d-diagram.webp)
 
-## Extrasul panourilor de acoperiș
+## Extrasele panourilor de acoperiș
 
 **Arhitectură → Panouri de acoperiș → Panouri de acoperiș** face extrasul **Panouri de acoperiș**, un extras de câmpuri al panourilor fiecărui acoperiș: acoperiș, profil, culoare, lungime, cumpărat sau tăiat dintr-un rest, bucăți, lungime totală și tablă cumpărată, cu un rând de totaluri. Ca orice extras de câmpuri, se poate schimba, sorta și exporta. Fiecare panou e o piesă a acoperișului lui, deci o etichetă de piesă îi scrie codul și lungimea.
+
+**Arhitectură → Panouri de acoperiș → Accesoriile panotajului** face extrasul **Accesoriile panotajului**: câte un rând pentru fiecare acoperiș și rând al necesarului lui (grup, articol, cantitate, unitate și din ce e numărat).

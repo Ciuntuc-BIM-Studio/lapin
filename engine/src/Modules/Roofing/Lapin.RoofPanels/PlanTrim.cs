@@ -50,8 +50,10 @@ public static class PlanTrim
 
     static List<Vec2> Ccw(IReadOnlyList<Vec2> r)
     {
-        var o = r.ToList();
-        if (o.Count > 1 && (o[0] - o[^1]).Length < 1e-12) o.RemoveAt(o.Count - 1);
+        // Corners repeated (a cut region's side of no length) dropped: a side with no direction would keep every piece outside it.
+        var o = new List<Vec2>();
+        foreach (var p in r) if (o.Count == 0 || (o[^1] - p).Length >= 1e-9) o.Add(p);
+        while (o.Count > 1 && (o[0] - o[^1]).Length < 1e-9) o.RemoveAt(o.Count - 1);
         if (Polygon2.SignedArea(o) < 0) o.Reverse();
         return o;
     }

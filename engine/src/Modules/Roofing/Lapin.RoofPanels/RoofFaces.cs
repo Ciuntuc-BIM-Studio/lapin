@@ -6,9 +6,13 @@ namespace Lapin.RoofPanels;
 public static class EdgeKinds
 {
     public const string Eave = "eave", Verge = "verge", Ridge = "ridge", Hip = "hip", Valley = "valley", TopEdge = "topEdge",
-        ConcaveBreak = "concaveBreak", ConvexBreak = "convexBreak", WallTop = "wallTop", WallSide = "wallSide";
+        ConcaveBreak = "concaveBreak", ConvexBreak = "convexBreak", WallTop = "wallTop", WallSide = "wallSide",
+        WindowTop = "windowTop", WindowBottom = "windowBottom", WindowSide = "windowSide";
 
-    public static readonly string[] All = [Eave, Verge, Ridge, Hip, Valley, TopEdge, ConcaveBreak, ConvexBreak, WallTop, WallSide];
+    public static readonly string[] All = [Eave, Verge, Ridge, Hip, Valley, TopEdge, ConcaveBreak, ConvexBreak, WallTop, WallSide, WindowTop, WindowBottom, WindowSide];
+
+    /// <summary>The edges round a roof window: its flashing kit's, not lengths of flashing.</summary>
+    public static bool IsWindow(string k) => k is WindowTop or WindowBottom or WindowSide;
 
     public static bool IsBreak(string k) => k is ConcaveBreak or ConvexBreak;
 }
@@ -33,6 +37,11 @@ public sealed class RoofFace
     public double Eave { get; set; }
     /// <summary>Where along u its eaves run (from, to): one span from 0 on a whole plane, several on one another roof cuts into.</summary>
     public List<(double From, double To)> EaveSpans { get; } = [];
+    /// <summary>The openings in it (roof windows, dormers, another roof standing in the slope): the panels are cut round them.</summary>
+    public List<FaceHole> Holes { get; } = [];
+
+    /// <summary>What the panels cover: the target less its holes (m²).</summary>
+    public double TargetArea => Clip.Area(Target) - Holes.Sum(h => h.Area);
 
     public double PitchDegrees => Math.Acos(Math.Clamp(N.Z, -1, 1)) * 180 / Math.PI;
 
@@ -40,10 +49,34 @@ public sealed class RoofFace
     public Vec3 Xyz(Vec2 uv, double h = 0) => Origin + X * uv.X + Y * uv.Y + N * h;
 }
 
-/// <summary>An edge of the covering: its kind, the faces it bounds (one or two), its ends.</summary>
-public sealed record RoofEdge(string Kind, IReadOnlyList<string> Faces, Vec3 A, Vec3 B)
+/// <summary>An edge of the covering: its kind, the faces it bounds (one or two), its ends; <see cref="Opening"/>, the hole it runs round (its id).</summary>
+public sealed record RoofEdge(string Kind, IReadOnlyList<string> Faces, Vec3 A, Vec3 B, string? Opening = null)
 {
     public double Length => (B - A).Length;
+}
+
+/// <summary>
+/// A vertical face of a wall as the abutments see it (layout.against_wall): a point on it, along it (<see cref="Tangent"/>, from
+/// <see cref="Lo"/> to <see cref="Hi"/>), across it (<see cref="Normal"/>, level), its bottom and top.
+/// </summary>
+public sealed record WallFace(Vec3 Origin, Vec3 Tangent, Vec3 Normal, double Lo, double Hi, double Z0, double Z1);
+
+/// <summary>
+/// What the panels are cut round on a roof plane (S3): a roof window's or a dormer's hole, or another roof standing inside the slope
+/// (decision 847); its outline on the plane (<see cref="Ring"/>, world) and the convex regions it is made of. <see cref="Kind"/>:
+/// <c>window</c>, <c>dormer</c>, <c>roof</c> (a roof at this one's height, met in valleys) or <c>under</c> (a roof over this one).
+/// </summary>
+public sealed record RoofHole(string Id, string Name, string Kind, int Plane, IReadOnlyList<Vec3> Ring, IReadOnlyList<IReadOnlyList<Vec3>> Regions)
+{
+    public const string Window = "window", Dormer = "dormer", Roof = "roof", Under = "under";
+}
+
+/// <summary>A hole on a face, in its (u, v): the outline, its convex regions, how far up it reaches.</summary>
+public sealed record FaceHole(RoofHole Of, List<Vec2> Ring, List<List<Vec2>> Regions)
+{
+    public double MinV => Clip.MinY(Ring);
+    public double MaxV => Clip.MaxY(Ring);
+    public double Area => Clip.Area(Ring);
 }
 
 /// <summary>
@@ -61,8 +94,15 @@ public static class RoofFaces
     /// a free edge along one is a valley with that roof, the panels kept the gap from it. <paramref name="planeOf"/>: each
     /// plane's index in the roof's shape (its own place in the list when not given).
     /// </summary>
+    /// <remarks>
+    /// Stage S3: a free edge along a wall rising over it (<paramref name="walls"/>: within 35 mm of its face, along it, the wall's
+    /// top 60 mm over it; the edge lifted <paramref name="wallLift"/> to the covering's top, as the app reads it from the IFC) or
+    /// along a line where a roof over this one takes it away (<paramref name="abutments"/>, decision 847's <c>Under</c>) is a wall
+    /// abutment, top when level, else side; each of <paramref name="holes"/> goes to the face it lies on, its sides classified.
+    /// </remarks>
     public static (List<RoofFace> Faces, List<RoofEdge> Edges) Read(IReadOnlyList<IReadOnlyList<Vec3>> planes, double valleyGap,
-        IReadOnlyList<(Vec2 A, Vec2 B)>? junctions = null, IReadOnlyList<int>? planeOf = null)
+        IReadOnlyList<(Vec2 A, Vec2 B)>? junctions = null, IReadOnlyList<int>? planeOf = null, IReadOnlyList<WallFace>? walls = null,
+        IReadOnlyList<(Vec2 A, Vec2 B)>? abutments = null, double wallLift = 0, IReadOnlyList<RoofHole>? holes = null)
     {
         // One point for corners within 2 µm of each other: the planes' shared corners, computed plane by plane.
         var verts = new List<Vec3>();
@@ -154,6 +194,9 @@ public static class RoofFaces
                     kind = EdgeKinds.Valley;
                     TrimValley(r, a, b, valleyGap, strict: false);
                 }
+                else if ((walls != null && AgainstWall(a + Vec3.UnitZ * wallLift, b + Vec3.UnitZ * wallLift, walls))
+                    || (abutments != null && OnJunction(a.Xy, b.Xy, abutments)))
+                    kind = horizontal ? EdgeKinds.WallTop : EdgeKinds.WallSide;
                 else if (horizontal && side > 1e-5)
                 {
                     kind = EdgeKinds.Eave;
@@ -184,7 +227,61 @@ public static class RoofFaces
             }
             edges.Add(new RoofEdge(kind, [.. rs.Select(r => r.Id)], a, b));
         }
+        if (holes != null) foreach (var h in holes) AddHole(faces, edges, h);
         return (faces, edges);
+    }
+
+    /// <summary>
+    /// A hole onto the face it lies on, and its sides as edges: round a roof window its kit's top, bottom and sides; round a
+    /// dormer the front wall's apron (top abutment), the cheeks (side abutments), the valleys of a gable dormer's roof and the
+    /// line a shed dormer's flatter roof meets the slope (a concave break); round another roof valleys, round a roof over this
+    /// one abutments.
+    /// </summary>
+    static void AddHole(List<RoofFace> faces, List<RoofEdge> edges, RoofHole h)
+    {
+        if (h.Ring.Count < 3) return;
+        var centre = new Vec3(h.Ring.Average(p => p.X), h.Ring.Average(p => p.Y), h.Ring.Average(p => p.Z));
+        var face = faces.FirstOrDefault(f => f.Plane == h.Plane && Polygon2.Contains(f.Poly.ToList(), f.Uv(centre)));
+        if (face == null) return;
+        List<Vec2> Ccw(IEnumerable<Vec3> pts) { var o = pts.Select(face.Uv).ToList(); if (Polygon2.SignedArea(o) < 0) o.Reverse(); return o; }
+        var hole = new FaceHole(h, Ccw(h.Ring), [.. h.Regions.Select(Ccw)]);
+        face.Holes.Add(hole);
+        var lo = hole.MinV;
+        for (var i = 0; i < h.Ring.Count; i++)
+        {
+            var (a, b) = (h.Ring[i], h.Ring[(i + 1) % h.Ring.Count]);
+            if ((b - a).Length < 1e-6) continue;
+            var (ua, ub) = (face.Uv(a), face.Uv(b));
+            var level = Math.Abs(ua.Y - ub.Y) < 0.002;
+            var bottom = level && Math.Abs((ua.Y + ub.Y) / 2 - lo) < 0.002;
+            var across = Math.Abs(ua.X - ub.X) < 0.002;
+            var kind = h.Kind switch
+            {
+                RoofHole.Window => level ? (bottom ? EdgeKinds.WindowBottom : EdgeKinds.WindowTop) : EdgeKinds.WindowSide,
+                RoofHole.Dormer => bottom ? EdgeKinds.WallTop : across ? EdgeKinds.WallSide : level ? EdgeKinds.ConcaveBreak : EdgeKinds.Valley,
+                RoofHole.Under => level ? EdgeKinds.WallTop : EdgeKinds.WallSide,
+                _ => EdgeKinds.Valley,
+            };
+            edges.Add(new RoofEdge(kind, [face.Id], a, b, h.Id));
+        }
+    }
+
+    /// <summary>
+    /// Whether a–b lies against one of the walls (layout.against_wall): within 35 mm of its face, along it (5 cm to spare at
+    /// its ends), no lower than 25 mm under its bottom and at least 60 mm under its top: the wall rises over the edge.
+    /// </summary>
+    public static bool AgainstWall(Vec3 a, Vec3 b, IReadOnlyList<WallFace> walls)
+    {
+        foreach (var w in walls)
+        {
+            var (oa, ob) = (a - w.Origin, b - w.Origin);
+            double ta = Vec3.Dot(oa, w.Tangent), tb = Vec3.Dot(ob, w.Tangent);
+            if (Math.Max(Math.Abs(Vec3.Dot(oa, w.Normal)), Math.Abs(Vec3.Dot(ob, w.Normal))) <= 0.035
+                && Math.Min(ta, tb) >= w.Lo - 0.05 && Math.Max(ta, tb) <= w.Hi + 0.05
+                && Math.Min(a.Z, b.Z) >= w.Z0 - 0.025 && Math.Max(a.Z, b.Z) < w.Z1 - 0.06)
+                return true;
+        }
+        return false;
     }
 
     /// <summary>

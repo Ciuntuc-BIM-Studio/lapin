@@ -12,7 +12,7 @@
       "module": 350,
       "joints": "module",
       "lengths": [1180, 2230, 2930],
-      "colors": [{ "code": "8017", "name": "RAL 8017 matt brown", "rgb": "#45322e" }],
+      "colors": [{"code": "8017", "name": "RAL 8017 matt brown", "rgb": "#45322e"}],
       "minPitch": 8,
       "minPitchHipValley": 14,
       "reuseOffcuts": true,
@@ -20,9 +20,127 @@
       "waves": 4,
       "waveHeight": 27,
       "accessoryLength": 2000,
-      "accessoryLaps": { "eave": 75, "ridge": 100, "hip": 100, "valley": 150, "topEdge": 100, "verge": 100, "wallTop": 100, "wallSide": 100, "concaveBreak": 100, "convexBreak": 100 },
+      "accessoryLaps": {
+        "eave": 75,
+        "ridge": 100,
+        "hip": 100,
+        "valley": 150,
+        "topEdge": 100,
+        "verge": 100,
+        "wallTop": 100,
+        "wallSide": 100,
+        "concaveBreak": 100,
+        "convexBreak": 100,
+        "windowTop": 100,
+        "windowBottom": 100,
+        "windowSide": 100
+      },
       "notes": "Stock lengths. The slope lap is 130 mm on these stock panels (Bilka's general guide says 150 mm): check it before installing.",
-      "source": "https://www.bilka.ro/bilka/documentatie_files/Ghid_montaj_tigla.pdf"
+      "source": "https://www.bilka.ro/bilka/documentatie_files/Ghid_montaj_tigla.pdf",
+      "ridges": ["large", "small"],
+      "support": [
+        {
+          "id": "battens",
+          "name": "Batten 50 × 30 mm",
+          "kind": "battens",
+          "code": "batten",
+          "section": "50x30",
+          "first": 0,
+          "second": 380,
+          "spacing": 350,
+          "bar": 3000,
+          "reserve": 1.05,
+          "note": "The first at the eave, the second 380 mm up, then on the module."
+        }
+      ],
+      "fixings": [
+        {
+          "code": "screw-short",
+          "name": "Stitching screw 4.8 × 20 mm",
+          "unit": "box 250",
+          "rule": "stitches",
+          "pack": 250,
+          "roundTo": 100,
+          "reserve": 1.1
+        },
+        {
+          "code": "screw-long",
+          "name": "Fixing screw 4.8 × 35 mm",
+          "unit": "box 250",
+          "rule": "tileFixings",
+          "pack": 250,
+          "roundTo": 100,
+          "perM2": 10,
+          "edgeSpacing": 250,
+          "reserve": 1.1
+        }
+      ],
+      "accessories": [
+        {"code": "ridge-large", "name": "Ridge cap, large (290 mm)", "unit": "piece 2 m", "rule": "edges", "edges": ["ridge"], "option": "large"},
+        {"code": "hip-large", "name": "Hip cap, large (290 mm)", "unit": "piece 2 m", "rule": "edges", "edges": ["hip"], "option": "large"},
+        {"code": "hip-end-large", "name": "Hip end cap, large", "unit": "piece", "rule": "count", "of": "hipCaps", "option": "large"},
+        {
+          "code": "ridge-roll-large",
+          "name": "Ridge seal roll 310 mm",
+          "unit": "roll 5 m",
+          "rule": "run",
+          "edges": {"ridge": 1, "hip": 1},
+          "length": 5000,
+          "lap": 100,
+          "factor": 1.1,
+          "option": "large"
+        },
+        {"code": "ridge-small", "name": "Ridge cap, small (230 mm)", "unit": "piece 2 m", "rule": "edges", "edges": ["ridge"], "option": "small"},
+        {"code": "hip-small", "name": "Hip cap, small (230 mm)", "unit": "piece 2 m", "rule": "edges", "edges": ["hip"], "option": "small"},
+        {"code": "hip-end-small", "name": "Hip end cap, small", "unit": "piece", "rule": "count", "of": "hipCaps", "option": "small"},
+        {
+          "code": "ridge-roll-small",
+          "name": "Ridge seal roll 230 mm",
+          "unit": "roll 5 m",
+          "rule": "run",
+          "edges": {"ridge": 1, "hip": 1},
+          "length": 5000,
+          "lap": 100,
+          "factor": 1.1,
+          "option": "small"
+        },
+        {
+          "code": "ridge-nodes",
+          "name": "Ridge nodes and ridge–valley heads",
+          "unit": "piece",
+          "rule": "count",
+          "of": "ridgeNodes",
+          "note": "Made from flat sheet (stage S5)."
+        },
+        {"code": "gable-cap", "name": "Ridge end cap at the verge", "unit": "piece", "rule": "count", "of": "gableCaps"},
+        {"code": "valley", "name": "Valley flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["valley"]},
+        {
+          "code": "valley-seal",
+          "name": "Valley foam seal",
+          "unit": "piece 1 m",
+          "rule": "perLength",
+          "edges": {"valley": 2},
+          "length": 1000,
+          "factor": 1.1,
+          "note": "Both sides, 10 % to spare."
+        },
+        {"code": "eave", "name": "Eave flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["eave"]},
+        {"code": "verge", "name": "Verge flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["verge"]},
+        {"code": "top-edge", "name": "Top edge flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["topEdge"]},
+        {"code": "wall-side", "name": "Side wall abutment flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["wallSide"]},
+        {"code": "wall-top", "name": "Top wall abutment flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["wallTop"]},
+        {"code": "break-concave", "name": "Concave break flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["concaveBreak"]},
+        {"code": "break-convex", "name": "Convex break flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["convexBreak"]},
+        {
+          "code": "window-kit",
+          "name": "Roof window flashing kit",
+          "unit": "piece",
+          "rule": "count",
+          "of": "windows",
+          "note": "One a window, sized to it and to the profile's height."
+        },
+        {"code": "snow-guard", "name": "Snow guard", "unit": "piece 2 m", "rule": "run", "snow": 1, "length": 2000, "lap": 100, "factor": 1.05}
+      ]
     },
     {
       "id": "bilka-clasic-35",
@@ -34,8 +152,8 @@
       "slopeLap": 150,
       "module": 350,
       "joints": "module",
-      "order": { "min": 500, "start": 500, "step": 350, "max": 7000 },
-      "colors": [{ "code": "7016", "name": "RAL 7016 matt anthracite", "rgb": "#383e42" }, { "code": "8017", "name": "RAL 8017 matt brown", "rgb": "#45322e" }],
+      "order": {"min": 500, "start": 500, "step": 350, "max": 7000},
+      "colors": [{"code": "7016", "name": "RAL 7016 matt anthracite", "rgb": "#383e42"}, {"code": "8017", "name": "RAL 8017 matt brown", "rgb": "#45322e"}],
       "minPitch": 8,
       "minPitchHipValley": 14,
       "reuseOffcuts": true,
@@ -43,9 +161,127 @@
       "waves": 6,
       "waveHeight": 20,
       "accessoryLength": 2000,
-      "accessoryLaps": { "eave": 75, "ridge": 100, "hip": 100, "valley": 150, "topEdge": 100, "verge": 100, "wallTop": 100, "wallSide": 100, "concaveBreak": 100, "convexBreak": 100 },
+      "accessoryLaps": {
+        "eave": 75,
+        "ridge": 100,
+        "hip": 100,
+        "valley": 150,
+        "topEdge": 100,
+        "verge": 100,
+        "wallTop": 100,
+        "wallSide": 100,
+        "concaveBreak": 100,
+        "convexBreak": 100,
+        "windowTop": 100,
+        "windowBottom": 100,
+        "windowSide": 100
+      },
       "notes": "Made to order, 500 to 7000 mm; the regular lengths put every joint on the 350 mm module, 7000 mm ends a column the regular ones cannot.",
-      "source": "https://www.bilka.ro/bilka/documentatie_files/Ghid_montaj_tigla.pdf"
+      "source": "https://www.bilka.ro/bilka/documentatie_files/Ghid_montaj_tigla.pdf",
+      "ridges": ["large", "small"],
+      "support": [
+        {
+          "id": "battens",
+          "name": "Batten 50 × 30 mm",
+          "kind": "battens",
+          "code": "batten",
+          "section": "50x30",
+          "first": 0,
+          "second": 380,
+          "spacing": 350,
+          "bar": 3000,
+          "reserve": 1.05,
+          "note": "The first at the eave, the second 380 mm up, then on the module."
+        }
+      ],
+      "fixings": [
+        {
+          "code": "screw-short",
+          "name": "Stitching screw 4.8 × 20 mm",
+          "unit": "box 250",
+          "rule": "stitches",
+          "pack": 250,
+          "roundTo": 100,
+          "reserve": 1.1
+        },
+        {
+          "code": "screw-long",
+          "name": "Fixing screw 4.8 × 35 mm",
+          "unit": "box 250",
+          "rule": "tileFixings",
+          "pack": 250,
+          "roundTo": 100,
+          "perM2": 10,
+          "edgeSpacing": 250,
+          "reserve": 1.1
+        }
+      ],
+      "accessories": [
+        {"code": "ridge-large", "name": "Ridge cap, large (290 mm)", "unit": "piece 2 m", "rule": "edges", "edges": ["ridge"], "option": "large"},
+        {"code": "hip-large", "name": "Hip cap, large (290 mm)", "unit": "piece 2 m", "rule": "edges", "edges": ["hip"], "option": "large"},
+        {"code": "hip-end-large", "name": "Hip end cap, large", "unit": "piece", "rule": "count", "of": "hipCaps", "option": "large"},
+        {
+          "code": "ridge-roll-large",
+          "name": "Ridge seal roll 310 mm",
+          "unit": "roll 5 m",
+          "rule": "run",
+          "edges": {"ridge": 1, "hip": 1},
+          "length": 5000,
+          "lap": 100,
+          "factor": 1.1,
+          "option": "large"
+        },
+        {"code": "ridge-small", "name": "Ridge cap, small (230 mm)", "unit": "piece 2 m", "rule": "edges", "edges": ["ridge"], "option": "small"},
+        {"code": "hip-small", "name": "Hip cap, small (230 mm)", "unit": "piece 2 m", "rule": "edges", "edges": ["hip"], "option": "small"},
+        {"code": "hip-end-small", "name": "Hip end cap, small", "unit": "piece", "rule": "count", "of": "hipCaps", "option": "small"},
+        {
+          "code": "ridge-roll-small",
+          "name": "Ridge seal roll 230 mm",
+          "unit": "roll 5 m",
+          "rule": "run",
+          "edges": {"ridge": 1, "hip": 1},
+          "length": 5000,
+          "lap": 100,
+          "factor": 1.1,
+          "option": "small"
+        },
+        {
+          "code": "ridge-nodes",
+          "name": "Ridge nodes and ridge–valley heads",
+          "unit": "piece",
+          "rule": "count",
+          "of": "ridgeNodes",
+          "note": "Made from flat sheet (stage S5)."
+        },
+        {"code": "gable-cap", "name": "Ridge end cap at the verge", "unit": "piece", "rule": "count", "of": "gableCaps"},
+        {"code": "valley", "name": "Valley flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["valley"]},
+        {
+          "code": "valley-seal",
+          "name": "Valley foam seal",
+          "unit": "piece 1 m",
+          "rule": "perLength",
+          "edges": {"valley": 2},
+          "length": 1000,
+          "factor": 1.1,
+          "note": "Both sides, 10 % to spare."
+        },
+        {"code": "eave", "name": "Eave flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["eave"]},
+        {"code": "verge", "name": "Verge flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["verge"]},
+        {"code": "top-edge", "name": "Top edge flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["topEdge"]},
+        {"code": "wall-side", "name": "Side wall abutment flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["wallSide"]},
+        {"code": "wall-top", "name": "Top wall abutment flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["wallTop"]},
+        {"code": "break-concave", "name": "Concave break flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["concaveBreak"]},
+        {"code": "break-convex", "name": "Convex break flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["convexBreak"]},
+        {
+          "code": "window-kit",
+          "name": "Roof window flashing kit",
+          "unit": "piece",
+          "rule": "count",
+          "of": "windows",
+          "note": "One a window, sized to it and to the profile's height."
+        },
+        {"code": "snow-guard", "name": "Snow guard", "unit": "piece 2 m", "rule": "run", "snow": 1, "length": 2000, "lap": 100, "factor": 1.05}
+      ]
     },
     {
       "id": "bilka-retro-panel",
@@ -59,9 +295,9 @@
       "joints": "staggered",
       "stagger": 800,
       "endFold": 25,
-      "order": { "min": 470, "start": 500, "step": 100, "max": 7130 },
+      "order": {"min": 470, "start": 500, "step": 100, "max": 7130},
       "maxLengths": [4000, 7130],
-      "colors": [{ "code": "8019", "name": "RAL 8019 matt dark brown", "rgb": "#403a3a" }],
+      "colors": [{"code": "8019", "name": "RAL 8019 matt dark brown", "rgb": "#403a3a"}],
       "minPitch": 8,
       "minPitchHipValley": 8,
       "reuseOffcuts": false,
@@ -69,9 +305,162 @@
       "waves": 0,
       "waveHeight": 25,
       "accessoryLength": 2000,
-      "accessoryLaps": { "eave": 75, "ridge": 100, "hip": 100, "valley": 200, "topEdge": 100, "verge": 100, "wallTop": 100, "wallSide": 100, "concaveBreak": 100, "convexBreak": 100 },
+      "accessoryLaps": {
+        "eave": 75,
+        "ridge": 100,
+        "hip": 100,
+        "valley": 200,
+        "topEdge": 100,
+        "verge": 100,
+        "wallTop": 100,
+        "wallSide": 100,
+        "concaveBreak": 100,
+        "convexBreak": 100,
+        "windowTop": 100,
+        "windowBottom": 100,
+        "windowSide": 100
+      },
       "notes": "Standing seam, made to order 470 to 7130 mm in 100 mm steps; a 25 mm end fold, 150 mm joints, 200 mm valley laps. One panel a column when it fits (the guide advises joints on slopes over 4 m: choose 4000 mm as the longest). Offcuts are not reused: each needs its seam and end checked.",
-      "source": "https://www.bilka.ro/bilka/documentatie_files/Ghid-montaj-retro-panel.pdf"
+      "source": "https://www.bilka.ro/bilka/documentatie_files/Ghid-montaj-retro-panel.pdf",
+      "support": [
+        {
+          "id": "boards",
+          "name": "Board 22 × 150 × 4000 mm",
+          "kind": "boards",
+          "code": "board",
+          "section": "22x150",
+          "first": 0,
+          "spacing": 200,
+          "bar": 4000,
+          "reserve": 1.05,
+          "note": "150 mm boards, 50 mm apart."
+        },
+        {
+          "id": "attached",
+          "name": "Batten 50 × 30 mm",
+          "kind": "battens",
+          "code": "batten",
+          "section": "50x30",
+          "first": 0,
+          "spacing": 300,
+          "steepSpacing": 350,
+          "steepFrom": 25,
+          "bar": 3000,
+          "reserve": 1.05,
+          "note": "The older guide's battens: 300 mm apart, 350 mm over 25°."
+        }
+      ],
+      "fixings": [
+        {
+          "code": "screw-flat",
+          "name": "Wafer-head screw 4.2 × 25 mm",
+          "unit": "piece",
+          "rule": "seamClips",
+          "pack": 1,
+          "roundTo": 1,
+          "edgeSpacing": 250,
+          "reserve": 1.1
+        },
+        {
+          "code": "screw-sealed",
+          "name": "Sealed screw 4.8 × 35 mm",
+          "unit": "box 250",
+          "rule": "seamFlashings",
+          "pack": 250,
+          "roundTo": 1,
+          "edgeSpacing": 250,
+          "reserve": 1.1
+        }
+      ],
+      "accessories": [
+        {"code": "ridge-retro", "name": "Angled ridge cap 417 mm", "unit": "piece 2 m", "rule": "edges", "edges": ["ridge"]},
+        {"code": "hip-retro", "name": "Angled hip cap 417 mm", "unit": "piece 2 m", "rule": "edges", "edges": ["hip"]},
+        {"code": "hip-end-retro", "name": "Hip end cap", "unit": "piece", "rule": "count", "of": "hipCaps"},
+        {
+          "code": "ridge-nodes",
+          "name": "Ridge nodes and ridge–valley heads",
+          "unit": "piece",
+          "rule": "count",
+          "of": "ridgeNodes",
+          "note": "Made from flat sheet (stage S5)."
+        },
+        {"code": "gable-cap", "name": "Ridge end cap at the verge", "unit": "piece", "rule": "count", "of": "gableCaps"},
+        {"code": "valley-retro", "name": "Valley 417 mm", "unit": "piece 2 m", "rule": "edges", "edges": ["valley"]},
+        {"code": "eave-retro", "name": "Large eave flashing 312 mm", "unit": "piece 2 m", "rule": "edges", "edges": ["eave"]},
+        {"code": "verge", "name": "Verge flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["verge"]},
+        {"code": "top-edge", "name": "Top edge flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["topEdge"]},
+        {"code": "wall-side", "name": "Side wall abutment flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["wallSide"]},
+        {"code": "wall-top", "name": "Top wall abutment flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["wallTop"]},
+        {"code": "break-concave", "name": "Concave break flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["concaveBreak"]},
+        {"code": "break-convex", "name": "Convex break flashing", "unit": "piece 2 m", "rule": "edges", "edges": ["convexBreak"]},
+        {
+          "code": "ridge-support",
+          "name": "Ridge support 125 mm",
+          "unit": "piece 2 m",
+          "rule": "edges",
+          "edges": {"ridge": 2, "hip": 2, "topEdge": 1, "wallTop": 1},
+          "lap": 100,
+          "note": "Both sides of a ridge or hip, one at a top edge or top abutment."
+        },
+        {
+          "code": "lap-small",
+          "name": "Small lap element 60 mm",
+          "unit": "piece 2 m",
+          "rule": "edges",
+          "edges": {"valley": 2, "concaveBreak": 1, "convexBreak": 1},
+          "lap": 100,
+          "jointBars": true,
+          "note": "Both sides of a valley, the top of a break and under the joints across the slope."
+        },
+        {
+          "code": "lap-large",
+          "name": "Large lap element 80 mm",
+          "unit": "piece 2 m",
+          "rule": "edges",
+          "edges": {"concaveBreak": 1, "convexBreak": 1},
+          "note": "The bottom of a break."
+        },
+        {
+          "code": "butyl-tape",
+          "name": "Butyl tape 3 × 15 mm",
+          "unit": "roll 15 m",
+          "rule": "run",
+          "edges": {"ridge": 2, "hip": 2, "topEdge": 1, "wallTop": 1, "valley": 2, "concaveBreak": 2, "convexBreak": 2, "verge": 1, "wallSide": 1},
+          "joints": 1,
+          "length": 15000,
+          "lap": 100,
+          "factor": 1.1
+        },
+        {"code": "valley-clips", "name": "Valley clips", "unit": "piece", "rule": "count", "of": "valleyClips", "note": "Cut from flat sheet."},
+        {
+          "code": "window-kit",
+          "name": "Roof window flashing kit",
+          "unit": "piece",
+          "rule": "count",
+          "of": "windows",
+          "note": "One a window, sized to it and to the profile's height."
+        },
+        {"code": "snow-guard", "name": "Snow guard", "unit": "piece 2 m", "rule": "run", "snow": 1, "length": 2000, "lap": 100, "factor": 1.05}
+      ]
     }
-  ]
+  ],
+  "common": {
+    "note": "Shared by every profile's takeoff (the Panotaj Bilka app's estimate): budget allowances, indicative; confirm the products and the fixing scheme for the real build-up.",
+    "membrane": {"code": "membrane", "name": "Breathable roof membrane 150 g/m²", "unit": "roll 75 m²", "width": 1500, "lap": 100, "roll": 75, "reserve": 1.08},
+    "membraneTape": {"code": "membrane-tape", "name": "Membrane lap tape", "unit": "roll 25 m", "roll": 25},
+    "counterBatten": {
+      "code": "counter-batten",
+      "name": "Counter-batten 50 × 30 mm",
+      "section": "50x30",
+      "bar": 3000,
+      "reserve": 1.05,
+      "note": "On every rafter, its whole length."
+    },
+    "counterBattenFixing": 600,
+    "fixingReserve": 1.1,
+    "woodFixings": [
+      {"id": "nails", "code": "wood-nails", "name": "Nails 4 × 100 mm", "unit": "box 5 kg", "pack": 450},
+      {"id": "screws", "code": "wood-screws", "name": "Wood screws 6 × 100 mm", "unit": "piece", "pack": 1}
+    ]
+  }
 }

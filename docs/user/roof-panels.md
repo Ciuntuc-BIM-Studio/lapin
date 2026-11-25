@@ -1,7 +1,7 @@
 ---
 title: Roof panels
 order: 41
-summary: Lay metal tiles or standing-seam panels on a roof's slopes: what to buy by length, the offcuts reused in the valleys, the panels drawn as the covering.
+summary: Lay metal tiles or standing-seam panels on a roof's slopes: what to buy by length, the offcuts reused in the valleys, the accessories, fixings, battens and membrane, roof windows cut out, the panels drawn as the covering.
 ---
 
 ## Metal tiles and panels on a roof
@@ -13,8 +13,11 @@ Select a sloped roof and open **Panels** in the properties panel:
 - **Profile.** The profile the roof is covered with; **none** keeps the covering as one layer, as before.
 - **Colour.** The colours the profile is made in (a profile made in one colour shows it).
 - **Longest panel.** For a profile made to order that offers it (Retro Panel: 4000 or 7130 mm): a shorter longest panel puts joints on long slopes, as the maker's guide advises.
+- **Ridge caps.** For a tile that comes with two (Balcanic, Clasic 35): the **Large** (290 mm) or **Small** (230 mm) ridge and hip caps, with their seal roll.
+- **Support.** For a profile carried in more than one way (Retro Panel): **Boards 150 mm** (150 mm wide, 50 mm apart, the maker's current guide) or **Battens** (the older guide's, 300 mm apart, 350 mm on slopes over 25°).
+- **Support fixings.** How the battens and counter-battens are fixed to the rafters: **Nails** 4 × 100 mm (the default) or **Screws** 6 × 100 mm.
 
-Each change is one undo step. Under them the section shows **To buy** (the panels by length and how many), **Panels laid**, **Reused offcuts** (valley pieces cut from what the hip pieces leave of their panels, not bought), **Sheet bought (m²)** (each panel bought at its nominal length by its whole width, as panels are priced) and the **Warnings**: a slope under the profile's least pitch, roof windows and dormers (not cut out of the panels yet).
+Each change is one undo step. Under them the section shows **To buy** (the panels by length and how many), **Panels laid**, **Reused offcuts** (valley pieces cut from what the hip pieces leave of their panels, not bought), **Sheet bought (m²)** (each panel bought at its nominal length by its whole width, as panels are priced), **Accessories and support** (every line of the takeoff below, with its quantity and unit) and the **Warnings**: a slope under the profile's least pitch, a roof without rafters (its counter-battens estimated).
 
 ![A roof's Panels section: Bilka Balcanic, the panels to buy and the offcuts reused](shots/roof-panels-section.webp)
 
@@ -22,13 +25,33 @@ Each change is one undo step. Under them the section shows **To buy** (the panel
 
 **Panel layout…** (in the Panels section, or **Architecture → Roof panels → Panel layout…** with a roof selected) shows the layout: the roof **In plan** or **Laid flat** (each roof plane in true size), every panel coloured by its length, the offcuts reused in **orange** with a dashed line from the panel they are cut from, and the edges coloured by kind (eaves, verges, ridges, hips, valleys). Point at a panel to read its code (roof plane, column, row: A03-07-01), its length and where it is cut from.
 
-Beside the drawing: **To buy** (lengths, pieces, metres), the roof area, coverage and sheet bought, **Per roof plane** (pitch, area, panels, bought, reused, sheet), **Edges** (how many, how long, how many accessory pieces of the profile's accessory length) and **Offcuts** (each piece with its donor and how far up the donor panel it is cut).
+Beside the drawing: **To buy** (lengths, pieces, metres), the roof area, coverage and sheet bought, **Per roof plane** (pitch, area, panels, bought, reused, sheet), **Edges** (how many, how long, how many accessory pieces of the profile's accessory length), the takeoff's tables (below) and **Offcuts** (each piece with its donor and how far up the donor panel it is cut).
 
 To compare, pick another **Profile** in the dialog: the layout shows it while the roof keeps its own; **Use this profile** gives it to the roof (one undo step).
 
 ![Panel layout in plan: the panels by length, the valley pieces cut from hip offcuts in orange](shots/roof-panel-layout.webp)
 
 ![The same roof laid flat, each roof plane in true size](shots/roof-panel-layout-flat.webp)
+
+## Accessories, fixings, battens and membrane
+
+The layout counts what else the panels need, as the profile's data says, on the roof as it is:
+
+- **Flashings and accessories.** Along each edge, pieces of the profile's accessory length (2 m) lapped as the profile says: ridge and hip caps, hip end caps where a hip meets the eave, ridge seal rolls, ridge end caps at the verges, eave, verge and top-edge flashings, valley flashings and their foam seals, side and top wall abutment flashings, break flashings, snow guards along the roof's own snow guards, a flashing kit for each roof window. A standing seam (Retro Panel) has its own: angled ridge caps, ridge supports, lap elements, butyl tape, valley clips. Ridge nodes, valley heads and valley clips are made from flat sheet (counted; their sheets come in a later stage).
+- **Fixings.** The tile's stitching screws where each side lap crosses the module and its fixing screws (ten a m² of cover, along the eaves, ridges, hips, verges, abutments and snow guards); a standing seam's flat-headed screws on each board a panel crosses and the flashings' sealed screws; and the support's nails or screws, one where a batten crosses a rafter and along the counter-battens. Each with 10 % to spare, in its pack.
+- **Battens and membrane.** The battens across each slope on the profile's module (the first at the eave, the second 380 mm up, then every 350 mm; Retro Panel's boards every 200 mm), their length in bars; the counter-battens along the roof's own rafters, their real length; the membrane over every slope with its 100 mm laps and 8 % for cuts, in rolls, and the tape along its laps. Each slope's battens, rows and membrane laps are in **Battens and membrane per roof plane**. They are counted, not drawn: the 3D view shows the roof's build-up as before.
+
+A column says what it is counted from in **Needed** (metres run, the area, the fixings). The numbers are the Panotaj Bilka app's on the same roofs; they are budget quantities, indicative: confirm them with the maker's installation guide.
+
+![The takeoff in Panel layout: the accessories, the fixings, the battens and the membrane](shots/roof-panels-takeoff.webp)
+
+## Walls, roof windows and dormers
+
+An edge of the covering against a wall that rises over it (within 35 mm of its face, the wall's top at least 60 mm higher) is a **wall abutment**: a **wall top** where it is level (a lean-to under a wall), a **wall side** where it slopes (a gable against a higher wall). So is the top of a roof that runs under a higher roof's eave and ends there. Each gets its abutment flashing.
+
+Roof windows and dormers are **cut out of the panels**: a column an opening crosses is laid below it, beside it and above it, each run starting on the profile's module as a column does. Round a roof window its kit's **bottom**, **top** and **sides**, and one flashing kit; round a dormer its front wall's apron (a wall top), its cheeks (wall sides) and the valleys of its roof with the slope. A roof standing inside a slope is cut out the same way, met in valleys. The battens and the membrane leave the openings out.
+
+![A roof window cut out of the panels](shots/roof-panels-window.webp)
 
 ## The panels in the model
 
@@ -44,6 +67,8 @@ In the **Diagram** display the panels take the roofs' colour, as any covering do
 
 ![The same roof in the Diagram display](shots/roof-panels-3d-diagram.webp)
 
-## Roof panels schedule
+## Roof panels schedules
 
 **Architecture → Roof panels → Roof panels** makes the **Roof panels** schedule, a field schedule of every roof's panels: roof, profile, colour, length, bought or cut from an offcut, pieces, total length and sheet bought, with a totals line. Like any field schedule it can be changed, sorted and exported. Each panel is a part of its roof, so a **part** tag writes its code and length.
+
+**Architecture → Roof panels → Roof panel accessories** makes the **Roof panel accessories** schedule: a row for each roof and line of its takeoff (group, item, quantity, unit, and what it is counted from).

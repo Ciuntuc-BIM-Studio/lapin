@@ -13,14 +13,18 @@ namespace Lapin.RoofPanels;
 /// </summary>
 public static class PanelLayout
 {
-    /// <summary>A column: its left side u, its first panel's start (in modules up from the eave), its top (mm up the slope), the target in it.</summary>
-    public sealed record Column(double X, int Start, int Stop, List<Vec2> Footprint);
+    /// <summary>
+    /// A column, or a run of one cut by an opening: its left side u, its first panel's start (in modules up from the eave), its top
+    /// (mm up the slope), the target in it; <see cref="Index"/>, the column it is a run of (0 the first across the face);
+    /// <see cref="Region"/>, the run's part of the face over the panel's whole width (null: the face's whole target).
+    /// </summary>
+    public sealed record Column(double X, int Start, int Stop, List<Vec2> Footprint, int Index = 0, List<Vec2>? Region = null);
 
     /// <summary>A panel laid: its left side and start (u, v), its nominal length (mm), its cut outline (whole width) and what it covers (useful width).</summary>
     public sealed record Piece(double X, double Y, int Length, List<Vec2> Gross, List<Vec2> Covered);
 
-    /// <summary>A face's layout: millimetres of panel, panels, the columns of pieces.</summary>
-    public sealed record FaceLayout(long Cost, int Number, List<List<Piece>> Columns);
+    /// <summary>A face's layout: millimetres of panel, panels, the columns (runs) of pieces, and the column each run is of.</summary>
+    public sealed record FaceLayout(long Cost, int Number, List<List<Piece>> Columns, List<int> Index);
 
     /// <summary>A panel of the result: its code (face-column-row), where it is, its edges' kinds.</summary>
     public sealed class Panel
@@ -108,7 +112,11 @@ public static class PanelLayout
             return [.. lengths];
         }
 
-        /// <summary>Each phase across the face that leaves no sliver of eave: its columns.</summary>
+        /// <summary>
+        /// Each phase across the face that leaves no sliver of eave: its columns. A column an opening crosses (S3) is laid in runs:
+        /// below the opening, beside it (each side its own run, its panels cut round it) and above it, each run starting on the
+        /// module as a column does.
+        /// </summary>
         public List<List<Column>> Columns(RoofFace roof)
         {
             var width = p.Width;
@@ -121,21 +129,58 @@ public static class PanelLayout
                 var left = (int)Math.Floor((low - phase + 1e-7) / width);
                 var right = (int)Math.Ceiling((high - phase - 1e-7) / width);
                 var ok = true;
+                var index = 0;
+                int Start(List<Vec2> f) => Math.Max(0, (int)Math.Floor((Clip.MinY(f) + 1e-6) / p.Pitch));
+                int Stop(List<Vec2> f) => (int)Math.Ceiling((Clip.MaxY(f) - 1e-6) * 1000);
                 for (var ix = left; ix < right; ix++)
                 {
                     var x = phase + ix * width;
                     var footprint = Clip.Strip(roof.Target, x, x + width);
                     if (Clip.Area(footprint) < 1e-6) continue;
-                    var start = Math.Max(0, (int)Math.Floor((Clip.MinY(footprint) + 1e-6) / p.Pitch));
-                    var stop = (int)Math.Ceiling((Clip.MaxY(footprint) - 1e-6) * 1000);
                     var eaveWidth = roof.EaveSpans.Sum(e => Math.Max(0, Math.Min(x + width, e.To) - Math.Max(x, e.From)));
                     if (eaveWidth > 1e-5 && eaveWidth < 0.22) { ok = false; break; }
-                    cols.Add(new Column(x, start, stop, footprint));
+                    if (roof.Holes.Count == 0) { cols.Add(new Column(x, Start(footprint), Stop(footprint), footprint, index++)); continue; }
+                    var any = false;
+                    foreach (var region in Runs(Clip.Strip(roof.Target, x, x + p.Gross), roof.Holes))
+                    {
+                        var f = Clip.Strip(region, x, x + width);
+                        if (Clip.Area(f) < 1e-6) continue;
+                        cols.Add(new Column(x, Start(f), Stop(f), f, index, region));
+                        any = true;
+                    }
+                    if (any) index++;
                 }
                 if (ok) options.Add(cols);
             }
             if (options.Count == 0) throw new ArgumentException($"Roof plane {roof.Id} takes no layout of {p.Name}.");
             return options;
+        }
+
+        /// <summary>
+        /// A column's strip cut into runs by the holes it crosses, bottom to top: for each hole the part below it, the parts beside
+        /// it (the band of its height less the hole: one a side, or one when the column reaches past one side only) and above it.
+        /// </summary>
+        static List<List<Vec2>> Runs(List<Vec2> strip, IReadOnlyList<FaceHole> holes)
+        {
+            var runs = new List<List<Vec2>> { strip };
+            foreach (var h in holes.OrderBy(h => h.MinV))
+            {
+                var next = new List<List<Vec2>>();
+                foreach (var s in runs)
+                {
+                    if (s.Count < 3 || Clip.MaxX(s) <= Clip.MinX(h.Ring) + 1e-9 || Clip.MinX(s) >= Clip.MaxX(h.Ring) - 1e-9
+                        || Clip.MaxY(s) <= h.MinV + 1e-9 || Clip.MinY(s) >= h.MaxV - 1e-9) { next.Add(s); continue; }
+                    var below = Clip.Trim(s, new Vec2(0, -1), -h.MinV);
+                    var above = Clip.Trim(s, new Vec2(0, 1), h.MaxV);
+                    var band = Clip.Trim(Clip.Trim(s, new Vec2(0, 1), h.MinV), new Vec2(0, -1), -h.MaxV);
+                    if (Clip.Area(below) > 1e-9) next.Add(below);
+                    if (band.Count >= 3 && Clip.Area(band) > 1e-9)
+                        next.AddRange(PlanTrim.Difference(band, [.. h.Regions]).Rings.Where(r => Clip.Area(r) > 1e-9));
+                    if (Clip.Area(above) > 1e-9) next.Add(above);
+                }
+                runs = next;
+            }
+            return [.. runs.OrderBy(r => Math.Round(Clip.MinY(r), 6)).ThenBy(r => Clip.MinX(r))];
         }
 
         /// <summary>The face's layouts that cover it, cheapest first, while within <paramref name="allowance"/> mm of the first.</summary>
@@ -149,14 +194,14 @@ public static class PanelLayout
                 for (var i = 0; i < cols.Count; i++)
                 {
                     var c = cols[i];
-                    var seq = p.Staggered ? Staggered(c.Start, c.Stop, stock, i) : Best(c.Start, c.Stop, stock);
+                    var seq = p.Staggered ? Staggered(c.Start, c.Stop, stock, c.Index) : Best(c.Start, c.Stop, stock);
                     if (seq == null) { all = false; break; }
                     seqs.Add(seq);
                 }
                 if (all) layouts.Add((seqs.Sum(q => (long)q.Sum()), seqs.Sum(q => q.Length), cols, seqs));
             }
             long? first = null;
-            var target = Clip.Area(roof.Target);
+            var target = roof.TargetArea;
             foreach (var (cost, number, cols, seqs) in layouts.OrderBy(l => l.Cost).ThenBy(l => l.Number))
             {
                 if (first != null && cost > first + allowance) yield break;
@@ -164,7 +209,7 @@ public static class PanelLayout
                 var failed = false;
                 for (var ci = 0; ci < cols.Count && !failed; ci++)
                 {
-                    var (x, start, _, footprint) = cols[ci];
+                    var (x, start, _, footprint, _, region) = cols[ci];
                     var sequence = seqs[ci];
                     var y = start * p.Pitch;
                     var pieces = new List<Piece>();
@@ -174,7 +219,7 @@ public static class PanelLayout
                         // The side lap stays outside the useful width.
                         var end = y + p.EffectiveLength(length);
                         var covered = Clip.Strip(footprint, x, x + p.Width, y, index == sequence.Length - 1 ? end : end - p.Lap);
-                        var gross = Clip.Strip(roof.Target, x, x + p.Gross, y, end);
+                        var gross = Clip.Strip(region ?? roof.Target, x, x + p.Gross, y, end);
                         if (Clip.Area(covered) < 1e-7) { failed = true; break; }
                         pieces.Add(new Piece(x, y, length, gross, covered));
                         y = end - p.Lap;
@@ -185,7 +230,7 @@ public static class PanelLayout
                 if (Math.Abs(chosen.Sum(c => c.Sum(q => Clip.Area(q.Covered))) - target) < 2e-5)
                 {
                     first ??= cost;
-                    yield return new FaceLayout(cost, number, chosen);
+                    yield return new FaceLayout(cost, number, chosen, [.. cols.Select(c => c.Index)]);
                 }
             }
         }
@@ -286,10 +331,14 @@ public static class PanelLayout
             var mean = new Vec2(roof.Poly.Average(v => v.X), roof.Poly.Average(v => v.Y));
             var relevant = edges.Where(e => e.Faces.Contains(roof.Id)).Select(e => (e.Kind, A: roof.Uv(e.A), B: roof.Uv(e.B))).ToList();
             var cols = layouts[fi].Columns;
+            // A column's runs (an opening crosses it) number their panels on from the run under them.
+            var rows = new Dictionary<int, int>();
             for (var c = 0; c < cols.Count; c++)
                 for (var r = 0; r < cols[c].Count; r++)
                 {
                     var piece = cols[c][r];
+                    var col = layouts[fi].Index[c];
+                    var row = rows[col] = rows.GetValueOrDefault(col) + 1;
                     var tags = new List<string>();
                     foreach (var (kind, a, b) in relevant)
                     {
@@ -298,8 +347,8 @@ public static class PanelLayout
                     }
                     o.Add(new Panel
                     {
-                        Id = $"{roof.Id}-{c + 1:00}-{r + 1:00}", Face = roof, X = piece.X, Y = piece.Y, Length = piece.Length,
-                        Poly = piece.Gross, Net = piece.Covered, Col = c + 1, Row = r + 1, Bottom = r > 0 || piece.Y < 1e-6,
+                        Id = $"{roof.Id}-{col + 1:00}-{row:00}", Face = roof, X = piece.X, Y = piece.Y, Length = piece.Length,
+                        Poly = piece.Gross, Net = piece.Covered, Col = col + 1, Row = row, Bottom = r > 0 || piece.Y < 1e-6,
                         Upper = r < cols[c].Count - 1, Tags = tags,
                     });
                 }

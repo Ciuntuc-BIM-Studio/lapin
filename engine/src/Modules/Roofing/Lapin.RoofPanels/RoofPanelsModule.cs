@@ -21,11 +21,16 @@ public sealed class RoofPanelsModule : ILapinModule
     {
         r.Catalog("profiles", PanelProfiles.Catalog());
         r.Service<IPartSource>(new Parts());
+        r.Service<IPartSource>(new Items());
         // Stage S2: the panels as the covering's geometry, and the Roof panels schedule (a field schedule of the parts).
         r.Service<IGeometryFilter>(new PanelBodies());
         r.Service(ShippedScheduleTemplate.Of("roofPanels", "Roof panels", null, ScheduleFields));
+        // Stage S3: what else the panels need (accessories, fixings, battens, counter-battens, membrane), a second schedule.
+        r.Service(ShippedScheduleTemplate.Of("roofPanelItems", "Roof panel accessories", null, ItemScheduleFields));
 
-        // {id (a roof), profile (a profile's id, or a profile of its own; null: none), color, maxLength (a made-to-order profile's longest panel, mm)}.
+        // {id (a roof), profile (a profile's id, or a profile of its own; null: none), color, maxLength (a made-to-order profile's longest panel, mm),
+        //  support (the profile's support scheme), ridge (its ridge caps, large or small), fixing (the support's: nails or screws)}; only what differs
+        //  from the profile's defaults is kept.
         r.Command("setRoofPanels", "Roof panels", (ctx, a) =>
         {
             var roof = ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.Roof } x ? x : throw new CommandException("Pick a roof.");
@@ -47,6 +52,22 @@ public sealed class RoofPanelsModule : ILapinModule
                 var o = new JsonObject { ["profile"] = profile.Id };
                 if (color != null) o["color"] = color;
                 if (Json.Number(a["maxLength"]) is { } max && (int)max != profile.Lengths[^1]) o["maxLength"] = (int)max;
+                if ((string?)a["support"] is { } support)
+                {
+                    if (!profile.Support.Any(x => x.Id == support)) throw new CommandException($"{profile.Name} is carried on {string.Join(" or ", profile.Support.Select(x => x.Id))}.");
+                    if (support != profile.Support[0].Id) o["support"] = support;
+                }
+                if ((string?)a["ridge"] is { } ridge)
+                {
+                    if (!profile.Ridges.Contains(ridge)) throw new CommandException(profile.Ridges.Count == 0 ? $"{profile.Name} has one ridge cap." : $"{profile.Name}'s ridge caps are {string.Join(" or ", profile.Ridges)}.");
+                    if (ridge != profile.Ridges[0]) o["ridge"] = ridge;
+                }
+                if ((string?)a["fixing"] is { } fixing)
+                {
+                    var woods = PanelProfiles.Shared.WoodFixings;
+                    if (!woods.Any(x => x.Id == fixing)) throw new CommandException($"The battens are fixed with {string.Join(" or ", woods.Select(x => x.Id))}.");
+                    if (fixing != woods[0].Id) o["fixing"] = fixing;
+                }
                 attrs[RoofPanels.Key] = o;
                 RoofPanels.EnsureMaterial(ctx, profile, color ?? profile.Colors.FirstOrDefault()?.Code);
             }
@@ -65,10 +86,13 @@ public sealed class RoofPanelsModule : ILapinModule
                     if (RoofPanels.ChoiceOf(roof) == null) return new JsonObject { ["problem"] = "The roof names no panel profile." };
                     if (RoofPanels.Of(roof, q.Model) is { } own) return RoofPanels.ToJson(own);
                     var c = RoofPanels.ChoiceOf(roof)!;
-                    return RoofPanels.ToJson(RoofPanels.Lay(roof, q.Model, PanelProfiles.Resolve(JsonValue.Create(c.Profile)).WithMaxLength(c.MaxLength), c.Color));
+                    return RoofPanels.ToJson(RoofPanels.Lay(roof, q.Model, PanelProfiles.Resolve(JsonValue.Create(c.Profile)).WithMaxLength(c.MaxLength), c.Color, c.Options));
                 }
                 var profile = PanelProfiles.Resolve(a["profile"]).WithMaxLength(Json.Number(a["maxLength"]) is { } ml ? (int)ml : null);
-                return RoofPanels.ToJson(RoofPanels.Lay(roof, q.Model, profile, (string?)a["color"]));
+                // A preview keeps the roof's own options where the profile has them, or takes the ones asked.
+                var mine = RoofPanels.ChoiceOf(roof);
+                var options = new Takeoff.Options((string?)a["support"] ?? mine?.Support, (string?)a["ridge"] ?? mine?.Ridge, (string?)a["fixing"] ?? mine?.Fixing);
+                return RoofPanels.ToJson(RoofPanels.Lay(roof, q.Model, profile, (string?)a["color"], options));
             }
             catch (ArgumentException e) { return new JsonObject { ["problem"] = e.Message }; }
         });
@@ -96,6 +120,50 @@ public sealed class RoofPanelsModule : ILapinModule
           ]
         }
         """;
+
+    /// <summary>
+    /// The Roof panel accessories schedule as shipped (S3): a row per roof and line of its takeoff, the flashings, the fixings
+    /// and the support (membrane, battens or boards, counter-battens), each in its unit and what it comes from.
+    /// </summary>
+    public const string ItemScheduleFields = """
+        {
+          "source": "roofPanelItems",
+          "filter": { "classes": ["IfcRoof"] },
+          "groupBy": ["name", "itemGroup", "itemName", "itemUnit"], "groupColumns": false, "count": false,
+          "sort": ["name", "itemOrder"],
+          "columns": [
+            { "field": "name", "heading": "Roof", "aggregate": "first" },
+            { "field": "itemGroup", "heading": "Group", "aggregate": "first" },
+            { "field": "itemName", "heading": "Item", "aggregate": "first" },
+            { "field": "itemQuantity", "heading": "Quantity", "aggregate": "sum", "decimals": 0 },
+            { "field": "itemUnit", "heading": "Unit", "aggregate": "first" },
+            { "field": "itemNeed", "heading": "Needed", "aggregate": "sum", "decimals": 2 },
+            { "field": "itemNeedUnit", "heading": "Needed in", "aggregate": "first" }
+          ]
+        }
+        """;
+
+    /// <summary>The takeoff of a roof's panels (<c>roofPanelItems</c>, S3), a part a line: its code, name, group, quantity and unit, what it comes from.</summary>
+    sealed class Items : IPartSource
+    {
+        public string Source => "roofPanelItems";
+        public string Label => "Roof panel accessories";
+        public IReadOnlyList<(string Key, string Label)> Fields { get; } =
+        [
+            ("itemCode", "Item code"), ("itemName", "Item"), ("itemGroup", "Group"), ("itemQuantity", "Quantity"), ("itemUnit", "Unit"),
+            ("itemNeed", "Needed"), ("itemNeedUnit", "Needed in"), ("itemOrder", "Order"), ("panelProfile", "Profile"),
+        ];
+
+        static readonly Dictionary<string, string> Groups = new() { ["flashings"] = "Flashings", ["fixings"] = "Fixings", ["support"] = "Support" };
+
+        public IEnumerable<ElementPart> PartsOf(IQueryContext q, Entity e)
+        {
+            if (e.Class != IfcClass.Roof || RoofPanels.Of(e, q.Model) is not { } l) return [];
+            return l.Takeoff.Items.Select((i, k) => ElementPart.Of($"item:{i.Code}", ("itemCode", i.Code), ("itemName", i.Name),
+                ("itemGroup", Groups.GetValueOrDefault(i.Group, i.Group)), ("itemQuantity", i.Quantity), ("itemUnit", i.Unit),
+                ("itemNeed", i.Need ?? 0.0), ("itemNeedUnit", i.NeedUnit ?? ""), ("itemOrder", (double)k), ("panelProfile", l.Profile.Name)));
+        }
+    }
 
     /// <summary>The panels of a roof (<c>roofPanels</c>), each a part: its code, plane, length, whether it is bought or an offcut reused.</summary>
     sealed class Parts : IPartSource

@@ -14,15 +14,33 @@ export interface PanelProfileDto {
   grossWidth: number; usefulWidth: number; slopeLap: number; module: number; joints: string;
   onOrder: boolean; minLength: number; maxLength: number; lengths?: number[] | null; maxLengths: number[];
   colors: PanelColour[]; minPitch: number; minPitchHipValley: number; reuseOffcuts: boolean; notes: string; source: string;
+  /** S3: the ridge caps it comes in (large, small), the ways it is carried (battens, boards), its accessories. */
+  ridges?: string[]; support?: { id: string; name: string; kind: string; section: string }[];
 }
 
-/** What a roof names: its profile, colour and a made-to-order profile's longest panel. */
-export interface PanelChoice { profile: string; color?: string | null; maxLength?: number | null }
+/**
+ * What a roof names: its profile, colour and a made-to-order profile's longest panel; the takeoff's options (S3): the support
+ * scheme, the ridge caps and the support's fixings (nails or screws), each absent when the profile's default.
+ */
+export interface PanelChoice { profile: string; color?: string | null; maxLength?: number | null; support?: string; ridge?: string; fixing?: string }
 
 export type Pt = [number, number];
 
-export interface FaceDto { id: string; plane: number; pitch: number; eave: number; area: number; coverage: number; slopeLength: number; outline: Pt[]; planOutline: Pt[] }
-export interface EdgeDto { kind: string; faces: string[]; length: number; lap: number; pieces: number; joints: number; a: number[]; b: number[] }
+/** An opening the panels are cut round (S3): a roof window, a dormer, another roof in the slope; laid flat and in plan. */
+export interface HoleDto { id: string; name: string; kind: string; outline: Pt[]; plan: Pt[] }
+export interface FaceDto { id: string; plane: number; pitch: number; eave: number; area: number; coverage: number; slopeLength: number; outline: Pt[]; planOutline: Pt[]; holes?: HoleDto[] }
+export interface EdgeDto { kind: string; faces: string[]; length: number; lap: number; pieces: number; joints: number; a: number[]; b: number[]; opening?: string | null }
+
+/** A line of the takeoff (S3): an accessory, a fixing, the support; its quantity in its unit and what that comes from. */
+export interface ItemDto { code: string; name: string; group: string; quantity: number; unit: string; need?: number | null; needUnit?: string | null; note: string }
+/** A slope's share of the takeoff: its area less its openings, the membrane's laps, its battens (m, rows). */
+export interface TakeoffFaceDto { id: string; area: number; membraneLaps: number; battens: number; rows: number; valleyBattens: number }
+export interface TakeoffDto {
+  support: string | null; ridge: string | null; fixing: string;
+  supports: { id: string; name: string; kind: string }[]; ridges: string[]; fixings: { id: string; name: string }[];
+  battenSection?: string | null; counterSection?: string | null; raftersEstimated: boolean;
+  faces: TakeoffFaceDto[]; stats: Record<string, number>; items: ItemDto[];
+}
 export interface PanelDto {
   id: string; face: string; column: number; row: number; length: number; buy: number; x: number; y: number;
   trimmedLength: number; grossArea: number; coverage: number; edges: string[];
@@ -34,6 +52,7 @@ export interface LayoutDto {
   purchase: Record<string, number>; installed: Record<string, number>;
   totals: { roofArea: number; coverage: number; sheetArea: number; panels: number; bought: number; reused: number; lengths: number; boughtLength: number; edgeLengths: Record<string, number> };
   warnings: string[];
+  takeoff?: TakeoffDto;
 }
 export type LayoutAnswer = LayoutDto | { problem: string };
 
@@ -53,12 +72,14 @@ export function colourLabel(c: PanelColour): string {
 
 /** What the roof names (its `panels`), or null. */
 export function choiceOf(node: NodeDto | undefined): PanelChoice | null {
-  const p = node?.props.panels as { profile?: unknown; color?: unknown; maxLength?: unknown } | undefined;
+  const p = node?.props.panels as { profile?: unknown; color?: unknown; maxLength?: unknown; support?: unknown; ridge?: unknown; fixing?: unknown } | undefined;
   if (!p || typeof p.profile !== 'string' || !p.profile) return null;
+  const text = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
   return {
     profile: p.profile,
     color: typeof p.color === 'string' ? p.color : null,
     maxLength: typeof p.maxLength === 'number' ? p.maxLength : null,
+    support: text(p.support), ridge: text(p.ridge), fixing: text(p.fixing),
   };
 }
 
@@ -72,7 +93,39 @@ export function setArgs(roofId: string, choice: PanelChoice | null, profiles: Pa
   const args: Record<string, unknown> = { id: roofId, profile: choice.profile };
   if (choice.color && (!p || p.colors.some((c) => c.code === choice.color))) args.color = choice.color;
   if (choice.maxLength && (!p || p.maxLengths.includes(choice.maxLength))) args.maxLength = choice.maxLength;
+  // The takeoff's options: the support and ridge caps only when the profile has them, the fixings always.
+  if (choice.support && (!p || !p.support || p.support.some((x) => x.id === choice.support))) args.support = choice.support;
+  if (choice.ridge && (!p || !p.ridges || p.ridges.includes(choice.ridge))) args.ridge = choice.ridge;
+  if (choice.fixing) args.fixing = choice.fixing;
   return args;
+}
+
+/** The takeoff's groups, in the order the tables show them, as the interface names them. */
+export const ITEM_GROUPS: { id: string; label: string }[] = [
+  { id: 'flashings', label: 'Flashings and accessories' }, { id: 'fixings', label: 'Fixings' }, { id: 'support', label: 'Battens and membrane' },
+];
+
+/** The takeoff's lines of a group, in the engine's order. */
+export const itemRows = (t: Pick<TakeoffDto, 'items'> | undefined, group: string): ItemDto[] => (t?.items ?? []).filter((i) => i.group === group);
+
+/** A takeoff line in a few words for the Panels section: „Ridge cap, large (290 mm) × 7 piece 2 m”. */
+export const itemText = (i: ItemDto) => `${i.name} × ${i.quantity}`;
+
+/** What a line comes from: 254.4 m, 1000 pcs; none for a count. */
+export function needText(i: ItemDto): string {
+  if (i.need == null || !i.needUnit) return '';
+  const n = i.needUnit === 'pcs' ? String(Math.round(i.need)) : i.need.toFixed(1);
+  return `${n} ${i.needUnit}`;
+}
+
+/** The takeoff's options as the Panels section offers them: each with its choices, the one taken and whether it can change. */
+export function takeoffOptions(t: TakeoffDto | undefined): { key: 'ridge' | 'support' | 'fixing'; label: string; value: string; choices: { id: string; name: string }[] }[] {
+  if (!t) return [];
+  const o: { key: 'ridge' | 'support' | 'fixing'; label: string; value: string; choices: { id: string; name: string }[] }[] = [];
+  if (t.ridges.length > 1) o.push({ key: 'ridge', label: 'Ridge caps', value: t.ridge ?? t.ridges[0], choices: t.ridges.map((r) => ({ id: r, name: r === 'large' ? 'Large' : r === 'small' ? 'Small' : r })) });
+  if (t.supports.length > 1) o.push({ key: 'support', label: 'Support', value: t.support ?? t.supports[0].id, choices: t.supports.map((s) => ({ id: s.id, name: s.kind === 'boards' ? 'Boards 150 mm' : 'Battens' })) });
+  if (t.fixings.length > 1) o.push({ key: 'fixing', label: 'Support fixings', value: t.fixing, choices: t.fixings.map((f) => ({ id: f.id, name: f.id === 'nails' ? 'Nails' : f.id === 'screws' ? 'Screws' : f.name })) });
+  return o;
 }
 
 /** The panels to buy by length, the longest first: each its count and metres. */
@@ -98,7 +151,7 @@ export function faceTotals(l: LayoutDto): { id: string; pitch: number; area: num
 }
 
 /** The edges by kind: how many, how long, how many accessory pieces; in the kinds' own order. */
-export const EDGE_ORDER = ['eave', 'verge', 'ridge', 'hip', 'valley', 'topEdge', 'concaveBreak', 'convexBreak', 'wallTop', 'wallSide'];
+export const EDGE_ORDER = ['eave', 'verge', 'ridge', 'hip', 'valley', 'topEdge', 'concaveBreak', 'convexBreak', 'wallTop', 'wallSide', 'windowTop', 'windowBottom', 'windowSide'];
 export function edgeRows(l: Pick<LayoutDto, 'edges'>): { kind: string; count: number; length: number; pieces: number }[] {
   const by = new Map<string, { kind: string; count: number; length: number; pieces: number }>();
   for (const e of l.edges) {
@@ -114,12 +167,14 @@ export function edgeRows(l: Pick<LayoutDto, 'edges'>): { kind: string; count: nu
 export const EDGE_LABEL: Record<string, string> = {
   eave: 'Eaves', verge: 'Verges', ridge: 'Ridges', hip: 'Hips', valley: 'Valleys', topEdge: 'Top edges',
   concaveBreak: 'Concave breaks', convexBreak: 'Convex breaks', wallTop: 'Wall tops', wallSide: 'Wall sides',
+  windowTop: 'Roof window tops', windowBottom: 'Roof window bottoms', windowSide: 'Roof window sides',
 };
 
 /** The edges' colours in the layout (by kind, as the app draws them). */
 export const EDGE_COLOUR: Record<string, string> = {
   eave: '#2f6fb3', verge: '#7a4fb0', ridge: '#c0392b', hip: '#d35400', valley: '#16a085', topEdge: '#8e44ad',
   concaveBreak: '#27ae60', convexBreak: '#2c3e50', wallTop: '#7f8c8d', wallSide: '#95a5a6',
+  windowTop: '#b8860b', windowBottom: '#b8860b', windowSide: '#daa520',
 };
 
 /** A reused offcut's colour, as the 3D view and the app show it. */

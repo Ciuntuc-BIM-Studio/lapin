@@ -2457,7 +2457,8 @@ export const scenes = [
   {
     // Roof panel layout (docs/plan-roof-panels.md, S2): an L-shaped house under a hip roof covered in Bilka Balcanic from the
     // roof's Panels section; Panel layout… shows the panels in plan with the hip offcuts reused in the valley pieces (orange),
-    // and the 3D view the panels as the covering, each a profiled sheet.
+    // and the 3D view the panels as the covering, each a profiled sheet. S3: the takeoff's tables (accessories, fixings,
+    // battens and membrane) and a roof window cut out of the panels with its flashing kit.
     id: 'roof-panels',
     touches: ['architecture', 'roofpanels'],
     async run(t) {
@@ -2500,6 +2501,24 @@ export const scenes = [
       await dialog.locator('[data-action=roof-panels-flat]').click();
       await t.wait(500);
       await t.shot('roof-panel-layout-flat', { of: '[data-testid=roof-panels-drawing]', pad: 4 });
+      // S3, the takeoff: the accessories counted on the edges as the Panotaj Bilka app does, the fixings, battens and membrane.
+      const takeoff = dialog.locator('[data-testid=roof-panels-takeoff]');
+      t.expect(await takeoff.count() === 1, 'the dialog has the takeoff\'s tables');
+      const qty = async (code) => (await dialog.locator(`tr[data-item="${code}"] td.num`).first().innerText()).trim();
+      t.expect(await qty('hip-large') === '15' && await qty('valley') === '3' && await qty('batten') === '165', `the takeoff counts the app's hip caps, valley and battens (${await qty('hip-large')}, ${await qty('valley')}, ${await qty('batten')})`);
+      await takeoff.scrollIntoViewIfNeeded();
+      await t.shot('roof-panels-takeoff', { of: '[data-testid=roof-panel-layout] [data-testid=roof-panels-takeoff-items]', pad: 4 });
+      // A roof window on the south slope: the panels are cut round it, its edges get the window's flashing kit.
+      await t.ui({ dialog: null });
+      await t.cmd('architecture.addRoofOpening', { roofId: roof.id, x: 3.5, y: 1.6 });
+      await t.wait(800);
+      await select(t, roof.id);
+      await t.wait(600);
+      await t.page.locator('[data-testid=roof-panels-open]').click();
+      await t.until(async () => await dialog.locator('[data-hole=window]').count() === 1, 'the layout draws the roof window cut out');
+      await t.until(async () => await dialog.locator('tr[data-item="window-kit"]').count() === 1, 'the takeoff lists the window\'s flashing kit');
+      t.expect(await t.page.locator('[data-testid=roof-panels-warnings]').count() === 0, 'no warning that the window is not cut out');
+      await t.shot('roof-panels-window', { of: '[data-testid=roof-panels-drawing]', pad: 4 });
       await t.ui({ dialog: null, selection: null, selected: [] });
       // The panels as the covering in 3D: a part each, profiled, the reused ones orange.
       await open3d(t);

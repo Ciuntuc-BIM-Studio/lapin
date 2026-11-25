@@ -2,7 +2,8 @@
  * Panel layout (docs/plan-roof-panels.md §4, S2): a roof's panels as the Panotaj Bilka app shows them. The roof in plan
  * (or its planes laid flat, each in true size), every panel coloured by its length, the offcuts reused in orange with a
  * line from the panel they are cut from, the edges coloured by kind; a panel's code, length and donor on hover. Beside it
- * the tables: what to buy, each roof plane's totals, the edges and the offcuts. Another profile can be tried first (the
+ * the tables: what to buy, each roof plane's totals, the edges and the offcuts, and (S3) the accessories, fixings, battens and
+ * membrane, with each slope's battens and membrane laps; openings drawn as the panels are cut round them. Another profile can be tried first (the
  * layout query takes a profile without changing the roof) and taken with Use this profile, one undo step.
  */
 
@@ -12,7 +13,7 @@ import { Dialog } from '../../shell/Dialog';
 import { execute, useSession } from '../../engine/session';
 import { useLayout } from './PanelsSection';
 import {
-  bounds, centroid, choiceOf, EDGE_COLOUR, EDGE_LABEL, edgeRows, faceTotals, isLayout, laidFlat, lengthColours, profilesOf,
+  bounds, centroid, choiceOf, EDGE_COLOUR, EDGE_LABEL, edgeRows, faceTotals, isLayout, ITEM_GROUPS, itemRows, laidFlat, lengthColours, needText, profilesOf,
   purchaseRows, REUSED, reuseLinks, setArgs, type LayoutDto, type PanelDto, type Pt,
 } from './roofpanels';
 
@@ -75,6 +76,14 @@ export function PanelLayoutDialog() {
   );
 }
 
+/** What a line is counted from: its number as it is, its unit translated. */
+function Need({ i }: { i: Parameters<typeof needText>[0] }) {
+  const t = needText(i);
+  if (!t) return null;
+  const at = t.indexOf(' ');
+  return <><span data-no-i18n>{t.slice(0, at)}</span>{' '}<span>{t.slice(at + 1)}</span></>;
+}
+
 function HoverLine({ p }: { p: PanelDto }) {
   return (
     <span>
@@ -116,6 +125,11 @@ function Drawing({ layout, mode, onHover }: { layout: LayoutDto; mode: Mode; onH
           <title>{`${p.id} · ${p.length} mm${p.donor ? ` ← ${p.donor}` : ''}`}</title>
         </path>
       ))}
+      {layout.faces.flatMap((f) => (f.holes ?? []).map((h) => (
+        <path key={`${f.id}-${h.id}`} d={d(mode === 'plan' ? h.plan : at(f.id, h.outline))} data-hole={h.kind} fill="var(--bg, #fff)" stroke="#b8860b" strokeWidth={stroke * 2} pointerEvents="none">
+          <title>{h.name}</title>
+        </path>
+      )))}
       {mode === 'plan' && layout.edges.map((e, i) => (
         <line key={i} x1={e.a[0]} y1={-e.a[1]} x2={e.b[0]} y2={-e.b[1]} stroke={EDGE_COLOUR[e.kind] ?? '#555'} strokeWidth={stroke * 3} strokeLinecap="round" pointerEvents="none" />
       ))}
@@ -188,6 +202,43 @@ function Tables({ layout }: { layout: LayoutDto }) {
           ))}
         </tbody>
       </table>
+      {layout.takeoff && (
+        <div data-testid="roof-panels-takeoff">
+          <div data-testid="roof-panels-takeoff-items">
+            {ITEM_GROUPS.map((g) => {
+              const rows = itemRows(layout.takeoff, g.id);
+              if (rows.length === 0) return null;
+              return (
+                <div key={g.id}>
+                  <p className="eyebrow">{g.label}</p>
+                  <table className="layer-table" data-testid={`roof-panels-items-${g.id}`}>
+                    <thead><tr><th>Item</th><th>Quantity</th><th>Unit</th><th title="What the quantity is counted from: the length run, the area, the fixings">Needed</th></tr></thead>
+                    <tbody>
+                      {rows.map((i) => (
+                        <tr key={i.code} title={i.note || undefined} data-item={i.code}>
+                          <td>{i.name}</td><td className="num" data-no-i18n>{i.quantity}</td><td>{i.unit}</td><td className="num"><Need i={i} /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })}
+          </div>
+          <p className="eyebrow">Battens and membrane per roof plane</p>
+          <table className="layer-table" data-testid="roof-panels-support">
+            <thead><tr><th>Roof plane</th><th>Area (m²)</th><th title="The membrane's strips lapped across the slope">Membrane laps (m²)</th><th>Battens (m)</th><th>Rows</th></tr></thead>
+            <tbody>
+              {layout.takeoff.faces.map((f) => (
+                <tr key={f.id}>
+                  <td data-no-i18n>{f.id}</td><td className="num" data-no-i18n>{n2(f.area)}</td><td className="num" data-no-i18n>{n2(f.membraneLaps)}</td>
+                  <td className="num" data-no-i18n>{n2(f.battens)}</td><td className="num" data-no-i18n>{f.rows}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {offcuts.length > 0 && (
         <>
           <p className="eyebrow">Offcuts</p>

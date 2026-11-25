@@ -5,12 +5,12 @@
  * command (roofpanels.setRoofPanels), one undo step; Panel layout… opens the layout itself.
  */
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { LayoutGrid } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
-import { choiceOf, colourLabel, isLayout, profilesOf, purchaseRows, setArgs, type LayoutAnswer } from './roofpanels';
+import { choiceOf, colourLabel, isLayout, ITEM_GROUPS, itemRows, profilesOf, purchaseRows, setArgs, takeoffOptions, type LayoutAnswer } from './roofpanels';
 
 /** The roof's layout, asked again whenever the model changes. */
 export function useLayout(roofId: string | null, preview?: Record<string, unknown> | null): LayoutAnswer | null {
@@ -26,6 +26,13 @@ export function useLayout(roofId: string | null, preview?: Record<string, unknow
   }, [roofId, nodes, key]);
   return answer;
 }
+
+/** What each of the takeoff's options changes. */
+const OPTION_TIPS: Record<string, string> = {
+  ridge: 'The ridge and hip caps the accessories are counted in: the large or the small profile',
+  support: 'What carries the panels: boards 150 mm wide with 50 mm gaps, or the older guide\'s battens',
+  fixing: 'How the battens and counter-battens are fixed to the rafters: nails 4 × 100 mm or screws 6 × 100 mm',
+};
 
 export function PanelsSection({ node }: { node: NodeDto }) {
   const info = useSession((s) => s.info);
@@ -69,6 +76,17 @@ export function PanelsSection({ node }: { node: NodeDto }) {
             </dd>
           </>
         )}
+        {choice && isLayout(layout) && takeoffOptions(layout.takeoff).map((o) => (
+          <Fragment key={o.key}>
+            <dt title={OPTION_TIPS[o.key]}>{o.label}</dt>
+            <dd>
+              <select className="cell" data-testid={`roof-panels-${o.key}`} value={o.value} disabled={!node.editable}
+                onChange={(e) => send({ ...choice, [o.key]: e.target.value })}>
+                {o.choices.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </dd>
+          </Fragment>
+        ))}
       </dl>
       {!choice && <p className="muted small pad">No panels: the covering is drawn as one layer. Pick a profile to lay metal tiles or panels on the roof's slopes.</p>}
       {choice && layout && !isLayout(layout) && <p className="error small pad" data-testid="roof-panels-problem">{layout.problem}</p>}
@@ -87,6 +105,20 @@ export function PanelsSection({ node }: { node: NodeDto }) {
             <dt title="Valley pieces cut from what the hip pieces leave of their panels: not bought">Reused offcuts</dt><dd className="num" data-no-i18n>{layout.totals.reused}</dd>
             <dt title="Each panel bought: its nominal length by its whole width, as panels are priced">Sheet bought (m²)</dt><dd className="num" data-no-i18n>{layout.totals.sheetArea.toFixed(2)}</dd>
           </dl>
+          {layout.takeoff && layout.takeoff.items.length > 0 && (
+            <>
+              <p className="eyebrow">Accessories and support</p>
+              <table className="roof-panels-items" data-testid="roof-panels-items">
+                <tbody>
+                  {ITEM_GROUPS.flatMap((g) => itemRows(layout.takeoff, g.id)).map((i) => (
+                    <tr key={i.code} title={i.note || undefined} data-item={i.code}>
+                      <td>{i.name}</td><td className="num" data-no-i18n>{i.quantity}</td><td className="muted" style={{ paddingLeft: 6, whiteSpace: 'nowrap' }}>{i.unit}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
           {layout.warnings.length > 0 && (
             <>
               <p className="eyebrow">Warnings</p>
