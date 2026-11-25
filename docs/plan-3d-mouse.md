@@ -3,7 +3,7 @@
 Asked on 25.11.2026 in forum topic 261 (Slawomir: has any work been done on integrating 3Dconnexion devices such as the SpaceMouse). Follows decision 219 (31.10.2026, a tester's report), which analysed the wheel emulation.
 
 **Order: 6 of 6** (angle lock, structural usage, level datums, leaning walls, national packs, 3D mouse). Only S0 now; S1 waits for a confirmed tester.
-**Status: proposed, not started.**
+**Status: S0 done (26.11.2026); S1 waiting for a tester with a device; S2 and S3 proposed.**
 
 ## What exists today
 
@@ -38,8 +38,8 @@ Pure unit tests on synthetic descriptors and reports (parsing, dead zone, pose d
 
 | Stage | Content | Effort |
 |---|---|---|
-| S0 | **Now.** A guide note on mapping 3DxWare buttons to Lapin's shortcuts; ask the forum user for their OS, model and driver version | S |
-| S1 | WebHID source plus the mapping, settings, buttons. Web only, plus a WebView2 trial. Only once a tester with a device confirms Chrome or Edge on Windows (about 1–2 days, Sonnet) | M |
+| S0 | **Done 26.11.2026.** A guide note on mapping 3DxWare buttons to Lapin's shortcuts; the forum question below is drafted, not posted | S |
+| S1 | WebHID source plus the mapping, settings, buttons. Web only, plus a WebView2 trial. Only once a tester with a device confirms Chrome or Edge on Windows (about 1–2 days, Sonnet). **Waiting for a tester.** | M |
 | S2 | `hidapi` in Tauri for every desktop OS (macOS exclusive open, the udev rule in the .deb), spacenavd on Linux | M |
 | S3 | Walk mode, the Studio editors, orbit about the selection | S |
 
@@ -65,3 +65,19 @@ The user accepted every recommendation:
 3. Accept the Linux udev rule in the .deb, in S2. **Yes.**
 4. The default orbit pivot is the point under the cursor. **Yes.**
 5. A 3Dconnexion-SDK plugin outside the repo: no, unless the HID route fails on macOS. **Yes.**
+
+## S0, done (26.11.2026)
+
+The guide has a section, "A 3D mouse (3Dconnexion SpaceMouse)", in `docs/user/views.md` and `docs/user/ro/views.md`, under 3D views. It says only what the repo shows: push and pull arrive as wheel turns (tamed by `clampWheel`); the keys Lapin has for the view are <kbd>+</kbd>, <kbd>-</kbd>, <kbd>Shift</kbd> <kbd>Z</kbd> and the typed letters ZE (Fit); Top, Front and the isometrics have no key yet (the PLAN button and the key plan's compass stops); Walk starts from a room's right-click menu; orbit, pan and the device's own settings are not supported. No scene needs changing (text only).
+
+## The forum question (to post by the user; not posted)
+
+> Thanks for asking, Slawomir. Lapin does not read 3Dconnexion devices yet: today the 3DxWare driver only sends the push/pull as mouse-wheel zoom, so there is no orbit or pan from the device. I added a short note to the user guide (3D views, "A 3D mouse") on what you can map in the driver meanwhile.
+>
+> I would like to add real support (orbit, pan, zoom and buttons, read through the device's standard HID reports, with no 3Dconnexion SDK), but I have no SpaceMouse to test with. Would you be willing to try a test build? If so, please tell me:
+> 1. your operating system and version (Windows, macOS or Linux);
+> 2. the model (Compact, Wireless, Pro, Enterprise...);
+> 3. the 3DxWare driver version, or whether you run without the driver;
+> 4. whether you use the desktop app or the web version, and which browser.
+>
+> The first test would be the web version in Chrome or Edge on Windows, then the desktop app.
