@@ -349,6 +349,7 @@ public class AnalysisRunTests
     [InlineData("HA-30/P/20/IIa", 30, 33e9)]
     [InlineData("HM-20/B/40/I", 20, 30e9)]
     [InlineData("HP-45/F/12/IIIa", 45, 36e9)]
+    [InlineData("ha-25/b/20/iia", 25, 31e9)]
     [InlineData("HA-25", 25, 31e9)]
     public void A_spanish_concrete_designation_gives_fck_and_Ecm_and_is_checked(string name, double fck, double ecm)
     {
@@ -356,7 +357,8 @@ public class AnalysisRunTests
         var mat = StructuralMaterials.Of(t.F.Model, t.F.Model.OfClass(IfcClass.Material).Single(m => m.Name == name));
         Assert.Equal("concrete", mat.Kind);
         Assert.Equal(fck * 1e6, mat.Fc!.Value, 1e-3);
-        Assert.Contains(name.Split('/')[0], mat.Fc.Source);
+        Assert.Contains(name.Split('/')[0].ToUpperInvariant(), mat.Fc.Source);
+        Assert.Equal(name.Split('/')[0].ToUpperInvariant(), mat.Grade);
         Assert.Equal(ecm, mat.E!.Value, 1e-3);
         Assert.Contains("EN 1992-1-1:2004 Table 3.1", mat.E.Source);
         Assert.True((bool)Run(t.F)["ok"]!);
@@ -428,12 +430,39 @@ public class AnalysisRunTests
     [InlineData("Timber C24", "timber", "C24")]
     [InlineData("Mystery", "other", null)]
     [InlineData("HAB-25", "other", null)]
+    [InlineData("hm-20/b/40/i", "concrete", "HM-20")]
+    [InlineData("C30", "timber", "C30")]
     public void A_materials_kind_by_its_name(string name, string kind, string? grade)
     {
         var f = LoadCaseTests.F();
         var mat = StructuralMaterials.Of(f.Model, StructuralMaterials.EntityOf(f.Model, name));
         Assert.Equal(kind, mat.Kind);
         Assert.Equal(grade, mat.Grade);
+    }
+
+    /// <summary>
+    /// What an IFC file says of a concrete in so many words (Pset_MaterialConcrete, or IfcMaterial.Category kept as ifcCategory) comes
+    /// before a bare timber class in the name: C30 is also EN 338's softwood class, but a C30 carrying a concrete's properties is a
+    /// concrete, its Ecm from its fck. Without them C30 stays timber.
+    /// </summary>
+    [Fact]
+    public void A_concrete_named_like_a_timber_class_is_concrete_when_its_data_says_so()
+    {
+        var t = Frame6x4(beamMaterial: "C30");
+        Assert.Equal("timber", StructuralMaterials.Of(t.F.Model, t.F.Model.OfClass(IfcClass.Material).Single(m => m.Name == "C30")).Kind);
+        Give(t.F, "C30", P("CompressiveStrength", 30e6, "Pset_MaterialConcrete"));
+        var mat = StructuralMaterials.Of(t.F.Model, t.F.Model.OfClass(IfcClass.Material).Single(m => m.Name == "C30"));
+        Assert.Equal("concrete", mat.Kind);
+        Assert.Null(mat.Grade);
+        Assert.Equal(30e6, mat.Fc!.Value, 1e-3);
+        Assert.Equal(22e9 * Math.Pow((30 + 8) / 10.0, 0.3), mat.E!.Value, 1e3);
+        Assert.Null(mat.Density is { } d && d.Source.Contains("EN 338") ? d : null);
+
+        var f = LoadCaseTests.F();
+        var categorised = new Entity("c30-ifc", IfcClass.Material, "C30", new JsonObject { ["ifcCategory"] = "concrete" });
+        Assert.Equal("concrete", StructuralMaterials.Of(f.Model, categorised).Kind);
+        var other = new Entity("c30-wood", IfcClass.Material, "C30", new JsonObject { ["ifcCategory"] = "wood" });
+        Assert.Equal("timber", StructuralMaterials.Of(f.Model, other).Kind);
     }
 
     [Fact]
