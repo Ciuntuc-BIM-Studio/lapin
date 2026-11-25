@@ -13194,6 +13194,11 @@ export const EL: Record<string, string> = {
   "LoadBearing in each element's Pset_…Common also where nothing says it, from the rule: a wall unless it is a partition, floors, roofs, columns, beams and footings; the elements whose Structural tick or LoadBearing property says it are written so either way": "LoadBearing στο Pset_…Common κάθε στοιχείου και εκεί όπου τίποτα δεν το δηλώνει, κατά τον κανόνα: ένας τοίχος εκτός αν είναι χώρισμα, πλάκες, στέγες, υποστυλώματα, δοκοί και θεμέλια· τα στοιχεία των οποίων η επιλογή Φέρων ή η ιδιότητα LoadBearing το δηλώνει γράφονται έτσι ούτως ή άλλως",
   "Write derived LoadBearing": "Εγγραφή παραγόμενου LoadBearing",
   "The Structural tick (or Pset_WallCommon.LoadBearing) on the wall or its type": "Η επιλογή Φέρων (ή Pset_WallCommon.LoadBearing) στον τοίχο ή στον τύπο του",
+  // Game-like UX Phase 4 (docs/plan-ux-game-like.md).
+  'Click start → Click end or type length': 'Κλικ αρχή → Κλικ τέλος ή πληκτρολόγησε μήκος',
+  'Click corner → Opposite corner or W,H': 'Κλικ γωνία → Απέναντι γωνία ή Π,Υ',
+  'Click a snapped point on the plan or 3D': 'Κλικ σε σημείο snap στην κάτοψη ή 3D',
+  'Click to run on model or selection': 'Κλικ για εκτέλεση στο μοντέλο ή την επιλογή',
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

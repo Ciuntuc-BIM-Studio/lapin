@@ -7076,6 +7076,11 @@ export const PL: Record<string, string> = {
   "LoadBearing in each element's Pset_…Common also where nothing says it, from the rule: a wall unless it is a partition, floors, roofs, columns, beams and footings; the elements whose Structural tick or LoadBearing property says it are written so either way": "LoadBearing w Pset_…Common każdego elementu także tam, gdzie nic tego nie określa, według reguły: ściana, chyba że jest działowa, stropy, dachy, słupy, belki i fundamenty; elementy, których zaznaczenie Konstrukcyjny lub właściwość LoadBearing to określa, są i tak zapisywane w ten sposób",
   "Write derived LoadBearing": "Zapisz wyprowadzone LoadBearing",
   "The Structural tick (or Pset_WallCommon.LoadBearing) on the wall or its type": "Zaznaczenie Konstrukcyjny (lub Pset_WallCommon.LoadBearing) na ścianie lub jej typie",
+  // Game-like UX Phase 4 (docs/plan-ux-game-like.md).
+  'Click start → Click end or type length': 'Kliknij początek → Kliknij koniec lub wpisz długość',
+  'Click corner → Opposite corner or W,H': 'Kliknij narożnik → Przeciwległy narożnik lub S,W',
+  'Click a snapped point on the plan or 3D': 'Kliknij punkt przyciągania na rzucie lub w 3D',
+  'Click to run on model or selection': 'Kliknij, aby zastosować do modelu lub zaznaczenia',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

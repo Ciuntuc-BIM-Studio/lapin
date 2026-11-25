@@ -13192,6 +13192,11 @@ export const TH: Record<string, string> = {
   "LoadBearing in each element's Pset_…Common also where nothing says it, from the rule: a wall unless it is a partition, floors, roofs, columns, beams and footings; the elements whose Structural tick or LoadBearing property says it are written so either way": "LoadBearing ใน Pset_…Common ของแต่ละองค์ประกอบแม้ในที่ที่ไม่มีอะไรระบุ ตามกฎ: ผนังยกเว้นผนังกั้นห้อง พื้น หลังคา เสา คาน และฐานราก องค์ประกอบที่เครื่องหมาย โครงสร้าง หรือคุณสมบัติ LoadBearing ระบุไว้จะถูกเขียนเช่นนั้นอยู่แล้ว",
   "Write derived LoadBearing": "เขียน LoadBearing ที่อนุมานได้",
   "The Structural tick (or Pset_WallCommon.LoadBearing) on the wall or its type": "เครื่องหมาย โครงสร้าง (หรือ Pset_WallCommon.LoadBearing) ที่ผนังหรือประเภทของผนัง",
+  // Game-like UX Phase 4 (docs/plan-ux-game-like.md).
+  'Click start → Click end or type length': 'คลิกจุดเริ่มต้น → คลิกจุดสิ้นสุด หรือพิมพ์ความยาว',
+  'Click corner → Opposite corner or W,H': 'คลิกมุม → มุมตรงข้าม หรือ กว้าง,สูง',
+  'Click a snapped point on the plan or 3D': 'คลิกจุดสแนปบนแปลนหรือ 3D',
+  'Click to run on model or selection': 'คลิกเพื่อใช้งานกับโมเดลหรือส่วนที่เลือก',
 };
 
 /** Phrases with a number or a name in them. */

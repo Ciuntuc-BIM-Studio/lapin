@@ -7075,6 +7075,11 @@ export const ES: Record<string, string> = {
   "LoadBearing in each element's Pset_…Common also where nothing says it, from the rule: a wall unless it is a partition, floors, roofs, columns, beams and footings; the elements whose Structural tick or LoadBearing property says it are written so either way": "LoadBearing en el Pset_…Common de cada elemento también donde nada lo dice, según la regla: un muro salvo que sea un tabique, forjados, cubiertas, pilares, vigas y cimentaciones; los elementos cuya marca Estructural o propiedad LoadBearing lo dice se escriben así de todos modos",
   "Write derived LoadBearing": "Escribir LoadBearing deducido",
   "The Structural tick (or Pset_WallCommon.LoadBearing) on the wall or its type": "La marca Estructural (o Pset_WallCommon.LoadBearing) en el muro o su tipo",
+  // Game-like UX Phase 4 (docs/plan-ux-game-like.md).
+  'Click start → Click end or type length': 'Clic inicio → Clic fin o escribe la longitud',
+  'Click corner → Opposite corner or W,H': 'Clic esquina → Esquina opuesta o A,A',
+  'Click a snapped point on the plan or 3D': 'Clic en un punto de referencia en planta o 3D',
+  'Click to run on model or selection': 'Clic para ejecutar en el modelo o selección',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

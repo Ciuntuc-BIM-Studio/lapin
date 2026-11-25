@@ -88,6 +88,9 @@ import { arcOf, axisLine, riseThrough } from './arc';
 import { PICKED, arrivingDir, circleOutline, ellipseOutline, loopOf, pickOutline, rectangleOutline, tangentRise, useOutlineShape } from './outlineShape';
 import { useLang } from '../i18n';
 import { others, reportPresence, useShare } from '../engine/share';
+import { useInterface } from '../app/interface';
+import { missionTargets, useOnboarding } from '../app/onboarding';
+import { equalSpacingMagnets, storeyAnchorPoints } from './smartMagnets';
 
 /** The radius of the arc from a to b through p (Infinity: in line). */
 function radiusOf(a: Vec2, b: Vec2, p: Vec2): number {
@@ -1122,6 +1125,14 @@ export function PlanView() {
   useEffect(() => () => setDrawnPath(null), []);
 
   const marker = hover && (tool?.gesture || editor.dragging || cadStep?.want === 'point' || cadStep?.snap || dragTrace) ? toScreen(hover.point) : null;
+  const obOpen = useOnboarding((s) => s.open && s.sandbox);
+  const workspace = useInterface((s) => s.workspace);
+  const ghostTargets = obOpen ? missionTargets(workspace) : [];
+  const magnets = useMemo(() => {
+    if (!hover || !tool?.gesture || !storey) return [];
+    const anchors = storeyAnchorPoints(nodes.values(), storey.id);
+    return equalSpacingMagnets(hover.point, anchors);
+  }, [hover, tool?.gesture, storey, nodes]);
 
   return (
     <div className="view-pane">
@@ -1251,6 +1262,34 @@ export function PlanView() {
         {pts.map((p, i) => { const s = toScreen(p); return <circle key={i} cx={s.x} cy={s.y} r={3} className="plan-vertex" />; })}
         {editor.render}
         <PlanOverlays toScreen={toScreen} toWorld={toWorld} scale={view.scale} rotation={rot} view={{ id: ownPlan ?? null, storeyId: storey?.id ?? null }} />
+        {ghostTargets.map((gt) => {
+          const sa = toScreen(gt.a);
+          if (gt.kind === 'point' || !gt.b) {
+            return (
+              <g key={gt.id} className="mission-ghost" aria-hidden="true">
+                <circle cx={sa.x} cy={sa.y} r={10} />
+                <text x={sa.x + 14} y={sa.y + 4}>{gt.label}</text>
+              </g>
+            );
+          }
+          const sb = toScreen(gt.b);
+          return (
+            <g key={gt.id} className="mission-ghost" aria-hidden="true">
+              <line x1={sa.x} y1={sa.y} x2={sb.x} y2={sb.y} />
+              <text x={(sa.x + sb.x) / 2} y={(sa.y + sb.y) / 2 - 8} textAnchor="middle">{gt.label}</text>
+            </g>
+          );
+        })}
+        {magnets.map((mg, i) => {
+          const sa = toScreen(mg.a), sm = toScreen(mg.mid), sb = toScreen(mg.b);
+          return (
+            <g key={`mag-${i}`} className="smart-magnet" aria-hidden="true">
+              <line x1={sa.x} y1={sa.y} x2={sb.x} y2={sb.y} />
+              <text x={(sa.x + sm.x) / 2} y={(sa.y + sm.y) / 2 - 6} textAnchor="middle">=</text>
+              <text x={(sm.x + sb.x) / 2} y={(sm.y + sb.y) / 2 - 6} textAnchor="middle">=</text>
+            </g>
+          );
+        })}
         {preview}
         {refPt && pts.length > 0 && <DatumMark at={toScreen(refPt)} />}
         <Crosshair at={marker ?? (hover ? toScreen(hover.point) : null)} width={size.w} height={size.h} />

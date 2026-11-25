@@ -12,9 +12,10 @@
  */
 
 import { keyIsForField } from './overlayKeys';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { X } from 'lucide-react';
+import { PrecisionPill } from './PrecisionPill';
 import { notify, useUi } from '../app/store';
 import { useDisplay } from '../app/display';
 import { claimValue } from '../app/valueOwner';
@@ -46,6 +47,8 @@ export function Move3D({ camera, canvas, scene, invalidate }: ViewRefs & { inval
   const level = () => num(activeStorey() ?? undefined, 'elevation');
   /** Shift held the lock: letting Shift go lets it go. */
   const shiftLock = useRef(false);
+  /** Visual 350 ms progress ring at the cursor while holding to grab & move in 3D. */
+  const [holdRing, setHoldRing] = useState<{ x: number; y: number } | null>(null);
 
   // What is carried on the screen: the elements moved, their openings and fills, with where they stood.
   const carried = useRef(new Map<THREE.Object3D, THREE.Vector3>());
@@ -204,12 +207,14 @@ export function Move3D({ camera, canvas, scene, invalidate }: ViewRefs & { inval
     const end = () => {
       clearTimeout(timer);
       press = null;
+      setHoldRing(null);
       const c = glass();
       if (c) c.style.cursor = '';
     };
     const hold = () => {
       if (!press) return;
       press.held = true;
+      setHoldRing(null);
       const c = glass();
       if (!c) return;
       c.style.cursor = 'move';
@@ -230,6 +235,8 @@ export function Move3D({ camera, canvas, scene, invalidate }: ViewRefs & { inval
       if (!hit || !shownSelection(ui.selected, nodes, relations).has(hit.nodeId)) return;
       // The press goes on to the orbit (and to the click that picks); only the hold makes it a move's.
       press = { x: e.clientX, y: e.clientY, id: hit.nodeId, pointer: e.pointerId, held: false };
+      const rect = canvas.current?.getBoundingClientRect();
+      if (rect) setHoldRing({ x: e.clientX - rect.left, y: e.clientY - rect.top });
       timer = window.setTimeout(hold, HOLD_MS);
     };
     const onMove = (e: PointerEvent) => {
@@ -259,7 +266,14 @@ export function Move3D({ camera, canvas, scene, invalidate }: ViewRefs & { inval
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, dragOn, canvas, scene]);
 
-  if (!active) return null;
+  if (!active) return (
+    holdRing ? (
+      <svg className="grip-overlay hold-ring-overlay" aria-hidden="true">
+        <circle cx={holdRing.x} cy={holdRing.y} r={14} className="hold-ring-track" />
+        <circle cx={holdRing.x} cy={holdRing.y} r={14} className="hold-ring-progress" />
+      </svg>
+    ) : null
+  );
   const project = projector(refs);
   const to = target();
   const at = st.at;
@@ -286,12 +300,20 @@ export function Move3D({ camera, canvas, scene, invalidate }: ViewRefs & { inval
       </svg>
       {cur && at && <div className={`face-sketch-snap-name ${at.color ?? ''}`} style={{ left: cur.x + 10, top: cur.y + 8 }} data-move3d="inference">{at.kind}</div>}
       {cur && st.base && (
-        <div className="axis-drag-value" style={{ left: cur.x + 18, top: cur.y - 30 }} data-move3d="value">
-          <input value={st.text} placeholder={label || '…'} aria-label="Measurements" spellCheck={false} data-move3d="vcb"
-            className={st.text && !typedTarget(st.text, st.base, at?.point ?? null, (x) => parseLength(x)) ? 'bad' : undefined}
-            onChange={(e) => useMove3d.setState({ text: e.target.value })}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); enterRef.current(); } }} />
-        </div>
+        <PrecisionPill
+          x={cur.x + 18}
+          y={cur.y - 30}
+          text={st.text}
+          placeholder={label || '…'}
+          bad={Boolean(st.text && !typedTarget(st.text, st.base, at?.point ?? null, (x) => parseLength(x)))}
+          badge={st.lock ? st.lock.axis.toUpperCase() : at?.kind ?? null}
+          badgeColor={st.lock?.axis ?? at?.color ?? null}
+          ariaLabel="Measurements"
+          dataContainerAttr={{ 'data-move3d': 'value' }}
+          dataTestAttr={{ 'data-move3d': 'vcb' }}
+          onChange={(v) => useMove3d.setState({ text: v })}
+          onEnter={() => enterRef.current()}
+        />
       )}
       <div className="axis-drag-chip mode-chip" data-move3d="chip">
         <span>{title}</span>

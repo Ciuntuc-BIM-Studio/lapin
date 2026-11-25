@@ -7029,6 +7029,11 @@ export const RO: Record<string, string> = {
   "LoadBearing in each element's Pset_…Common also where nothing says it, from the rule: a wall unless it is a partition, floors, roofs, columns, beams and footings; the elements whose Structural tick or LoadBearing property says it are written so either way": "LoadBearing în Pset_…Common al fiecărui element și acolo unde nimic nu-l spune, după regulă: un perete dacă nu e despărțitor, planșeele, acoperișurile, stâlpii, grinzile și fundațiile; elementele a căror bifă Structural sau proprietate LoadBearing îl spune sunt scrise așa oricum",
   "Write derived LoadBearing": "Scrie LoadBearing dedus",
   "The Structural tick (or Pset_WallCommon.LoadBearing) on the wall or its type": "Bifa Structural (sau Pset_WallCommon.LoadBearing) pe perete sau pe tipul lui",
+  // Game-like UX Phase 4 (docs/plan-ux-game-like.md).
+  'Click start → Click end or type length': 'Click început → Click capăt sau tastează lungimea',
+  'Click corner → Opposite corner or W,H': 'Click colț → Colțul opus sau L,H',
+  'Click a snapped point on the plan or 3D': 'Click pe un punct de snap în plan sau 3D',
+  'Click to run on model or selection': 'Click pentru a aplica pe model sau selecție',
 };
 
 /** Phrases with a number or a name in them. */

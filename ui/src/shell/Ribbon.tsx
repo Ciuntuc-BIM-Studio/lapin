@@ -10,6 +10,7 @@ import { quickToggleTheme, setPrefs, usePrefs } from '../app/prefs';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ChevronDown, FolderOpen, Moon, Printer, Redo2, Save, Search, Sun, Undo2 } from 'lucide-react';
 import { HelpMenu } from './HelpMenu';
+import { RichTooltip } from './RichTooltip';
 import { BrandName } from './BrandMark';
 import { useUi } from '../app/store';
 import { ribbonTabs } from '../platform/modules';
@@ -168,6 +169,18 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
       onPicked?.();
     }
   };
+  const [tip, setTip] = useState<{ tool: ToolDef; shortcut?: string; x: number; y: number } | null>(null);
+  const tipTimer = useRef(0);
+  useEffect(() => () => clearTimeout(tipTimer.current), []);
+  const tipProps = (tl: ToolDef, shortcut?: string) => ({
+    onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
+      clearTimeout(tipTimer.current);
+      const r = e.currentTarget.getBoundingClientRect();
+      tipTimer.current = window.setTimeout(() => setTip({ tool: tl, shortcut, x: r.left, y: r.bottom + 6 }), 600);
+    },
+    onMouseLeave: () => { clearTimeout(tipTimer.current); setTip(null); },
+    onMouseDown: () => { clearTimeout(tipTimer.current); setTip(null); },
+  });
   // A pulldown is lit while one of its tools is on, and marked by its arrow.
   const on = (tl: ToolDef) => tool === tl.id || !!tl.items?.some((x) => x.id === tool);
   const mark = (tl: ToolDef, size: number) => (tl.items?.length ? <ChevronDown className="pulldown-mark" size={size} strokeWidth={2} aria-hidden /> : null);
@@ -193,7 +206,7 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
             {g.tools.map((tl) => {
               const keys = bindingText(tl.id);
               return (
-                <button type="button" key={tl.id} className={`tool${on(tl) ? ' on' : ''}`} disabled={off(tl)} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label)} data-pulldown={tl.items?.length ? tl.id : undefined}>
+                <button type="button" key={tl.id} className={`tool${on(tl) ? ' on' : ''}`} disabled={off(tl)} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} {...tipProps(tl, keys ? keys.split(', ')[0] : undefined)} title={hint(tl.id, tl.label)} data-pulldown={tl.items?.length ? tl.id : undefined}>
                   <tl.icon size={22} strokeWidth={1.5} />
                   <span>{tl.label}{mark(tl, 10)}</span>
                   {keys && <kbd className="tool-key" data-no-i18n>{keys.split(', ')[0]}</kbd>}
@@ -213,6 +226,7 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
           <div className="group-label">{g.label}</div>
         </div>
       ))}
+      {tip && <RichTooltip tool={tip.tool} shortcut={tip.shortcut} x={tip.x} y={tip.y} />}
     </div>
   );
 }

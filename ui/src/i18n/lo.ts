@@ -7129,6 +7129,11 @@ export const LO: Record<string, string> = {
   "LoadBearing in each element's Pset_…Common also where nothing says it, from the rule: a wall unless it is a partition, floors, roofs, columns, beams and footings; the elements whose Structural tick or LoadBearing property says it are written so either way": "LoadBearing ໃນ Pset_…Common ຂອງແຕ່ລະອົງປະກອບ ເຖິງບ່ອນທີ່ບໍ່ມີຫຍັງບອກ, ຕາມກົດເກນ: ຝາ ເວັ້ນແຕ່ເປັນຝາກັ້ນ, ພື້ນ, ຫຼັງຄາ, ເສົາ, ຄານ ແລະ ຮາກຖານ; ອົງປະກອບທີ່ເຄື່ອງໝາຍ ໂຄງສ້າງ ຫຼື ຄຸນສົມບັດ LoadBearing ບອກ ຈະຖືກຂຽນແບບນັ້ນຢູ່ແລ້ວ",
   "Write derived LoadBearing": "ຂຽນ LoadBearing ທີ່ອະນຸມານ",
   "The Structural tick (or Pset_WallCommon.LoadBearing) on the wall or its type": "ເຄື່ອງໝາຍ ໂຄງສ້າງ (ຫຼື Pset_WallCommon.LoadBearing) ຢູ່ຝາ ຫຼື ປະເພດຂອງມັນ",
+  // Game-like UX Phase 4 (docs/plan-ux-game-like.md).
+  'Click start → Click end or type length': 'ຄລິກຈຸດເລີ່ມ → ຄລິກຈຸດສິ້ນສຸດ ຫຼື ພິມຄວາມຍາວ',
+  'Click corner → Opposite corner or W,H': 'ຄລິກມຸມ → ມຸມກົງກັນຂ້າມ ຫຼື ກວ້າງ,ສູງ',
+  'Click a snapped point on the plan or 3D': 'ຄລິກຈຸດ snap ໃນແຜນຜັງ ຫຼື 3D',
+  'Click to run on model or selection': 'ຄລິກເພື່ອໃຊ້ກັບໂມເດວ ຫຼື ສິ່ງທີ່ເລືອກ',
 };
 
 /** Phrases with a number or a name in them. */
