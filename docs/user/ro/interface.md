@@ -51,6 +51,27 @@ Sub părți, **Taburi**: debifează taburile din ribbon de care nu ai nevoie (un
 
 Lapin îți păstrează alegerea pe acest calculator, pentru tine. Aplicația desktop și browserul o țin separat. În browser, Lapin pornește în Compact când fereastra are sub 800 de pixeli înălțime, până alegi tu.
 
+## Flow și extrasele lui
+
+**View → Interfață…** are un al patrulea mod, **Flow**: vederea pe primul loc, ribbonul care coboară din taburi, ambele panouri laterale pliate în bare și uneltele rapide <kbd>1</kbd>–<kbd>9</kbd> plutind jos, peste vedere. Alegerea lui Flow pornește și **Extra Flow**. Nimic din ele nu apare până nu le alegi: celelalte moduri, și oricine nu alege Flow, păstrează fereastra așa cum o arată restul ghidului.
+
+Fiecare extra se pornește sau se oprește separat din **File → Preferințe… → General → Extra Flow** (tot acolo sunt **Pornește-le pe toate** și **Oprește-le pe toate**). Dacă alegi apoi alt mod, ele rămân cum erau.
+
+- **ViewCube în vederea 3D**: un cub mic în dreapta sus a vederii 3D; clic pe o față pentru Sus, Jos, cele patru laturi, **ISO**, iar **PERSP**/**ORTHO** schimbă proiecția. Stă la stânga planului-cheie sau a butonului lui, ca amândouă să rămână la îndemână.
+- **Bară de selecție deasupra vederii**: când e ceva selectat și nicio unealtă pornită, un rând în dreapta jos cu Mută, Copiază, Rotește, Preia și creează similar, Izolează, Ascunde și Șterge. Indicațiile arată tastele tale (Scurtături de tastatură…). Șterge face ce face tasta <kbd>Delete</kbd>.
+- **Starea modelului în linia de stare**: o etichetă care numără pereții foarte scurți, pereții sau stâlpii suprapuși și elementele fără nivel; clic pe ea pentru listă, iar ținta de lângă un rând îl selectează și face zoom la el.
+- **Un sfat de scurtătură după ce aceeași unealtă din panglică a fost apăsată de trei ori**: o singură dată pe unealtă, un mesaj cu tastele ei.
+- **Butoanele Plimbare și Plan + 3D înaintea filelor de vedere**: Plimbare pornește plimbarea în 3D (în prima încăpere a nivelului activ, altfel unde privește vederea 3D); Plan + 3D împarte vederea în plan și 3D, iar al doilea clic închide împărțirea. O împărțire făcută de tine rămâne neatinsă.
+- **Taste afișate ca butoane de tastatură în indiciul uneltei**: Shift, Space, Enter, Esc… desenate ca taste, aprinse cât le ții apăsate.
+- **Previzualizarea volumului la plasarea în 3D**: pereții și plăcile desenate în 3D își arată înălțimea ca un volum transparent înainte de clic.
+- **Ține apăsat X în 3D ca să privești prin obiecte în raze X**: ține <kbd>X</kbd> o clipă și vederea 3D trece în raze X până îl eliberezi; o apăsare scurtă pe X merge în continuare la linia de comandă (EXPLODE), iar tasta ținută nu mai scrie nimic.
+- **Trage unitatea unui câmp ca să-i schimbi valoarea**: trage la stânga sau la dreapta pe unitatea de după un câmp de lungime sau de număr (sau <kbd>Alt</kbd> și trage în câmp); <kbd>Shift</kbd> e mai fin, <kbd>Ctrl</kbd> mai grosier, iar valoarea se păstrează o dată, ca un singur pas de anulare, când eliberezi. Un câmp cu numere întregi rămâne întreg.
+- **Cărți de rol pe ecranul de start**: Arhitect, Inginer structurist, Drumuri și teren, Inginer instalații, Desen 2D sau Toate disciplinele, modul, stilul mouse-ului și **Sandbox ghidat** (un model mic, început, cu **Ajutor → Misiuni interactive…** pentru acel rol, un singur pas de anulare).
+
+Încă două stau separat, oprite până le alegi acolo: **Unelte rapide alese pentru spațiul de lucru** (uneltele 1–9 ale fiecărui spațiu de lucru, alese pentru disciplina lui; pornite când alegi o carte de rol; sloturile umplute de tine rămân), și **Sunete tactile de feedback (snap, plasare, undo)**; cât sunt pornite, un difuzor în linia de stare le oprește.
+
+În orice mod, Comenzi… (<kbd>Ctrl</kbd> <kbd>K</kbd>) are **Meniu radial** (<kbd>Alt</kbd> <kbd>Q</kbd>: uneltele obișnuite sau acțiunile selecției, într-un cerc la cursor), **Preia și creează similar** (<kbd>Alt</kbd> <kbd>I</kbd>: unealta elementului selectat, cu tipul lui), **Reluare construcție (time-lapse)** și semnele de cameră: <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>1</kbd>–<kbd>4</kbd> păstrează vederea 3D într-un semn, <kbd>Alt</kbd> <kbd>1</kbd>–<kbd>4</kbd> revine la ea. Toate se pot lega de alte taste din Scurtături de tastatură….
+
 ## Uneltele rapide
 
 Uneltele rapide sunt locurile numerotate de pe marginea din stânga a vederii, lipite de browserul proiectului, așa că se mută odată cu el; sunt mici și semi-transparente până când vine cursorul peste ele (View → Interface… le poate pune și plutind jos în vedere); tastele <kbd>1</kbd>–<kbd>9</kbd> le pornesc. Fiecare spațiu de lucru are uneltele lui: pornesc așa cum le dă ediția ta, iar tu le alegi singur:

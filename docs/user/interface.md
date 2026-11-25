@@ -51,6 +51,27 @@ Below the parts, **Tabs**: untick the ribbon tabs you do without (an architect m
 
 Lapin keeps your choice on this computer, for you. The desktop app and the browser keep theirs apart. In the browser, Lapin starts in Compact when the window is less than 800 pixels tall, until you choose.
 
+## Flow and its extras
+
+**View → Interface…** has a fourth mode, **Flow**: the view first, the ribbon dropping from its tabs, both side panels folded to rails and the quick tools <kbd>1</kbd>–<kbd>9</kbd> floating at the bottom of the view. Picking Flow also turns on the **Flow extras**. Nothing of them shows until you choose: the other modes, and everyone who never picks Flow, keep the window as the rest of this guide shows it.
+
+Each extra can be switched on or off by itself in **File → Preferences… → General → Flow extras** (**Turn all on** and **Turn all off** are there too). Choosing another mode afterwards leaves them as they are.
+
+- **ViewCube in the 3D view**: a small cube at the top right of the 3D view; click a face for Top, Bottom, the four sides, **ISO**, and **PERSP**/**ORTHO** to switch the projection. It stands left of the key plan, or of its button, so both stay within reach.
+- **Selection toolbar over the view**: with something selected and no tool on, a row at the bottom right with Move, Copy, Rotate, Pick & create similar, Isolate, Hide and Delete. Its tooltips show your own keys (Keyboard shortcuts…). Delete does what the <kbd>Delete</kbd> key does.
+- **Model health in the status line**: a pill that counts very short walls, walls or columns on top of one another and elements on no level; click it for the list, and the crosshair beside an entry selects it and zooms to it.
+- **A shortcut tip after the same ribbon tool is clicked three times**: once per tool, a notice with its keys.
+- **Walk and Plan + 3D buttons before the view tabs**: Walk starts walking in 3D (in the active level's first room, else where the 3D view looks); Plan + 3D splits the view into the plan and the 3D view, and a second click closes that split. A split you made yourself is left alone.
+- **Keys shown as keycaps in the tool hint**: Shift, Space, Enter, Esc… drawn as keys, lit while held.
+- **Volume preview while placing in 3D**: walls and floors drawn in 3D show their height as a see-through volume before the click.
+- **Hold X in 3D to look through in X-ray**: hold <kbd>X</kbd> for a moment and the 3D view turns X-ray until you let go; a quick tap of X still goes to the command line (EXPLODE), and the held key types nothing more.
+- **Drag a field's unit to change its value**: drag left or right on the unit after a length or number field (or <kbd>Alt</kbd>-drag in the field); <kbd>Shift</kbd> is finer, <kbd>Ctrl</kbd> coarser, and the value is kept once, as one undo step, when you let go. A field of whole numbers stays whole.
+- **Role cards on the start screen**: Architect, Structural engineer, Roads & site, MEP engineer, Drafting 2D or All disciplines, the mode, the mouse style and **Guided sandbox** (a small started model with **Help → Interactive missions…** for that role, one undo step).
+
+Two more stand on their own, off until chosen there: **Quick tools chosen for the workspace** (each workspace's 1–9 tools picked for that discipline; on when you pick a role card; the slots you filled yourself stay), and **Tactile feedback sounds (snap, place, undo)**; while they are on, a speaker in the status line mutes them.
+
+Whatever the mode, Commands… (<kbd>Ctrl</kbd> <kbd>K</kbd>) holds **Radial menu** (<kbd>Alt</kbd> <kbd>Q</kbd>: the common tools, or the selection's actions, in a ring at the pointer), **Pick & create similar** (<kbd>Alt</kbd> <kbd>I</kbd>: the selected element's tool with its type), **Build replay (time-lapse)** and the camera bookmarks: <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>1</kbd>–<kbd>4</kbd> keeps the 3D view in a bookmark, <kbd>Alt</kbd> <kbd>1</kbd>–<kbd>4</kbd> goes back to it. All of them can be bound to other keys in Keyboard shortcuts….
+
 ## Quick tools
 
 The quick tools are the numbered slots on the view's left edge, against the project browser, so they move with it; small and see-through until the pointer comes to them (View → Interface… can float them at the bottom of the view instead); the keys <kbd>1</kbd>–<kbd>9</kbd> start them. Each workspace has its own: they start as your edition gives them, and you choose them yourself:
