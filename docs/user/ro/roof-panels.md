@@ -110,13 +110,23 @@ Cu un profil, învelitoarea acoperișului **sunt** panourile lui: în 3D fiecare
 
 Acolo unde se întâlnesc două acoperișuri, panourile urmează învelitoarea așa cum e construită: apele unei aripi se opresc în doliile cu acoperișul principal, panourile la distanța de dolie de ele, iar apa principală e panotată în jurul aripii.
 
-Exportul IFC scrie încă învelitoarea ca o singură placă de acoperiș (panourile ca IfcCovering vin într-o etapă următoare), deci GlobalId-urile nu se schimbă.
-
 ![Panourile ca învelitoarea acoperișului în 3D](shots/roof-panels-3d.webp)
 
 În afișarea **Diagramă** panourile iau culoarea acoperișurilor, ca orice învelitoare.
 
 ![Același acoperiș în afișarea Diagramă](shots/roof-panels-3d-diagram.webp)
+
+## Panourile în IFC
+
+**Fișier → Exportă → Exportă IFC, Fragments sau BOS…** scrie fiecare panou al unui acoperiș care are un profil ca un **IfcCovering** de tipul **ROOFING**, piesă a acoperișului (în locul plăcii de acoperiș a învelitorii, deci învelitoarea nu apare niciodată de două ori), la fel în IFC4 și IFC4X3. Corpul fiecărui panou e placa pe care o arată desenele, de grosimea învelitorii peste ce acoperă; tabla profilată rămâne a vederii 3D. Fiecare are:
+
+- setul **Lapin_RoofPanel**: codul (A01-02-01), profilul, culoarea, apa, lungimea nominală, lățimea totală și cea utilă și petrecerea pe pantă ale profilului, aria pe care o acoperă, panta apei, coloana și rândul, iar la un rest refolosit panoul din care e tăiat (CutFrom) și cu cât e decalat, la panoul care dă restul codul restului (OffcutTo);
+- **Qto_CoveringBaseQuantities**: grosimea învelitorii (Width), tabla așa cum e așezată (GrossArea) și ce acoperă (NetArea); NetArea a panourilor însumată dă acoperirea panotajului;
+- materialul tablei vopsite, ca în 3D.
+
+Panourile fiecărei ape sunt un **IfcGroup** cu numele apei (A01, A02…; tipul Roof plane, descrierea numele acoperișului), cu setul **Lapin_RoofPlane**: panta, aria apei, ce acoperă panourile ei și câte sunt. GlobalId-urile panourilor vin din cel al acoperișului și codul panoului, deci un al doilea export, sau unul după modificări în altă parte, dă aceleași; se schimbă doar când se schimbă panotajul. Un acoperiș lăsat afară din export (un tip, un nivel, o fază sau ce ascunde vederea 3D) își lasă afară și panourile; cu **Părți: câte un corp fiecare** acoperișul e un singur corp, cu panourile în el. Acoperișul își păstrează cantitățile lui (Qto_RoofBaseQuantities, Lapin_RoofCoveringQuantities, Lapin_RoofPanelQuantities).
+
+Deschis din nou în Lapin, acoperișul e nativ, cu profilul lui, iar panourile sunt din nou panotajul lui (niciodată un al doilea rând de panouri deasupra); într-un fișier din alt program, panourile vin ca referințe.
 
 ## Extrasele panourilor de acoperiș
 

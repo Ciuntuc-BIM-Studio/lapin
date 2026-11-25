@@ -110,13 +110,23 @@ With a profile, the roof's covering **is** its panels: in 3D each panel is a she
 
 Where two roofs meet, the panels follow the covering as it is built: a wing's slopes end on the valleys with the main roof, the panels kept the valley gap short of them, and the main slope is panelled round the wing.
 
-The IFC export still writes the covering as one roof slab (the panels as IfcCovering come in a later stage), so its GlobalIds do not change.
-
 ![The panels as the roof's covering in 3D](shots/roof-panels-3d.webp)
 
 In the **Diagram** display the panels take the roofs' colour, as any covering does.
 
 ![The same roof in the Diagram display](shots/roof-panels-3d-diagram.webp)
+
+## The panels in IFC
+
+**File → Export → Export IFC, Fragments or BOS…** writes each panel of a roof that has a profile as an **IfcCovering** of the kind **ROOFING**, part of the roof (in place of the covering's roof slab, so the covering is never there twice), in IFC4 and IFC4X3 alike. Each panel's body is the plate the drawings show, of the covering's thickness over what it covers; the profiled sheet stays the 3D view's. Each carries:
+
+- the set **Lapin_RoofPanel**: its code (A01-02-01), the profile, the colour, its roof plane, its nominal length, the profile's whole and useful widths and slope lap, the area it covers, the plane's pitch, its column and row, and for a reused offcut the panel it is cut from (CutFrom) and by how much it is shifted, for the panel that gives it the offcut's code (OffcutTo);
+- **Qto_CoveringBaseQuantities**: the covering's thickness (Width), the sheet as laid (GrossArea) and what it covers (NetArea); the NetArea of the panels adds up to the layout's coverage;
+- the painted sheet's material, as in 3D.
+
+The panels of each roof plane are an **IfcGroup** named after the plane (A01, A02…; its type Roof plane, its description the roof's name), with the set **Lapin_RoofPlane**: the pitch, the plane's area, what its panels cover and how many they are. The panels' GlobalIds come from the roof's and the panel's code, so a second export, or one after edits elsewhere, gives the same ones; they change only when the layout does. A roof left out of the export (a kind, a storey, a phase or what the 3D view hides) leaves its panels out with it; with **Parts: one body each** the roof is one body, the panels included. The roof itself keeps its own quantities (Qto_RoofBaseQuantities, Lapin_RoofCoveringQuantities, Lapin_RoofPanelQuantities).
+
+Opened again in Lapin, the roof is native, with its profile, and the panels are its layout again (never a second set of panels on top); in a file from another program, the panels come in as references.
 
 ## Roof panels schedules
 

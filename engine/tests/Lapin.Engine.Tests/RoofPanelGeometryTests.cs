@@ -12,7 +12,7 @@ namespace Lapin.Engine.Tests;
 /// <summary>
 /// What the roof panel layout shows (docs/plan-roof-panels.md, stage S2): on a roof that names a profile, the covering is
 /// its panels, a part each (a closed profiled sheet in 3D, a plate of the covering's thickness over what it covers for the
-/// drawings), the reused offcuts orange, the panels' outlines in plan; the IFC export keeps the covering until stage S6;
+/// drawings), the reused offcuts orange, the panels' outlines in plan; the IFC export's geometry the panels' plates (stage S6);
 /// a roof another roof cuts (decision 847) is panelled as it is built; the Roof panels schedule is shipped.
 /// </summary>
 public class RoofPanelGeometryTests
@@ -116,7 +116,7 @@ public class RoofPanelGeometryTests
     }
 
     [Fact]
-    public void Reused_offcuts_are_orange_and_the_IFC_export_keeps_the_covering()
+    public void Reused_offcuts_are_orange_and_the_IFC_export_writes_the_panels()
     {
         var f = New();
         var roof = AddRoof(f, Pts((0, 0), (12, 0), (12, 6), (6, 6), (6, 11), (0, 11)), new JsonObject { ["shape"] = "hip", ["pitch"] = 35, ["overhang"] = 0.5 });
@@ -126,10 +126,14 @@ public class RoofPanelGeometryTests
         var parts = f.Session.Geometry(roof)!.Parts.Where(p => p.Key?.StartsWith("panel:", StringComparison.Ordinal) == true).ToList();
         Assert.All(parts, p => Assert.Equal(reused.Contains(p.Key!), p.Color == PanelBodies.Reused));
         Assert.Contains(parts.Single(p => reused.Contains(p.Key!) && p.Key == "panel:A04-01-01").Properties!, x => x == ("CutFrom", "A01-01-01"));
-        // The IFC export's geometry: the covering as before (the panels as IfcCovering are stage S6), so its GlobalIds stay.
+        // The IFC export's geometry (stage S6): the panels in place of the covering, each its plate (no profiled sheet made), with its plane as a group.
         var ifc = f.Session.Geometry(roof, new GeometryOptions(CutOpenings: false))!;
-        Assert.Contains(ifc.Parts, p => p.Key == "covering");
-        Assert.DoesNotContain(ifc.Parts, p => p.Key?.StartsWith("panel:", StringComparison.Ordinal) == true);
+        Assert.DoesNotContain(ifc.Parts, p => p.Key == "covering");
+        var ifcPanels = ifc.Parts.Where(p => p.Key?.StartsWith("panel:", StringComparison.Ordinal) == true).ToList();
+        Assert.Equal(parts.Select(p => p.Key).Order(), ifcPanels.Select(p => p.Key).Order());
+        Assert.All(ifcPanels, p => Assert.Null(p.Mesh));
+        Assert.All(ifcPanels, p => Assert.Equal(p.Key!.Substring("panel:".Length, 3), p.Group!.Key));
+        Assert.Contains(ifcPanels.Single(p => p.Key == "panel:A01-01-01").Properties!, x => x.Name == "OffcutTo" && x.Value.Split(", ").Contains("A04-01-01"));
         // No profile: the covering is back, in one undo step.
         f.Session.Undo();
         Assert.Contains(f.Session.Geometry(roof)!.Parts, p => p.Key == "covering");

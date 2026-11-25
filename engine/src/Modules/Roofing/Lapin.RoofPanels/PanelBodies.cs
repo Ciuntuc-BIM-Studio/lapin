@@ -14,8 +14,8 @@ namespace Lapin.RoofPanels;
 /// each row and column a little proud of the one it laps so they never fight), simplified to a few facets a wave; in plans,
 /// elevations and sections a flat plate of the covering's thickness over what the panel covers, so a drawing shows every
 /// joint and the covering as thick as before, never thousands of lines of corrugation. Worked out on every ask from the
-/// layout (cached per model revision), never stored; an IFC export keeps the covering as it was (the panels as
-/// IfcCovering come with stage S6), and its GlobalIds with it.
+/// layout (cached per model revision), never stored. The IFC export (stage S6) writes each panel's plate as an IfcCovering
+/// ROOFING aggregated by the roof, in place of the covering slab, with its own set, quantities and its roof plane as an IfcGroup.
 /// </summary>
 public sealed class PanelBodies : IGeometryFilter
 {
@@ -25,8 +25,9 @@ public sealed class PanelBodies : IGeometryFilter
     public ElementGeometry? Apply(Entity entity, ElementGeometry geometry, IModelView model, IServices services)
     {
         if (entity.Class != IfcClass.Roof || RoofPanels.ChoiceOf(entity) == null) return null;
-        // The IFC export writes the covering as it was until the panels are IfcCovering (S6).
-        if (services.Get<GeometryOptions>()?.CutOpenings == false) return null;
+        // The IFC export (stage S6) writes each panel as an IfcCovering ROOFING of the roof in place of its covering: its body the
+        // plate the drawings show (the profiled sheet, thousands of facets a panel, is the 3D view's alone).
+        var ifc = services.Get<GeometryOptions>()?.CutOpenings == false;
         if (Roof.Resolve(entity, model) is not { } r || r.Flat || r.Barrel) return null;
         if (RoofPanels.Of(entity, model) is not { } layout) return null;
         string key;
@@ -44,7 +45,7 @@ public sealed class PanelBodies : IGeometryFilter
         var colour = layout.Profile.Colors.FirstOrDefault(c => c.Code == layout.Color)?.Rgb ?? covering.Color;
         // The panels' own painted material (made by the command); the covering's when a project from before it has none.
         var material = Materials.Find(model, RoofPanels.MaterialName(layout.Profile, layout.Color))?.Id ?? covering.Material;
-        foreach (var part in Parts(layout, below, Math.Max(0.002, thickness), colour, material))
+        foreach (var part in Parts(layout, below, Math.Max(0.002, thickness), colour, material, ifc))
             parts.Add(part);
         // In plan each panel's outline (what it covers), overhead as the roof's other lines, on plans of 1:200 and larger.
         foreach (var p in layout.Result.Panels)
@@ -52,17 +53,33 @@ public sealed class PanelBodies : IGeometryFilter
         return geometry with { Parts = parts, Plan = plan, Instance = null };
     }
 
-    /// <summary>A part per panel of the layout, its bottom <paramref name="below"/> over its plane (along the normal), its plate <paramref name="thickness"/> thick.</summary>
-    public static IEnumerable<GeometryPart> Parts(RoofPanels.Layout l, double below, double thickness, string colour, string? material)
+    /// <summary>
+    /// A part per panel of the layout, its bottom <paramref name="below"/> over its plane (along the normal), its plate <paramref name="thickness"/> thick.
+    /// Each says what IFC writes of it (stage S6, plan §2.6): the set <c>Lapin_RoofPanel</c> (its code, profile, colour, plane, the
+    /// offcut it is cut from or gives, its nominal length, widths, slope lap, covered area, the plane's pitch, its column and row),
+    /// <c>Qto_CoveringBaseQuantities</c> (the covering's thickness, the sheet's area as laid and what it covers) and its roof plane
+    /// as a group. <paramref name="ifc"/>: for the IFC export, the plate alone (no profiled sheet made).
+    /// </summary>
+    public static IEnumerable<GeometryPart> Parts(RoofPanels.Layout l, double below, double thickness, string colour, string? material, bool ifc = false)
     {
         var reuse = l.Result.Reuse;
+        var gives = reuse.GroupBy(kv => kv.Value.Donor).ToDictionary(g => g.Key, g => string.Join(", ", g.Select(kv => kv.Key).Order(StringComparer.Ordinal)));
         var lastColumn = l.Result.Panels.GroupBy(p => p.Face.Id).ToDictionary(g => g.Key, g => g.Max(p => p.Col));
+        var planes = new Dictionary<string, PartGroup>();
+        PartGroup Plane(RoofFace face)
+        {
+            if (planes.TryGetValue(face.Id, out var g)) return g;
+            var mine = l.Result.Panels.Where(x => x.Face == face && x.Net.Count >= 3 && Clip.Area(x.Net) >= 1e-8).ToList();
+            return planes[face.Id] = new PartGroup(face.Id, face.Id, l.Roof.Name, "Roof plane", "Lapin_RoofPlane",
+                [("RoofPlane", face.Id), ("Profile", l.Profile.Name)],
+                [new("Pitch", face.PitchDegrees, "ANGLE"), new("Area", Clip.Area(face.Poly), "AREA"), new("CoveredArea", mine.Sum(x => Clip.Area(x.Net)), "AREA"), new("Panels", mine.Count, "COUNT")]);
+        }
         foreach (var p in l.Result.Panels)
         {
             var donor = reuse.TryGetValue(p.Id, out var d) ? d.Donor : null;
             var order = l.Profile.OnOrder ? lastColumn[p.Face.Id] - p.Col + 1 : p.Col;
-            var mesh = Sheet(p, l.Profile, below, order);
-            if (mesh.Tris.Length == 0) continue;
+            var mesh = ifc ? default : Sheet(p, l.Profile, below, order);
+            if (!ifc && mesh.Tris.Length == 0) continue;
             var face = p.Face;
             var cos = Math.Max(1e-6, face.N.Z);
             var net = p.Net.Select(v => face.Xyz(v, below)).ToList();
@@ -70,17 +87,32 @@ public sealed class PanelBodies : IGeometryFilter
             if (net.Count < 3 || Clip.Area(p.Net) < 1e-8) continue;
             // Each panel a shade apart from its neighbours, as the app colours them; a reused offcut orange.
             var shade = donor != null ? Reused : (p.Col + p.Row) % 2 == 1 ? HexColor.Mix(colour, 0.08) : colour;
-            List<(string, string)> props =
-            [
-                ("Code", p.Id), ("Profile", l.Profile.Name), ("Length", p.Length.ToString(CultureInfo.InvariantCulture)),
-                ("RoofPlane", face.Id), ("Column", p.Col.ToString(CultureInfo.InvariantCulture)), ("Row", p.Row.ToString(CultureInfo.InvariantCulture)),
-            ];
+            List<(string, string)> props = [("Code", p.Id), ("Profile", l.Profile.Name), ("RoofPlane", face.Id)];
             if (l.Color != null) props.Add(("Colour", l.Color));
             if (donor != null) props.Add(("CutFrom", donor));
-            yield return new GeometryPart($"Panel {p.Id} · {p.Length} mm", shade, mesh, Plate, material, $"panel:{p.Id}")
+            if (gives.TryGetValue(p.Id, out var to)) props.Add(("OffcutTo", to));
+            List<PartMeasure> measures =
+            [
+                new("Length", p.Length / 1000.0, "LENGTH"), new("GrossWidth", l.Profile.Gross, "LENGTH"), new("UsefulWidth", l.Profile.Width, "LENGTH"),
+                new("SlopeLap", l.Profile.Lap, "LENGTH"), new("CoveredArea", Clip.Area(p.Net), "AREA"), new("Pitch", face.PitchDegrees, "ANGLE"),
+                new("Column", p.Col, "COUNT"), new("Row", p.Row, "COUNT"),
+            ];
+            if (d.Donor != null) measures.Add(new("Shift", d.Shift / 1000.0, "LENGTH"));
+            QuantitySet qto = new("Qto_CoveringBaseQuantities",
+            [
+                new("Width", thickness, "LENGTH", "Thickness"),
+                new("GrossArea", Clip.Area(p.Poly), "AREA", "The sheet as laid"),
+                new("NetArea", Clip.Area(p.Net), "AREA", "What it covers"),
+            ]);
+            var name = $"Panel {p.Id} · {p.Length} mm";
+            var key = $"panel:{p.Id}";
+            yield return (ifc ? new GeometryPart(name, shade, Plate(), material, key) : new GeometryPart(name, shade, mesh, Plate, material, key)) with
             {
                 PropertySet = "Lapin_RoofPanel",
                 Properties = props,
+                Measures = measures,
+                Quantities = [qto],
+                Group = Plane(face),
             };
         }
     }
