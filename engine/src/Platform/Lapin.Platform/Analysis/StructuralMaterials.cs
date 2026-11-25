@@ -145,7 +145,10 @@ public static partial class StructuralMaterials
             e ??= new(210e9, "EN 1993-1-1:2005 §3.2.6: E = 210 000 MPa");
             nu ??= new(0.3, "EN 1993-1-1:2005 §3.2.6: ν = 0.3");
         }
-        else if (!saysConcrete && TimberClass().Match(name) is { Success: true } tm && Timber.FirstOrDefault(t => t.Key.Equals(tm.Groups[1].Value, StringComparison.OrdinalIgnoreCase)) is { Key: not null } tc)
+        // A bare timber class with a concrete's data or category is that concrete (C30 is also a concrete's name), whatever word a
+        // category adds (wood): its Ecm then comes from its fck, below, never a timber left without E.
+        else if (saysConcrete && TimberClass().IsMatch(name)) kind = "concrete";
+        else if (TimberClass().Match(name) is { Success: true } tm && Timber.FirstOrDefault(t => t.Key.Equals(tm.Groups[1].Value, StringComparison.OrdinalIgnoreCase)) is { Key: not null } tc)
         {
             kind = "timber";
             grade = tc.Key;

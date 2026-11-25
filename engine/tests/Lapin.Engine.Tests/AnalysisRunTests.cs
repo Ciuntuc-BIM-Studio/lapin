@@ -469,6 +469,40 @@ public class AnalysisRunTests
         Assert.Equal("timber", StructuralMaterials.Of(f.Model, other).Kind);
     }
 
+    /// <summary>
+    /// A C30 whose data says concrete (Pset_MaterialConcrete) while its category says wood: the concrete's own properties win over
+    /// the category word, so it is a concrete with Ecm from its fck, never a timber left without E (the EN 338 row skipped for the
+    /// Pset, the word "wood" then making it timber with nothing to give it E). A plain C30 with a wood category stays EN 338 timber.
+    /// </summary>
+    [Fact]
+    public void A_timber_class_name_with_a_concretes_data_and_a_wood_category_is_concrete()
+    {
+        var f = LoadCaseTests.F();
+        var conflicting = new Entity("c30-pset-wood", IfcClass.Material, "C30", new JsonObject
+        {
+            ["ifcCategory"] = "wood",
+            ["params"] = new JsonArray(new JsonObject { ["name"] = "CompressiveStrength", ["pset"] = "Pset_MaterialConcrete", ["value"] = 30e6 }),
+        });
+        var mat = StructuralMaterials.Of(f.Model, conflicting);
+        Assert.Equal("concrete", mat.Kind);
+        Assert.Equal(30e6, mat.Fc!.Value, 1e-3);
+        Assert.Equal(22e9 * Math.Pow((30 + 8) / 10.0, 0.3), mat.E!.Value, 1e3);
+        Assert.Contains("EN 1992-1-1:2004 Table 3.1", mat.E.Source);
+        Assert.Equal(0.2, mat.Poisson!.Value);
+
+        var ownWood = new Entity("c30-own-wood", IfcClass.Material, "C30", new JsonObject
+        {
+            ["category"] = "Wood",
+            ["params"] = new JsonArray(new JsonObject { ["name"] = "CompressiveStrength", ["pset"] = "Pset_MaterialConcrete", ["value"] = 30e6 }),
+        });
+        Assert.Equal("concrete", StructuralMaterials.Of(f.Model, ownWood).Kind);
+
+        var plain = StructuralMaterials.Of(f.Model, new Entity("c30-plain-wood", IfcClass.Material, "C30", new JsonObject { ["category"] = "Wood" }));
+        Assert.Equal("timber", plain.Kind);
+        Assert.Equal("C30", plain.Grade);
+        Assert.Equal(12e9, plain.E!.Value, 1e-3);
+    }
+
     [Fact]
     public void A_standard_set_comes_before_the_materials_own_strength()
     {
