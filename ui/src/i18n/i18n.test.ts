@@ -245,7 +245,7 @@ describe('the languages', () => {
 
   it('says the game-like UX notices in Romanian, a tool\'s name translated too', () => {
     expect(translate('Tip: press WA to start Wall instantly.', 'ro')).toBe('Sfat: apasă WA ca să pornești Perete instant.');
-    expect(translate('Camera bookmark 2 saved: Alt+2 jumps back to it.', 'ro')).toBe('Semnul de cameră 2 salvat: Alt+2 revine la el.');
+    expect(translate('Camera bookmark 2 saved: Alt+2 jumps back to it.', 'ro')).toBe('Poziția de cameră 2 salvată: Alt+2 revine la ea.');
     expect(translate('4 issues', 'ro')).toBe('4 probleme');
   });
 
