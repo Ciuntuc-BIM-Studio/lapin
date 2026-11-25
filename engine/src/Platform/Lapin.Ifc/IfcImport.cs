@@ -759,15 +759,18 @@ public static partial class IfcImport
         };
 
         /// <summary>
-        /// A foreign material's IfcMaterial.Description and IfcMaterialProperties read into the project's material: the description
-        /// when it has none, each property it lacks as a parameter (a standard set's by its own names, Lapin_Material's as the user's
-        /// own, any other set as a set of the user's); null when nothing is added.
+        /// A foreign material's IfcMaterial.Description, Category and IfcMaterialProperties read into the project's material: the
+        /// description when it has none; the category (IFC4: a material class, concrete, steel, brick) as <c>ifcCategory</c>, beside
+        /// the project's own (a function: Structure, Finish… which finishes, view styles and drawings read), for the analysis to tell
+        /// the material's kind and for export to write back; each property it lacks as a parameter (a standard set's by its own names,
+        /// Lapin_Material's as the user's own, any other set as a set of the user's); null when nothing is added.
         /// </summary>
         Entity? ForeignData(Entity material, StepEntity mat)
         {
             var attrs = material.CloneAttrs();
             var changed = false;
             if (material.Str("description") is not { Length: > 0 } && mat.Args.Count > 1 && Str(mat[1]) is { Length: > 0 } description) { attrs["description"] = description; changed = true; }
+            if (material.Str("ifcCategory") is not { Length: > 0 } && mat.Args.Count > 2 && Str(mat[2])?.Trim() is { Length: > 0 } category) { attrs["ifcCategory"] = category; changed = true; }
             var list = attrs["params"] as JsonArray ?? [];
             foreach (var props in Rels.PropertiesOf[mat.Id])
             {

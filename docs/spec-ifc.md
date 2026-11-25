@@ -88,7 +88,7 @@ Fiecare element: `GlobalId` = id-ul lui, `Name`, `ObjectType` = numele tipului (
 
 | Lapin | IFC |
 |---|---|
-| `IfcMaterial` (nume, culoare, aspect pe tip de vedere) | `IFCMATERIAL` + `IFCMATERIALDEFINITIONREPRESENTATION` cu `IFCSTYLEDREPRESENTATION`: `IFCSURFACESTYLE` (culoarea 3D) și `IFCFILLAREASTYLE` cu `IFCFILLAREASTYLEHATCHING` (hașura secțiunii: unghi, distanță) (#52) |
+| `IfcMaterial` (nume, culoare, aspect pe tip de vedere) | `IFCMATERIAL` + `IFCMATERIALDEFINITIONREPRESENTATION` cu `IFCSTYLEDREPRESENTATION`: `IFCSURFACESTYLE` (culoarea 3D) și `IFCFILLAREASTYLE` cu `IFCFILLAREASTYLEHATCHING` (hașura secțiunii: unghi, distanță) (#52); `Category`: categoria proiectului, altfel cea dată de fișierul importat (`ifcCategory`: la import, `IfcMaterial.Category` al altui program, o clasă de material ca „concrete”, e păstrat lângă categoria proiectului și citit doar de calcul pentru felul materialului, #121) |
 | `IfcMaterialLayerSet`, `IfcMaterialLayerSetUsage` | `IFCMATERIALLAYERSET` (straturile cu grosime, `IsVentilated` nu, `Category` „LoadBearing” pe miez), `IFCMATERIALLAYERSETUSAGE` (`AXIS2`/`AXIS3`, sensul, offsetul) |
 | `IfcMaterialProfileSet` (profile structurale) | `IFCMATERIALPROFILESET` cu `IFCRECTANGLEPROFILEDEF`, `IFCCIRCLEPROFILEDEF`, `IFCISHAPEPROFILEDEF`, `IFCUSHAPEPROFILEDEF`, `IFCTSHAPEPROFILEDEF`, `IFCLSHAPEPROFILEDEF` |
 

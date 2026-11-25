@@ -21,7 +21,7 @@ public sealed record StructuralMaterial(string Id, string Name, string Kind, Mat
 /// Pset_MaterialCommon.MassDensity) in IFC's SI units, a value outside what any building material has refused rather than
 /// guessed at another unit; then the strength class its name says (C25/30, or HA-25 as Spanish names write it; S355) by
 /// EN 1992-1-1 Table 3.1 and EN 1993-1-1 Table 3.1 and §3.2.6; a concrete also by its words (concrete, beton, hormigón) or by
-/// carrying Pset_MaterialConcrete; the density of reinforced concrete and of steel by EN 1991-1-1 Annex A and EN 1993-1-1 §3.2.6.
+/// carrying Pset_MaterialConcrete, and any kind by the category an IFC file gave it; the density of reinforced concrete and of steel by EN 1991-1-1 Annex A and EN 1993-1-1 §3.2.6.
 /// Anything else stays null.
 /// </summary>
 public static partial class StructuralMaterials
@@ -92,7 +92,8 @@ public static partial class StructuralMaterials
         MaterialValue? density = MaterialMeasure.DensityOf(material) is { } rho && rho is > 1 and < 25000
             ? new(rho, $"project: material „{name}”, density (kg/m³)") : null;
 
-        var lower = $"{name} {fields.Category}".ToLowerInvariant();
+        // The project's category and the one an IFC file gave (IfcMaterial.Category, a material class: concrete, steel, brick).
+        var lower = $"{name} {fields.Category} {material.Str("ifcCategory")}".ToLowerInvariant();
         string kind = "other";
         string? grade = null, standard = null;
         if (ConcreteClass().Match(name) is { Success: true } cm && Concrete.TryGetValue($"C{cm.Groups[1].Value}/{cm.Groups[2].Value}", out var cc))

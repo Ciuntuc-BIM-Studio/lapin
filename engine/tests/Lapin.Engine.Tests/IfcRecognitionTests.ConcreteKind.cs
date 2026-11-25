@@ -9,7 +9,8 @@ namespace Lapin.Engine.Tests;
 /// <summary>
 /// A foreign file's concrete as the analysis reads it (issue #121, finding 2): a material that names no C class is concrete when
 /// its name is a Spanish designation (HA-25/B/20/IIa: EHE-08, Código Estructural) or says hormigón, or when it carries
-/// Pset_MaterialConcrete; its fck from the file's set or its name, its Ecm by EN 1992-1-1 Table 3.1.
+/// Pset_MaterialConcrete or its IfcMaterial.Category says concrete; its fck from the file's set or its name, its Ecm by EN 1992-1-1
+/// Table 3.1.
 /// </summary>
 public partial class IfcRecognitionTests
 {
@@ -70,5 +71,46 @@ public partial class IfcRecognitionTests
         Assert.Equal("concrete", other.Kind);
         Assert.Equal(30e6, other.Fc!.Value, 1e-3);
         Assert.Equal(22e9 * Math.Pow((30 + 8) / 10.0, 0.3), other.E!.Value, 1e3);
+    }
+
+    /// <summary>
+    /// IfcMaterial.Category as another program writes it (IFC4 recommends a material class: concrete, steel, brick): kept beside the
+    /// project's own category (Structure, Finish… which finishes, view styles and drawings read, left as it was), read by the
+    /// analysis for the material's kind, and written back as IfcMaterial.Category when the project gives none of its own.
+    /// </summary>
+    [Fact]
+    public void A_foreign_materials_category_says_its_kind_to_the_analysis_and_goes_back_to_ifc()
+    {
+        var x = new Foreign();
+        var concrete = x.F.Add("IFCMATERIAL", S("Mat-X"), Null, S("concrete"));
+        var plaster = x.F.Add("IFCMATERIAL", S("Lime plaster"), Null, S("Plaster"));
+        var wall = x.Element("IFCWALL", "wall", "W1", x.Place(2500, 0, 0), x.Shape(x.Box(0, 0, 0, 5000, 200, 2800)), E("STANDARD"));
+        x.Material(wall, concrete);
+        var wall2 = x.Element("IFCWALL", "wall2", "W2", x.Place(2500, 3000, 0), x.Shape(x.Box(0, 0, 0, 5000, 200, 2800)), E("STANDARD"));
+        x.Material(wall2, plaster);
+
+        var f = Full();
+        IfcImport.Run(f.Session, x.Write(Path.Combine(_dir, "concrete-category.ifc")), null, out _);
+        var m = f.Session.Model;
+
+        var matX = Materials.Find(m, "Mat-X")!;
+        Assert.Equal("concrete", matX.Str("ifcCategory"));
+        Assert.Null(matX.Str("category"));
+        var sm = StructuralMaterials.Of(m, matX);
+        Assert.Equal("concrete", sm.Kind);
+        Assert.Null(sm.E);
+
+        // The plaster stays a finish by its name: the file's category is not the project's.
+        var lime = Materials.Find(m, "Lime plaster")!;
+        Assert.Equal("Plaster", lime.Str("ifcCategory"));
+        Assert.True(Materials.IsFinish(lime));
+
+        // Back to IFC: the file's category when the project gives none; the project's own when it does.
+        f.Run("material.update", new System.Text.Json.Nodes.JsonObject { ["id"] = lime.Id, ["category"] = "Finish" });
+        var ifc = Path.Combine(_dir, "concrete-category-out.ifc");
+        IfcExport.Write(f.Session, ifc, null);
+        var text = File.ReadAllText(ifc);
+        Assert.Contains("IFCMATERIAL('Mat-X',$,'concrete')", text);
+        Assert.Contains("IFCMATERIAL('Lime plaster',$,'Finish')", text);
     }
 }
