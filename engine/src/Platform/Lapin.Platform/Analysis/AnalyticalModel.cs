@@ -137,6 +137,20 @@ public sealed class AnalyticalModel
     public const double PartitionThickness = 0.10;
     const string ThinPartition = "not load-bearing: says nothing of its load and is thinner than 10 cm (a partition)";
 
+    /// <summary>Why an element whose Structural tick (on it or its type) is cleared stays out of the model.</summary>
+    public const string NotStructural = "not structural (its Structural tick is cleared)";
+
+    /// <summary>
+    /// Whether a floor, a roof, a column, a beam or a member is said not to bear load (docs/plan-structural-usage.md, the
+    /// user's answer 5): the Structural tick cleared, or Pset_…Common.LoadBearing false, on it or its type. A wall keeps its
+    /// own rule (<see cref="UnsaidLeftOut"/>); what nothing is said of stays in, as before.
+    /// </summary>
+    static string? SaidNotBearing(IModelView m, string sourceId, string kind)
+    {
+        if (kind == "wall" || m.Get(sourceId) is not { } e || StructuralUsage.SaidOf(m, e) is not { Value: false } said) return null;
+        return said.Source is "own" or "type" ? NotStructural : e.Class.StartsWith("Ifc", StringComparison.Ordinal) ? $"not load-bearing (Pset_{e.Class[3..]}Common.LoadBearing false)" : "not load-bearing (LoadBearing false)";
+    }
+
     /// <summary>
     /// Why a wall that is not marked load-bearing stays out of the model (docs/plan-fem.md §11.10), null when it is taken: one
     /// whose LoadBearing (on it or its type) is false, or that IFC calls a partition, is out; one that says nothing is taken
@@ -144,7 +158,7 @@ public sealed class AnalyticalModel
     /// </summary>
     static string? UnsaidLeftOut(IModelView m, AnalyticalShell s)
     {
-        if (!s.Unsaid) return "not load-bearing (Pset_WallCommon.LoadBearing)";
+        if (!s.Unsaid) return m.Get(s.SourceId) is { } w && StructuralUsage.SaidOf(m, w)?.Source is "own" or "type" ? NotStructural : "not load-bearing (Pset_WallCommon.LoadBearing)";
         var kind = s.MaterialId == null ? null
             : StructuralMaterials.Of(m, (m.Get(s.MaterialId) is { Class: IfcClass.Material } own ? own : Materials.Find(m, s.MaterialId))
                 ?? new Entity($"lapin-material-{s.MaterialId}", IfcClass.Material, s.MaterialId, [])).Kind;
@@ -170,9 +184,11 @@ public sealed class AnalyticalModel
         model.Roofs.AddRange(all.Roofs.Where(r => options.Keeps(r.SourceId)));
 
         var bars = new List<Bar>();
+        var notBearing = new List<string>();
         foreach (var f in all.Frames)
         {
             if (!options.On(f.StoreyId)) continue;
+            if (SaidNotBearing(m, f.SourceId, f.Kind) is { } fwhy) { model.LeftOut.Add(new(f.SourceId, f.Name, f.IfcClass, fwhy)); notBearing.Add(f.Name); continue; }
             if (!options.Keeps(f.SourceId)) { model.LeftOut.Add(new(f.SourceId, f.Name, f.IfcClass, "left out of the export")); continue; }
             if (!options.Takes(f.Category)) { model.LeftOut.Add(new(f.SourceId, f.Name, f.IfcClass, $"{f.Category} not chosen")); continue; }
             if (f.Points.Count < 2) { model.LeftOut.Add(new(f.SourceId, f.Name, f.IfcClass, "no axis")); continue; }
@@ -183,6 +199,7 @@ public sealed class AnalyticalModel
         foreach (var s in all.Shells)
         {
             if (!options.On(s.StoreyId)) continue;
+            if (SaidNotBearing(m, s.SourceId, s.Kind) is { } swhy) { if (!model.LeftOut.Any(l => l.SourceId == s.SourceId && l.Reason == swhy)) { model.LeftOut.Add(new(s.SourceId, s.Name, s.IfcClass, swhy)); notBearing.Add(s.Name); } continue; }
             if (!options.Keeps(s.SourceId)) { model.LeftOut.Add(new(s.SourceId, s.Name, s.IfcClass, "left out of the export")); continue; }
             var kind = s.Kind == "wall" ? AnalyticalKinds.Walls : s.IfcClass == "IfcRoof" ? AnalyticalKinds.Roofs : AnalyticalKinds.Slabs;
             if (!options.Takes(kind)) { model.LeftOut.Add(new(s.SourceId, s.Name, s.IfcClass, $"{kind} not chosen")); continue; }
@@ -195,9 +212,12 @@ public sealed class AnalyticalModel
         }
         static string Names(List<string> xs) { var d = xs.Distinct().ToList(); return string.Join(", ", d.Take(6)) + (d.Count > 6 ? "…" : ""); }
         if (treated.Count > 0)
-            model.Notes.Add($"Walls that say nothing of their load taken as load-bearing (masonry or concrete, a core of {PartitionThickness * 100:0} cm or more): {Names(treated)}. Set Pset_WallCommon.LoadBearing to false on a partition to leave it out.");
+            model.Notes.Add($"Walls that say nothing of their load taken as load-bearing (masonry or concrete, a core of {PartitionThickness * 100:0} cm or more): {Names(treated)}. Clear Structural in a partition's properties to leave it out.");
         if (thin.Count > 0)
-            model.Notes.Add($"Walls that say nothing of their load, thinner than {PartitionThickness * 100:0} cm, taken as partitions (their weight on the floors): {Names(thin)}. Set Pset_WallCommon.LoadBearing to true on one that carries.");
+            model.Notes.Add($"Walls that say nothing of their load, thinner than {PartitionThickness * 100:0} cm, taken as partitions (their weight on the floors): {Names(thin)}. Tick Structural in the properties of one that carries.");
+        // An explicit false on a floor, a roof or a member (a Pset value typed before the tick existed too) leaves it out: said, so the user sees it.
+        if (notBearing.Count > 0)
+            model.Notes.Add($"Floors, roofs and members marked not load-bearing, left out of the analysis: {Names(notBearing)}. Tick Structural in the properties of one that carries.");
         var supports = options.Takes(AnalyticalKinds.Supports) ? all.Supports.Where(s => options.Keeps(s.SourceId) && options.Keeps(s.ForFrame)).ToList() : [];
 
         JoinEnds(bars);

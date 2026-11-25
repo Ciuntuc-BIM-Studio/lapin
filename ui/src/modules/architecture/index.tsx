@@ -26,6 +26,7 @@ import { drawsFlipped, setJoinStyle, setRememberLine, setWallLine, setWallLineOf
 import { LengthField } from '../../shell/cells';
 import { axisFromReference, referenceArc } from '../../viewport/wallReference';
 import { WallLayers } from './WallLayers';
+import { asStructural } from './structuralTools';
 import { mirrorLine, wallGhost } from './wallLine';
 import { newWallSection } from './newWallSection';
 import { WallDims } from './WallTempDims';
@@ -801,6 +802,8 @@ const architecture: LapinModule = {
     id: 'annotate', label: 'Annotate', order: 60,
     groups: [{ label: 'Rooms', tools: [colorLegend] }],
   }],
+  // The Structure tab's Wall and Floor (docs/plan-structural-usage.md): the same tools, what they draw marked Structural.
+  sharedGroups: { structuralBuild: { label: 'Walls and floors', tools: [asStructural(wall, 'structure.wall', 'Structural wall'), asStructural(slab, 'structure.floor', 'Structural floor')] } },
   legacyTools: [curvedWall, roomDividerArc, mitre, butt, swap, trimTool, extendTool, ...openingAliases, editStairSketchTool],
   hotbar: [wall, door, window_, slab, roof],
   propertySections: [

@@ -6227,6 +6227,47 @@ export const scenes = [
     },
   },
   {
+    // Decision 866 (forum topic 256, docs/plan-structural-usage.md): the Structural (load-bearing) tick in Properties, the Structure
+    // tab's Structural wall and floor, and a Structure plan drawing what is not structural halftone.
+    id: 'structural-usage',
+    touches: ['core', 'architecture', 'structure'],
+    async run(t) {
+      await t.fresh();
+      const { storey, walls } = await house(t, { roof: false });
+      // The inner wall a partition: its tick cleared; the outer ones by rule.
+      await t.cmd('element.setStructural', { ids: [walls.inner], value: false });
+      await t.cmd('element.setStructural', { ids: [walls[0]], value: true });
+      await t.ui({ view: 'plan', selection: null, selected: [] });
+      await t.wait(600);
+      await select(t, walls[0]);
+      await t.until(async () => (await t.page.locator('[data-testid=structural]').count()) === 1, 'Properties shows the Structural tick');
+      t.expect(await t.page.locator('[data-testid=structural-source]').first().innerText() === 'set on this element', 'the tick says it is set on the wall');
+      await t.wait(400);
+      await t.page.locator('[data-testid=structural]').scrollIntoViewIfNeeded();
+      await t.shot('structural-usage-properties', { of: '[data-testid=structural]', pad: 8 });
+      await select(t, walls[1]);
+      await t.until(async () => (await t.page.locator('[data-testid=structural-source]').count()) >= 1 && (await t.page.locator('[data-testid=structural-source]').first().innerText()).startsWith('by rule'), 'an unset wall shows the rule');
+      await t.ui({ selection: null, selected: [] });
+      // The Structure tab: Structural wall and Structural floor, their walls and floors ticked as drawn.
+      await t.button('Structure', { exact: true });
+      await t.tool('structure.wall');
+      t.expect(await t.page.locator('[data-testid=draw-structural]').count() === 1, 'Structural wall offers its tick in the bar');
+      t.expect(await t.page.locator('[data-testid=draw-structural]').isChecked(), 'ticked by default');
+      await t.wait(400);
+      await t.shot('structural-usage-wall-tool', { of: '.cad-prompt', pad: 4 });
+      await t.keys('Escape');
+      // A Structure plan drawing the others halftone: the partition grey under the bearing walls.
+      const plan = (await t.cmd('view.create', { kind: 'plan', storeyId: storey, discipline: 'Structure', name: 'Structure' })).id;
+      await t.cmd('view.setStyle', { id: plan, halftoneOthers: true });
+      await t.ui({ view: 'plan', planViewId: plan, keyPlan: false });
+      await t.wait(1200);
+      await t.fit();
+      await t.wait(800);
+      await t.shot('structural-usage-plan', { of: '[data-testid=plan]', pad: 0 });
+      await t.ui({ planViewId: null });
+    },
+  },
+  {
     // Structural analysis, stage S0 (docs/plan-fem.md §8): the load cases, an area load by its tool, a room's imposed-load category, the summary and the combinations.
     id: 'loads',
     touches: ['core', 'architecture', 'structure', 'analysis'],

@@ -3,7 +3,7 @@
 Asked on 25.11.2026 in forum topic 256 (Victor1: how to tell structural from architectural walls, columns and beams; in Revit there are tabs for both and a Structural Usage tick in the properties).
 
 **Order: 2 of 6** (angle lock, structural usage, level datums, leaning walls, national packs, 3D mouse).
-**Status: proposed, not started.**
+**Status: done, stages U1–U3 (25.11.2026, decision 866); U4 (one unified default rule) left.** The type dialogs got no tick of their own: the properties' "Type structural" row sets it on the elements' type (and a type selected shows the tick itself).
 
 ## What exists today
 

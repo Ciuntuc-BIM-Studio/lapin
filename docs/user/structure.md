@@ -110,9 +110,26 @@ Profile footings run straight or curved. Two of them meeting in a corner are mit
 
 ![A strip footing type of a profile](shots/footing-profile-type.webp)
 
+## Structural or not
+
+Every wall, floor, roof, column, beam and footing has **Structural (load-bearing)** in its **Properties**: ticked, it carries loads; cleared, it does not; unset, the rule decides and the box shows greyed, with where its value came from. The rule: a wall is structural unless it is a partition (its IFC type PARTITIONING), floors, roofs, columns, beams and footings are; coverings and room finishes never are. The analysis keeps its own rule for an unset wall: it takes one of masonry or concrete with a core of 10 cm or more (see [Structural analysis](analysis.md)).
+
+![The Structural tick in Properties, set on the wall](shots/structural-usage-properties.webp)
+
+- **Type structural**, under it, sets the tick on the elements' type: every element of the type that says nothing itself takes it.
+- **Structural wall** and **Structural floor**, in the Structure tab's **Walls and floors** group, draw Architecture's walls and floors already ticked; untick **Structural** in the command line's bar to leave them to the rule. The Architecture tab's Wall and Floor leave it unset.
+- **Modify → Structural** and **Not structural** set it on the selection.
+- The tick is IFC's **Pset_…Common.LoadBearing**: a value typed there, or given by an imported IFC file, counts too (the tick wins over it, and Properties says when they disagree). The IFC export writes the tick into the common set; **Write derived LoadBearing** in the export's options writes the rule's value on the others too (a CDE issue and an IDS check always do).
+- Filters, Quick select, clash sets and schedules read the field **Structural** (yes or no). **Visibility / Graphics → Filters → Structural usage** adds a filter of what is not structural, drawn halftone in the view.
+- A floor, a roof, a column or a beam whose tick is cleared (or whose LoadBearing is false) leaves the analysis, and its report says so.
+
+![The Structure tab's Structural wall, its tick in the command line's bar](shots/structural-usage-wall-tool.webp)
+
 ## A structural view
 
-A view's discipline decides what it shows. A **Structure** view shows the load-bearing cores only, without the finishes. You choose the discipline in the view's properties. See [Views](views.md).
+A view's discipline decides what it shows. A **Structure** view shows the load-bearing cores only, without the finishes. You choose the discipline in the view's properties. See [Views](views.md). With **Other disciplines halftone** on in its view settings, what is not structural (a partition, a wall whose tick is cleared) is drawn halftone with the other disciplines.
+
+![A Structure plan: the partition halftone, the load-bearing walls in full](shots/structural-usage-plan.webp)
 
 ## Loads
 

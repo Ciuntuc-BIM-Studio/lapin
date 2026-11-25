@@ -52,6 +52,8 @@ export function ExchangeExportDialog() {
   // A type's properties also on each of its elements (issue #30), for programs that read only the element: off, the export is as it was.
   const [typeProps, setTypeProps] = useState(false);
   const [spaceBrep, setSpaceBrep] = useState(false);
+  // Pset_…Common.LoadBearing also where only the rule says it (docs/plan-structural-usage.md): off, written where the Structural tick or a Pset value says it.
+  const [derivedLoadBearing, setDerivedLoadBearing] = useState(false);
   // Studio solids known exactly as IfcAdvancedBrep (docs/plan-studio-freeform.md §9): off, every body is written as its facets, as before.
   const [advancedBrep, setAdvancedBrep] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -85,7 +87,7 @@ export function ExchangeExportDialog() {
       } catch (e) {
         notify(e instanceof Error ? e.message : String(e));
       }
-    } else if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}), ...(bonsai && isDesktop() ? { bonsaiStyles: true } : {}), ...(structural ? { structural: true } : {}), ...(typeProps ? { typePropertiesOnOccurrences: true } : {}), ...(spaceBrep ? { spaceBrep: true } : {}), ...(advancedBrep ? { advancedBrep: true } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
+    } else if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}), ...(bonsai && isDesktop() ? { bonsaiStyles: true } : {}), ...(structural ? { structural: true } : {}), ...(typeProps ? { typePropertiesOnOccurrences: true } : {}), ...(spaceBrep ? { spaceBrep: true } : {}), ...(derivedLoadBearing ? { derivedLoadBearing: true } : {}), ...(advancedBrep ? { advancedBrep: true } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
     else if (format === 'step') {
       const { phase: _phase, voids: _voids, ...chosen } = common as Record<string, unknown>;
       await exportFile('project.exportStep', { ...chosen, entourage: true }, `${projectTitle(path)}.step`, 'step');
@@ -156,6 +158,8 @@ export function ExchangeExportDialog() {
                 )}
                 <dt title="A type's property sets (Pset_WallCommon.IsExternal on the wall type) also written on each element of the type, for programs that read only the element; an element's own value wins">Type properties</dt>
                 <dd><label><input type="checkbox" data-testid="export-type-properties" style={{ width: 'auto', marginRight: 6 }} checked={typeProps} onChange={(e) => setTypeProps(e.target.checked)} /> Also write type properties on each occurrence</label></dd>
+                <dt title="LoadBearing in each element's Pset_…Common also where nothing says it, from the rule: a wall unless it is a partition, floors, roofs, columns, beams and footings; the elements whose Structural tick or LoadBearing property says it are written so either way">Load-bearing</dt>
+                <dd><label><input type="checkbox" data-testid="export-derived-load-bearing" style={{ width: 'auto', marginRight: 6 }} checked={derivedLoadBearing} onChange={(e) => setDerivedLoadBearing(e.target.checked)} /> Write derived LoadBearing</label></dd>
                 <dt title="The analytical model (bearing walls, floors, columns and beams as structural members) with the load cases, the loads and the combinations, as an IFC Structural Analysis View">Structural analysis</dt>
                 <dd><label><input type="checkbox" data-testid="export-structural" style={{ width: 'auto', marginRight: 6 }} checked={structural} onChange={(e) => setStructural(e.target.checked)} /> Structural analysis view (analytical model and loads)</label></dd>
                 <dt title="Export IfcSpace geometry as faceted B-rep (or face set) instead of SweptSolid extrusions, for IFC readers such as CYPECAD MEP that fail on extruded space profiles">Spaces</dt>

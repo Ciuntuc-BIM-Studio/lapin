@@ -104,7 +104,7 @@ export function JgExportDialog() {
               <option value="contract">cm, kgf (the contract's)</option>
               <option value="si">m, kN (SI)</option>
             </select></dd>
-            <dt title="Pset_WallCommon.LoadBearing on the wall or its type">Walls</dt>
+            <dt title="The Structural tick (or Pset_WallCommon.LoadBearing) on the wall or its type">Walls</dt>
             <dd><label><input type="checkbox" style={{ width: 'auto', marginRight: 6 }} checked={allWalls} onChange={(e) => setAllWalls(e.target.checked)} /> every wall, not only the load-bearing ones</label></dd>
             <dt title="How the column and wall feet standing on a footing are held; a steel column base keeps its connection's own">Feet on footings</dt>
             <dd><select data-testid="jg-footings" value={footings} onChange={(e) => setFootings(e.target.value as 'fixed' | 'pinned')}>

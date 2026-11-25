@@ -129,23 +129,11 @@ public static class Provisions
         foreach (var k in ProvisionCells.Of(box)) tv.Read.Add(k);
     }
 
-    /// <summary>Whether an element bears load: Pset_…Common LoadBearing true on it or its type, or its own <c>loadBearing</c>.</summary>
+    /// <summary>Whether an element bears load: what it or its type says (<see cref="StructuralUsage.Said"/>: the Structural tick, a Pset_…Common LoadBearing), false when nothing says.</summary>
     public static bool LoadBearing(IModelView m, Entity e) => LoadBearingOrNull(m, e) ?? false;
 
-    /// <summary>What an element or its type says of its bearing load (<see cref="LoadBearing"/>), null when neither says.</summary>
-    public static bool? LoadBearingOrNull(IModelView m, Entity e)
-    {
-        static bool? In(Entity x)
-        {
-            if (x.Attrs["loadBearing"] is JsonValue lv && lv.TryGetValue<bool>(out var own)) return own;
-            if (x.Attrs["params"] is not JsonArray ps) return null;
-            foreach (var p in ps.OfType<JsonObject>())
-                if (string.Equals((string?)p["name"], "LoadBearing", StringComparison.OrdinalIgnoreCase) && ((string?)p["pset"])?.StartsWith("Pset_", StringComparison.Ordinal) != false)
-                    return p["value"] is JsonValue v && (v.TryGetValue<bool>(out var b) ? b : v.TryGetValue<string>(out var s) && s.Trim().ToLowerInvariant() is "true" or "yes" or "1");
-            return null;
-        }
-        return In(e) ?? (m.RelatingOf(e.Id, IfcClass.RelDefinesByType) is { } t ? In(t) : null);
-    }
+    /// <summary>What an element or its type says of its bearing load (<see cref="StructuralUsage.SaidOf"/>), null when neither says.</summary>
+    public static bool? LoadBearingOrNull(IModelView m, Entity e) => StructuralUsage.Said(m, e);
 
     /// <summary>Takes the provisions out of a host's parts (a geometry filter): only where they cut and the build cuts openings.</summary>
     sealed class Cuts : IGeometryFilter

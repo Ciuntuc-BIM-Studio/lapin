@@ -74,8 +74,8 @@ public static class SearchSets
         StartsWith = "startsWith", AtLeast = "atLeast", AtMost = "atMost", Greater = "greater", Less = "less", Between = "between", Exists = "exists", Missing = "missing";
     public static readonly string[] Ops = [Is, IsOneOf, IsNot, IsNotAnyOf, Contains, NotContains, StartsWith, AtLeast, AtMost, Greater, Less, Between, Exists, Missing];
     public const string ClassField = "class", PredefinedType = "predefinedType", Type = "type", Storey = "storey", Material = "material", Name = "name", Link = "link", Parameter = "parameter",
-        Category = "category", Group = "group", Phase = "phase", Demolished = "demolished", Field = "field";
-    public static readonly string[] Fields = [ClassField, PredefinedType, Type, Storey, Material, Name, Link, Parameter, Category, Group, Phase, Demolished, Field];
+        Category = "category", Group = "group", Phase = "phase", Demolished = "demolished", Structural = "structural", Field = "field";
+    public static readonly string[] Fields = [ClassField, PredefinedType, Type, Storey, Material, Name, Link, Parameter, Category, Group, Phase, Demolished, Structural, Field];
 
     public static bool IsNegative(string op) => op is IsNot or IsNotAnyOf or NotContains;
     public static bool IsText(string op) => op is Contains or NotContains or StartsWith;

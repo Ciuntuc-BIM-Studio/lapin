@@ -8,7 +8,7 @@ import { execute, query } from '../../engine/session';
 
 /** A rule's operators and fields, as the engine keeps them (Lapin.Clash.SearchSets; edited in the one condition editor, shell/conditionGroup). */
 export type RuleOp = 'is' | 'isOneOf' | 'isNot' | 'isNotAnyOf' | 'contains' | 'notContains' | 'startsWith' | 'atLeast' | 'atMost' | 'greater' | 'less' | 'between' | 'exists' | 'missing';
-export type RuleField = 'class' | 'predefinedType' | 'type' | 'storey' | 'material' | 'name' | 'link' | 'parameter' | 'category' | 'group' | 'phase' | 'demolished' | 'field';
+export type RuleField = 'class' | 'predefinedType' | 'type' | 'storey' | 'material' | 'name' | 'link' | 'parameter' | 'category' | 'group' | 'phase' | 'demolished' | 'structural' | 'field';
 export interface SetRule { field: RuleField; op: RuleOp; values: string[]; parameter?: string }
 export interface RuleGroup { matchAll: boolean; rules: SetRule[]; groups: RuleGroup[] }
 export interface SearchSet extends RuleGroup { id: string; name: string; count?: number }
