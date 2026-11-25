@@ -12469,7 +12469,8 @@ export const scenes = [
       // The steel beam splits the edge beams it frames into and the floor it crosses; the wall is one more shell.
       t.expect(report.counts.frames === 11 && report.counts.shells === 3, `four columns, four beams (two split), the steel beam, the floor in two and the wall (${report.counts.frames} frames, ${report.counts.shells} shells)`);
       t.expect(report.counts.supports === 4, `the column and wall feet stand on footings (${report.counts.supports})`);
-      t.expect(report.missing.some((m) => m.name === 'Steel' && m.fields.includes('elastic_modulus')), 'a steel without a grade has no E: said, not guessed');
+      // E is the same for every structural steel (EN 1993-1-1 §3.2.6, report #189); its yield strength is the grade's, so it is said missing, not guessed.
+      t.expect(report.missing.some((m) => m.name === 'Steel' && m.fields.includes('yield_strength') && !m.fields.includes('elastic_modulus')), 'a steel without a grade has E but no fy: said, not guessed');
       t.expect(await dialog.locator('.jg-warn').count() === 1, 'the report says the file is valid but analysis still needs values');
       t.expect(await dialog.locator('[data-testid=jg-footings]').inputValue() === 'fixed', 'feet on footings are fixed by default');
       const pinned = await t.call('doc.query', { name: 'jg.preview', args: { footings: 'pinned' } });
