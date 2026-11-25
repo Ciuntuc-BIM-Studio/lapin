@@ -100,4 +100,12 @@ describe('a grip dragged in 3D (decision 399)', () => {
     expect(gripTarget(at(top, 3, 2, { base, axes: ['red', 'green'], level: { x: 3, y: 2, z: 0 } }))).toBeNull();
     expect(gripTarget({ point: { x: 1, y: 2, z: 0.3 }, kind: 'On face' })).toEqual({ x: 1, y: 2 });
   });
+
+  it('infers the axis, not the edge, along an edge that runs on the axis from the base', () => {
+    const base = { x: 0, y: 0, z: 0 };
+    expect(at(top, 1.5, 0, { segs: [edge], base })).toMatchObject({ kind: 'On red axis', color: 'red' });
+    // Beside the axis, nearer the edge than the axis: still the edge (an edge off the axis).
+    const off: Seg3 = { a: { x: 0, y: 0.06, z: 0 }, b: { x: 2, y: 0.06, z: 0 } };
+    expect(at(top, 1.5, 0.06, { segs: [off], base })).toMatchObject({ kind: 'On edge' });
+  });
 });
