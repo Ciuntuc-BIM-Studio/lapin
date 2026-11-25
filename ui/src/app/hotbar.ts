@@ -37,6 +37,27 @@ export function parseSlot(slot: string | null): { tool: string; type: string | n
 /** A slot holding a tool, with a type's name or without. */
 export const slotOf = (tool: string, type?: string | null): string => (type ? `${tool}|${type}` : tool);
 
+/** Curated 1–9 quick-tool defaults per discipline workspace (docs/plan-ux-game-like.md, P1). */
+export const WORKSPACE_HOTBAR: Record<string, readonly string[]> = {
+  architecture: ['architecture.wall', 'architecture.door', 'architecture.window', 'architecture.slab', 'architecture.stair', 'architecture.roof', 'drafting.dimension', 'view.section', 'measure'],
+  structure: ['drafting.grid', 'structure.column', 'structure.beam', 'architecture.wall', 'architecture.slab', 'structure.pad', 'structure.strip', 'view.section', 'measure'],
+  mep: ['mep.run', 'mep.edit', 'mep.node.radiator', 'mep.node.valve', 'mep.node.basin', 'mep.node.outlet', 'mep.node.diffuser', 'view.section', 'measure'],
+  site: ['civil.flatTerrain', 'civil.terrainOutline', 'civil.terrain', 'civil.spot', 'civil.parcel', 'civil.subregion', 'civil.slopeTag', 'view.section', 'measure'],
+  drafting: ['cad.line', 'cad.pline', 'cad.rect', 'cad.circle', 'cad.offset', 'cad.trim', 'cad.hatch', 'drafting.dimension', 'measure'],
+};
+
+/** Default tool list for a workspace: curated discipline tools that exist in this edition, topped up from `fallback`. */
+export function defaultHotbarFor(workspace: string, fallback: readonly string[], known: (id: string) => boolean): string[] {
+  const curated = WORKSPACE_HOTBAR[workspace];
+  if (!curated) return [...fallback];
+  const out = curated.filter(known);
+  for (const id of fallback) {
+    if (out.length >= SLOTS) break;
+    if (known(id) && !out.includes(id)) out.push(id);
+  }
+  return out;
+}
+
 /** The modules' quick tools laid in the slots, the first nine. */
 export function defaultSlots(defaults: readonly string[]): Slots {
   return Array.from({ length: SLOTS }, (_, i) => defaults[i] ?? null);

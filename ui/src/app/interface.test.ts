@@ -37,6 +37,9 @@ describe('the interface modes', () => {
     expect(custom.preset).toBe('custom');
     expect(withPart(custom, 'ribbon', 'icons').preset).toBe('compact');
     expect(presetOf(PRESETS.focus)).toBe('focus');
+    expect(presetOf(PRESETS.flow)).toBe('flow');
+    expect(PRESETS.flow.quickTools).toBe('floating');
+    expect(PRESETS.flow.panels).toBe('bothRail');
   });
 
   it('reads what was kept, leaving out what it does not know', () => {

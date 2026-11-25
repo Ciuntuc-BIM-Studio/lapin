@@ -6,7 +6,7 @@
 
 import { useDialogLayer } from './shell/Dialog';
 import { Fragment, lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { AppWindow, Bot, Box, Columns2, Ruler, FolderTree, Layers, ListTree, PanelLeftOpen, PanelRightOpen, Rows2, SlidersHorizontal, X } from 'lucide-react';
+import { AppWindow, Bot, Box, Columns2, Footprints, Ruler, FolderTree, Layers, ListTree, PanelLeftOpen, PanelRightOpen, Rows2, SlidersHorizontal, X } from 'lucide-react';
 import { beginPanelDrag, DockOverlay, FloatingPanel, useKeepFloatsInWindow } from './shell/PanelDock';
 import { closeOverlay, columns, panelsOn, setPanelWidth, setStackRatio, type PanelId, type Side, showOverlay, showPropsTab, syncToolPropsTab, togglePanel, usePanels, type PanelTab } from './app/panels';
 import { assistantAvailable } from './assistant/available';
@@ -28,7 +28,11 @@ import { NavStyleMenu } from './shell/NavStyleMenu';
 import { CdeServerStatus } from './shell/CdeStart';
 import { watchLocation } from './app/location';
 import { useShortcuts } from './app/keys';
-import { useSession } from './engine/session';
+import { useXrayPeekKeys } from './app/xrayPeek';
+import { activeStorey, useSession } from './engine/session';
+import { num } from './engine/model';
+import { useCamera } from './viewport/camera';
+import { EYE_HEIGHT, exitWalk, useWalk, walkInto } from './viewport/walk';
 import { SectionIcon } from './icons';
 import { unitLabel, useStandards } from './engine/unitsStore';
 import { openStandards } from './modules/core/standardsTab';
@@ -231,9 +235,47 @@ function PaneTabs({ i }: { i: number }) {
   );
 }
 
-/** 3D, Section and Measure in one click, before the view tabs (a tester's request, decision 458). */
+/** Start first-person walk in 3D: inside the first room of the active storey if one exists, else at the 3D camera target. */
+function toggleQuickWalk(): void {
+  if (useWalk.getState().start) { exitWalk(); return; }
+  const { nodes, render } = useSession.getState();
+  const storey = activeStorey();
+  const elev = num(storey ?? undefined, 'elevation');
+  let start = null;
+  for (const n of nodes.values()) {
+    if (n.type !== 'IfcSpace' || (storey && n.storeyId !== storey.id)) continue;
+    const item = render.get(n.id);
+    const outline = item?.plan.find((p) => p.kind === 'room')?.points;
+    if (!item || !outline) continue;
+    let floor = Infinity;
+    for (let k = 2; k < item.positions.length; k += 3) floor = Math.min(floor, item.positions[k]);
+    start = walkInto(n.name, outline, item.plan.filter((p) => p.kind === 'roomIsland').map((p) => p.points), Number.isFinite(floor) ? floor : elev);
+    if (start) break;
+  }
+  if (!start) {
+    const cam = useCamera.getState();
+    start = { eye: { x: cam.target.x, y: cam.target.y, z: elev + EYE_HEIGHT }, yaw: cam.azimuth + Math.PI, pitch: 0, name: storey?.name ?? '3D' };
+  }
+  useWalk.setState({ start });
+  useUi.setState({ view: '3d' });
+}
+
+/** 1-click live Plan + 3D split-screen toggle (or close split if already split). */
+function togglePlan3dSplit(): void {
+  const ui = useUi.getState();
+  if (ui.panes.length >= 2) { closePane(1); return; }
+  const storeyId = ui.storeyId ?? activeStorey()?.id ?? null;
+  splitPane('row');
+  openTab(0, { view: 'plan', storeyId, planViewId: ui.planViewId, drawingViewId: null, sheetId: null, scheduleId: null, view3dId: null });
+  openTab(1, { view: '3d', storeyId: null, planViewId: null, drawingViewId: null, sheetId: null, scheduleId: null, view3dId: ui.view3dId });
+}
+
+/** 3D, Section, Measure, Walk and Plan+3D in one click, before the view tabs (decision 458; plan-ux-game-like.md). */
 function QuickViews() {
   const tool = useUi((s) => s.tool);
+  const walking = useWalk((s) => s.start !== null);
+  const splitOn = useUi((s) => s.panes.length >= 2);
+  const role = useUi((s) => s.windowRole);
   const quick: { id: string; icon: ToolDef['icon']; hint: string }[] = [
     { id: 'view.3d', icon: Box, hint: '3D' },
     { id: 'view.section', icon: SectionIcon, hint: 'Section' },
@@ -249,6 +291,12 @@ function QuickViews() {
             title={def.shortcut ? `${tr(hint)} (${def.shortcut})` : tr(hint)} onClick={() => activate(def)}><Icon size={14} /></button>
         );
       })}
+      <button type="button" className={`icon mini${walking ? ' on' : ''}`} data-testid="quick-view.walk" aria-label={tr('Walk in 3D')}
+        title={tr('Walk in 3D (WASD, F to fly)')} onClick={toggleQuickWalk}><Footprints size={14} /></button>
+      {role === 'main' && !isGuest() && (
+        <button type="button" className={`icon mini${splitOn ? ' on' : ''}`} data-testid="quick-view.split" aria-label={tr('Plan + 3D')}
+          title={splitOn ? tr('Close split view') : tr('Plan + 3D live split view')} onClick={togglePlan3dSplit}><Columns2 size={14} /></button>
+      )}
     </div>
   );
 }
@@ -518,6 +566,7 @@ export function App() {
   const screen = useUi((s) => s.screen);
   const theme = useUi((s) => s.theme);
   useShortcuts();
+  useXrayPeekKeys();
   useDialogLayer();
   useEffect(() => { watchLocation(); installTruncationTitles(); }, []);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);

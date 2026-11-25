@@ -15,7 +15,7 @@ import { chooseWorkspace, onInterfaceChange, useInterface, WORKSPACE_IDS, WORKSP
 import { effectiveBindings, formatBinding, resolveAlias, resolveKeymap, useKeymap, type Binding, type CommandDef, type Keymap } from './shortcuts';
 import { anchorFor, setAnchor, stepAnchor } from '../platform/anchor';
 import { datumHere } from '../viewport/datum';
-import { findTool, activate, activateSlot, allTools, defaultHotbar, hotbarSlots, ribbonTabs } from '../platform/modules';
+import { findTool, activate, activateSlot, allTools, defaultHotbar, hotbarSlots, ribbonTabs, similarFor } from '../platform/modules';
 import { extraTools, extraToolsRev } from '../platform/extraTools';
 import { tabHandlers } from '../platform/scope';
 import { redo, undo, useSession } from '../engine/session';
@@ -84,6 +84,14 @@ function appCommands(): CommandDef[] {
     { id: 'app.selectAll', label: 'Select all', category: general, defaults: ['Ctrl+A'], run: selectAll },
     // The selection's class and type in the view in front (forum topic 250); the right-click menu's Select similar in this view.
     { id: 'app.selectSimilar', label: 'Select similar in this view', category: general, defaults: ['Ctrl+Shift+A'], run: selectSimilarHere },
+    // Smart eyedropper / Pick Block (docs/plan-ux-game-like.md, P5): activates the authoring tool with the selected element's exact type.
+    { id: 'app.eyedropper', label: 'Pick & create similar', category: general, defaults: ['Alt+I'], run: () => {
+      const id = useUi.getState().selection;
+      const node = id ? useSession.getState().nodes.get(id) : undefined;
+      const fn = node ? similarFor(node) : null;
+      if (fn) fn();
+      else notify('Select an element first, then press Alt+I (or CS) to place another of the same type.');
+    } },
     { id: 'app.palette', label: 'Commands…', category: general, defaults: ['Ctrl+K'], run: dialog('palette') },
     { id: 'app.commandLine', label: 'Command line: take all typing', category: general, defaults: ['Backquote'], run: () => useCad.setState((s) => ({ takeAll: !s.takeAll })) },
     { id: 'app.shortcuts', label: 'Keyboard shortcuts…', category: general, defaults: [], run: dialog('shortcuts') },

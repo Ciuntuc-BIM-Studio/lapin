@@ -9,7 +9,7 @@ import { OptimizeIfcDialog } from './OptimizeIfcDialog';
 import { openOptimize } from '../engine/ifcOptimize';
 import { brand, tagline } from '../platform/brand';
 import { BrandName } from './BrandMark';
-import { WorkspaceSelect } from './WorkspacePicker';
+import { RoleSelector, WorkspaceSelect } from './WorkspacePicker';
 import { thumbOf } from '../engine/recentThumbs';
 import { savedTemplatePicture, startFrom, templates } from './templates';
 import { ProjectTemplatesDialog } from './ProjectTemplatesDialog';
@@ -93,6 +93,7 @@ function LocalStart({ cde }: { cde: boolean }) {
         </>}
       </section>
       <section className="start-right">
+        <RoleSelector />
         {(templates().length > 0 || saved.length > 0) && <>
           <p className="eyebrow">Start from</p>
           <div className="templates" role="group" aria-label="Start from">
