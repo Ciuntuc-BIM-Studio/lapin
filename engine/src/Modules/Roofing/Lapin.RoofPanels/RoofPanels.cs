@@ -23,14 +23,17 @@ public static class RoofPanels
     /// scheme (Retro Panel's boards or battens), the ridge caps (large or small) and the support's fixings (nails, the default, or
     /// screws); null when the roof has none.
     /// </summary>
-    public sealed record Choice(string Profile, string? Color, int? MaxLength, string? Support = null, string? Ridge = null, string? Fixing = null)
+    /// <remarks>Stage S5: the rainwater system (<c>drainage</c>: <c>125/90</c> or <c>150/100</c>, none: Auto), the downpipes (<c>downpipes</c>, none: Auto) and the rain (<c>rain</c>, l/s·m²).</remarks>
+    public sealed record Choice(string Profile, string? Color, int? MaxLength, string? Support = null, string? Ridge = null, string? Fixing = null,
+        string? Drainage = null, int? Downpipes = null, double? Rain = null)
     {
-        public Takeoff.Options Options => new(Support, Ridge, Fixing);
+        public Takeoff.Options Options => new(Support, Ridge, Fixing, Drainage, Downpipes, Rain);
     }
 
     public static Choice? ChoiceOf(Entity roof) =>
         roof.Attrs[Key] is JsonObject o && (string?)o["profile"] is { Length: > 0 } id
-            ? new Choice(id, (string?)o["color"], Json.Number(o["maxLength"]) is { } m ? (int)m : null, (string?)o["support"], (string?)o["ridge"], (string?)o["fixing"])
+            ? new Choice(id, (string?)o["color"], Json.Number(o["maxLength"]) is { } m ? (int)m : null, (string?)o["support"], (string?)o["ridge"], (string?)o["fixing"],
+                (string?)o["drainage"], Json.Number(o["downpipes"]) is { } dp ? (int)dp : null, Json.Number(o["rain"]))
             : null;
 
     /// <summary>
@@ -80,6 +83,11 @@ public static class RoofPanels
         public double Coverage => Result.Panels.Sum(p => Clip.Area(p.Net));
         /// <summary>The sheet bought (m²): each panel bought, its nominal length by its whole width (how panels are priced).</summary>
         public double SheetArea => Bought.Sum(p => p.Length * Profile.GrossWidth / 1e6);
+
+        /// <summary>The rainwater system (S5): sized over the roof's slopes, counted along its gutters, with what to check.</summary>
+        public Rainwater.Result? Drainage { get; init; }
+        /// <summary>The flashings cut from flat sheet (S5): every combination of ridge cap and rainwater system laid on sheets, the roof's own.</summary>
+        public FlatStock.Result? Sheets { get; init; }
     }
 
     /// <summary>How many accessory pieces of <paramref name="stock"/> metres, lapped <paramref name="lap"/>, run an edge (accessories.piece_count).</summary>
@@ -215,7 +223,11 @@ public static class RoofPanels
         var result = PanelLayout.Lay(faces, edges, profile);
         var takeoff = Takeoff.Of(profile, faces, edges, result, set.Data, options ?? new Takeoff.Options(null, null, null));
         if (takeoff.RaftersEstimated) warnings.Add("The roof has no rafters: its counter-battens are estimated at 600 mm spacing.");
-        return new Layout(roof, profile, color ?? profile.Colors.FirstOrDefault()?.Code, faces, edges, result, warnings, takeoff);
+        // Stage S5: the rainwater system on the roof's own gutters and downpipes, and the pieces cut from flat sheet.
+        var o = options ?? new Takeoff.Options(null, null, null);
+        var drainage = Rainwater.Of(PanelProfiles.Rain, faces, edges, Rainwater.Read(roof, m), takeoff.Stats, o);
+        var sheets = FlatStock.Of(profile, PanelProfiles.Sheet, PanelProfiles.Rain, takeoff.Ridge, drainage.Sizing.Selected, takeoff.Stats, drainage.Counts.Angles);
+        return new Layout(roof, profile, color ?? profile.Colors.FirstOrDefault()?.Code, faces, edges, result, warnings, takeoff) { Drainage = drainage, Sheets = sheets };
     }
 
     static double R(double v, int d = 4) => Math.Round(v, d);
@@ -288,6 +300,8 @@ public static class RoofPanels
         foreach (var g in l.Edges.GroupBy(e => e.Kind)) byKind[g.Key] = R(g.Sum(e => e.Length), 4);
         ((JsonObject)o["totals"]!)["edgeLengths"] = byKind;
         o["takeoff"] = TakeoffJson(l);
+        if (l.Drainage is { } d) o["drainage"] = Rainwater.ToJson(d, PanelProfiles.Rain);
+        if (l.Sheets is { } sh) o["flatSheet"] = FlatStock.ToJson(sh);
         return o;
     }
 

@@ -26,6 +26,7 @@ public class RoofPanelTakeoffTests
 
     static readonly double[] House = [0, 0, 10, 0, 10, 6, 0, 6];
     static readonly double[] L = [0, 0, 12, 0, 12, 6, 6, 6, 6, 11, 0, 11];
+    static readonly double[] Chamfer = [0, 0, 10, 0, 10, 4, 7, 7, 0, 7];
 
     static string AddRoof(Fixture f, double[] pts, JsonObject attrs, string? storey = null)
     {
@@ -51,6 +52,8 @@ public class RoofPanelTakeoffTests
             case "leanto":
                 f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 11, ["y1"] = 6.14, ["x2"] = -1, ["y2"] = 6.14, ["height"] = 9 });
                 return (f, AddRoof(f, House, new JsonObject { ["shape"] = "shed", ["pitch"] = 15, ["overhang"] = 0.4, ["gableOverhang"] = 0.3 }));
+            // S5: a hip roof on a house with one corner cut at 45°: two gutter corners of 135°, cut from flat sheet.
+            case "chamfer": return (f, AddRoof(f, Chamfer, new JsonObject { ["shape"] = "hip", ["pitch"] = 30, ["overhang"] = 0.5 }));
             default: throw new ArgumentException(name);
         }
     }

@@ -19,6 +19,9 @@ public static class Drainage
     public const string DownpipeClass = "LapinDownpipe";
     public const double DefaultDiameter = 0.1;
 
+    /// <summary>The roof's downpipes' diameter: its <c>downpipeDiameter</c> (the automatic ones', and an element's without its own), else 100 mm as always.</summary>
+    public static double PipeDiameterOf(Entity roof) => Math.Clamp(roof.NumOrNull("downpipeDiameter") ?? DefaultDiameter, 0.04, 0.3);
+
     /// <summary>A gutter's parameters, from its roof.</summary>
     public sealed record Spec(bool Box, double Width, double Offset, double Drop, double Fall, bool Ends)
     {
@@ -345,7 +348,7 @@ public static class Drainage
         var station = Math.Clamp(pipe.Num("station"), 0, g.Length);
         var spec = Spec.Of(roof);
         var outlet = OutletAt(g, station, RunPlaces(gutters, drain.R, drain.Outlets.Select(x => (x.Gutter, x.Station)))[gutters.IndexOf(g)], spec);
-        var d = pipe.NumOrNull("diameter") ?? DefaultDiameter;
+        var d = pipe.NumOrNull("diameter") ?? PipeDiameterOf(roof);
         var chain = Chain(outlet, g.Out, RouteOf(pipe), GroundAt(m, services), pipe.Str("shoe") != "False", d / 2);
         return new Placed(pipe, roof, g, station, outlet, chain, d);
     }

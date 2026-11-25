@@ -37,7 +37,7 @@ Ca să compari, alege alt **Profil** în dialog: panotajul îl arată, iar acope
 
 Panotajul numără și ce le mai trebuie panourilor, cum spun datele profilului, pe acoperișul așa cum este:
 
-- **Tinichigerie și accesorii.** Pe fiecare muchie, piese de lungimea accesoriilor profilului (2 m), petrecute cum spune profilul: coame și coame oblice, închideri de coamă oblică unde aceasta ajunge la streașină, benzi de coamă, capace de coamă la fronton, borduri de streașină, de fronton și de semicoamă, dolii cu buretele lor de etanșare, racorduri laterale și de sus la perete, racorduri la ruperi, parazăpezi de-a lungul parazăpezilor acoperișului, câte un kit de racord pentru fiecare fereastră de acoperiș. Un panou cu falț (Retro Panel) are ale lui: coame unghiulare, suporturi de coamă, elemente de suprapunere, bandă butilică, agrafe de dolie. Nodurile de coamă, capetele de dolie și agrafele se fac din tablă plană (numărate; colile lor vin într-o etapă următoare).
+- **Tinichigerie și accesorii.** Pe fiecare muchie, piese de lungimea accesoriilor profilului (2 m), petrecute cum spune profilul: coame și coame oblice, închideri de coamă oblică unde aceasta ajunge la streașină, benzi de coamă, capace de coamă la fronton, borduri de streașină, de fronton și de semicoamă, dolii cu buretele lor de etanșare, racorduri laterale și de sus la perete, racorduri la ruperi, parazăpezi de-a lungul parazăpezilor acoperișului, câte un kit de racord pentru fiecare fereastră de acoperiș. Un panou cu falț (Retro Panel) are ale lui: coame unghiulare, suporturi de coamă, elemente de suprapunere, bandă butilică, agrafe de dolie. Nodurile de coamă, capetele de dolie și agrafele se fac din tablă plană (vezi **Tabla plană** mai jos).
 - **Prinderi.** La țiglă, șuruburile de cusătură unde fiecare petrecere laterală trece de un modul și șuruburile de prindere (zece pe m² acoperit, de-a lungul streșinilor, coamelor, frontoanelor, racordurilor și parazăpezilor); la falț, șuruburile cu cap plat pe fiecare scândură pe care o trece un panou și șuruburile cu garnitură ale accesoriilor; și cuiele sau șuruburile suportului, unul unde o șipcă trece peste un căprior și de-a lungul contrașipcilor. Fiecare cu 10 % rezervă, în ambalajul lui.
 - **Șipci și folie.** Șipcile pe fiecare apă la modulul profilului (prima la streașină, a doua cu 380 mm mai sus, apoi la 350 mm; scândurile Retro Panel la 200 mm), lungimea lor în bare; contrașipcile pe căpriorii acoperișului, la lungimea lor reală; folia pe toate apele cu petrecerile de 100 mm și 8 % pentru tăieri, în role, și banda pe petrecerile ei. Șipcile, rândurile și petrecerile foliei pe fiecare apă sunt în **Șipci și folie pe ape**. Sunt numărate, nu desenate: în 3D straturile acoperișului se văd ca înainte.
 
@@ -45,16 +45,48 @@ Coloana **Necesar** spune din ce e numărat un rând (metri, aria, prinderile). 
 
 ![Necesarul în Panotaj: accesoriile, prinderile, șipcile și folia](shots/roof-panels-takeoff.webp)
 
+## Sistemul pluvial
+
+Panotajul dimensionează jgheaburile și burlanele acoperișului cum face aplicația Panotaj Bilka, după ghidul Bilka, pe jgheaburile acoperișului (cele pe care le desenează **Jgheaburi** din proprietățile lui) și pe burlanele lui:
+
+- **Unde merge apa.** Fiecare apă se scurge la streașina ei când streașina are jgheab. O apă fără jgheab își trece apa peste o rupere de pantă la apa de sub ea, sau pe o dolie la streșinile de la piciorul doliei; ce nu ajunge la niciun jgheab este semnalat (*… m² de acoperiș nu ajung la niciun jgheab*), așa că un jgheab oprit pe o streașină face ca apa lui să spună că nu are evacuare.
+- **Minimul de coborâri pe o apă**: cel mai mare dintre 1, câte una la 10 m de jgheab și debitul ei (aria ori ploaia) împărțit la capacitatea unui burlan (1,5 l/s la 125/90, 3,0 l/s la 150/100, orientativ).
+- **Sistemul.** **Automat** ia 150/100 când acoperișul colectează peste 100 m² sau ploaia e mai mare de 0,05 l/s·m², altfel 125/90; sau alegi unul.
+
+În secțiunea **Panouri** a acoperișului, la **Sistem pluvial**:
+
+1. **Sistem**: Automat (spune pe care îl ia), 125/90 sau 150/100.
+2. **Coborâri**: gol pentru Automat (minimul), sau scrii numărul de socotit.
+3. **Ploaie (l/s·m²)**: 0,05 pentru buget; verifică valoarea locală.
+
+Secțiunea arată **Minimul estimat**, **Coborârile socotite** și pe cele **În model**, și verificarea: *În limita estimată*, *Alt sistem decât cel recomandat* sau *Sub minimul estimat*. O schimbare a sistemului, a coborârilor sau a ploii duce și jgheaburile și burlanele acoperișului la mărimile sistemului (125 sau 150 mm, 90 sau 100 mm), în același pas de anulare, ca modelul să deseneze ce socotește devizul. Când jgheaburile acoperișului diferă (după o schimbare a acoperișului), **Potrivește jgheaburile la sistem** o face din nou. Burlanele modelului rămân unde sunt: dacă are mai puține decât socotește devizul, spune; adaugă burlane pe jgheaburi (**Burlan**) sau fă-le editabile.
+
+![Sistemul pluvial în secțiunea Panouri: Automat, minimul, numărul socotit, burlanele modelului](shots/roof-panels-drainage-section.webp)
+
+În **Panotaj**, tabul **Pluvial** este foaia *Pluvial* a aplicației: fiecare apă cu streașină cu jgheab (streașina, aria care se scurge la ea, debitul, minimul pentru fiecare sistem, coborârile pe care i le dă devizul și cele din model), apoi jgheaburile și burlanele socotite cum le socotește aplicația: jgheaburi de 4 m pe fiecare streașină, cârlige la 600 mm, colțare exterioare și interioare, cuplaje, capace la capetele libere, câte un racord, două coturi de 60°, un prelungitor, coliere (la cel mult 2 m) și un cot de evacuare pe coborâre, burlanele de 3 m la lungimea medie a burlanelor din model, diblurile, și un cartuș de etanșant la fiecare cinci noduri de coamă, capete de dolie, închideri de coamă oblică și colțare atipice. Un colțar de jgheab la alt unghi decât 90° se taie din tablă plană. Rândurile au coduri precum `gutter-150`, `outlet-150`, `downpipe-100`, `pipe-clamp-100` (ale sistemului 125/90 se termină în `-125` și `-90`), cotate de șablonul Bilka – Dedeman cu restul.
+
+![Tabul Pluvial: sistemul, minimul de coborâri pe fiecare apă, jgheaburile și burlanele socotite](shots/roof-panels-drainage.webp)
+
+Sunt numere de buget: verifică ploaia locală, pantele jgheaburilor, pozițiile racordurilor și apa pe care o dolie o adună într-un singur loc.
+
+## Tabla plană
+
+Ce se face din tablă plană (nodurile unde se întâlnesc trei coame, racordurile coamă–cap de dolie, închiderile de coamă oblică și capacele de coamă la fronton ale Retro Panel, colțarele de jgheab atipice, fâșiile pentru agrafele de dolie ale Retro Panel) se așază pe coli de 2000 × 1250 mm: fiecare piesă un dreptunghi întreg pe o singură coală, la 10 mm de marginile colii și la 5 mm de piesa vecină, cum face foaia *Debitare tablă* a aplicației. Dimensiunile pieselor sunt gabarite de buget care cresc cu lățimea coamei (290 sau 230 mm, 417 mm la Retro Panel) și cu mărimea jgheabului.
+
+Tabul **Tablă plană** din **Panotaj** arată câte coli ia fiecare combinație de coamă și sistem pluvial (a acoperișului marcată ✓), desenează fiecare coală a acoperișului cu piesele ei (cursorul pe o piesă îi arată numele și mărimea) și listează locul fiecărei piese. Colile combinației acoperișului se cumpără: rândul `flat-sheet-8017` (`flat-sheet-8019` la Retro Panel) în tabul Cost și în deviz.
+
+![Tabul Tablă plană: cele patru combinații, cele două coli ale acoperișului cu nodurile de coamă și capul de dolie](shots/roof-panels-sheets.webp)
+
 ## Cât costă
 
 Lapin nu are prețuri: ele vin din listele tale de prețuri (vezi [Devizul](cost.md)). Fiecare rând după care se cumpără panourile are un **cod de articol**, iar o listă de prețuri îl cotează după acel cod:
 
 - **Panourile**, pe m² de tablă cumpărată (lungimea nominală a fiecărui panou ori lățimea lui totală, cum le cotează magazinele), un rând pe fiecare lungime: `bilka-clasic-35/7016` (Clasic 35 în RAL 7016), `bilka-retro-panel/8019`; Balcanic, vândut în trei lungimi de stoc, are un articol pe fiecare: `bilka-balcanic/8017/2930`.
-- **Accesoriile, prinderile și suportul** după codurile lor: `ridge-large`, `hip-small`, `eave`, `valley`, `screw-long`, `batten`, `board`, `membrane`, `wood-nails`… (tinichigeria proprie a Retro Panel se termină în `-retro`).
+- **Accesoriile, prinderile și suportul** după codurile lor: `ridge-large`, `hip-small`, `eave`, `valley`, `screw-long`, `batten`, `board`, `membrane`, `wood-nails`… (tinichigeria proprie a Retro Panel se termină în `-retro`); ale sistemului pluvial și ale tablei plane: `gutter-150`, `outlet-150`, `downpipe-100`, `sealant`, `flat-sheet-8017`…
 
 Ca să încerci cu prețuri reale, adaugă lista **Bilka – Dedeman (indicative, 24.11.2026)**: în **Panotaj**, deschide tabul **Cost** și apasă **Adaugă șablonul Bilka – Dedeman**, sau **Execuție → Liste de prețuri… → Șabloane → Adaugă în proiect**. Are prețurile publice citite la 24.11.2026, în principal la Dedeman, fiecare rând cu sursa lui (magazinul și codul produsului), pagina lui și ziua în care a fost citit. E marcată *orientativ* și intră în proiect doar când ceri: un proiect n-o primește niciodată singur.
 
-Tabul **Cost** arată fiecare rând pe grupe (panouri, tinichigerie și accesorii, prinderi, șipci și folie) cu **Cantitatea** și **Unitatea**, **Prețul** dat de prima listă care are codul lui, **Valoarea** (cantitatea ori prețul, rotunjită la ban) și **Sursa** (apasă pe ea ca să deschizi pagina magazinului). Un rând fără preț în nicio listă spune **De ofertat**. **Subtotalul liniilor cu preț** adună doar rândurile cu preț. Separat de ele: **Îmbinările între coame** (o operațiune, materialul e în coame) și ce e **Din tablă plană** (nodurile de coamă, închiderile de coamă oblică și agrafele de dolie ale Retro Panel: nu se cumpără; colile de tablă plană vin într-o etapă următoare). Manopera, transportul și sistemul pluvial nu sunt incluse. Secțiunea Panouri arată același subtotal.
+Tabul **Cost** arată fiecare rând pe grupe (panouri, tinichigerie și accesorii, prinderi, șipci și folie) cu **Cantitatea** și **Unitatea**, **Prețul** dat de prima listă care are codul lui, **Valoarea** (cantitatea ori prețul, rotunjită la ban) și **Sursa** (apasă pe ea ca să deschizi pagina magazinului). Un rând fără preț în nicio listă spune **De ofertat**. **Subtotalul liniilor cu preț** adună doar rândurile cu preț. Separat de ele: **Îmbinările între coame** (o operațiune, materialul e în coame) și ce e **Din tablă plană** (nodurile de coamă, închiderile de coamă oblică și agrafele de dolie ale Retro Panel, colțarele de jgheab atipice: nu se cumpără; colile de tablă plană din care se taie, da). Sistemul pluvial are grupa lui. Manopera și transportul nu sunt incluse. Secțiunea Panouri arată același subtotal.
 
 Schimbi profilul, culoarea, coamele sau prinderile și tabelul urmează imediat: Clasic 35 costă la fel în RAL 7016 și 8017, Retro Panel are prețul lui, Balcanic un preț pe fiecare lungime de stoc. Numerele sunt cele din foaia *Deviz RON* a aplicației Panotaj Bilka pe aceleași acoperișuri.
 

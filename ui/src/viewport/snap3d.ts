@@ -154,7 +154,8 @@ export function snap3(o: Snap3Input): Snapped3 | null {
       if (d <= tol && (!axis || d < axis.d)) axis = { p, name, d };
     }
   }
-  if (axis && (!edge || axis.d < edge.d)) return { point: axis.p, kind: AXIS_KIND[axis.name], color: axis.name, guide: { from: base!, to: axis.p, color: axis.name } };
+  // An edge along the axis from the base (a floor's side drawn on from its corner) is a tie: the axis wins, as it says more.
+  if (axis && (!edge || axis.d <= edge.d + 0.5)) return { point: axis.p, kind: AXIS_KIND[axis.name], color: axis.name, guide: { from: base!, to: axis.p, color: axis.name } };
   if (edge) return { point: edge.p, kind: 'On edge', seg: edge.s };
   if (o.face) return { point: o.face, kind: 'On face' };
   if (o.level) return { point: o.level, kind: 'On level' };

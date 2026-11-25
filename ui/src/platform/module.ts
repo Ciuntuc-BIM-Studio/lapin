@@ -238,6 +238,11 @@ export interface Grip {
   slope?: { kind: 'eave' | 'gable'; override?: boolean };
   /** What the grip does, shown over it. */
   title?: string;
+  /**
+   * Gives way to another grip under the pointer: picked only when no other grip is in reach (the hatch origin, which by default
+   * sits on an outline's first corner and would else take that corner's drag and right-click).
+   */
+  yields?: boolean;
   /** The element it belongs to (gripsOf fills it in). */
   owner?: string;
   /** The view it is drawn in, when it belongs to one (a drafted shape's view); else every 2D view. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groupGrips, movers, snapGrip } from './grips';
+import { groupGrips, movers, nearestGroup, snapGrip } from './grips';
 import type { Grip } from '../platform/module';
 
 const g = (owner: string, key: string, x: number, y: number, kind: Grip['kind'] = 'end'): Grip => ({ owner, key, at: { x, y }, kind });
@@ -35,5 +35,17 @@ describe('a module\'s grip snap', () => {
     expect(snapGrip([undefined, () => undefined, tenMm, () => ({ x: 9, y: 9 })], node, grip, to, false)).toEqual({ x: 1.23, y: 2 });
     expect(snapGrip([() => undefined], node, grip, to, false)).toBe(to);
     expect(snapGrip([tenMm], node, grip, to, true)).toBe(to);
+  });
+
+  it('picks the nearest group in reach, a yielding one (the hatch origin on a corner) only when nothing else is', () => {
+    const origin: Grip = { owner: 'f', key: 'hatchOrigin', at: { x: 0, y: 0 }, kind: 'anchor', yields: true };
+    const groups = groupGrips([origin, g('f', 'v0', 0, 0, 'vertex'), g('f', 'v1', 6, 0, 'vertex')], 0.01);
+    const at = (x: number, y: number) => nearestGroup(groups, (gr) => ({ d: Math.hypot(gr.at.x - x, gr.at.y - y), limit: 8 }), 12)?.members[0].key;
+    expect(at(0, 0)).toBe('v0');
+    expect(at(6, 1)).toBe('v1');
+    expect(at(40, 0)).toBeUndefined();
+    // Alone in reach, the origin is picked (dragged once moved off the corner).
+    const moved = groupGrips([{ ...origin, at: { x: 20, y: 0 } }, g('f', 'v0', 0, 0, 'vertex')], 0.01);
+    expect(nearestGroup(moved, (gr) => ({ d: Math.hypot(gr.at.x - 20, gr.at.y), limit: 8 }), 12)?.members[0].key).toBe('hatchOrigin');
   });
 });

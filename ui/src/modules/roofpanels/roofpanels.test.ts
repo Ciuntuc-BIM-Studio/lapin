@@ -4,6 +4,7 @@ import {
   BILKA_TEMPLATE, COST_GROUPS, costRows, costState, money, quantityText, sheetRows, subtotalText, type CostDto, type CostLineDto,
   choiceOf, colourLabel, edgeRows, faceTotals, ITEM_GROUPS, itemRows, laidFlat, lengthColours, needText, purchaseRows, purchaseText, REUSED, reuseLinks, setArgs,
   takeoffOptions, type LayoutDto, type PanelDto, type PanelProfileDto, type TakeoffDto,
+  combinationLabel, downpipesOf, drainageArgs, drainageCheck, drainageRows, pieceColour, rainOf, sheetsOf, sheetUse,
 } from './roofpanels';
 import { roofFor } from './index';
 
@@ -169,7 +170,7 @@ describe('the roof panels in every language', () => {
     for (const { id } of LANGUAGES.filter((l) => l.id !== 'en')) {
       for (const phrase of [...COST_GROUPS.map((g) => g.label), 'Cost', 'Quantities', 'Price', 'Amount', 'Source', 'To quote', 'Indicative subtotal', 'Subtotal of the priced lines',
         'Joints between ridge caps', 'Cut from flat sheet', 'Add the Bilka – Dedeman template', 'Price lists…', 'Templates', 'Source (supplier)', 'Price checked on',
-        'Indicative — check prices when ordering. Labour, transport and the rainwater system are not included.', 'There is no such price list template.'])
+        'Indicative — check prices when ordering. Labour and transport are not included.', 'There is no such price list template.'])
         expect(translate(phrase, id), `${phrase} in ${id}`).not.toBeNull();
       expect(translate('18 panel(s) of 4350 mm: priced per m² of sheet bought (the nominal length by the 1200 mm width).', id), id).toContain('4350');
       expect(translate('Price list added to the project: Bilka – Dedeman (indicative, 24.11.2026).', id), id).toContain('Bilka – Dedeman');
@@ -237,7 +238,7 @@ describe('the Cost tab (S4)', () => {
   };
 
   it('groups the lines bought, the panels first, and keeps what is cut from flat sheet apart', () => {
-    expect(COST_GROUPS.map((g) => g.id)).toEqual(['panels', 'flashings', 'fixings', 'support']);
+    expect(COST_GROUPS.map((g) => g.id)).toEqual(['panels', 'flashings', 'fixings', 'support', 'rainwater']);
     expect(costRows(cost, 'panels').map((l) => l.code)).toEqual(['bilka-clasic-35/7016']);
     expect(costRows(cost, 'flashings').map((l) => l.code)).toEqual(['hip-large', 'window-kit']);
     expect(sheetRows(cost).map((l) => l.code)).toEqual(['ridge-nodes']);
@@ -264,5 +265,70 @@ describe('the Cost tab (S4)', () => {
     expect(quantityText({ quantity: 46.37352, unit: 'm²' })).toBe('46.37');
     expect(quantityText({ quantity: 165, unit: 'bar 3 m' })).toBe('165');
     expect(BILKA_TEMPLATE).toBe('bilka-dedeman-2026-11-24');
+  });
+});
+
+describe('the rainwater system and the flat sheet (S5)', () => {
+  it('reads the drainage a roof names and sends it, Auto left out, with drainage always when it changes', () => {
+    const c = choiceOf(node({ panels: { profile: 'bilka-clasic-35', drainage: '150/100', downpipes: 6, rain: 0.08 } }))!;
+    expect([c.drainage, c.downpipes, c.rain]).toEqual(['150/100', 6, 0.08]);
+    expect(choiceOf(node({ panels: { profile: 'bilka-clasic-35' } }))).toMatchObject({ drainage: undefined, downpipes: undefined, rain: undefined });
+    expect(setArgs('r1', c, [clasic])).toMatchObject({ drainage: '150/100', downpipes: 6, rain: 0.08 });
+    expect(setArgs('r1', { profile: 'bilka-clasic-35', drainage: 'auto' }, [clasic])).not.toHaveProperty('drainage');
+    expect(drainageArgs('r1', c, { drainage: 'auto' }, [clasic])).toMatchObject({ drainage: 'auto', downpipes: 6 });
+    expect(drainageArgs('r1', c, { downpipes: null }, [clasic])).not.toHaveProperty('downpipes');
+    expect(drainageArgs('r1', { profile: 'bilka-clasic-35' }, {}, [clasic]).drainage).toBe('auto');
+  });
+
+  it('takes a typed number of downpipes or rain, else Auto and the default', () => {
+    expect(downpipesOf('')).toBeNull();
+    expect(downpipesOf('0')).toBeNull();
+    expect(downpipesOf('abc')).toBeNull();
+    expect(downpipesOf(' 6 ')).toBe(6);
+    expect(downpipesOf('5.6')).toBe(6);
+    expect(rainOf('0,08')).toBe(0.08);
+    expect(rainOf('-1')).toBeNull();
+    expect(rainOf('')).toBeNull();
+  });
+
+  it('says the check as the app does: under the least first, then another system', () => {
+    expect(drainageCheck({ belowMinimum: true, differs: true })).toBe('below');
+    expect(drainageCheck({ belowMinimum: false, differs: true })).toBe('differs');
+    expect(drainageCheck({ belowMinimum: false, differs: false })).toBe('ok');
+    expect(drainageRows({ items: [
+      { code: 'gutter-125', name: 'Gutter', group: 'rainwater', quantity: 6, unit: 'piece 4 m', note: '' },
+      { code: 'gutter-special-125', name: 'Odd corner', group: 'rainwater', quantity: 2, unit: 'piece', note: '', madeFrom: 'flatSheet' },
+    ] }).map((i) => i.code)).toEqual(['gutter-125']);
+    expect(COST_GROUPS.map((g) => g.id)).toContain('rainwater');
+  });
+
+  it('splits the pieces by sheet, says how much of the sheets they take and names each combination', () => {
+    const piece = (id: string, sheet: number, w: number, h: number) => ({ id, name: id, sheet, x: 10, y: 10, width: w, height: h, blankWidth: w, blankHeight: h });
+    const f = { sheets: 2, width: 2000, height: 1250, pieces: [piece('NC-01', 1, 850, 900), piece('NC-02', 1, 900, 850), piece('CD-01', 2, 750, 650)] };
+    expect(sheetsOf(f).map((s) => [s.sheet, s.pieces.map((p) => p.id)])).toEqual([[1, ['NC-01', 'NC-02']], [2, ['CD-01']]]);
+    expect(sheetUse(f)).toBeCloseTo((2 * 850 * 900 + 750 * 650) / (2 * 2000 * 1250), 9);
+    expect(sheetUse({ ...f, sheets: 0, pieces: [] })).toBe(0);
+    expect(combinationLabel({ ridge: 'small', system: '150/100' })).toBe('Small · 150/100');
+    expect(combinationLabel({ ridge: 'large', system: '125/90' })).toBe('Large · 125/90');
+    expect(combinationLabel({ ridge: null, system: '125/90' })).toBe('125/90');
+    expect(pieceColour('NC-03')).toBe(pieceColour('NC-01'));
+    expect(pieceColour('ZZ-01')).toBe('#7f8c8d');
+  });
+});
+
+describe('the rainwater and flat sheet tabs in every language (S5)', () => {
+  it('names the tabs, the columns, the checks and the engine\'s lines and warnings', async () => {
+    const { loadAllLanguages, translate, LANGUAGES } = await import('../../i18n');
+    await loadAllLanguages();
+    for (const { id } of LANGUAGES.filter((l) => l.id !== 'en')) {
+      for (const phrase of ['Rainwater', 'Flat sheet', 'Rainwater system', 'Rain (l/s·m²)', 'Least estimated', 'Downpipes counted', 'In the model', 'Under the least estimated',
+        'Another system than the recommended one', 'Within the estimate', 'Size the gutters to the system', 'Small ridge cap', 'Large ridge cap', 'Downpipe size',
+        'Ridge node, three ways', 'Ridge–valley head', 'Strip for valley clips', 'The roof has no gutters: no outlet drains it and no gutter is counted.'])
+        expect(translate(phrase, id), `${phrase} in ${id}`).not.toBeNull();
+      for (const [phrase, keep] of [['Auto (150/100)', '150/100'], ['Gutter Ø125, 4 m', '125'], ['Gutter outlet Ø150 to downpipe Ø100', '100'], ['Gutter corner Ø125 at 135°', '135'],
+        ['3 downpipe(s) are fewer than the 8 the 125/90 system needs.', '125/90'], ['The model has 4 downpipe(s); the estimate counts 6.', '6'],
+        ["The roof's gutters are 125 mm; the estimate counts the 150/100 system.", '150/100'], ['12.40 m² of roof (A03) drain to no gutter: size their outlets yourself.', 'A03']])
+        expect(translate(phrase, id), `${phrase} in ${id}`).toContain(keep);
+    }
   });
 });

@@ -78,6 +78,8 @@ public sealed record PanelProfile(
     /// order); a stock profile priced by length names <c>{length}</c> too (Balcanic's three lengths).
     /// </summary>
     public string Article { get; init; } = "{id}/{color}";
+    /// <summary>What its flashings are cut from (S5): the flat sheet's article, the ridge cap widths its pieces are sized by, the kinds of piece; null: none.</summary>
+    public FlatSheet? FlatSheet { get; init; }
 
     /// <summary>The article code of its panels in <paramref name="color"/> and of <paramref name="length"/> mm.</summary>
     public string ArticleCode(string? color, int length) =>
@@ -160,6 +162,7 @@ public sealed record PanelProfile(
             Fixings = [.. ((o["fixings"] as JsonArray) ?? []).OfType<JsonObject>().Select(ReadFixing)],
             Ridges = [.. ((o["ridges"] as JsonArray) ?? []).Select(n => (string?)n).OfType<string>()],
             Article = (string?)o["article"] is { Length: > 0 } art ? art : "{id}/{color}",
+            FlatSheet = FlatSheet.Read(o["flatSheet"]),
         };
     }
 
@@ -228,6 +231,14 @@ public static class PanelProfiles
     public static Common Shared => SharedData.Value;
 
     static readonly Lazy<Common> SharedData = new(() => Common.Read(Data.Value.Raw["common"] as JsonObject ?? []));
+
+    /// <summary>The rainwater system's sizing and lines (S5, profiles.json's <c>common.rainwater</c>).</summary>
+    public static Rainwater.Data Rain => RainData.Value;
+    static readonly Lazy<Rainwater.Data> RainData = new(() => Rainwater.Data.Read((Data.Value.Raw["common"] as JsonObject)?["rainwater"] as JsonObject ?? []));
+
+    /// <summary>The flat sheet's stock and the kinds of piece cut from it (S5, profiles.json's <c>common.flatSheet</c>).</summary>
+    public static FlatStock.Data Sheet => SheetData.Value;
+    static readonly Lazy<FlatStock.Data> SheetData = new(() => FlatStock.Data.Read((Data.Value.Raw["common"] as JsonObject)?["flatSheet"] as JsonObject ?? []));
 
     public static PanelProfile? Find(string? id) => BuiltIn.FirstOrDefault(p => string.Equals(p.Id, id, StringComparison.OrdinalIgnoreCase));
 

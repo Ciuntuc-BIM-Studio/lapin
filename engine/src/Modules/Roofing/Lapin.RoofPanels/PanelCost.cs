@@ -12,8 +12,9 @@ namespace Lapin.RoofPanels;
 /// estimate as the roof's <c>Lapin_RoofPanelQuantities</c> (<see cref="Quantities"/>), and the Panel layout's Cost tab prices
 /// them from the project's price lists (<see cref="Estimate"/>), as the Panotaj Bilka app's "Deviz RON" sheet does: an amount
 /// is the quantity by the unit price rounded half up to the ban, a line with no price is to quote, the subtotal is only the
-/// priced lines'. The module has no prices; what is made from flat sheet is not bought (stage S5), the joints between ridge
-/// caps are operations, listed apart. Worked out on every ask, never stored.
+/// priced lines'. The module has no prices; what is made from flat sheet is not bought (its sheets are, stage S5), the joints
+/// between ridge caps are operations, listed apart. Stage S5 adds the flat sheets and the rainwater system's lines, so the
+/// subtotal is the app's whole <c>priced_subtotal_ron</c>. Worked out on every ask, never stored.
 /// </summary>
 public static class PanelCost
 {
@@ -51,6 +52,12 @@ public static class PanelCost
                 $"{count} panel(s) of {length} mm: priced per m² of sheet bought (the nominal length by the {p.GrossWidth} mm width)."));
         }
         foreach (var i in l.Takeoff.Items)
+            o.Add(new Line(i.Code, null, i.Name, i.Group, (decimal)i.Quantity, i.Unit, null, i.MadeFrom, i.Note));
+        // Stage S5: the flat sheet the flashings are cut from (the sheets the roof's own combination takes), the rainwater system.
+        if (l.Sheets is { Current.Nesting.Sheets: > 0 } sh)
+            o.Add(new Line(sh.Sheet.Code, null, sh.Sheet.Name, "flashings", sh.Current.Nesting.Sheets, "sheet", null, null,
+                $"{sh.Current.Nesting.Pieces.Count} piece(s) laid whole on {sh.Data.Width} × {sh.Data.Height} mm sheets: check the templates before cutting."));
+        foreach (var i in l.Drainage?.Items ?? [])
             o.Add(new Line(i.Code, null, i.Name, i.Group, (decimal)i.Quantity, i.Unit, null, i.MadeFrom, i.Note));
         return o;
     }

@@ -59,6 +59,8 @@ export function hatchOriginGrips(n: NodeDto, v?: GripView, deps: OriginDeps = en
   return [{
     key: 'hatchOrigin', at: { x: known.point[0], y: known.point[1] }, kind: 'anchor', view,
     title: 'Hatch origin: drag to where the hatch should start',
+    // On an outline's first corner by default: the corner's grip comes first.
+    yields: true,
     move: async (to) => { await dropHatchOrigin(n.id, view, to, deps); },
   }];
 }

@@ -14,8 +14,12 @@ public static class Takeoff
     /// <summary>What the roof itself gives the takeoff: its snow guards' length, its rafters' (null: no framing, estimated), their spacing, its roof windows.</summary>
     public sealed record RoofData(double? Snow, double? RafterLength, double RafterSpacing, int Windows);
 
-    /// <summary>The roof's options (its <c>panels</c>): the support scheme, the ridge caps, the support's fixings; null takes the profile's default.</summary>
-    public sealed record Options(string? Support, string? Ridge, string? Fixing);
+    /// <summary>
+    /// The roof's options (its <c>panels</c>): the support scheme, the ridge caps, the support's fixings; null takes the profile's
+    /// default. Stage S5: the rainwater system (<c>125/90</c>, <c>150/100</c>; null: the recommended one), the downpipes (null:
+    /// the least the sizing asks) and the rain's intensity (l/s·m²; null: the default 0.05).
+    /// </summary>
+    public sealed record Options(string? Support, string? Ridge, string? Fixing, string? System = null, int? Downpipes = null, double? Rain = null);
 
     /// <summary>
     /// A line of the takeoff: its code, name, group (<c>support</c>, <c>fixings</c>, <c>flashings</c>), how many in its unit, what that

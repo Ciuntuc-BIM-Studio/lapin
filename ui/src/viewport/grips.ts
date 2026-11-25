@@ -17,6 +17,21 @@ export const bumpGrips = (): void => useGripRev.setState((s) => ({ rev: s.rev + 
 
 export interface GripGroup { key: string; at: Vec2; members: Grip[] }
 
+/**
+ * The group under the pointer: the nearest within its reach (`reach` gives its screen distance and limit), a group whose grips
+ * all yield (Grip.yields) only when no other is in reach.
+ */
+export function nearestGroup(groups: GripGroup[], reach: (g: GripGroup) => { d: number; limit: number }, best0 = Infinity): GripGroup | null {
+  let best: GripGroup | null = null, bd = best0, yielding: GripGroup | null = null, yd = best0;
+  for (const g of groups) {
+    const { d, limit } = reach(g);
+    if (d >= limit) continue;
+    if (g.members.every((m) => m.yields)) { if (d < yd) { yd = d; yielding = g; } }
+    else if (d < bd) { bd = d; best = g; }
+  }
+  return best ?? yielding;
+}
+
 /** Grips of different elements at one point (screen tolerance in model units) gathered; one element's own grips stay apart. */
 export function groupGrips(grips: Grip[], tol: number): GripGroup[] {
   const groups: GripGroup[] = [];

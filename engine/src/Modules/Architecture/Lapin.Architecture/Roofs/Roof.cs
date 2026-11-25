@@ -501,8 +501,8 @@ public static class Roof
             if (element != null) continue;
             var g = gutters[gi];
             var outlet = Drainage.OutletAt(g, station, runs[gi], spec);
-            var chain = Drainage.Chain(outlet, g.Out, Drainage.DefaultRoute(Drainage.OutFromWall(r, g, spec)), ground, false, Drainage.DefaultDiameter / 2);
-            var pipe = Drainage.PipeSolids(chain, Drainage.DefaultDiameter / 2, "downpipe");
+            var chain = Drainage.Chain(outlet, g.Out, Drainage.DefaultRoute(Drainage.OutFromWall(r, g, spec)), ground, false, Drainage.PipeDiameterOf(roof) / 2);
+            var pipe = Drainage.PipeSolids(chain, Drainage.PipeDiameterOf(roof) / 2, "downpipe");
             if (pipe.Count > 0) parts.Add(Drainage.PipePart("Downpipe", metal, Openings.Combine(pipe, "downpipe"), $"downpipe:{++auto}", chain));
             var foot = chain[^1].Xy;
             plan.Add(new PlanItem("symbol", true, Enumerable.Range(0, 12).Select(k => foot + new Vec2(Math.Cos(k * Math.PI / 6), Math.Sin(k * Math.PI / 6)) * 0.05).ToArray()));
@@ -645,7 +645,7 @@ public static class Roof
                 if (built != null && k < built.Count && built[k] is { } len) return len;
                 var g = gutters[x.Gutter];
                 var outlet = Drainage.OutletAt(g, x.Station, all.Where(y => y.Gutter == x.Gutter).Select(y => y.Station).ToList(), spec);
-                return Drainage.LengthOf(Drainage.Chain(outlet, g.Out, Drainage.DefaultRoute(Drainage.OutFromWall(r, g, spec)), ground, false, Drainage.DefaultDiameter / 2));
+                return Drainage.LengthOf(Drainage.Chain(outlet, g.Out, Drainage.DefaultRoute(Drainage.OutFromWall(r, g, spec)), ground, false, Drainage.PipeDiameterOf(roof) / 2));
             }).ToList();
             var q2 = new List<Quantity>
             {
@@ -656,7 +656,7 @@ public static class Roof
                 var ends = gutters.Sum(x => (x.CapStart ? 1 : 0) + (x.CapEnd ? 1 : 0));
                 if (ends > 0) q2.Add(new("GutterEndCount", ends, "COUNT", "Gutter end caps"));
             }
-            if (autos.Count > 0) { q2.Add(new("DownpipeCount", autos.Count, "COUNT", "Downpipes")); q2.Add(new("DownpipeLength", autos.Sum(), "LENGTH", "Downpipe Ø100")); }
+            if (autos.Count > 0) { q2.Add(new("DownpipeCount", autos.Count, "COUNT", "Downpipes")); q2.Add(new("DownpipeLength", autos.Sum(), "LENGTH", $"Downpipe Ø{Math.Round(Drainage.PipeDiameterOf(roof) * 1000)}")); }
             yield return new QuantitySet("Lapin_RoofDrainageQuantities", q2, "drainage", "Gutters and downpipes");
         }
         var rows = RoofParts.SnowGuards(r, shape, holes);
