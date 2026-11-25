@@ -446,6 +446,20 @@ public sealed class Terrain
         }
     }
 
+    /// <summary>
+    /// The contour levels every <paramref name="interval"/> shifted down by <paramref name="offset"/> (k·interval − offset), from
+    /// the lowest to the highest point: an absolute view's, whose contours fall at round altitudes (decision 867).
+    /// </summary>
+    public IEnumerable<double> Levels(double interval, double offset)
+    {
+        if (!(interval > 0) || Tin.Triangles.Count == 0) yield break;
+        for (var z = Math.Ceiling((Bounds.Min.Z + offset) / interval - 1e-9) * interval; z <= Bounds.Max.Z + offset + 1e-9; z += interval)
+        {
+            yield return Math.Round(z / interval) * interval - offset;
+            if (z + interval == z) yield break;
+        }
+    }
+
     /// <summary>The TIN's boundary edges (each in one triangle only), directed counter-clockwise around it.</summary>
     public List<(int A, int B)> Boundary()
     {

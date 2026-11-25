@@ -39,13 +39,15 @@ public static class Analysis
     public sealed record Result(string Kind, IReadOnlyList<Band> Bands, IReadOnlyList<Cell> Cells, double CellArea);
 
     /// <summary>The bands of a kind (elevation bands span the ground from its lowest to its highest point).</summary>
-    public static IReadOnlyList<Band> Bands(string kind, Terrain t)
+    public static IReadOnlyList<Band> Bands(string kind, Terrain t, LevelDatum? datum = null)
     {
+        // As the project's datum writes a level (decision 867), two decimals in metres.
+        string L(double z) => datum?.Text(z, null) ?? LevelDatum.Number(z, null);
         if (kind == "slope") return SlopeBands;
         if (kind == "cutfill") return CutFillBands;
         var (lo, hi) = (t.Bounds.Min.Z, Math.Max(t.Bounds.Max.Z, t.Bounds.Min.Z + 0.01));
         var n = ElevationColors.Length;
-        return Enumerable.Range(0, n).Select(i => new Band($"e{i}", $"{Standards.FormatLevel(lo + (hi - lo) * i / n)} … {Standards.FormatLevel(lo + (hi - lo) * (i + 1) / n)}", ElevationColors[i], i == n - 1 ? double.PositiveInfinity : lo + (hi - lo) * (i + 1) / n)).ToList();
+        return Enumerable.Range(0, n).Select(i => new Band($"e{i}", $"{L(lo + (hi - lo) * i / n)} … {L(lo + (hi - lo) * (i + 1) / n)}", ElevationColors[i], i == n - 1 ? double.PositiveInfinity : lo + (hi - lo) * (i + 1) / n)).ToList();
     }
 
     public static Band BandOf(IReadOnlyList<Band> bands, double v) => bands.FirstOrDefault(b => v <= b.UpTo + 1e-9) ?? bands[^1];
@@ -105,7 +107,7 @@ public static class Analysis
         if (t.Tin.Triangles.Count == 0) return null;
         var existing = kind == "cutfill" ? Terrains.Existing(terrain) : null;
         var designed = new Designed(m, terrain, t);
-        var bands = Bands(kind, t);
+        var bands = Bands(kind, t, LevelDatum.Of(m));
         var (min, max) = t.Bounds;
         var span = Math.Max(max.X - min.X, max.Y - min.Y);
         var cell = Math.Max(span / 60, 0.25);

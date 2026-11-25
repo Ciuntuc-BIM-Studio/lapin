@@ -12,6 +12,8 @@ public sealed record DocFormat(string Lang, string Units, double? AreaStep = nul
     public string? DateFormat { get; init; }
     /// <summary>The project's standards, for its levels (<see cref="Lapin.Drawing.Standards.FormatLevel(double, Lapin.Drawing.StyleBook, bool)"/>); null: two decimals in metres, or the units' imperial.</summary>
     public Lapin.Drawing.StyleBook? Book { get; init; }
+    /// <summary>The project's level datum (relative, absolute or both: decision 867); null: the model's z as it is.</summary>
+    public LevelDatum? Datum { get; init; }
 
     public static DocFormat Ro => new("ro", "metric");
 }

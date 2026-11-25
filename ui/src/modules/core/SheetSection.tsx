@@ -12,6 +12,7 @@ import { t as tr } from '../../i18n';
 import { DisciplinePicker } from './DisciplinePicker';
 import { listTitleBlocks, setSheetTitleBlock, type TbList } from './titleBlocks/titleBlocks';
 import { titleBlocksDialog } from './titleBlocks/TitleBlocksDialog';
+import { VIEW_LEVEL_MODES, viewDatumPatch } from '../../shell/levelDatum';
 
 /** A field the sheet types for its title block: its own value, and what prints when it is left empty. */
 export interface SheetTbField { key: string; label: string; value?: string | null; otherwise?: string | null }
@@ -46,6 +47,14 @@ export function SheetSection({ node }: { node: NodeDto }) {
         </select>
         <button type="button" className="btn mini" title="Edit the title blocks: Manage → Title blocks…" data-field="sheet-title-blocks"
           onClick={() => { titleBlocksDialog.open = own || blocks?.default || null; useUi.setState({ dialog: 'titleBlocks' }); }}>…</button>
+      </dd>
+      <dt title="How every view placed on the sheet writes its levels: each view keeps it, and may change it again">Levels in its views</dt>
+      <dd>
+        <select value="" disabled={!node.editable} data-field="sheet-level-datum" onChange={(e) => { if (e.target.value) void execute('view.levelDatum', viewDatumPatch({ sheet: node.id }, e.target.value === 'project' ? '' : e.target.value)); }}>
+          <option value="">Set every view…</option>
+          <option value="project">as the project's</option>
+          {VIEW_LEVEL_MODES.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+        </select>
       </dd>
       {(fields ?? FIELDS).map(({ key, label, otherwise }) => (
         <span key={key} style={{ display: 'contents' }}>

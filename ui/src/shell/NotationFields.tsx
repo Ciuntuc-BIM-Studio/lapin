@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { groupKeys, setNotation, SYMBOLS, tokenHint, useNotation, type NotationKey } from './notation';
+import { groupKeys, setNotation, symbolsOf, tokenHint, useNotation, type NotationKey } from './notation';
 
 /** A text applied when left or on Enter (a template half typed is not sent); Esc puts it back. */
 function TemplateInput({ value, placeholder, onCommit, testId }: { value: string; placeholder: string; onCommit: (v: string) => void; testId: string }) {
@@ -19,13 +19,14 @@ function TemplateInput({ value, placeholder, onCommit, testId }: { value: string
 function KeyRow({ domain, k }: { domain: string; k: NotationKey }) {
   const commit = (text: string) => void setNotation(domain, { key: k.key, text });
   const testId = `notation-${domain}-${k.key}`;
+  const symbols = symbolsOf(domain);
   return (
     <label className="field-line" data-notation-key={k.key}>
       <span className="eyebrow">{k.label}</span>
       {k.kind === 'symbol' && (
-        <select value={SYMBOLS.includes(k.value) ? k.value : ''} data-field={`${testId}-pick`} onChange={(e) => { if (e.target.value) commit(e.target.value); }}>
+        <select value={symbols.includes(k.value) ? k.value : ''} data-field={`${testId}-pick`} onChange={(e) => { if (e.target.value) commit(e.target.value); }}>
           <option value="">Other…</option>
-          {SYMBOLS.map((s) => <option key={s} value={s} data-no-i18n>{s}</option>)}
+          {symbols.map((s) => <option key={s} value={s} data-no-i18n>{s}</option>)}
         </select>
       )}
       <TemplateInput value={k.value} placeholder={k.default} onCommit={commit} testId={testId} />
@@ -35,7 +36,10 @@ function KeyRow({ domain, k }: { domain: string; k: NotationKey }) {
   );
 }
 
-export function NotationFields({ domain }: { domain: string }) {
+/** The formula hint under a domain's texts (rebar's by default); null: none. */
+const REBAR_FORMULA = 'A formula works in any text: {= round(d / 25.4; 2)} writes the diameter in inches.';
+
+export function NotationFields({ domain, formula = REBAR_FORMULA }: { domain: string; formula?: string | null }) {
   const d = useNotation(domain);
   if (!d) return null;
   const { drawing, schedule } = groupKeys(d.keys);
@@ -52,9 +56,9 @@ export function NotationFields({ domain }: { domain: string }) {
       <p className="muted small">Symbols, prefixes and spacing differ from one country to another. The presets are indicative: check them against the standard you work to. A text you type goes over the preset; empty, it goes back.</p>
       {drawing.map((k) => <KeyRow key={k.key} domain={domain} k={k} />)}
       <p className="muted small" data-no-i18n>{hints}</p>
-      <p className="eyebrow">Schedule</p>
+      {schedule.length > 0 && <p className="eyebrow">Schedule</p>}
       {schedule.map((k) => <KeyRow key={k.key} domain={domain} k={k} />)}
-      <p className="muted small">{'A formula works in any text: {= round(d / 25.4; 2)} writes the diameter in inches.'}</p>
+      {formula && <p className="muted small">{formula}</p>}
       <div className="row small"><button type="button" className="btn" data-action={`notation-${domain}-reset`} onClick={() => void setNotation(domain, { reset: true })}>Back to Lapin's notation</button></div>
     </div>
   );

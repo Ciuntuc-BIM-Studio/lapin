@@ -63,7 +63,7 @@ public static class Symbols
     /// (<c>level.name</c>, <c>level.elevation</c> as +3.00, <c>level.z</c>), the project's and the system's; then <paramref name="more"/>
     /// (a slot's own tokens, a sheet's).
     /// </summary>
-    public static Func<string, (bool Known, string? Value)> Resolver(IModelView m, SymbolDef def, Entity? instance, Entity? view, Vec2? at = null, Func<string, (bool Known, string? Value)>? more = null)
+    public static Func<string, (bool Known, string? Value)> Resolver(IModelView m, SymbolDef? def, Entity? instance, Entity? view, Vec2? at = null, Func<string, (bool Known, string? Value)>? more = null)
     {
         var values = instance?.Attrs["values"] as JsonObject;
         return key =>
@@ -77,7 +77,7 @@ public static class Symbols
                 case "attr":
                 {
                     if (values != null && values.FirstOrDefault(p => p.Key.Equals(k, StringComparison.OrdinalIgnoreCase)) is { Value: { } v }) return (true, v.ToString());
-                    return def.Attributes.FirstOrDefault(a => a.Key.Equals(k, StringComparison.OrdinalIgnoreCase)) is { } a ? (true, a.Default) : (false, null);
+                    return def?.Attributes.FirstOrDefault(a => a.Key.Equals(k, StringComparison.OrdinalIgnoreCase)) is { } a ? (true, a.Default) : (false, null);
                 }
                 case "symbol":
                     return k switch
@@ -100,19 +100,28 @@ public static class Symbols
                     };
                 case "level":
                 {
+                    var datum = LevelDatum.Of(m, view);
+                    // The tie (±0.00 = 650.00) is the project's, on a sheet's title block as on a plan.
+                    if (k == "tie") return (true, datum.Tie(DraftingResources.Book(m)));
                     var storey = view != null ? m.Get(view.Str("storeyId") ?? "") : null;
-                    if (storey is not { Class: IfcClass.BuildingStorey }) return k is "name" or "elevation" or "z" ? (true, "") : (false, null);
+                    if (storey is not { Class: IfcClass.BuildingStorey }) return k is "name" or "elevation" or "z" or "altitude" or "relative" ? (true, "") : (false, null);
                     var z = storey.Num("elevation");
+                    // As the view's datum writes it (relative, absolute or both: decision 867), the altitude and the relative level alone.
                     return k switch
                     {
                         "name" => (true, storey.Name),
-                        "elevation" => (true, Standards.FormatLevel(z, DraftingResources.Book(m))),
+                        "elevation" => (true, datum.Text(z, DraftingResources.Book(m))),
+                        "altitude" => (true, datum.AltitudeOf(z, DraftingResources.Book(m))),
+                        "relative" => (true, datum.LevelOf(z, DraftingResources.Book(m))),
                         "z" => (true, Num(z)),
                         _ => (false, null),
                     };
                 }
                 case "project":
                     if (k == "name") return (true, Spatial.Project(m)?.Name ?? "");
+                    // The altitude of ±0.00 and the tie note (decision 867).
+                    if (k == "altitude") { var pd = LevelDatum.Of(m); return (true, pd.AltitudeOf(pd.Zero, DraftingResources.Book(m))); }
+                    if (k == "levelTie") return (true, LevelDatum.Of(m).Tie(DraftingResources.Book(m)));
                     if (Documents.ProjectInfo.Fields.Any(f => f.Key == k)) return (true, Documents.ProjectInfo.Get(m, k));
                     return Documents.ProjectInfo.Customs(m).FirstOrDefault(c => c.Key.Equals(k, StringComparison.OrdinalIgnoreCase)) is { } c ? (true, c.Printed) : (false, null);
                 case "system":
@@ -130,7 +139,7 @@ public static class Symbols
     static string Num(double v) => Math.Round(v, 6).ToString("0.######", CultureInfo.InvariantCulture);
 
     /// <summary>A level as drawings write it by default: +3.00, −0.45, ±0.00 (the project's own decimals and zeros: <see cref="Standards.FormatLevel(double, StyleBook, bool)"/>).</summary>
-    public static string Level(double z) => Standards.FormatLevel(z);
+    public static string Level(double z) => LevelDatum.Number(z, null);
 
     /// <summary>The tokens offered to insert in a symbol's text, by group (its attributes first).</summary>
     public static List<(string Key, string Label, string Group)> FieldList(IModelView m, SymbolDef? def)
@@ -140,10 +149,12 @@ public static class Symbols
         o.AddRange([
             ("view.name", "View name", "view"), ("view.scale", "View scale (1:100)", "view"), ("view.scaleNumber", "View scale (100)", "view"),
             ("level.name", "Level name", "view"), ("level.elevation", "Level elevation (+3.00)", "view"), ("level.z", "Level elevation (m)", "view"),
+            ("level.altitude", "Level altitude (+653.00)", "view"), ("level.relative", "Level relative to ±0.00 (+3.00)", "view"), ("level.tie", "Tie note (±0.00 = 650.00)", "view"),
             ("point.x", "Insertion point x (m)", "symbol"), ("point.y", "Insertion point y (m)", "symbol"),
             ("point.elevation", "Level at the insertion point (+3.00; sections and elevations)", "symbol"), ("point.z", "Level at the insertion point (m)", "symbol"),
+            ("point.altitude", "Altitude at the insertion point (+653.00; sections and elevations)", "symbol"),
             ("symbol.name", "Symbol name", "symbol"), ("symbol.angle", "Symbol angle (°)", "symbol"), ("symbol.scale", "Symbol scale", "symbol"),
-            ("project.name", "Project name", "project"),
+            ("project.name", "Project name", "project"), ("project.altitude", "Altitude of ±0.00 (+650.00)", "project"), ("project.levelTie", "Tie note (±0.00 = 650.00)", "project"),
         ]);
         foreach (var (key, label, _) in Documents.ProjectInfo.Grouped) o.Add(("project." + key, label, "project"));
         foreach (var c in Documents.ProjectInfo.Customs(m)) o.Add(("project." + c.Key, c.Label, "project"));
@@ -189,7 +200,8 @@ public static class Symbols
             return key switch
             {
                 "point.z" when z is { } h => (true, Num(h)),
-                "point.elevation" when z is { } h => (true, Standards.FormatLevel(h, c.Book)),
+                "point.elevation" when z is { } h => (true, LevelDatum.Text(c, h)),
+                "point.altitude" when z is { } h => (true, LevelDatum.Of(c).AltitudeOf(h, c.Book)),
                 _ => (false, null),
             };
         };

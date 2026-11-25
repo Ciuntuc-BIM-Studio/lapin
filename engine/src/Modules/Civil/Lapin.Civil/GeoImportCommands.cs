@@ -169,6 +169,8 @@ public static class GeoImportCommands
         var e = new Entity(ctx.NewId(), IfcClass.GeographicElement, name, Terrains.NewAttrs(ctx, pts, datum), Terrains.Predefined);
         ctx.Add(e);
         Spatial.Contain(ctx, Storey(ctx, a), e.Id);
-        return new JsonObject { ["id"] = e.Id, ["points"] = pts.Count, ["datum"] = datum };
+        var made = new JsonObject { ["id"] = e.Id, ["points"] = pts.Count, ["datum"] = datum };
+        if (Terrains.AdoptAltitude(ctx, datum) is { } note) made["note"] = note;
+        return made;
     }
 }

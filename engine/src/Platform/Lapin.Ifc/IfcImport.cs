@@ -237,6 +237,7 @@ public static partial class IfcImport
             Project(edit);
             Georeference(edit);
             Storeys(edit);
+            ZeroStorey(edit);
             if (!o.ReferenceOnly)
             {
                 Materials(edit);

@@ -8048,6 +8048,47 @@ export const scenes = [
     },
   },
   {
+    // Levels relative or absolute (decision 867, report #190): a survey at 650.37 brought in makes its datum the project's altitude;
+    // the site plan in altitudes draws its contours at round ones; a section writes +0.00 (+650.37); Manage → Location → Levels.
+    id: 'level-datums',
+    touches: ['core', 'civil', 'architecture'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const s = await t.storey();
+      await t.cmd('storey.create', { name: 'First floor', elevation: 3, height: 3 });
+      for (const [x1, y1, x2, y2] of [[10, 8, 22, 8], [22, 8, 22, 18], [22, 18, 10, 18], [10, 18, 10, 8]]) await t.cmd('architecture.addWall', { storeyId: s, x1, y1, x2, y2 });
+      const rows = [];
+      for (let x = 0; x <= 40; x += 5) for (let y = 0; y <= 30; y += 5) rows.push(`${x} ${y} ${(650.37 + 0.05 * x + 0.02 * y).toFixed(3)}`);
+      const made = await t.cmd('civil.addTerrain', { text: rows.join('\n'), datum: 650.37, storeyId: s, interval: 0.5, majorEvery: 2, name: 'Survey' });
+      t.expect(typeof made?.note === 'string', 'the survey says it took its datum as the project\'s altitude');
+      const datum = await t.call('doc.query', { name: 'project.levelDatum', args: {} });
+      t.expect(Math.abs((datum?.altitude ?? 0) - 650.37) < 1e-6, `the project's altitude is the terrain's datum (${datum?.altitude})`);
+      // The site plan in altitudes: contours at 650.50, 651.00…
+      await t.cmd('project.levelDatum', { mode: 'absolute' });
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(1200);
+      await t.shot('level-datum-site', { of: '[data-testid=plan]', pad: 0 });
+      // A section across the house: both, +0.00 (+650.37).
+      await t.cmd('project.levelDatum', { mode: 'both' });
+      const view = (await t.cmd('view.create', { kind: 'section', start: [16, 4], end: [16, 22], name: 'Section A' })).id;
+      await t.ui({ view: 'drawing', drawingViewId: view, selection: null, selected: [], keyPlan: false });
+      await t.wait(1500);
+      await t.fit();
+      await t.wait(800);
+      const texts = JSON.stringify(await t.call('doc.query', { name: 'view.drawing', args: { id: view } }));
+      t.expect(texts.includes('+0.00 (+650.37)'), 'the section writes the level and its altitude');
+      await t.shot('level-datum-section', { of: '[data-testid=drawing]', pad: 0 });
+      await t.ui({ dialog: 'location' });
+      await t.wait(1000);
+      t.expect(await page.locator('[data-field=level-datum]').count() === 1, 'Manage → Location has its Levels block');
+      await t.shot('level-datum', { of: '[data-field=level-datum]', pad: 6 });
+      await t.ui({ dialog: null, keyPlan: true });
+    },
+  },
+  {
     // Copy to storeys (a tester's wish): the ground floor's walls, doors, windows and floor onto the two levels above, in one step.
     id: 'copy-storeys',
     async run(t) {
