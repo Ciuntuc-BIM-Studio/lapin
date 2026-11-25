@@ -13387,6 +13387,15 @@ const S5D_TAILS: Record<string, string> = {
   "documents expire within 30 days": "เอกสารหมดอายุภายใน 30 วัน",
   "Reference documents past their validity: click to list them": "เอกสารอ้างอิงที่พ้นกำหนดอายุ: คลิกเพื่อดูรายการ",
   "Reference documents whose validity ends soon: click to list them": "เอกสารอ้างอิงที่ใกล้หมดอายุ: คลิกเพื่อดูรายการ",
+  // Reference documents synced with a server (docs/plan-cde-references.md, stage R4).
+  "Sync issues and documents": "ซิงก์ประเด็นและเอกสาร",
+  "The remarks synced with the server's issues and the reference documents with its documents: theirs brought here (one undo step), yours sent": "ข้อสังเกตที่ซิงก์กับประเด็นของเซิร์ฟเวอร์ และเอกสารอ้างอิงที่ซิงก์กับเอกสารของเซิร์ฟเวอร์: ของเซิร์ฟเวอร์ถูกนำมาที่นี่ (เลิกทำหนึ่งขั้น) ของคุณถูกส่งไป",
+  "This server does not keep reference documents.": "เซิร์ฟเวอร์นี้ไม่เก็บเอกสารอ้างอิง",
+  "Reference documents up to date with the server.": "เอกสารอ้างอิงเป็นปัจจุบันกับเซิร์ฟเวอร์แล้ว",
+  "Group by folder": "จัดกลุ่มตามโฟลเดอร์",
+  "Someone changed this document at the same time: it was read again. Make your change again.": "มีคนแก้ไขเอกสารนี้พร้อมกัน: อ่านใหม่แล้ว โปรดแก้ไขอีกครั้ง",
+  "Reading the files…": "กำลังอ่านไฟล์…",
+  "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "โมเดล: บันทึกสำเนาแล้วเปิดใน Lapin เป็นลิงก์ (ไฟล์ → ลิงก์ IFC…)",
 };
 export const TH_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   // Publish sets (forum topic 225)
@@ -13904,4 +13913,5 @@ export const TH_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^Camera bookmark (\d+) saved\.$/, (m) => `บันทึกบุ๊กมาร์กกล้อง ${m[1]} แล้ว.`],
   [/^Camera bookmark (\d+) is empty: (.+) in 3D keeps the current view there\.$/, (m) => `บุ๊กมาร์กกล้อง ${m[1]} ว่างอยู่: กด ${m[2]} ใน 3D เพื่อเก็บมุมมองปัจจุบันไว้ที่นี่.`],
   [/^Camera bookmark (\d+) is empty\.$/, (m) => `บุ๊กมาร์กกล้อง ${m[1]} ว่างอยู่.`],
+  [/^Reference documents synced: (\d+) changed here, (\d+) sent\.$/, (m) => `ซิงก์เอกสารอ้างอิงแล้ว: เปลี่ยนที่นี่ ${m[1]} ส่งไป ${m[2]}`],
 ];

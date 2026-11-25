@@ -7278,6 +7278,15 @@ const S5D_TAILS: Record<string, string> = {
   "documents expire within 30 days": "dokumentów wygasa w ciągu 30 dni",
   "Reference documents past their validity: click to list them": "Dokumenty referencyjne po terminie ważności: kliknij, aby je wyświetlić",
   "Reference documents whose validity ends soon: click to list them": "Dokumenty referencyjne, których ważność wkrótce się kończy: kliknij, aby je wyświetlić",
+  // Reference documents synced with a server (docs/plan-cde-references.md, stage R4).
+  "Sync issues and documents": "Synchronizuj problemy i dokumenty",
+  "The remarks synced with the server's issues and the reference documents with its documents: theirs brought here (one undo step), yours sent": "Uwagi zsynchronizowane z problemami serwera, a dokumenty referencyjne z jego dokumentami: jego zmiany są przynoszone tutaj (jeden krok cofania), twoje są wysyłane",
+  "This server does not keep reference documents.": "Ten serwer nie przechowuje dokumentów referencyjnych.",
+  "Reference documents up to date with the server.": "Dokumenty referencyjne są aktualne względem serwera.",
+  "Group by folder": "Grupuj według folderów",
+  "Someone changed this document at the same time: it was read again. Make your change again.": "Ktoś zmienił ten dokument w tym samym czasie: odczytano go ponownie. Wprowadź zmianę jeszcze raz.",
+  "Reading the files…": "Odczyt plików…",
+  "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "Model: zapisz kopię i otwórz ją w Lapin jako łącze (Plik → Połącz IFC…).",
 };
 export const PL_PATTERNS: Language['patterns'] = [
   // Publish sets (forum topic 225)
@@ -7796,4 +7805,5 @@ export const PL_PATTERNS: Language['patterns'] = [
   [/^Camera bookmark (\d+) saved\.$/, (m) => `Zakładka kamery ${m[1]} zapisana.`],
   [/^Camera bookmark (\d+) is empty: (.+) in 3D keeps the current view there\.$/, (m) => `Zakładka kamery ${m[1]} jest pusta: ${m[2]} w 3D zapisuje tam bieżący widok.`],
   [/^Camera bookmark (\d+) is empty\.$/, (m) => `Zakładka kamery ${m[1]} jest pusta.`],
+  [/^Reference documents synced: (\d+) changed here, (\d+) sent\.$/, (m) => `Zsynchronizowano dokumenty referencyjne: ${m[1]} zmienionych tutaj, ${m[2]} wysłanych.`],
 ];

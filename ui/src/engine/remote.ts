@@ -229,8 +229,8 @@ export async function getLatest(): Promise<void> {
     const o = await writingCall<{ pulled?: boolean; kind?: string; message?: string; notes?: string[] }>('remote.pull', {}, server);
     if (!o) return;
     for (const n of o.notes ?? []) notify(n);
-    // The server's issues come with the latest (W3), whatever the commits did.
-    if (server) await syncIssues(server, true);
+    // The server's issues and reference documents come with the latest (W3, R4), whatever the commits did.
+    if (server) await syncIssuesAndDocuments(server, true);
     if (o.pulled === false) return open(o.message ?? 'Someone saved before you: choose what to keep.');
     notify('Up to date with the server.');
   } catch (e) { notify(e instanceof Error ? e.message : String(e)); }
@@ -276,4 +276,55 @@ export function tellIssueSync(r: IssueSyncReport, quiet: boolean): void {
   for (const code of codes) notify(refusalText(code, r.refused.find((x) => x.code === code)?.message));
   const who = [...new Set(r.byOthers.map((x) => x.who))];
   if (who.length > 0) notify(`Changed by others: ${who.join(', ')}`);
+}
+
+// ------------------------------------------------------------ reference documents (R4)
+
+/** What a sync of the reference documents did (engine ReferenceSync): changes here, what went to the server, files moved, refusals, others' work. */
+export interface ReferenceSyncReport {
+  offered: boolean;
+  changedHere: number; added: number; removed: number; created: number; updated: number; deleted: number; conflicts: number; uploaded: number; downloaded: number;
+  settings: 'sent' | 'received' | null;
+  refused: { id: string; title: string | null; code: string; message: string }[];
+  byOthers: { who: string; title: string | null; what: string[] }[];
+  first: boolean;
+}
+
+/**
+ * The project's reference documents synced with the server's (remote.syncReferences): the server is the truth, field by field, last
+ * writer wins; files go through the object store (those above the project's keep limit stay on the server). `quiet` says only what
+ * matters. Null when there is no sign-in; a server without the `references` feature does nothing (said unless quiet).
+ */
+export async function syncReferences(server: string, quiet = false): Promise<ReferenceSyncReport | null> {
+  if (!await signedIn(server)) { if (!quiet) notify('Sign in to the server first.'); return null; }
+  try {
+    const r = engineInBrowser
+      ? await writingCall<{ report: ReferenceSyncReport }>('remote.syncReferences', {}, server)
+      : await remoteCall<{ report: ReferenceSyncReport }>('remote.syncReferences', {}, server);
+    if (!r) return null;
+    tellReferenceSync(r.report, quiet);
+    return r.report;
+  } catch (e) {
+    notify(e instanceof Error ? e.message : String(e));
+    return null;
+  }
+}
+
+/** What a sync of the documents did, said: the counts, the conflicts, each refusal once, and who else changed what. */
+export function tellReferenceSync(r: ReferenceSyncReport, quiet: boolean): void {
+  if (!r.offered) { if (!quiet) notify('This server does not keep reference documents.'); return; }
+  const sent = r.created + r.updated + r.deleted;
+  if (r.changedHere > 0 || sent > 0 || !quiet) notify(r.changedHere === 0 && sent === 0 ? 'Reference documents up to date with the server.' : `Reference documents synced: ${r.changedHere} changed here, ${sent} sent.`);
+  if (r.conflicts > 0) notify(`${r.conflicts} edits met someone else's: merged, the last writer's value kept.`);
+  const codes = [...new Set(r.refused.map((x) => x.code))];
+  for (const code of codes) notify(refusalText(code, r.refused.find((x) => x.code === code)?.message));
+  const who = [...new Set(r.byOthers.map((x) => x.who))];
+  if (who.length > 0) notify(`Changed by others: ${who.join(', ')}`);
+}
+
+/** The issues, then the reference documents, synced one after the other (Save to server, Get latest, Collaborate → Sync issues and documents). */
+export async function syncIssuesAndDocuments(server: string, quiet = false): Promise<{ issues: IssueSyncReport | null; documents: ReferenceSyncReport | null }> {
+  const issues = await syncIssues(server, quiet);
+  const documents = await syncReferences(server, quiet);
+  return { issues, documents };
 }

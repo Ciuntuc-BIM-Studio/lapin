@@ -13387,6 +13387,15 @@ const S5D_TAILS: Record<string, string> = {
   "documents expire within 30 days": "dokument går ut inom 30 dagar",
   "Reference documents past their validity: click to list them": "Referensdokument vars giltighet har gått ut: klicka för att lista dem",
   "Reference documents whose validity ends soon: click to list them": "Referensdokument vars giltighet snart går ut: klicka för att lista dem",
+  // Reference documents synced with a server (docs/plan-cde-references.md, stage R4).
+  "Sync issues and documents": "Synka ärenden och dokument",
+  "The remarks synced with the server's issues and the reference documents with its documents: theirs brought here (one undo step), yours sent": "Anmärkningarna synkade med serverns ärenden och referensdokumenten med dess dokument: dess hämtas hit (ett ångra-steg), dina skickas",
+  "This server does not keep reference documents.": "Den här servern lagrar inga referensdokument.",
+  "Reference documents up to date with the server.": "Referensdokumenten är uppdaterade mot servern.",
+  "Group by folder": "Gruppera efter mapp",
+  "Someone changed this document at the same time: it was read again. Make your change again.": "Någon ändrade det här dokumentet samtidigt: det lästes in igen. Gör din ändring igen.",
+  "Reading the files…": "Läser filerna…",
+  "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "En modell: spara en kopia och öppna den i Lapin som en länk (Arkiv → Länka IFC…).",
 };
 export const SV_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   // Publish sets (forum topic 225)
@@ -13904,4 +13913,5 @@ export const SV_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^Camera bookmark (\d+) saved\.$/, (m) => `Kamerabokmärke ${m[1]} sparat.`],
   [/^Camera bookmark (\d+) is empty: (.+) in 3D keeps the current view there\.$/, (m) => `Kamerabokmärke ${m[1]} är tomt: ${m[2]} i 3D sparar den aktuella vyn där.`],
   [/^Camera bookmark (\d+) is empty\.$/, (m) => `Kamerabokmärke ${m[1]} är tomt.`],
+  [/^Reference documents synced: (\d+) changed here, (\d+) sent\.$/, (m) => `Referensdokument synkade: ${m[1]} ändrade här, ${m[2]} skickade.`],
 ];

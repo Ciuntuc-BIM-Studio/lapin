@@ -7230,6 +7230,15 @@ const S5D_TAILS: Record<string, string> = {
   "documents expire within 30 days": "Dokumente laufen innerhalb von 30 Tagen ab",
   "Reference documents past their validity: click to list them": "Referenzdokumente mit abgelaufener Gültigkeit: klicken, um sie aufzulisten",
   "Reference documents whose validity ends soon: click to list them": "Referenzdokumente, deren Gültigkeit bald endet: klicken, um sie aufzulisten",
+  // Reference documents synced with a server (docs/plan-cde-references.md, stage R4).
+  "Sync issues and documents": "Probleme und Dokumente synchronisieren",
+  "The remarks synced with the server's issues and the reference documents with its documents: theirs brought here (one undo step), yours sent": "Die Anmerkungen mit den Problemen des Servers und die Referenzdokumente mit dessen Dokumenten abgleichen: seine hierher geholt (ein Rückgängig-Schritt), Ihre gesendet",
+  "This server does not keep reference documents.": "Dieser Server führt keine Referenzdokumente.",
+  "Reference documents up to date with the server.": "Referenzdokumente sind mit dem Server auf dem neuesten Stand.",
+  "Group by folder": "Nach Ordner gruppieren",
+  "Someone changed this document at the same time: it was read again. Make your change again.": "Jemand hat dieses Dokument gleichzeitig geändert: es wurde neu gelesen. Machen Sie Ihre Änderung erneut.",
+  "Reading the files…": "Dateien werden gelesen…",
+  "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "Ein Modell: Kopie speichern und in Lapin als Verknüpfung öffnen (Datei → IFC verknüpfen…).",
 };
 export const DE_PATTERNS: Language['patterns'] = [
   // Publish sets (forum topic 225)
@@ -7748,4 +7757,5 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^Camera bookmark (\d+) saved\.$/, (m) => `Kamera-Lesezeichen ${m[1]} gespeichert.`],
   [/^Camera bookmark (\d+) is empty: (.+) in 3D keeps the current view there\.$/, (m) => `Kamera-Lesezeichen ${m[1]} ist leer: ${m[2]} in 3D speichert dort die aktuelle Ansicht.`],
   [/^Camera bookmark (\d+) is empty\.$/, (m) => `Kamera-Lesezeichen ${m[1]} ist leer.`],
+  [/^Reference documents synced: (\d+) changed here, (\d+) sent\.$/, (m) => `Referenzdokumente synchronisiert: ${m[1]} hier geändert, ${m[2]} gesendet.`],
 ];

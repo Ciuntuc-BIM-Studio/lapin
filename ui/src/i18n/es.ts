@@ -7272,6 +7272,15 @@ const S5D_TAILS: Record<string, string> = {
   "documents expire within 30 days": "documentos caducan en 30 días",
   "Reference documents past their validity: click to list them": "Documentos de referencia con la vigencia superada: haz clic para listarlos",
   "Reference documents whose validity ends soon: click to list them": "Documentos de referencia cuya vigencia termina pronto: haz clic para listarlos",
+  // Reference documents synced with a server (docs/plan-cde-references.md, stage R4).
+  "Sync issues and documents": "Sincronizar incidencias y documentos",
+  "The remarks synced with the server's issues and the reference documents with its documents: theirs brought here (one undo step), yours sent": "Las observaciones sincronizadas con las incidencias del servidor y los documentos de referencia con los suyos: los suyos traídos aquí (un paso de deshacer), los tuyos enviados",
+  "This server does not keep reference documents.": "Este servidor no guarda documentos de referencia.",
+  "Reference documents up to date with the server.": "Los documentos de referencia están al día con el servidor.",
+  "Group by folder": "Agrupar por carpeta",
+  "Someone changed this document at the same time: it was read again. Make your change again.": "Alguien cambió este documento a la vez: se ha vuelto a leer. Haz tu cambio de nuevo.",
+  "Reading the files…": "Leyendo los archivos…",
+  "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "Un modelo: guarda una copia y ábrela en Lapin como vínculo (Archivo → Vincular IFC…).",
 };
 export const ES_PATTERNS: Language['patterns'] = [
   // Publish sets (forum topic 225)
@@ -7790,4 +7799,5 @@ export const ES_PATTERNS: Language['patterns'] = [
   [/^Camera bookmark (\d+) saved\.$/, (m) => `Marcador de cámara ${m[1]} guardado.`],
   [/^Camera bookmark (\d+) is empty: (.+) in 3D keeps the current view there\.$/, (m) => `El marcador de cámara ${m[1]} está vacío: ${m[2]} en 3D guarda ahí la vista actual.`],
   [/^Camera bookmark (\d+) is empty\.$/, (m) => `El marcador de cámara ${m[1]} está vacío.`],
+  [/^Reference documents synced: (\d+) changed here, (\d+) sent\.$/, (m) => `Documentos de referencia sincronizados: ${m[1]} cambiados aquí, ${m[2]} enviados.`],
 ];

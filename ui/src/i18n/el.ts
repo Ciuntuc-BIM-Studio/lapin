@@ -13358,6 +13358,15 @@ const S5D_TAILS_EL: Record<string, string> = {
   "documents expire within 30 days": "έγγραφα λήγουν εντός 30 ημερών",
   "Reference documents past their validity: click to list them": "Έγγραφα αναφοράς με ληγμένη ισχύ: κάντε κλικ για να εμφανιστούν",
   "Reference documents whose validity ends soon: click to list them": "Έγγραφα αναφοράς των οποίων η ισχύς λήγει σύντομα: κάντε κλικ για να εμφανιστούν",
+  // Reference documents synced with a server (docs/plan-cde-references.md, stage R4).
+  "Sync issues and documents": "Συγχρονισμός ζητημάτων και εγγράφων",
+  "The remarks synced with the server's issues and the reference documents with its documents: theirs brought here (one undo step), yours sent": "Οι παρατηρήσεις συγχρονίζονται με τα ζητήματα του διακομιστή και τα έγγραφα αναφοράς με τα δικά του έγγραφα: τα δικά του έρχονται εδώ (ένα βήμα αναίρεσης), τα δικά σας αποστέλλονται",
+  "This server does not keep reference documents.": "Αυτός ο διακομιστής δεν φυλάσσει έγγραφα αναφοράς.",
+  "Reference documents up to date with the server.": "Τα έγγραφα αναφοράς είναι ενημερωμένα με τον διακομιστή.",
+  "Group by folder": "Ομαδοποίηση ανά φάκελο",
+  "Someone changed this document at the same time: it was read again. Make your change again.": "Κάποιος άλλαξε αυτό το έγγραφο ταυτόχρονα: διαβάστηκε ξανά. Κάντε ξανά την αλλαγή σας.",
+  "Reading the files…": "Ανάγνωση των αρχείων…",
+  "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "Ένα μοντέλο: αποθηκεύστε ένα αντίγραφο και ανοίξτε το στο Lapin ως σύνδεσμο (Αρχείο → Σύνδεση IFC…).",
 };
 
 export const EL_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
@@ -13846,4 +13855,5 @@ export const EL_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^Camera bookmark (\d+) saved\.$/, (m) => `Ο σελιδοδείκτης κάμερας ${m[1]} αποθηκεύτηκε.`],
   [/^Camera bookmark (\d+) is empty: (.+) in 3D keeps the current view there\.$/, (m) => `Ο σελιδοδείκτης κάμερας ${m[1]} είναι κενός: το ${m[2]} σε 3D κρατά εκεί την τρέχουσα προβολή.`],
   [/^Camera bookmark (\d+) is empty\.$/, (m) => `Ο σελιδοδείκτης κάμερας ${m[1]} είναι κενός.`],
+  [/^Reference documents synced: (\d+) changed here, (\d+) sent\.$/, (m) => `Συγχρονισμός εγγράφων αναφοράς: ${m[1]} άλλαξαν εδώ, ${m[2]} στάλθηκαν.`],
 ];

@@ -12,8 +12,9 @@ import { notify } from '../../../app/store';
 import { saveFile } from '../../../engine/files';
 import { formatSize } from '../format';
 import { today } from './expiry';
+import { useRefAdapter } from './adapter';
 import {
-  attachFiles, badgeOf, deleteRef, detachFile, fileKind, fileOf, flattenFolders, nameIn, readFiles, splitList, suggestFor, supersedeRef, updateRef, withdrawRef,
+  badgeOf, fileKind, flattenFolders, nameIn, readFiles, splitList,
   type FolderTree, type RefDoc, type RefFile, type Suggestion, type TypeList,
 } from './references';
 import { StatusBadge } from './StatusBadge';
@@ -23,9 +24,10 @@ import { ReferenceChecklist } from './ReferenceChecklist';
 type Suggested = 'type' | 'number' | 'date' | 'issuer' | 'validUntil';
 const SUGGESTED: [Suggested, string][] = [['type', 'Type'], ['number', 'Number'], ['date', 'Date'], ['issuer', 'Issuer'], ['validUntil', 'Valid until']];
 
-export function ReferenceDetail({ doc, docs, types, tree, lang, phases, guest, onSelect, onChanged }: {
-  doc: RefDoc; docs: RefDoc[]; types: TypeList; tree: FolderTree; lang: string; phases: string[]; guest: boolean; onSelect: (id: string) => void; onChanged: () => void;
+export function ReferenceDetail({ doc, docs, types, tree, lang, phases, guest, canDelete = !guest, onSelect, onChanged }: {
+  doc: RefDoc; docs: RefDoc[]; types: TypeList; tree: FolderTree; lang: string; phases: string[]; guest: boolean; canDelete?: boolean; onSelect: (id: string) => void; onChanged: () => void;
 }) {
+  const adapter = useRefAdapter();
   const type = types.types.find((x) => x.id === doc.type);
   const [tab, setTab] = useState<'details' | 'checklist'>('details');
   const [open, setOpen] = useState<string | null>(doc.files[0]?.name ?? null);
@@ -35,7 +37,7 @@ export function ReferenceDetail({ doc, docs, types, tree, lang, phases, guest, o
   const folders = flattenFolders(tree.folders);
   const b = badgeOf(doc, today());
   const live = doc.status !== 'withdrawn' && doc.status !== 'superseded';
-  const save = (patch: Record<string, unknown>) => { void updateRef(doc.id, patch).then(onChanged); };
+  const save = (patch: Record<string, unknown>) => { void adapter.update(doc.id, patch).then(onChanged); };
   const titleOf = (id: string) => docs.find((d) => d.id === id)?.title ?? id;
   const readonly = guest;
   const openFile = doc.files.find((f) => f.name === open) ?? null;
@@ -56,7 +58,7 @@ export function ReferenceDetail({ doc, docs, types, tree, lang, phases, guest, o
   const ask = async () => {
     setBusy(true);
     try {
-      const s = await suggestFor(doc.id, open ?? undefined);
+      const s = (await adapter.suggest?.(doc.id, open ?? undefined)) ?? null;
       if (!s) { notify('No suggestion could be read from this file.'); return; }
       const on = new Set<string>(SUGGESTED.map(([k]) => k as string).filter((k) => s[k as Suggested] != null && String(s[k as Suggested]) !== String(doc[k as keyof RefDoc] ?? '')));
       setSuggest({ s, on });
@@ -73,25 +75,25 @@ export function ReferenceDetail({ doc, docs, types, tree, lang, phases, guest, o
   const evidenceOf = (k: Suggested) => suggest?.s.evidence?.[k] ?? (k === 'validUntil' ? suggest?.s.evidence?.validityMonths : undefined);
 
   const saveCopy = async (f: RefFile) => {
-    const r = await fileOf(doc.id, f.name);
+    const r = await adapter.file(doc.id, f.name);
     if (!r) { notify('The file could not be read.'); return; }
     await saveFile(Uint8Array.from(atob(r.data), (c) => c.charCodeAt(0)), r.name, r.mime ?? 'application/octet-stream');
   };
   const detach = (f: RefFile) => {
-    if (confirmAction('Take the file {name} off this document? The document and its other files stay.', { name: f.name })) void detachFile(doc.id, f.name).then(onChanged);
+    if (confirmAction('Take the file {name} off this document? The document and its other files stay.', { name: f.name })) void adapter.detach(doc.id, f.name).then(onChanged);
   };
   const attachPicked = async (files: File[]) => {
     if (!files.length) return;
-    const r = await attachFiles(doc.id, await readFiles(files));
+    const r = await adapter.attach(doc.id, await readFiles(files));
     r?.warnings.forEach((w) => notify(w));
     onChanged();
   };
   const withdraw = () => {
     const reason = promptText('Why is this document withdrawn?')?.trim();
-    if (reason) void withdrawRef(doc.id, reason).then(onChanged);
+    if (reason) void adapter.withdraw(doc.id, reason).then(onChanged);
   };
   const remove = () => {
-    if (confirmAction('Delete {title} for good? Its record and its files leave the project; withdrawing keeps them. This is for a file added by mistake.', { title: doc.title })) void deleteRef(doc.id).then(onChanged);
+    if (confirmAction('Delete {title} for good? Its record and its files leave the project; withdrawing keeps them. This is for a file added by mistake.', { title: doc.title })) void adapter.remove(doc.id).then(onChanged);
   };
   const others = docs.filter((d) => d.id !== doc.id && d.status !== 'withdrawn');
   const relates = (doc.relatesTo ?? []).filter((id) => docs.some((d) => d.id === id));
@@ -110,9 +112,10 @@ export function ReferenceDetail({ doc, docs, types, tree, lang, phases, guest, o
         : (
           <>
             <div className="row"><StatusBadge label={b.label} tone={b.tone} expiry={b.expiry} />
+              {doc.textStatus === 'pending' && <span className="muted small" data-testid="refs-reading">Reading the files…</span>}
               {doc.status === 'withdrawn' && doc.reason && <span className="muted small">{doc.reason}</span>}
               <span className="grow" />
-              {!guest && live && <button type="button" className="btn small" data-testid="refs-suggest" disabled={busy || doc.files.length === 0} title="Read the number, the dates and the issuer from the file's text; you confirm them" onClick={() => void ask()}><Sparkles size={12} /> Suggest</button>}
+              {!guest && live && adapter.suggest && <button type="button" className="btn small" data-testid="refs-suggest" disabled={busy || doc.files.length === 0} title="Read the number, the dates and the issuer from the file's text; you confirm them" onClick={() => void ask()}><Sparkles size={12} /> Suggest</button>}
             </div>
 
             {suggest && (
@@ -197,7 +200,7 @@ export function ReferenceDetail({ doc, docs, types, tree, lang, phases, guest, o
             {(doc.supersedes ?? []).map((id) => <p key={id} className="small"><span>Supersedes</span> <button type="button" className="link" onClick={() => onSelect(id)}>{titleOf(id)}</button></p>)}
             {!readonly && live && (
               <label className="refs-field"><span className="muted small"><Replace size={11} /> <span>Superseded by…</span></span>
-                <select value="" aria-label="Superseded by" onChange={(e) => { if (e.target.value) void supersedeRef(doc.id, e.target.value).then(onChanged); }}>
+                <select value="" aria-label="Superseded by" onChange={(e) => { if (e.target.value) void adapter.supersede(doc.id, e.target.value).then(onChanged); }}>
                   <option value="">—</option>
                   {others.filter((d) => d.status !== 'superseded').map((d) => <option key={d.id} value={d.id}>{d.title}</option>)}
                 </select>
@@ -221,10 +224,10 @@ export function ReferenceDetail({ doc, docs, types, tree, lang, phases, guest, o
               <div className="row refs-end">
                 {live && <button type="button" className="btn small" data-testid="refs-withdraw" onClick={withdraw}><Ban size={12} /> Withdraw…</button>}
                 <span className="grow" />
-                <button type="button" className="btn small danger" data-testid="refs-delete" onClick={remove}><Trash2 size={12} /> Delete…</button>
+                {canDelete && <button type="button" className="btn small danger" data-testid="refs-delete" onClick={remove}><Trash2 size={12} /> Delete…</button>}
               </div>
             )}
-            {doc.addedAt && <p className="muted small"><span>Added</span> {doc.addedAt.slice(0, 10)}{doc.addedBy ? ` · ${doc.addedBy}` : ''}</p>}
+            {doc.addedAt && <p className="muted small"><span>Added</span> {doc.addedAt.slice(0, 10)}{doc.addedByName ?? doc.addedBy ? ` · ${doc.addedByName ?? doc.addedBy}` : ''}</p>}
           </>
         )}
     </div>

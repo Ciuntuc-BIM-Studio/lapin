@@ -11,10 +11,13 @@ import { ArrowDown, ArrowUp, FolderPlus, Plus, Trash2 } from 'lucide-react';
 import { execute } from '../../../engine/session';
 import { useLang } from '../../../i18n';
 import { addFolder, addTypeField, draftOf, moveFolder, removeFolder, renameFolder, renameType, sameTree, typeIdOf, type FolderDraft } from './folderEdit';
-import { nameIn, setFolders, setTypes, type FolderTree, type RefType, type TypeList } from './references';
+import { useRefAdapter } from './adapter';
+import { nameIn, type FolderTree, type RefType, type TypeList } from './references';
 
 export function ReferenceSettings({ tree, types, guest, onDone }: { tree: FolderTree; types: TypeList; guest: boolean; onDone: () => void }) {
   const ui = useLang((s) => s.lang);
+  const adapter = useRefAdapter();
+  const { setFolders, setTypes } = adapter;
   const [tab, setTab] = useState<'folders' | 'types'>('folders');
   const [draft, setDraft] = useState<FolderDraft[]>(() => draftOf(tree.folders));
   const [list, setList] = useState<RefType[]>(types.types);
@@ -79,7 +82,7 @@ export function ReferenceSettings({ tree, types, guest, onDone }: { tree: Folder
               <button type="button" className="btn small primary" disabled={!dirtyFolders} data-testid="refs-save-folders" onClick={() => void saveFolders()}>Save folders</button>
             </div>
           )}
-          <KeepLimit tree={tree} guest={guest} onDone={onDone} />
+          {adapter.kind === 'engine' && <KeepLimit tree={tree} guest={guest} onDone={onDone} />}
         </>
       )}
       {tab === 'types' && (

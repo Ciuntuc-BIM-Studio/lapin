@@ -20,6 +20,8 @@ export interface RefDoc {
   phase?: string[]; discipline?: string; status: string; expired: boolean; folder?: string; folderPath?: string; files: RefFile[];
   requires?: ChecklistRequire[]; relatesTo?: string[]; fields?: Record<string, string>; supersededBy?: string; supersedes?: string[]; reason?: string;
   requestedAt?: string; requestedBy?: string; addedAt?: string; addedBy?: string; modifiedAt?: string; modifiedBy?: string; withdrawnAt?: string;
+  /** On a server (R4): the names it knows for `addedBy` and `modifiedBy`, the files' text state (`pending` while being read) and the record's ETag. */
+  addedByName?: string; modifiedByName?: string; textStatus?: string; etag?: string;
 }
 export interface RefFolder { id: string; name: Named; text: string; count: number; total: number; derived?: string; children: RefFolder[] }
 export interface FolderTree {
@@ -196,7 +198,22 @@ export const typeList = () => query<TypeList>('references.types');
 export const checklistOf = (id: string) => query<Checklist>('references.checklist', { id, today: today() });
 export const suggestFor = (id: string, name?: string) => query<Suggestion>('references.suggest', { id, ...(name ? { name } : {}) });
 export const scanFolder = () => query<ScanResult>('references.scan');
-export const fileOf = (id: string, name?: string) => query<{ name: string; mime?: string; size: number; data: string }>('references.file', { id, ...(name ? { name } : {}) });
+export interface RefFileData { name: string; mime?: string; size: number; data: string }
+/**
+ * A file's bytes as base64: the project's copy, else (a file above the project's keep limit that a sync left on the server) fetched
+ * from the project's server through `remote.referenceFile` when the project's remote is a signed-in server (stage R4).
+ */
+export async function fileOf(id: string, name?: string): Promise<RefFileData | null> {
+  const here = await query<RefFileData>('references.file', { id, ...(name ? { name } : {}) });
+  if (here) return here;
+  if (!name) return null;
+  try {
+    const { historyStatus, remoteCall, serverOf, signedIn } = await import('../../../engine/remote');
+    const server = serverOf(await historyStatus());
+    if (!server || !await signedIn(server)) return null;
+    return await remoteCall<RefFileData>('remote.referenceFile', { id, name }, server);
+  } catch { return null; }
+}
 export const textOf = (id: string, name?: string, pages?: string) => query<{ pageCount: number; pages: { page: number; text: string }[]; warning?: string }>('references.text', { id, ...(name ? { name } : {}), ...(pages ? { pages } : {}) });
 
 export const addRef = (args: Record<string, unknown>) => execute('references.add', { ...args, today: today() }) as Promise<AddResult | null>;

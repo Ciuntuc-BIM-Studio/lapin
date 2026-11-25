@@ -7324,6 +7324,15 @@ const S5D_TAILS: Record<string, string> = {
   "documents expire within 30 days": "ເອກະສານໝົດອາຍຸພາຍໃນ 30 ມື້",
   "Reference documents past their validity: click to list them": "ເອກະສານອ້າງອີງທີ່ເກີນອາຍຸການໃຊ້: ກົດເພື່ອສະແດງລາຍການ",
   "Reference documents whose validity ends soon: click to list them": "ເອກະສານອ້າງອີງທີ່ໃກ້ຈະໝົດອາຍຸ: ກົດເພື່ອສະແດງລາຍການ",
+  // Reference documents synced with a server (docs/plan-cde-references.md, stage R4).
+  "Sync issues and documents": "ຊິ້ງບັນຫາ ແລະ ເອກະສານ",
+  "The remarks synced with the server's issues and the reference documents with its documents: theirs brought here (one undo step), yours sent": "ໝາຍເຫດທີ່ຊິ້ງກັບບັນຫາຂອງເຊີບເວີ ແລະ ເອກະສານອ້າງອີງທີ່ຊິ້ງກັບເອກະສານຂອງມັນ: ຂອງເຊີບເວີຖືກນຳມາທີ່ນີ້ (ຍົກເລີກໜຶ່ງຂັ້ນຕອນ), ຂອງທ່ານຖືກສົ່ງໄປ",
+  "This server does not keep reference documents.": "ເຊີບເວີນີ້ບໍ່ເກັບເອກະສານອ້າງອີງ.",
+  "Reference documents up to date with the server.": "ເອກະສານອ້າງອີງທັນສະໄໝກັບເຊີບເວີແລ້ວ.",
+  "Group by folder": "ຈັດກຸ່ມຕາມໂຟນເດີ",
+  "Someone changed this document at the same time: it was read again. Make your change again.": "ມີຄົນແກ້ໄຂເອກະສານນີ້ພ້ອມກັນ: ອ່ານໃໝ່ແລ້ວ. ກະລຸນາແກ້ໄຂອີກຄັ້ງ.",
+  "Reading the files…": "ກຳລັງອ່ານໄຟລ໌…",
+  "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "ແບບຈຳລອງ: ບັນທຶກສຳເນົາ ແລ້ວເປີດໃນ Lapin ເປັນລິ້ງ (ໄຟລ໌ → ລິ້ງ IFC…).",
 };
 export const LO_PATTERNS: Language['patterns'] = [
   // Publish sets (forum topic 225)
@@ -7842,4 +7851,5 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^Camera bookmark (\d+) saved\.$/, (m) => `ບັນທຶກບຸກມາກກ້ອງ ${m[1]} ແລ້ວ.`],
   [/^Camera bookmark (\d+) is empty: (.+) in 3D keeps the current view there\.$/, (m) => `ບຸກມາກກ້ອງ ${m[1]} ຫວ່າງຢູ່: ກົດ ${m[2]} ໃນ 3D ເພື່ອເກັບມຸມມອງປັດຈຸບັນໄວ້ບ່ອນນີ້.`],
   [/^Camera bookmark (\d+) is empty\.$/, (m) => `ບຸກມາກກ້ອງ ${m[1]} ຫວ່າງຢູ່.`],
+  [/^Reference documents synced: (\d+) changed here, (\d+) sent\.$/, (m) => `ຊິ້ງເອກະສານອ້າງອີງແລ້ວ: ປ່ຽນທີ່ນີ້ ${m[1]}, ສົ່ງໄປ ${m[2]}.`],
 ];

@@ -7266,6 +7266,15 @@ const S5D_TAILS: Record<string, string> = {
   "documents expire within 30 days": "份文件将在 30 天内到期",
   "Reference documents past their validity: click to list them": "已过有效期的参考文件：点击列出",
   "Reference documents whose validity ends soon: click to list them": "有效期即将结束的参考文件：点击列出",
+  // Reference documents synced with a server (docs/plan-cde-references.md, stage R4).
+  "Sync issues and documents": "同步问题和文档",
+  "The remarks synced with the server's issues and the reference documents with its documents: theirs brought here (one undo step), yours sent": "批注与服务器的问题同步，参考文件与服务器的文档同步：服务器上的内容带到这里（一步撤销），你的内容发送过去",
+  "This server does not keep reference documents.": "此服务器不保存参考文件。",
+  "Reference documents up to date with the server.": "参考文件已与服务器同步到最新。",
+  "Group by folder": "按文件夹分组",
+  "Someone changed this document at the same time: it was read again. Make your change again.": "有人同时修改了此文件：已重新读取。请再次进行你的修改。",
+  "Reading the files…": "正在读取文件…",
+  "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "模型：保存一份副本，然后在 Lapin 中作为链接打开（文件 → 链接 IFC…）。",
 };
 export const ZH_PATTERNS: Language['patterns'] = [
   // Publish sets (forum topic 225)
@@ -7784,4 +7793,5 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^Camera bookmark (\d+) saved\.$/, (m) => `相机书签 ${m[1]} 已保存.`],
   [/^Camera bookmark (\d+) is empty: (.+) in 3D keeps the current view there\.$/, (m) => `相机书签 ${m[1]} 为空：在 3D 中按 ${m[2]} 可将当前视图保存到该处.`],
   [/^Camera bookmark (\d+) is empty\.$/, (m) => `相机书签 ${m[1]} 为空.`],
+  [/^Reference documents synced: (\d+) changed here, (\d+) sent\.$/, (m) => `参考文件已同步：此处更改 ${m[1]} 项，已发送 ${m[2]} 项。`],
 ];

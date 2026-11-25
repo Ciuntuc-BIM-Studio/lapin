@@ -10,12 +10,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Download, FileSpreadsheet, FolderOpen, GitCompare, RefreshCw, RotateCw, Undo2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { download, isDesktop, openProjectBytes, pickPath, safeFileName, fileBytes } from '../../engine/files';
-import { historyStatus, refusalText, remoteCall, signedIn, syncIssues, writingCall } from '../../engine/remote';
-import { useCde, type Role } from '../../engine/cdeServer';
+import { historyStatus, refusalText, remoteCall, signedIn, syncIssuesAndDocuments, writingCall } from '../../engine/remote';
+import { isCdeServer, useCde, type Role } from '../../engine/cdeServer';
 import { when } from './format';
+import { useLang } from '../../i18n';
+import { folderNames, groupByFolder, type FolderNode } from './references/roleFolders';
 import { openRemark } from './remarks/RemarksDialog';
 import {
-  AtriumError, account, approveSubmission, features, commitViewer, containers as getContainers, getRules, getSubmission, handoverDiff, members as listMembers, listSubmissions, outbox, rejectSubmission, rerunChecks, serverBytes, withdrawSubmission,
+  AtriumError, account, approveSubmission, need, features, commitViewer, containers as getContainers, getRules, getSubmission, handoverDiff, members as listMembers, listSubmissions, outbox, rejectSubmission, rerunChecks, serverBytes, withdrawSubmission,
   type Containers, type GateTopic, type HandoverDiff, type OutboxItem, type Rules, type ServerFile, type Submission, type SubmissionStatus,
 } from '../../engine/atrium';
 import { pollChecks, type GateChecks } from '../../engine/checks';
@@ -30,6 +32,7 @@ const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const IdsOnSubmit = lazyPart(() => import('./ids/IdsOnSubmit').then((m) => m.IdsOnSubmit), { inline: true });
 const IdsPanel = lazyPart(() => import('./ids/IdsPanel').then((m) => m.IdsPanel), { inline: true });
 // W6c: the IDS files on the server and the dry run (CdeIds.tsx), when the server offers `ids`.
+const DocumentsTab = lazyPart(() => import('./references/CdeDocuments').then((m) => m.CdeDocuments), { inline: true });
 const IdsServerPanel = lazyPart(() => import('./CdeIds').then((m) => m.IdsServerPanel), { inline: true });
 const IdsCheckOnServer = lazyPart(() => import('./CdeIds').then((m) => m.IdsCheckOnServer), { inline: true });
 const short = (id: string) => id.slice(0, 8);
@@ -109,7 +112,7 @@ function useMe(server: string, project: string): { me: Me | null; rules: Rules |
 
 // ------------------------------------------------------------ the panel
 
-type Tab = 'containers' | 'submissions' | 'diff' | 'register' | 'serverIds' | 'ids';
+type Tab = 'containers' | 'submissions' | 'diff' | 'register' | 'serverIds' | 'ids' | 'documents';
 
 /**
  * A submission read whole (with its checks report) and kept up to date while its checks run (W5): polled until they are done or
@@ -172,12 +175,13 @@ function Publishing({ server, project, name, offers, withModel }: { server: stri
         <button type="button" className="link small" data-cde="handover-report" disabled={busy} title="The issues, their comments and the journal of who changed what, as an Excel workbook" onClick={() => void run(() => exportHandover(server, project, name))}><FileSpreadsheet size={12} /> Handover report (XLSX)</button>
       </p>
       <div className="cde-tabs" role="tablist">
-        {([['containers', 'Containers'], ['submissions', 'Submissions'], ['diff', 'Handover diff'], ...(offers.includes('register') ? [['register', 'Register']] : []), ...(offers.includes('ids') ? [['serverIds', 'IDS on the server']] : []), ...(withModel ? [['ids', 'IDS']] : [])] as [Tab, string][]).map(([id, label]) => (
+        {([['containers', 'Containers'], ['submissions', 'Submissions'], ['diff', 'Handover diff'], ...(offers.includes('references') && isCdeServer(server) ? [['documents', 'Documents']] : []), ...(offers.includes('register') ? [['register', 'Register']] : []), ...(offers.includes('ids') ? [['serverIds', 'IDS on the server']] : []), ...(withModel ? [['ids', 'IDS']] : [])] as [Tab, string][]).map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={tab === id} className={`tab${tab === id ? ' active' : ''}`} data-cde-tab={id} onClick={() => setTab(id)}>{label}</button>
         ))}
       </div>
       {failed && <p className="muted small">{failed}</p>}
-      {tab === 'containers' && <ContainersView server={server} project={project} name={name} data={data} busy={busy} run={run} />}
+      {tab === 'containers' && <ContainersView server={server} project={project} name={name} data={data} busy={busy} run={run} folders={offers.includes('references')} />}
+      {tab === 'documents' && <DocumentsTab server={server} project={project} />}
       {tab === 'submissions' && <SubmissionsQueue server={server} project={project} who={who} onDecided={load} checks={offers.includes('checks')} />}
       {tab === 'diff' && <HandoverDiffView server={server} project={project} name={name} data={data} />}
       {tab === 'ids' && <IdsPanel server={server} project={project} />}
@@ -189,41 +193,59 @@ function Publishing({ server, project, name, offers, withModel }: { server: stri
 
 // ------------------------------------------------------------ containers
 
-function ContainersView({ server, project, name, data, busy, run }: { server: string; project: string; name: string; data: Containers | null; busy: boolean; run: (f: () => Promise<unknown>) => Promise<void> }) {
+function ContainersView({ server, project, name, data, busy, run, folders = false }: { server: string; project: string; name: string; data: Containers | null; busy: boolean; run: (f: () => Promise<unknown>) => Promise<void>; folders?: boolean }) {
   const [files, setFiles] = useState<string | null>(null);
+  // Group by folder (R4): the reference documents' folders say where each role's items go; read once, when asked for.
+  const [grouped, setGrouped] = useState(false);
+  const [map, setMap] = useState<{ roleFolders: Record<string, string>; names: Map<string, string> } | null>(null);
+  const lang = useLang((s) => s.lang);
+  useEffect(() => {
+    if (!grouped || map) return;
+    let live = true;
+    void need<{ folders: FolderNode[]; roleFolders?: Record<string, string> }>(server, 'GET', `atrium/1.0/projects/${encodeURIComponent(project)}/references/folders?lang=${lang === 'ro' ? 'ro' : 'en'}`)
+      .then((f) => { if (live) setMap({ roleFolders: f.roleFolders ?? {}, names: folderNames(f.folders ?? [], lang === 'ro' ? 'ro' : 'en') }); })
+      .catch((e) => { notify(message(e)); if (live) setGrouped(false); });
+    return () => { live = false; };
+  }, [grouped, map, server, project, lang]);
   if (!data) return <p className="muted small">Loading…</p>;
   const file = (f: ServerFile) => (
     <li key={f.name} className="small row">
       <button type="button" className="link" disabled={busy} title="Download the issued file" onClick={() => void run(() => saveFromServer(server, `${P(project)}/objects/${f.sha256}`, f.name))}><Download size={11} /> <span data-no-i18n>{f.name}</span></button>
     </li>
   );
+  const row = (r: ReturnType<typeof containerRows>[number]) => (
+    <li key={r.key} className="cde-row" data-cde-revision={r.key}>
+      <span className="cde-row-body">
+        <span className="recent-name"><span data-no-i18n>{r.title}</span>{r.suitability && <span className="chip" data-no-i18n>{r.suitability}</span>}
+          {r.fromSubmission && <span className="chip">approved</span>}
+          {r.supersededBy && <span className="muted small"> <span>superseded by</span> <span data-no-i18n>{tagShort(r.supersededBy)}</span></span>}</span>
+        <span className="muted small" data-no-i18n>{r.by} · {when(r.at)} · {short(r.commit)}{r.note ? ` · ${r.note}` : ''}</span>
+      </span>
+      <span className="cde-row-actions">
+        <button type="button" className="btn" disabled={busy} title="Open this revision, read-only" onClick={() => void run(() => openRevision(server, project, name, r.commit))}><FolderOpen size={13} />Open</button>
+        <button type="button" className="icon" disabled={busy} title="Download the .lapin" onClick={() => void run(() => saveFromServer(server, `${P(project)}/commits/${r.commit}/package?viewer=false`, safeFileName(`${name} ${r.revision ?? short(r.commit)}.lapin`)))}><Download size={13} /><span>.lapin</span></button>
+        <button type="button" className="icon" disabled={busy} title="Download the IFC copy" onClick={() => void run(() => downloadIfc(server, project, name, r.commit))}><Download size={13} /><span>IFC</span></button>
+        {r.files > 0 && <button type="button" className="link small" onClick={() => setFiles(files === r.key ? null : r.key)} title="The files issued with this revision">{r.files} <span>files</span></button>}
+      </span>
+      {files === r.key && r.tag && <ul className="cde-issued-files">{r.tag.files.map(file)}</ul>}
+    </li>
+  );
   return (
     <div className="cde-containers" data-cde-containers>
+      {folders && <label className="row small"><input type="checkbox" checked={grouped} data-cde="group-by-folder" onChange={(e) => setGrouped(e.target.checked)} /> <span>Group by folder</span></label>}
       {CONTAINERS.map(({ id, label }) => {
         const rows = containerRows(data, id as ContainerId);
         return (
           <section key={id} className="cde-container" data-cde-container={id}>
             <p className="eyebrow">{label} <span className="muted small" data-no-i18n>{rows.length}</span></p>
             {rows.length === 0 && <p className="muted small">Nothing here.</p>}
-            <ul className="cde-list">
-              {rows.map((r) => (
-                <li key={r.key} className="cde-row" data-cde-revision={r.key}>
-                  <span className="cde-row-body">
-                    <span className="recent-name"><span data-no-i18n>{r.title}</span>{r.suitability && <span className="chip" data-no-i18n>{r.suitability}</span>}
-                      {r.fromSubmission && <span className="chip">approved</span>}
-                      {r.supersededBy && <span className="muted small"> <span>superseded by</span> <span data-no-i18n>{tagShort(r.supersededBy)}</span></span>}</span>
-                    <span className="muted small" data-no-i18n>{r.by} · {when(r.at)} · {short(r.commit)}{r.note ? ` · ${r.note}` : ''}</span>
-                  </span>
-                  <span className="cde-row-actions">
-                    <button type="button" className="btn" disabled={busy} title="Open this revision, read-only" onClick={() => void run(() => openRevision(server, project, name, r.commit))}><FolderOpen size={13} />Open</button>
-                    <button type="button" className="icon" disabled={busy} title="Download the .lapin" onClick={() => void run(() => saveFromServer(server, `${P(project)}/commits/${r.commit}/package?viewer=false`, safeFileName(`${name} ${r.revision ?? short(r.commit)}.lapin`)))}><Download size={13} /><span>.lapin</span></button>
-                    <button type="button" className="icon" disabled={busy} title="Download the IFC copy" onClick={() => void run(() => downloadIfc(server, project, name, r.commit))}><Download size={13} /><span>IFC</span></button>
-                    {r.files > 0 && <button type="button" className="link small" onClick={() => setFiles(files === r.key ? null : r.key)} title="The files issued with this revision">{r.files} <span>files</span></button>}
-                  </span>
-                  {files === r.key && r.tag && <ul className="cde-issued-files">{r.tag.files.map(file)}</ul>}
-                </li>
-              ))}
-            </ul>
+            {map && grouped
+              ? groupByFolder(rows, (r) => [...(r.tag?.files.map((f) => f.name) ?? []), r.tag?.name ?? r.title], map.roleFolders, map.names).map((g) => (
+                <div key={g.folder ?? 'other'} data-cde-group={g.folder ?? 'other'}>
+                  <p className="muted small"><b>{g.name ?? 'Other'}</b> <span data-no-i18n>{g.rows.length}</span></p>
+                  <ul className="cde-list">{g.rows.map(row)}</ul>
+                </div>))
+              : <ul className="cde-list">{rows.map(row)}</ul>}
           </section>
         );
       })}
@@ -497,8 +519,8 @@ export async function saveForIssue(server: string | null, note: string): Promise
   const o = await remoteCall<{ pushed?: boolean; message?: string; notes?: string[] }>('remote.push', {}, server);
   for (const n of o.notes ?? []) notify(n);
   if (o.pushed === false) { notify(o.message ?? 'The remote did not take it.'); return false; }
-  // The issues go along, as Save to server sends them (W3): the gate is worked out from the server's.
-  if (server) await syncIssues(server, true);
+  // The issues go along, as Save to server sends them (W3): the gate is worked out from the server's. The documents too (R4).
+  if (server) await syncIssuesAndDocuments(server, true);
   return true;
 }
 

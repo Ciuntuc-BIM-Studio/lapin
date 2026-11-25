@@ -17,9 +17,10 @@ import { useLang } from '../../../i18n';
 import { usePhaseList } from '../format';
 import { PendingDialog } from '../PendingDialog';
 import { today, useReferencesOpen } from './expiry';
+import { RefProvider, enginePerms, engineAdapter, type RefAdapter, type RefPerms } from './adapter';
 import {
-  addRef, badgeOf, dragHasFiles, DRAG_TYPE, filterRefs, flattenFolders, folderLanguage, folderTree, hasNoReferenceSettings, listRefs, moveRefs,
-  NO_FILTER, nameIn, phaseChoices, readFiles, setFolders, sortRefs, typeList,
+  badgeOf, dragHasFiles, DRAG_TYPE, filterRefs, flattenFolders, folderLanguage, hasNoReferenceSettings,
+  NO_FILTER, nameIn, phaseChoices, readFiles, sortRefs,
   type AddResult, type FolderTree, type RefDoc, type RefFilter, type RefFolder, type SortKey, type TypeList,
 } from './references';
 import { ReferenceDetail } from './ReferenceDetail';
@@ -32,13 +33,26 @@ const COLUMNS: [SortKey, string][] = [['title', 'Title'], ['type', 'Type'], ['is
 
 interface Outcome { added: number; duplicates: { title: string; of: string[] }[]; warnings: string[] }
 
+/** Manage → Reference documents…: the open project's documents, in a dialog. */
 export function ReferencesDialog() {
   const nodes = useSession((s) => s.nodes);
+  const guest = isGuest();
+  const close = () => useUi.setState({ dialog: null });
+  const perms = useMemo(() => enginePerms(guest), [guest]);
+  return <ReferencesWorkspace adapter={engineAdapter} perms={perms} reloadOn={nodes} onClose={close} />;
+}
+
+/**
+ * The list, the folder tree and the document's detail over an adapter: in a dialog over the open project (onClose given), or in the
+ * CDE web's Documents tab over a server (`embedded`). `reloadOn` makes it read again when it changes (the project's nodes).
+ */
+export function ReferencesWorkspace({ adapter, perms, reloadOn, onClose, embedded = false }: { adapter: RefAdapter; perms: RefPerms; reloadOn?: unknown; onClose?: () => void; embedded?: boolean }) {
   const error = useSession((s) => s.error);
   const ui = useLang((s) => s.lang);
   const opened = useReferencesOpen();
   const phases = usePhaseList();
-  const guest = isGuest();
+  const guest = !perms.add;
+  const server = adapter.kind === 'server';
   const [docs, setDocs] = useState<RefDoc[] | null>(null);
   const [tree, setTree] = useState<FolderTree | null>(null);
   const [types, setTypes] = useState<TypeList | null>(null);
@@ -52,27 +66,37 @@ export function ReferencesDialog() {
   const [overFolder, setOverFolder] = useState<string | null>(null);
   const [closed, setClosed] = useState<Set<string>>(new Set());
   const input = useRef<HTMLInputElement>(null);
-  const close = () => useUi.setState({ dialog: null });
+  const close = onClose ?? (() => undefined);
   const now = today();
 
   // Only the latest read is kept (one started before it, answering late, is dropped).
   const asked = useRef(0);
   const refresh = useCallback(async () => {
     const n = ++asked.current;
-    const [d, f, t] = [await listRefs(), await folderTree(), await typeList()];
-    if (n !== asked.current) return;
-    setDocs(d); setTree(f); setTypes(t);
-  }, []);
-  useEffect(() => { void refresh(); }, [refresh, nodes]);
+    try {
+      const [d, f, t] = [await adapter.list(), await adapter.folders(), await adapter.types()];
+      if (n !== asked.current || !f || !t) return;
+      setDocs(d); setTree(f); setTypes(t);
+    } catch (e) { if (n === asked.current) { notify(e instanceof Error ? e.message : String(e)); setDocs((d) => d ?? []); } }
+  }, [adapter]);
+  useEffect(() => { void refresh(); }, [refresh, reloadOn]);
+
+  // A server reads the files in the background (text, IFC header): the list is read again while any is pending, until none is or the tab closes.
+  const pending = server && !!docs?.some((d) => d.textStatus === 'pending');
+  useEffect(() => {
+    if (!pending) return;
+    const t = setTimeout(() => void refresh(), 3000);
+    return () => clearTimeout(t);
+  }, [pending, docs, refresh]);
 
   // The folders are named in the interface's language the first time, while the project has no folders of its own (Romanian or English).
   const named = useRef(false);
   useEffect(() => {
-    if (named.current || !tree || guest) return;
+    if (named.current || !tree || guest || server) return;
     named.current = true;
     const lang = folderLanguage(ui);
-    if (lang !== tree.language && hasNoReferenceSettings(useSession.getState().nodes)) void setFolders({ language: lang });
-  }, [tree, ui, guest]);
+    if (lang !== tree.language && hasNoReferenceSettings(useSession.getState().nodes)) void adapter.setFolders({ language: lang });
+  }, [tree, ui, guest, server, adapter]);
 
   const shown = useMemo(() => (docs && tree ? sortRefs(filterRefs(docs, filter, tree.folders, now), sort.key, sort.desc) : []), [docs, tree, filter, sort, now]);
   const current = docs?.find((d) => d.id === selected) ?? null;
@@ -89,7 +113,7 @@ export function ReferencesDialog() {
       const result: Outcome = { added: 0, duplicates: [], warnings: [] };
       let last: string | null = null;
       for (const f of read) {
-        const r = await addRef({ files: [f], ...(target ? { folder: target } : {}), ...(filter.type ? { type: filter.type } : {}) }) as AddResult | null;
+        const r = await adapter.add({ files: [f], ...(target ? { folder: target } : {}), ...(filter.type ? { type: filter.type } : {}) }) as AddResult | null;
         if (!r) continue;
         result.added++; last = r.id;
         if (r.duplicates.length) result.duplicates.push({ title: f.name, of: r.duplicates });
@@ -105,7 +129,7 @@ export function ReferencesDialog() {
     const title = promptText('What is asked for (the title of the document)?')?.trim();
     if (!title) return;
     const folder = filter.folder && !isDerived(tree?.folders ?? [], filter.folder) ? filter.folder : undefined;
-    const r = await addRef({ title, ...(folder ? { folder } : {}), ...(filter.type ? { type: filter.type } : {}) });
+    const r = await adapter.add({ title, ...(folder ? { folder } : {}), ...(filter.type ? { type: filter.type } : {}) });
     if (r) setSelected(r.id);
   };
 
@@ -114,7 +138,7 @@ export function ReferencesDialog() {
     setDropping(false); setOverFolder(null);
     if (dragHasFiles(e)) { e.stopPropagation(); void addFiles([...e.dataTransfer.files], folder); return; }
     const raw = e.dataTransfer.getData(DRAG_TYPE);
-    if (folder && raw) { e.stopPropagation(); void moveRefs(JSON.parse(raw) as string[], folder).then(() => refresh()); }
+    if (folder && raw) { e.stopPropagation(); void adapter.move(JSON.parse(raw) as string[], folder).then(() => refresh()); }
   };
 
   const sortBy = (key: SortKey) => setSort((s) => (s.key === key ? { key, desc: !s.desc } : { key, desc: false }));
@@ -128,18 +152,32 @@ export function ReferencesDialog() {
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  if (!docs || !tree || !types) return <PendingDialog title="Reference documents" />;
+  if (!docs || !tree || !types) return embedded ? <p className="muted small">Loading…</p> : <PendingDialog title="Reference documents" />;
   const phaseList = phaseChoices(docs, phases.map((p) => p.name));
-  const canScan = isDesktop() && !guest && !!tree.projectFolder;
+  const canScan = !!adapter.scan && isDesktop() && !guest && !!tree.projectFolder;
+
+  const frame = {
+    onDragOver: (e: DragEvent) => { if (dragHasFiles(e) && !guest) { e.preventDefault(); setDropping(true); } },
+    onDragLeave: (e: DragEvent) => { if (e.currentTarget === e.target) setDropping(false); },
+    onDrop: (e: DragEvent) => onDrop(e),
+  };
+  const shell = (children: React.ReactNode) => (embedded
+    ? <div className={`refs refs-embedded${dropping ? ' refs-drop' : ''}`} data-cde-documents {...frame}>{children}{dropping && <div className="refs-drop-hint" aria-hidden="true"><span>Drop to add</span></div>}</div>
+    : (
+      <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
+        <div className={`dialog wide refs${dropping ? ' refs-drop' : ''}`} role="dialog" aria-label="Reference documents" onClick={(e) => e.stopPropagation()} {...frame}>
+          <header className="dialog-head"><span className="panel-title">Reference documents</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
+          {children}
+          <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}<span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
+          {dropping && <div className="refs-drop-hint" aria-hidden="true"><span>Drop to add</span></div>}
+        </div>
+      </div>
+    ));
 
   return (
-    <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
-      <div className={`dialog wide refs${dropping ? ' refs-drop' : ''}`} role="dialog" aria-label="Reference documents" onClick={(e) => e.stopPropagation()}
-        onDragOver={(e) => { if (dragHasFiles(e) && !guest) { e.preventDefault(); setDropping(true); } }}
-        onDragLeave={(e) => { if (e.currentTarget === e.target) setDropping(false); }}
-        onDrop={(e) => onDrop(e)}>
-        <header className="dialog-head"><span className="panel-title">Reference documents</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
-        <div className="dialog-body refs-body" data-testid="refs">
+    <RefProvider value={{ adapter, perms }}>
+      {shell(
+        <div className={embedded ? 'refs-body' : 'dialog-body refs-body'} data-testid="refs">
           <p className="muted small">What the project receives: urbanism certificates, permits and agreements, land-book extracts, studies, a consultant's models. Nothing is deleted outright: a document is superseded or withdrawn. Drop files anywhere on this window to add them.</p>
           <div className="row refs-bar">
             {!guest && <button type="button" className="btn" data-testid="refs-add" onClick={() => input.current?.click()}><Paperclip size={13} /> Add files…</button>}
@@ -161,7 +199,7 @@ export function ReferencesDialog() {
           )}
 
           {panel === 'scan' && <ReferenceScan folders={tree.folders} types={types} onDone={() => void refresh()} />}
-          {panel === 'settings' && <ReferenceSettings tree={tree} types={types} guest={guest} onDone={() => void refresh()} />}
+          {panel === 'settings' && <ReferenceSettings tree={tree} types={types} guest={!perms.admin} onDone={() => void refresh()} />}
 
           <div className="refs-grid">
             <nav className="refs-tree" aria-label="Folders" data-testid="refs-tree">
@@ -227,15 +265,12 @@ export function ReferencesDialog() {
 
             <aside className="refs-detail">
               {current
-                ? <ReferenceDetail key={current.id} doc={current} docs={docs} types={types} tree={tree} lang={ui} phases={phaseList} guest={guest} onSelect={setSelected} onChanged={() => void refresh()} />
+                ? <ReferenceDetail key={current.id} doc={current} docs={docs} types={types} tree={tree} lang={ui} phases={phaseList} guest={!perms.canChange(current)} canDelete={perms.remove} onSelect={setSelected} onChanged={() => void refresh()} />
                 : <p className="muted small">Select a document to see its details, files and links.</p>}
             </aside>
           </div>
-        </div>
-        <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}<span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
-        {dropping && <div className="refs-drop-hint" aria-hidden="true"><span>Drop to add</span></div>}
-      </div>
-    </div>
+        </div>)}
+    </RefProvider>
   );
 }
 
@@ -262,7 +297,7 @@ function FolderRows({ nodes, depth, selected, over, closed, onSelect, onToggle, 
                 ? <button type="button" className="icon mini" aria-label={open ? 'Fold' : 'Unfold'} onClick={() => onToggle(n.id)}>{open ? <ChevronDown size={11} /> : <ChevronRight size={11} />}</button>
                 : <span className="refs-twisty" />}
               <button type="button" className="refs-name" onClick={() => onSelect(n.id)}>{n.text}</button>
-              <span className="refs-count" title={kids.length ? 'With its subfolders' : undefined}>{derived ? n.count : n.total}</span>
+              <span className="refs-count" title={kids.length ? 'With its subfolders' : undefined}>{derived ? (n.count || '') : n.total}</span>
             </div>
             {open && kids.length > 0 && <FolderRows nodes={kids} depth={depth + 1} selected={selected} over={over} closed={closed} onSelect={onSelect} onToggle={onToggle} onOver={onOver} onDrop={onDrop} guest={guest} />}
           </div>

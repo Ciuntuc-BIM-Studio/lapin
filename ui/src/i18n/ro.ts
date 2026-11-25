@@ -7224,6 +7224,15 @@ const S5D_TAILS: Record<string, string> = {
   "documents expire within 30 days": "documente expiră în 30 de zile",
   "Reference documents past their validity: click to list them": "Documente de referință cu valabilitatea depășită: clic ca să le listezi",
   "Reference documents whose validity ends soon: click to list them": "Documente de referință a căror valabilitate se termină curând: clic ca să le listezi",
+  // Reference documents synced with a server (docs/plan-cde-references.md, stage R4).
+  "Sync issues and documents": "Sincronizează problemele și documentele",
+  "The remarks synced with the server's issues and the reference documents with its documents: theirs brought here (one undo step), yours sent": "Observațiile sincronizate cu problemele serverului și documentele de referință cu documentele lui: ale lui aduse aici (un singur pas de anulare), ale tale trimise",
+  "This server does not keep reference documents.": "Acest server nu păstrează documente de referință.",
+  "Reference documents up to date with the server.": "Documentele de referință sunt la zi cu serverul.",
+  "Group by folder": "Grupează pe foldere",
+  "Someone changed this document at the same time: it was read again. Make your change again.": "Altcineva a modificat acest document în același timp: a fost citit din nou. Fă modificarea încă o dată.",
+  "Reading the files…": "Se citesc fișierele…",
+  "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "Un model: salvează o copie și deschide-l în Lapin ca legătură (Fișier → Leagă IFC…).",
 };
 export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   // Publish sets (forum topic 225)
@@ -7742,4 +7751,5 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^Camera bookmark (\d+) saved\.$/, (m) => `Poziția de cameră ${m[1]} salvată.`],
   [/^Camera bookmark (\d+) is empty: (.+) in 3D keeps the current view there\.$/, (m) => `Poziția de cameră ${m[1]} este goală: ${m[2]} în 3D păstrează aici vederea curentă.`],
   [/^Camera bookmark (\d+) is empty\.$/, (m) => `Poziția de cameră ${m[1]} este goală.`],
+  [/^Reference documents synced: (\d+) changed here, (\d+) sent\.$/, (m) => `Documente de referință sincronizate: ${m[1]} schimbate aici, ${m[2]} trimise.`],
 ];

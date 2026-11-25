@@ -7267,6 +7267,15 @@ const S5D_TAILS: Record<string, string> = {
   "documents expire within 30 days": "dokumenter udløber inden for 30 dage",
   "Reference documents past their validity: click to list them": "Referencedokumenter med overskredet gyldighed: klik for at vise dem",
   "Reference documents whose validity ends soon: click to list them": "Referencedokumenter, hvis gyldighed snart udløber: klik for at vise dem",
+  // Reference documents synced with a server (docs/plan-cde-references.md, stage R4).
+  "Sync issues and documents": "Synkroniser problemer og dokumenter",
+  "The remarks synced with the server's issues and the reference documents with its documents: theirs brought here (one undo step), yours sent": "Bemærkningerne synkroniseret med serverens problemer og referencedokumenterne med dens dokumenter: dens hentet hertil (ét fortryd-trin), dine sendt",
+  "This server does not keep reference documents.": "Denne server opbevarer ikke referencedokumenter.",
+  "Reference documents up to date with the server.": "Referencedokumenterne er ajour med serveren.",
+  "Group by folder": "Gruppér efter mappe",
+  "Someone changed this document at the same time: it was read again. Make your change again.": "En anden ændrede dette dokument samtidig: det blev læst igen. Foretag din ændring igen.",
+  "Reading the files…": "Læser filerne…",
+  "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "En model: gem en kopi og åbn den i Lapin som et link (Filer → Link IFC…).",
 };
 export const DA_PATTERNS: Language['patterns'] = [
   // Publish sets (forum topic 225)
@@ -7785,4 +7794,5 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^Camera bookmark (\d+) saved\.$/, (m) => `Kamerabogmærke ${m[1]} gemt.`],
   [/^Camera bookmark (\d+) is empty: (.+) in 3D keeps the current view there\.$/, (m) => `Kamerabogmærke ${m[1]} er tomt: ${m[2]} i 3D gemmer den aktuelle visning der.`],
   [/^Camera bookmark (\d+) is empty\.$/, (m) => `Kamerabogmærke ${m[1]} er tomt.`],
+  [/^Reference documents synced: (\d+) changed here, (\d+) sent\.$/, (m) => `Referencedokumenter synkroniseret: ${m[1]} ændret her, ${m[2]} sendt.`],
 ];

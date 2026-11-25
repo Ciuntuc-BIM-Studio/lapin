@@ -53,3 +53,11 @@ A received document past its *valid until* date is **expired**; one that ends wi
 ## Scan folder
 
 On the desktop, when the project has a folder, **Scan folder** lists the files in its `Reference/` that the register does not hold, with the folder and type their path suggests, for you to add. It also lists the register's copies that are missing there or lie in another folder. The register is the truth: a file gone from the disk is a warning, never a deletion.
+
+## With a server
+
+On a project kept on a CDE server, the documents are kept there too, and the **server is the truth**. **Sync issues and documents** (File → Collaborate → Collaborate…) brings the server's documents into the project and sends yours; **Save to server** and **Get latest** do the same along with the issues. Documents are matched by their id and merged field by field: when two people changed the same field, the last writer's value stays, and Lapin says how many edits met someone else's. What others changed is said by name.
+
+- A file above the size limit stays on the server and not in your project file. It is fetched when you open it, preview it or save a copy.
+- Deleting follows the roles: viewers read, editors add and change the documents they added, owners change any document, delete one and edit the folders and types. A change the server refuses (your role does not allow it) comes back as it was, and Lapin says why.
+- The same register is on the project's page in the browser, in the **Documents** tab, without opening the project at all: see [CDE server](cde-server.md).

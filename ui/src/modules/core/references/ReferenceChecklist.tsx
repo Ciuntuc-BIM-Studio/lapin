@@ -7,8 +7,9 @@
 import { useEffect, useState } from 'react';
 import { FilePlus2, Link2, Plus, Trash2, Unlink } from 'lucide-react';
 import { useLang } from '../../../i18n';
+import { useRefAdapter } from './adapter';
 import {
-  addRef, answerCandidates, checklistOf, CHECKLIST_STATES, nameIn, requiresOf, updateRef,
+  answerCandidates, CHECKLIST_STATES, nameIn, requiresOf,
   type Checklist, type ChecklistItem, type FolderTree, type RefDoc,
 } from './references';
 
@@ -16,15 +17,16 @@ export function ReferenceChecklist({ doc, docs, tree, guest, onSelect, onChanged
   doc: RefDoc; docs: RefDoc[]; tree: FolderTree; guest: boolean; onSelect: (id: string) => void; onChanged: () => void;
 }) {
   const ui = useLang((s) => s.lang);
+  const adapter = useRefAdapter();
   const [list, setList] = useState<Checklist | null>(null);
   const [typed, setTyped] = useState('');
   // Read again whenever the documents change (a linked one received, expired, withdrawn).
   const stamp = docs.map((d) => `${d.id}:${d.status}:${d.number ?? ''}:${d.validUntil ?? ''}`).join('|') + (doc.requires ?? []).map((r) => `${r.key}:${r.document ?? ''}`).join('|');
-  useEffect(() => { let live = true; void checklistOf(doc.id).then((r) => { if (live) setList(r); }); return () => { live = false; }; }, [doc.id, stamp]);
+  useEffect(() => { let live = true; void adapter.checklist(doc.id).then((r) => { if (live) setList(r); }); return () => { live = false; }; }, [doc.id, stamp, adapter]);
   void tree;
 
   if (!list) return <p className="muted small">Reading…</p>;
-  const write = (items: ChecklistItem[]) => { void updateRef(doc.id, { requires: requiresOf(items) }).then(onChanged); };
+  const write = (items: ChecklistItem[]) => { void adapter.update(doc.id, { requires: requiresOf(items) }).then(onChanged); };
   const link = (item: ChecklistItem, document?: string) => write(list.items.map((i) => (i.key === item.key ? { ...i, document } : i)));
   const add = (key: string, label: ChecklistItem['label']) => write([...list.items, { key, label, text: '', state: 'missing' }]);
   const addTyped = () => {
@@ -37,7 +39,7 @@ export function ReferenceChecklist({ doc, docs, tree, guest, onSelect, onChanged
   };
   const request = async (item: ChecklistItem) => {
     const option = list.options.find((o) => o.key === item.key) ?? undefined;
-    const r = await addRef({ title: item.text || nameIn(item.label, ui), ...(option?.folder ? { folder: option.folder } : {}), relatesTo: [doc.id] });
+    const r = await adapter.add({ title: item.text || nameIn(item.label, ui), ...(option?.folder ? { folder: option.folder } : {}), relatesTo: [doc.id] });
     if (r) link(item, r.id);
   };
   const fine = (item: ChecklistItem) => [item.number && `${item.number}`, item.date, item.issuer, item.validUntil && `→ ${item.validUntil}`].filter(Boolean).join(' · ');

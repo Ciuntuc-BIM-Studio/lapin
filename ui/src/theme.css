@@ -3574,3 +3574,11 @@ body.panel-dragging, body.panel-dragging * { cursor: grabbing !important; user-s
 .refs-detail select, .refs-detail input { max-width: 100%; min-width: 0; }
 .refs-items li { min-width: 0; }
 .refs-table td { overflow-wrap: anywhere; }
+
+/* The CDE web's Documents tab (R4): the reference documents' workspace in the page, not in a dialog. */
+.refs-embedded { position: relative; }
+.refs-embedded .refs-grid { height: 70vh; }
+@media (max-width: 900px) {
+  .refs-embedded .refs-grid { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .refs-embedded .refs-tree, .refs-embedded .refs-list, .refs-embedded .refs-detail { max-height: 60vh; }
+}
