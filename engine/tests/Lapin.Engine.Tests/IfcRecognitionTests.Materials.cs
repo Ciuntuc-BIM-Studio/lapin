@@ -114,6 +114,11 @@ public partial class IfcRecognitionTests
         var beamType = x.F.Add("IFCBEAMTYPE", x.G("b2540"), Null, S("B 250x400"), Null, Null, Null, Null, Null, Null, E("BEAM"));
         x.F.Add("IFCRELDEFINESBYTYPE", x.G("b2540-rel"), Null, Null, Null, L([beam]), beamType);
         x.Material(beamType, ProfileSet("HA-25/B/20/IIa beam"));
+        // A profile set whose profile names no material: the column takes the default, as one with no material at all does.
+        var blank = x.Element("IFCCOLUMN", "blank", "C-blank", x.Place(9000, 0, 0), x.Shape(x.Box(0, 0, 0, 300, 300, 3000)), E("COLUMN"));
+        var blankProf = x.F.Add("IFCMATERIALPROFILE", Null, Null, Null, x.F.Add("IFCRECTANGLEPROFILEDEF", E("AREA"), S("300x300"), Null, "300.", "300."), Null, Null);
+        x.Material(blank, x.F.Add("IFCMATERIALPROFILESETUSAGE", x.F.Add("IFCMATERIALPROFILESET", S("No material"), Null, L([blankProf]), Null), "5", Null));
+        x.Element("IFCCOLUMN", "bare", "C-bare", x.Place(12000, 0, 0), x.Shape(x.Box(0, 0, 0, 300, 300, 3000)), E("COLUMN"));
 
         var f = Full();
         IfcImport.Run(f.Session, x.Write(Path.Combine(_dir, "profile-sets.ifc")), null, out _);
@@ -125,5 +130,6 @@ public partial class IfcRecognitionTests
         Assert.Equal("Concrete C30/37", Of("typed", true));
         Assert.Equal("HA-30/B/20/IIa", Of("tapered", true));
         Assert.Equal("HA-25/B/20/IIa beam", Of("beam", false));
+        Assert.Equal(Of("bare", true), Of("blank", true));
     }
 }
