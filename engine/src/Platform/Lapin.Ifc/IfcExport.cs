@@ -1621,8 +1621,9 @@ public static partial class IfcExport
         {
             if (materials.TryGetValue(id, out var r)) return r;
             var mat = m.Get(id);
-            // Its description (docs/plan-buildup-tags.md) as IfcMaterial.Description.
-            r = f.Add("IFCMATERIAL", S(mat?.Name ?? id), S(mat?.Str("description") is { Length: > 0 } d ? d : null), S(mat?.Str("category")));
+            // Its description (docs/plan-buildup-tags.md) as IfcMaterial.Description; its category, else the one its file gave (ifcCategory).
+            r = f.Add("IFCMATERIAL", S(mat?.Name ?? id), S(mat?.Str("description") is { Length: > 0 } d ? d : null),
+                S(mat?.Str("category") is { Length: > 0 } c ? c : mat?.Str("ifcCategory")));
             materials[id] = r;
             // Its Lapin id and attributes, so an import gives the material the same id and what refers to it (a column type, a zone) still finds it.
             if (mat != null) f.Add("IFCMATERIALPROPERTIES", S(IntentSetName), Null, L(IntentProperties(mat, null, [("LapinId", mat.Id)])), r);

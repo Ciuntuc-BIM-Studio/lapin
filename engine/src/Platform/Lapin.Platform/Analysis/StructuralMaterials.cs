@@ -13,14 +13,25 @@ public sealed record MaterialValue(double Value, string Source);
 /// density, each with its source, null when the project and the standard named say nothing. The note says what is missing.
 /// </summary>
 public sealed record StructuralMaterial(string Id, string Name, string Kind, MaterialValue? E, MaterialValue? Poisson, MaterialValue? Fy, MaterialValue? Fc,
-    MaterialValue? Density, string? Grade, string? Standard, IReadOnlyList<string> Sources);
+    MaterialValue? Density, string? Grade, string? Standard, IReadOnlyList<string> Sources)
+{
+    /// <summary>
+    /// An indicative E (and ν) a bar takes when the material gives no E of its own (Lapin's default „Reinforced concrete”); its
+    /// slabs and walls do not (they stay out of the shells, as without an E). Null for every other material.
+    /// </summary>
+    public (MaterialValue E, MaterialValue Poisson)? BarDefault { get; init; }
+
+    /// <summary>The material as a bar (a column, a beam, a member) takes it: its own E, else <see cref="BarDefault"/>'s.</summary>
+    public StructuralMaterial ForBars() => E == null && BarDefault is { } d ? this with { E = d.E, Poisson = Poisson ?? d.Poisson } : this;
+}
 
 /// <summary>
 /// A material's mechanical values (docs/jg-structures.md, Materials): first the project's own, IFC's standard sets
 /// (Pset_MaterialMechanical.YoungModulus, PoissonRatio; Pset_MaterialSteel.YieldStress; Pset_MaterialConcrete.CompressiveStrength;
 /// Pset_MaterialCommon.MassDensity) in IFC's SI units, a value outside what any building material has refused rather than
-/// guessed at another unit; then the strength class its name says (C25/30, S355) by EN 1992-1-1 Table 3.1 and EN 1993-1-1
-/// Table 3.1 and §3.2.6; the density of reinforced concrete and of steel by EN 1991-1-1 Annex A and EN 1993-1-1 §3.2.6.
+/// guessed at another unit; then the strength class its name says (C25/30, or HA-25 as Spanish names write it; S355) by
+/// EN 1992-1-1 Table 3.1 and EN 1993-1-1 Table 3.1 and §3.2.6; a concrete also by its words (concrete, beton, hormigón) or by
+/// carrying Pset_MaterialConcrete, and any kind by the category an IFC file gave it; the density of reinforced concrete and of steel by EN 1991-1-1 Annex A and EN 1993-1-1 §3.2.6.
 /// Anything else stays null.
 /// </summary>
 public static partial class StructuralMaterials
@@ -32,6 +43,9 @@ public static partial class StructuralMaterials
         ["C40/50"] = (40, 35), ["C45/55"] = (45, 36), ["C50/60"] = (50, 37), ["C55/67"] = (55, 38), ["C60/75"] = (60, 39), ["C70/85"] = (70, 41),
         ["C80/95"] = (80, 42), ["C90/105"] = (90, 44),
     };
+
+    /// <summary>The material Lapin's tools make when none is chosen (slabs, walls, beams, an IFC element with no material).</summary>
+    public const string DefaultConcrete = "Reinforced concrete";
 
     /// <summary>EN 1993-1-1 Table 3.1 (EN 10025-2, -4): fy (MPa) for a nominal thickness t ≤ 40 mm.</summary>
     static readonly Dictionary<string, double> Steel = new() { ["S235"] = 235, ["S275"] = 275, ["S355"] = 355, ["S420"] = 420, ["S450"] = 440, ["S460"] = 460 };
@@ -50,6 +64,8 @@ public static partial class StructuralMaterials
     [GeneratedRegex(@"\b(C(?:14|16|18|20|22|24|27|30)|GL(?:24h|28h|30c))\b(?!\s?/)", RegexOptions.IgnoreCase)] private static partial Regex TimberClass();
     [GeneratedRegex(@"\bC\s?(\d{2})\s?/\s?(\d{2,3})\b", RegexOptions.IgnoreCase)] private static partial Regex ConcreteClass();
     [GeneratedRegex(@"\bS\s?(235|275|355|420|450|460)", RegexOptions.IgnoreCase)] private static partial Regex SteelGrade();
+    /// <summary>A Spanish designation (EHE-08 art. 39.2, Código Estructural): HA reinforced, HM plain, HP prestressed, then fck in MPa (HA-25/B/20/IIa).</summary>
+    [GeneratedRegex(@"\bH([AMP])-(\d{2,3})(?![\d.,])")] private static partial Regex SpanishConcrete();
 
     /// <summary>The material an element names (its id, or a name): the model's own, the library's by name, else a bare one of that name (its values read from the name).</summary>
     public static Entity EntityOf(IModelView m, string id) =>
@@ -89,7 +105,8 @@ public static partial class StructuralMaterials
         MaterialValue? density = MaterialMeasure.DensityOf(material) is { } rho && rho is > 1 and < 25000
             ? new(rho, $"project: material „{name}”, density (kg/m³)") : null;
 
-        var lower = $"{name} {fields.Category}".ToLowerInvariant();
+        // The project's category and the one an IFC file gave (IfcMaterial.Category, a material class: concrete, steel, brick).
+        var lower = $"{name} {fields.Category} {material.Str("ifcCategory")}".ToLowerInvariant();
         string kind = "other";
         string? grade = null, standard = null;
         if (ConcreteClass().Match(name) is { Success: true } cm && Concrete.TryGetValue($"C{cm.Groups[1].Value}/{cm.Groups[2].Value}", out var cc))
@@ -99,6 +116,18 @@ public static partial class StructuralMaterials
             standard = "EN 1992-1-1:2004";
             e ??= new(cc.Ecm * 1e9, $"EN 1992-1-1:2004 Table 3.1, {grade}: Ecm = {cc.Ecm} GPa");
             fc ??= new(cc.Fck * 1e6, $"EN 1992-1-1:2004 Table 3.1, {grade}: fck = {cc.Fck} MPa (characteristic cylinder strength)");
+            nu ??= new(0.2, "EN 1992-1-1:2004 §3.1.3(4): ν = 0.2 for uncracked concrete");
+        }
+        else if (SpanishConcrete().Match(name) is { Success: true } hm && int.Parse(hm.Groups[2].Value, CultureInfo.InvariantCulture) is var named and >= 12 and <= 100)
+        {
+            // Its fck as the name says; Ecm of Table 3.1's row for that fck when it has one, else (below) by its formula.
+            kind = "concrete";
+            grade = hm.Value;
+            standard = "EN 1992-1-1:2004";
+            var what = hm.Groups[1].Value switch { "A" => "reinforced", "M" => "plain", _ => "prestressed" };
+            fc ??= new(named * 1e6, $"its name, {grade} (Spanish designation, {what} concrete): fck = {named} MPa");
+            if (Concrete.FirstOrDefault(c => c.Value.Fck == named) is { Key: not null } row)
+                e ??= new(row.Value.Ecm * 1e9, $"EN 1992-1-1:2004 Table 3.1, fck = {named} MPa ({grade}, as {row.Key}): Ecm = {row.Value.Ecm} GPa");
             nu ??= new(0.2, "EN 1992-1-1:2004 §3.1.3(4): ν = 0.2 for uncracked concrete");
         }
         else if (SteelGrade().Match(name) is { Success: true } sm && !lower.Contains("rebar") && !lower.Contains("b500"))
@@ -130,7 +159,7 @@ public static partial class StructuralMaterials
             nu ??= new(Masonry.Poisson, "EN 1996-1-1:2005 §3.7.3: G = 0.4 E, so ν = 0.25 for an isotropic shell (indicative)");
             density ??= m0.Density;
         }
-        else if (lower.Contains("concrete") || lower.Contains("beton")) kind = "concrete";
+        else if (lower.Contains("concrete") || lower.Contains("beton") || lower.Contains("hormig")) kind = "concrete";
         else if (lower.Contains("steel") || lower.Contains("oțel") || lower.Contains("otel"))
         {
             // Steel's E does not depend on its grade: a material that names none still has it (fy stays null without a grade).
@@ -144,6 +173,8 @@ public static partial class StructuralMaterials
             }
         }
         else if (lower.Contains("timber") || lower.Contains("wood") || lower.Contains("lemn") || lower.Contains("glulam") || lower.Contains("clt")) kind = "timber";
+        // A name that says nothing, but IFC's set for a concrete's properties (another program's file, issue #121): a concrete.
+        else if (fields.Params.Any(p => p.Pset == "Pset_MaterialConcrete")) kind = "concrete";
 
         // A concrete that names no class but gives its fck (Manage → Materials → Data): Ecm by EN 1992-1-1 Table 3.1's formula.
         if (kind == "concrete" && fc is { } fck && e == null)
@@ -153,11 +184,19 @@ public static partial class StructuralMaterials
             e = new(ecm * 1e9, $"EN 1992-1-1:2004 Table 3.1: Ecm = 22 (fcm/10)^0.3 = {ecm.ToString("0.#", CultureInfo.InvariantCulture)} GPa, fcm = fck + 8 MPa, from fck = {mpa.ToString("0.#", CultureInfo.InvariantCulture)} MPa");
             nu ??= new(0.2, "EN 1992-1-1:2004 §3.1.3(4): ν = 0.2 for uncracked concrete");
         }
+        // Lapin's own default material names no class (issue #121): its bars take an indicative Ecm, C25/30's, so they are
+        // analysed; its slabs and walls do not (they stay out of the shells, as before). No fck is assumed, so the checks still ask
+        // for it. Any other concrete naming no class keeps no E until it is given one.
+        (MaterialValue, MaterialValue)? barDefault = null;
+        if (kind == "concrete" && e == null && string.Equals(name.Trim(), DefaultConcrete, StringComparison.OrdinalIgnoreCase))
+            barDefault = (new(Concrete["C25/30"].Ecm * 1e9, $"indicative: „{DefaultConcrete}”, Lapin's default, names no class: Ecm of C25/30 = {Concrete["C25/30"].Ecm} GPa " +
+                    "(EN 1992-1-1:2004 Table 3.1) for its bars; name its class or give its fck in Manage → Materials → Data for its own"),
+                nu ?? new(0.2, "EN 1992-1-1:2004 §3.1.3(4): ν = 0.2 for uncracked concrete"));
         if (density == null && kind == "steel")
             density = new(7850, "EN 1993-1-1:2005 §3.2.6: ρ = 7850 kg/m³");
         if (density == null && kind == "concrete" && (lower.Contains("reinforced") || lower.Contains("armat")))
             density = new(25000 / Units.G, "EN 1991-1-1:2002 Table A.1: reinforced normal-weight concrete 25 kN/m³");
-        return new(material.Id, name, kind, e, nu, fy, fc, density, grade, standard, sources);
+        return new(material.Id, name, kind, e, nu, fy, fc, density, grade, standard, sources) { BarDefault = barDefault };
     }
 
     /// <summary>The names a user gives Young's modulus in a material's own parameters (Manage → Materials → Data), squashed as <see cref="TagText.Squash"/> does.</summary>
