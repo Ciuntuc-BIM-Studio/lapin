@@ -190,7 +190,9 @@ public static class PointCloudLinks
             }
         }
         if (OperatingSystem.IsBrowser()) Work();
-        else Task.Run(Work);
+        // A thread of its own, not the thread pool's: an index takes minutes on a large scan, and queued behind the pool's work (models
+        // rebuilt in parallel, the host's calls) it could wait many seconds to start while the interface polls its status (issue #122).
+        else new Thread(Work) { IsBackground = true, Name = "Point cloud index" }.Start();
     }
 
     /// <summary>What the link records of its index: points, box, where they are dense, what each point carries, the classes, intensity's range.</summary>

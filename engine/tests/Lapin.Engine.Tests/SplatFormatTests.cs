@@ -540,7 +540,7 @@ public class SplatFormatTests
         var r = (JsonObject)f.Run("pointcloud.link", new JsonObject { ["name"] = "scene.sog", ["data"] = Convert.ToBase64String(Zip(Sog(gs, 3))) })!;
         var id = (string)r["id"]!;
         Assert.Contains("SOG version 3", (string?)r["format"]);
-        for (var k = 0; k < 400 && (string?)((JsonObject)f.Session.Query("pointcloud.status", new JsonObject { ["id"] = id })!)["state"] != "ready"; k++) Thread.Sleep(25);
+        PointCloudSamples.WaitIndexed(f, id);
         f.Run("pointcloud.place", new JsonObject { ["id"] = id, ["rotation"] = 90, ["units"] = "cm" });
         var link = Links.Require(f.Model, id);
         Assert.Equal(3, (int?)link.Attrs["cloud"]?["shDegree"]);

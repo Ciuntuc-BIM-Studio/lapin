@@ -1,12 +1,34 @@
 using System.Buffers.Binary;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
+using System.Text.Json.Nodes;
 
 namespace Lapin.Engine.Tests;
 
 /// <summary>Tiny point clouds written by the tests themselves, after the formats' specifications (never large files in the repo).</summary>
 static class PointCloudSamples
 {
+    /// <summary>How long a linked cloud's index is waited for: a few thousand points, made in milliseconds.</summary>
+    static readonly TimeSpan IndexLimit = TimeSpan.FromSeconds(10);
+
+    /// <summary>
+    /// A linked cloud waited for until its index, made in the background, is ready: one that is not fails the test here, saying the
+    /// cloud's state, not further on with what an index not yet made lacks (issue #122).
+    /// </summary>
+    public static void WaitIndexed(Fixture f, string id)
+    {
+        var clock = Stopwatch.StartNew();
+        while (true)
+        {
+            var st = (JsonObject)f.Session.Query("pointcloud.status", new JsonObject { ["id"] = id })!;
+            var state = (string?)st["state"];
+            if (state == "ready") return;
+            Assert.True(state == "indexing" && clock.Elapsed < IndexLimit, $"the cloud is {st.ToJsonString()} after {clock.Elapsed.TotalSeconds:0.0} s");
+            Thread.Sleep(25);
+        }
+    }
+
     public sealed record P(double X, double Y, double Z, ushort R = 0, ushort G = 0, ushort B = 0, ushort I = 0, byte C = 0);
 
     /// <summary>A grid of points over a box: a floor and two walls, coloured by position, intensity rising, classes 2 (ground) and 6 (building).</summary>

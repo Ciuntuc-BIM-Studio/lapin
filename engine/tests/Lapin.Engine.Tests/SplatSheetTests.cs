@@ -139,13 +139,7 @@ public class SplatSheetTests
         var placement = new JsonObject { ["mode"] = "origin", ["up"] = "z" };
         var r = (JsonObject)f.Run("pointcloud.link", new JsonObject { ["name"] = "wall.ply", ["data"] = Convert.ToBase64String(Capture()), ["placement"] = placement })!;
         var id = (string)r["id"]!;
-        for (var k = 0; k < 400; k++)
-        {
-            var st = (JsonObject)f.Session.Query("pointcloud.status", new JsonObject { ["id"] = id })!;
-            if ((string?)st["state"] == "ready") break;
-            Assert.NotEqual("failed", (string?)st["state"]);
-            Thread.Sleep(25);
-        }
+        PointCloudSamples.WaitIndexed(f, id);
         f.Session.TakeDeliveries();
         return id;
     }

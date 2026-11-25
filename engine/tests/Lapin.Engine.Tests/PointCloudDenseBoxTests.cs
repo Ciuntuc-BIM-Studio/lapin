@@ -82,13 +82,7 @@ public class PointCloudDenseBoxTests
         var f = new Fixture(new ArchitectureModule());
         var r = (JsonObject)f.Run("pointcloud.link", new JsonObject { ["name"] = "floaters.las", ["data"] = Convert.ToBase64String(Las(Floaters())), ["placement"] = new JsonObject { ["mode"] = "origin" } })!;
         var id = (string)r["id"]!;
-        for (var k = 0; k < 400; k++)
-        {
-            var st = (JsonObject)f.Session.Query("pointcloud.status", new JsonObject { ["id"] = id })!;
-            if ((string?)st["state"] == "ready") break;
-            Assert.NotEqual("failed", (string?)st["state"]);
-            Thread.Sleep(25);
-        }
+        WaitIndexed(f, id);
         f.Session.TakeDeliveries();
         double[] Arr(JsonNode? n) => n!.AsArray().Select(v => (double)v!).ToArray();
         JsonObject H() => (JsonObject)f.Session.Query("pointcloud.hierarchy", new JsonObject { ["id"] = id })!;
