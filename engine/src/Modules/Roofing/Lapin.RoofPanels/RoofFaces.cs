@@ -40,6 +40,12 @@ public sealed class RoofFace
     /// <summary>The openings in it (roof windows, dormers, another roof standing in the slope): the panels are cut round them.</summary>
     public List<FaceHole> Holes { get; } = [];
 
+    /// <summary>
+    /// The phase of its columns the user fixed (S7, metres: the columns' left sides that far from its origin along u, taken modulo the
+    /// useful width); null, the layout tries a phase every 15 mm and keeps the cheapest.
+    /// </summary>
+    public double? FixedPhase { get; set; }
+
     /// <summary>What the panels cover: the target less its holes (m²).</summary>
     public double TargetArea => Clip.Area(Target) - Holes.Sum(h => h.Area);
 

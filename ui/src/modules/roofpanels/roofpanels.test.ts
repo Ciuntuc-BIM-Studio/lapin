@@ -5,6 +5,7 @@ import {
   choiceOf, colourLabel, edgeRows, faceTotals, ITEM_GROUPS, itemRows, laidFlat, lengthColours, needText, purchaseRows, purchaseText, REUSED, reuseLinks, setArgs,
   takeoffOptions, type LayoutDto, type PanelDto, type PanelProfileDto, type TakeoffDto,
   combinationLabel, downpipesOf, drainageArgs, drainageCheck, drainageRows, pieceColour, rainOf, sheetsOf, sheetUse,
+  allProfiles, faceArgs, facesOf, lengthsOf, phaseOf, saleOf, withSale, type ProjectProfileDto,
 } from './roofpanels';
 import { roofFor } from './index';
 
@@ -330,5 +331,40 @@ describe('the rainwater and flat sheet tabs in every language (S5)', () => {
         ["The roof's gutters are 125 mm; the estimate counts the 150/100 system.", '150/100'], ['12.40 m² of roof (A03) drain to no gutter: size their outlets yourself.', 'A03']])
         expect(translate(phrase, id), `${phrase} in ${id}`).toContain(keep);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------- stage S7
+
+describe('the project\'s profiles and the slopes\' exceptions (S7)', () => {
+  it('reads the slopes\' exceptions from the roof, and leaves out an entry that says nothing', () => {
+    expect(facesOf({ A02: { skip: true }, A03: { phase: 120.4 }, A04: {}, A05: { skip: false } })).toEqual({ A02: { skip: true }, A03: { phase: 120 } });
+    expect(facesOf(undefined)).toBeUndefined();
+    expect(choiceOf(node({ panels: { profile: 'bilka-clasic-35', faces: { A01: { skip: true } } } }))?.faces).toEqual({ A01: { skip: true } });
+    expect(choiceOf(node({ panels: { profile: 'bilka-clasic-35' } }))?.faces).toBeUndefined();
+  });
+
+  it('takes a typed phase in whole millimetres, and empty as the layout\'s own', () => {
+    expect(phaseOf('300')).toBe(300);
+    expect(phaseOf(' 12,6 ')).toBe(13);
+    expect(phaseOf('')).toBeNull();
+    expect(phaseOf('-5')).toBeNull();
+    expect(phaseOf('abc')).toBeNull();
+    expect(faceArgs('r1', 'A02', { skip: true })).toEqual({ id: 'r1', face: 'A02', skip: true });
+    expect(faceArgs('r1', 'A02', { phase: null })).toEqual({ id: 'r1', face: 'A02', phase: null });
+  });
+
+  it('lists Lapin\'s profiles, then the project\'s that read, marked', () => {
+    const own = (p: Partial<ProjectProfileDto>): ProjectProfileDto => ({ id: 'e1', profile: 'x', name: 'X', uses: 0, roofs: [], summary: null, def: {}, ...p });
+    const all = allProfiles([clasic], [own({ summary: profile({ id: 'office-tile', name: 'Office tile' }) }), own({ id: 'e2', problem: 'bad' })]);
+    expect(all.map((p) => [p.id, !!p.own])).toEqual([['bilka-clasic-35', false], ['office-tile', true]]);
+  });
+
+  it('edits a profile\'s sale as stock lengths or an order range, never both', () => {
+    expect(lengthsOf('2930, 1180;2230 1180 x')).toEqual([1180, 2230, 2930]);
+    const order = saleOf({ order: { min: 500, start: 500, step: 350, max: 7000 } });
+    expect(order.kind).toBe('order');
+    expect(withSale({ lengths: [1], order: {} }, { ...order, kind: 'stock', lengths: [1180, 2230] })).toEqual({ lengths: [1180, 2230] });
+    expect(withSale({ lengths: [1180] }, order)).toEqual({ order: { min: 500, start: 500, step: 350, max: 7000 } });
   });
 });

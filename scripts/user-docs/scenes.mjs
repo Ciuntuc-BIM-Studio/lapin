@@ -2627,6 +2627,44 @@ export const scenes = [
         await t.page.evaluate(async () => (await import('/src/viewport/diagram.ts')).setDiagram({ variant: 'white' }));
         await profile('drawing');
       }
+      // S7, the project's own profiles: Profiles… lists Lapin's (read-only) and the project's; Duplicate to edit makes a copy in the
+      // project, which keeps the original's article codes; the roof takes the copy and lays, counts and prices the same.
+      await select(t, roof.id);
+      await t.wait(600);
+      await t.page.locator('[data-testid=roof-panels-profiles]').click();
+      const profiles = t.page.locator('[data-dialog=roofPanelProfiles]');
+      await t.until(async () => await profiles.locator('[data-panel-profile=bilka-balcanic]').count() === 1, 'the profiles dialog lists Lapin\'s profiles');
+      await profiles.locator('[data-panel-profile=bilka-balcanic]').click();
+      t.expect(await profiles.locator('[data-testid=panel-profile-builtin]').count() === 1, 'a built-in profile is shown read-only');
+      await profiles.locator('[data-action=panel-profile-duplicate]').click();
+      await t.until(async () => await profiles.locator('[data-testid=panel-profile-editor]').count() === 1, 'the copy opens in the editor');
+      t.expect(await profiles.locator('[data-panel-profile=bilka-balcanic-copy]').count() === 1, 'the copy is listed under this project\'s');
+      t.expect((await profiles.locator('[data-field=pp-article]').inputValue()).startsWith('bilka-balcanic/'), 'the copy keeps the original\'s article codes');
+      await t.shot('roof-panel-profiles', { of: '[data-dialog=roofPanelProfiles]', pad: 0 });
+      await t.ui({ dialog: null });
+      await t.wait(400);
+      const shipped = (await t.page.locator('[data-testid=roof-panels-summary] .roof-panels-buy').innerText()).replace(/\s+/g, ' ');
+      await t.page.locator('[data-testid=roof-panels-profile]').selectOption('bilka-balcanic-copy');
+      await t.until(async () => (await t.nodes()).find((n) => n.id === roof.id)?.props?.panels?.profile === 'bilka-balcanic-copy', 'the roof names the project\'s copy');
+      await t.until(async () => (await t.page.locator('[data-testid=roof-panels-summary] .roof-panels-buy').innerText()).replace(/\s+/g, ' ') === shipped, `the copy buys the same panels (${shipped})`);
+      // A slope left without panels and a slope's phase fixed, in Panel layout's Per roof plane table; each one undo step.
+      await t.page.locator('[data-testid=roof-panels-open]').click();
+      await t.until(async () => await dialog.locator('[data-testid=roof-panels-faces] tr[data-face]').count() === 6, 'the table lists the six roof planes');
+      const before = await dialog.locator('[data-panel]').count();
+      await dialog.locator('[data-testid=roof-panels-faces] tr[data-face="A06"] [data-field=face-laid]').click();
+      await t.until(async () => (await t.nodes()).find((n) => n.id === roof.id)?.props?.panels?.faces?.A06?.skip === true, 'the roof keeps the slope without panels');
+      await t.until(async () => await dialog.locator('[data-panel]').count() < before, 'the slope\'s panels are gone from the layout');
+      t.expect(await dialog.locator('[data-face-outline="A06"][fill^="url"]').count() === 1, 'the slope without panels is hatched');
+      await dialog.locator('[data-testid=roof-panels-faces] tr[data-face="A01"] [data-action=face-phase-fix]').click();
+      await t.until(async () => typeof (await t.nodes()).find((n) => n.id === roof.id)?.props?.panels?.faces?.A01?.phase === 'number', 'the first slope\'s phase is fixed');
+      await t.wait(400);
+      await t.shot('roof-panels-slope-exceptions', { of: '[data-testid=roof-panel-layout]', pad: 0 });
+      await t.ui({ dialog: null, selection: null, selected: [] });
+      await open3d(t);
+      // From the west, looking east: the slope without panels (A06) in front, its plain covering beside the panels.
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.35, pitch: -0.55, distance: 30, target: { x: 5, y: 5.5, z: 3 } }, false));
+      await t.wait(1500);
+      await t.shot('roof-panels-3d-slope-without', { of: 'canvas', pad: 0 });
     },
   },
   {

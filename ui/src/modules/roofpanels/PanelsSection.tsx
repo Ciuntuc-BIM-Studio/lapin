@@ -9,12 +9,14 @@
  */
 
 import { Fragment, useEffect, useState } from 'react';
-import { LayoutGrid } from 'lucide-react';
+import { LayoutGrid, Layers } from 'lucide-react';
 import { useUi } from '../../app/store';
+import { phrase } from '../../shell/prompts';
 import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
+import { useProfileLibrary } from './projectProfiles';
 import {
-  choiceOf, colourLabel, costState, downpipesOf, drainageArgs, drainageCheck, isLayout, ITEM_GROUPS, itemRows, profilesOf, purchaseRows, rainOf, setArgs, subtotalText,
+  allProfiles, choiceOf, colourLabel, costState, downpipesOf, drainageArgs, drainageCheck, isLayout, ITEM_GROUPS, itemRows, profilesOf, purchaseRows, rainOf, setArgs, subtotalText,
   takeoffOptions, type DrainageDto, type LayoutAnswer, type PanelChoice, type PanelProfileDto,
 } from './roofpanels';
 
@@ -42,10 +44,14 @@ const OPTION_TIPS: Record<string, string> = {
 
 export function PanelsSection({ node }: { node: NodeDto }) {
   const info = useSession((s) => s.info);
-  const profiles = profilesOf(info?.catalogs as Record<string, unknown> | undefined);
+  const lib = useProfileLibrary();
+  const builtin = profilesOf(info?.catalogs as Record<string, unknown> | undefined);
+  // Lapin's profiles and the project's own (S7).
+  const profiles = allProfiles(builtin, lib?.project);
   const choice = choiceOf(node);
   const profile = profiles.find((p) => p.id === choice?.profile) ?? null;
   const layout = useLayout(choice ? node.id : null);
+  const skipped = Object.entries(choice?.faces ?? {}).filter(([, r]) => r.skip).map(([k]) => k);
   const send = (next: Parameters<typeof setArgs>[1]) => void execute('roofpanels.setRoofPanels', setArgs(node.id, next, profiles));
   const open = () => useUi.setState({ dialog: 'roofPanelLayout', roofId: node.id });
   return (
@@ -56,7 +62,8 @@ export function PanelsSection({ node }: { node: NodeDto }) {
           <select className="cell" data-testid="roof-panels-profile" value={choice?.profile ?? ''} disabled={!node.editable}
             onChange={(e) => send(e.target.value ? { profile: e.target.value } : null)}>
             <option value="">none</option>
-            {profiles.map((p) => <option key={p.id} value={p.id} data-no-i18n>{p.name}</option>)}
+            <optgroup label="Lapin's">{builtin.map((p) => <option key={p.id} value={p.id} data-no-i18n>{p.name}</option>)}</optgroup>
+            {profiles.some((p) => p.own) && <optgroup label="This project's">{profiles.filter((p) => p.own).map((p) => <option key={p.id} value={p.id} data-no-i18n>{p.name}</option>)}</optgroup>}
           </select>
         </dd>
         {profile && profile.colors.length > 0 && (
@@ -106,6 +113,7 @@ export function PanelsSection({ node }: { node: NodeDto }) {
               ))}
             </tbody>
           </table>
+          {skipped.length > 0 && <p className="muted small" data-testid="roof-panels-skipped" title="Panel layout… → Per roof plane: tick Laid to lay them there again">{phrase('Without panels: {faces}', { faces: skipped.join(', ') })}</p>}
           <dl className="fields">
             <dt>Panels laid</dt><dd className="num" data-no-i18n>{layout.totals.panels}</dd>
             <dt title="Valley pieces cut from what the hip pieces leave of their panels: not bought">Reused offcuts</dt><dd className="num" data-no-i18n>{layout.totals.reused}</dd>
@@ -157,6 +165,10 @@ export function PanelsSection({ node }: { node: NodeDto }) {
           <button type="button" className="btn compact" data-testid="roof-panels-open" onClick={open}><LayoutGrid size={13} /> Panel layout…</button>
         </div>
       )}
+      <div className="pad">
+        <button type="button" className="btn compact" data-testid="roof-panels-profiles" title="Lapin's profiles and the project's own: duplicate one to change it, a firm's .lapinpanels file in and out"
+          onClick={() => useUi.setState({ dialog: 'roofPanelProfiles' })}><Layers size={13} /> Profiles…</button>
+      </div>
     </div>
   );
 }

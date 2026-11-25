@@ -242,13 +242,23 @@ public static class PanelProfiles
 
     public static PanelProfile? Find(string? id) => BuiltIn.FirstOrDefault(p => string.Equals(p.Id, id, StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>A profile as a command or query gives it: a built-in's id, or a profile of its own (an object, the catalogue's format).</summary>
-    public static PanelProfile Resolve(JsonNode? n)
+    /// <summary>A built-in profile as profiles.json writes it (every field, for a copy made in the project, S7); null when there is none of the id.</summary>
+    public static JsonObject? Raw(string? id) =>
+        ((JsonArray)Data.Value.Raw["profiles"]!).OfType<JsonObject>().FirstOrDefault(o => string.Equals((string?)o["id"], id, StringComparison.OrdinalIgnoreCase)) is { } o
+            ? (JsonObject)o.DeepClone() : null;
+
+    /// <summary>
+    /// A profile as a command or query gives it: a built-in's id, a profile of the project's (S7, <see cref="ProjectProfiles"/>: its id,
+    /// read from <paramref name="m"/>), or a profile of its own (an object, the catalogue's format). The built-in ones come first: a
+    /// project's profile never takes one of their ids.
+    /// </summary>
+    public static PanelProfile Resolve(JsonNode? n, IModelView? m = null)
     {
         var p = n switch
         {
             JsonObject o => PanelProfile.Read(o),
-            JsonValue v when (string?)v is { } id => Find(id) ?? throw new ArgumentException($"There is no roof panel profile \"{id}\"."),
+            JsonValue v when (string?)v is { } id => Find(id) ?? (m != null && ProjectProfiles.Find(m, id) is { } own ? PanelProfile.Read(ProjectProfiles.DefOf(own)) : null)
+                ?? throw new ArgumentException($"There is no roof panel profile \"{id}\"."),
             _ => throw new ArgumentException("Name a roof panel profile."),
         };
         return p.Problem() is { } problem ? throw new ArgumentException(problem) : p;

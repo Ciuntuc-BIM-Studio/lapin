@@ -47,10 +47,26 @@ public sealed class PanelBodies : IGeometryFilter
         var material = Materials.Find(model, RoofPanels.MaterialName(layout.Profile, layout.Color))?.Id ?? covering.Material;
         foreach (var part in Parts(layout, below, Math.Max(0.002, thickness), colour, material, ifc))
             parts.Add(part);
+        // A slope left without panels (S7) keeps the roof's covering: a plate of it over the slope, less its openings, in the covering's
+        // own material (an IfcSlab ROOF in IFC, as the covering is).
+        foreach (var f in layout.Skipped)
+            if (SkippedCovering(f, below, Math.Max(0.002, thickness), covering) is { } plate) parts.Add(plate);
         // In plan each panel's outline (what it covers), overhead as the roof's other lines, on plans of 1:200 and larger.
         foreach (var p in layout.Result.Panels)
             plan.Add(new PlanItem("overhead", true, [.. p.Net.Select(v => p.Face.Xyz(v).Xy)], PlanDetail.Fine));
         return geometry with { Parts = parts, Plan = plan, Instance = null };
+    }
+
+    /// <summary>The covering of a slope left without panels (S7): its outline less its openings, <paramref name="below"/> over its plane, <paramref name="thickness"/> thick.</summary>
+    static GeometryPart? SkippedCovering(RoofFace f, double below, double thickness, GeometryPart covering)
+    {
+        if (f.Poly.Count < 3 || Clip.Area(f.Poly) < 1e-8) return null;
+        var cos = Math.Max(1e-6, f.N.Z);
+        var outer = f.Poly.Select(v => f.Xyz(v, below)).ToList();
+        var holes = f.Holes.Where(h => h.Ring.Count >= 3).Select(h => (IReadOnlyList<Vec3>)[.. h.Ring.Select(v => f.Xyz(v, below))]).ToList();
+        var solid = Prism.Extrude(outer, holes.Count > 0 ? holes : null, new Vec3(0, 0, thickness / cos), "covering")
+            ?? Prism.Extrude(outer, null, new Vec3(0, 0, thickness / cos), "covering");
+        return solid == null ? null : new GeometryPart($"{covering.Name} · {f.Id}", covering.Color, solid, covering.Material, $"covering:{f.Id}");
     }
 
     /// <summary>

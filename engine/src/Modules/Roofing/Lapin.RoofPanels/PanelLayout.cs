@@ -122,9 +122,11 @@ public static class PanelLayout
             var width = p.Width;
             double low = Clip.MinX(roof.Target), high = Clip.MaxX(roof.Target);
             var options = new List<List<Column>>();
-            for (var k = 0; k * 0.015 < width - 1e-6; k++)
+            // A phase the user fixed on the face (S7): that one alone, a sliver of eave warned rather than refused.
+            var fixedPhase = roof.FixedPhase is { } fp ? Phase(fp, width) : (double?)null;
+            for (var k = 0; fixedPhase != null ? k == 0 : k * 0.015 < width - 1e-6; k++)
             {
-                var phase = k * 0.015;
+                var phase = fixedPhase ?? k * 0.015;
                 var cols = new List<Column>();
                 var left = (int)Math.Floor((low - phase + 1e-7) / width);
                 var right = (int)Math.Ceiling((high - phase - 1e-7) / width);
@@ -138,7 +140,7 @@ public static class PanelLayout
                     var footprint = Clip.Strip(roof.Target, x, x + width);
                     if (Clip.Area(footprint) < 1e-6) continue;
                     var eaveWidth = roof.EaveSpans.Sum(e => Math.Max(0, Math.Min(x + width, e.To) - Math.Max(x, e.From)));
-                    if (eaveWidth > 1e-5 && eaveWidth < 0.22) { ok = false; break; }
+                    if (eaveWidth > 1e-5 && eaveWidth < 0.22 && fixedPhase == null) { ok = false; break; }
                     if (roof.Holes.Count == 0) { cols.Add(new Column(x, Start(footprint), Stop(footprint), footprint, index++)); continue; }
                     var any = false;
                     foreach (var region in Runs(Clip.Strip(roof.Target, x, x + p.Gross), roof.Holes))
@@ -301,6 +303,31 @@ public static class PanelLayout
             }
             return current;
         }
+    }
+
+    /// <summary>A phase taken into [0, <paramref name="width"/>): the same columns.</summary>
+    public static double Phase(double phase, double width) => width > 0 ? ((phase % width) + width) % width : 0;
+
+    /// <summary>The phase of a face's layout (metres, in [0, useful width)): its first column's left side, modulo the width; 0 for none.</summary>
+    public static double PhaseOf(FaceLayout layout, PanelProfile p) =>
+        layout.Columns.FirstOrDefault(c => c.Count > 0) is { } c ? Phase(c[0].X, p.Width) : 0;
+
+    /// <summary>Whether the columns of <paramref name="roof"/> at <paramref name="phase"/> leave a sliver of eave under 22 cm (a phase the layout itself refuses).</summary>
+    public static bool LeavesSliver(RoofFace roof, PanelProfile p, double phase)
+    {
+        var width = p.Width;
+        phase = Phase(phase, width);
+        double low = Clip.MinX(roof.Target), high = Clip.MaxX(roof.Target);
+        var left = (int)Math.Floor((low - phase + 1e-7) / width);
+        var right = (int)Math.Ceiling((high - phase - 1e-7) / width);
+        for (var ix = left; ix < right; ix++)
+        {
+            var x = phase + ix * width;
+            if (Clip.Area(Clip.Strip(roof.Target, x, x + width)) < 1e-6) continue;
+            var eaveWidth = roof.EaveSpans.Sum(e => Math.Max(0, Math.Min(x + width, e.To) - Math.Max(x, e.From)));
+            if (eaveWidth > 1e-5 && eaveWidth < 0.22) return true;
+        }
+        return false;
     }
 
     /// <summary>Whether one of the polygon's edges lies along the line a–b moved <paramref name="offset"/> to its left, over more than 5 mm of it.</summary>

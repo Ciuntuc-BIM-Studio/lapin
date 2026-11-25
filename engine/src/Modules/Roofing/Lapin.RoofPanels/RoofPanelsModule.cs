@@ -35,6 +35,8 @@ public sealed class RoofPanelsModule : ILapinModule
         // list as an indicative template the user adds when asked.
         r.Service<IQuantityFilter>(new PanelCost.Filter());
         r.Service<IPriceListTemplate>(new PanelCost.BilkaTemplate());
+        // Stage S7: the project's own profiles (and a firm's .lapinpanels file) beside the built-in ones, which stay read-only.
+        ProjectProfiles.Register(r);
 
         // {id (a roof), profile (a profile's id, or a profile of its own; null: none), color, maxLength (a made-to-order profile's longest panel, mm),
         //  support (the profile's support scheme), ridge (its ridge caps, large or small), fixing (the support's: nails or screws),
@@ -47,11 +49,11 @@ public sealed class RoofPanelsModule : ILapinModule
             if (a["profile"] is null) attrs.Remove(RoofPanels.Key);
             else
             {
-                if (a["profile"] is not JsonValue) throw new CommandException("A roof names a profile of the catalogue; a profile of its own comes with the project's profiles (stage S7).");
+                if (a["profile"] is not JsonValue) throw new CommandException("A roof names a profile of the catalogue or of the project (Roof panel profiles…): a profile of its own is made there first.");
                 PanelProfile profile;
                 try
                 {
-                    profile = PanelProfiles.Resolve(a["profile"]);
+                    profile = PanelProfiles.Resolve(a["profile"], ctx.Model);
                     profile.WithMaxLength(Json.Number(a["maxLength"]) is { } ml ? (int)ml : null);
                 }
                 catch (ArgumentException e) { throw new CommandException(e.Message); }
@@ -95,6 +97,9 @@ public sealed class RoofPanelsModule : ILapinModule
                     if (Json.Number(rv) is not { } rn || !(rn > 0) || rn > 1) throw new CommandException("The rain's intensity is a positive number of l/s·m² (0.05 by default).");
                     if (Math.Abs(rn - rain.Rain) > 1e-9) o["rain"] = rn;
                 }
+                // Stage S7: the slopes' exceptions, as given, else as the roof had them (another profile keeps them; a phase is taken modulo its width).
+                if (a.ContainsKey("faces")) { if (RoofPanels.FacesJson(CheckFaces(a["faces"])) is { } fj) o["faces"] = fj; }
+                else if (roof.Attrs[RoofPanels.Key]?["faces"] is JsonObject had && had.Count > 0) o["faces"] = had.DeepClone();
                 attrs[RoofPanels.Key] = o;
                 RoofPanels.EnsureMaterial(ctx, profile, color ?? profile.Colors.FirstOrDefault()?.Code);
                 // The roof's own gutters and downpipes follow the system the drainage is sized for, when it is asked (one source:
@@ -109,6 +114,26 @@ public sealed class RoofPanelsModule : ILapinModule
                     }
                 }
             }
+            ctx.Replace(roof.With(attrs: attrs));
+            return null;
+        });
+
+        // Stage S7: {id (a roof), face (a slope's code, A01…), skip?: true | false, phase?: mm | null}: one slope left without panels, or its
+        // columns' phase fixed (null: the layout's own again); what is not given stays. One undo step.
+        r.Command("setFacePanels", "Roof plane panels", (ctx, a) =>
+        {
+            var roof = ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.Roof } x ? x : throw new CommandException("Pick a roof.");
+            if (RoofPanels.ChoiceOf(roof) is not { } choice) throw new CommandException("The roof names no panel profile: pick one first.");
+            var face = ((string?)a["face"])?.Trim() ?? "";
+            if (!FaceCode.IsMatch(face)) throw new CommandException("Name a roof plane by its code (A01, A02…), as Panel layout shows it.");
+            var rules = new Dictionary<string, RoofPanels.FaceRule>(choice.Faces ?? new Dictionary<string, RoofPanels.FaceRule>(), StringComparer.Ordinal);
+            var was = rules.GetValueOrDefault(face) ?? new RoofPanels.FaceRule(false, null);
+            var skip = a["skip"] is JsonValue sv ? sv.TryGetValue<bool>(out var b) ? b : throw new CommandException("skip is true or false.") : was.Skip;
+            var phase = a.ContainsKey("phase") ? CheckPhase(a["phase"]) : was.Phase;
+            if (skip || phase != null) rules[face] = new RoofPanels.FaceRule(skip, phase); else rules.Remove(face);
+            var attrs = roof.CloneAttrs();
+            var panels = (JsonObject)attrs[RoofPanels.Key]!;
+            if (RoofPanels.FacesJson(rules) is { } fj) panels["faces"] = fj; else panels.Remove("faces");
             ctx.Replace(roof.With(attrs: attrs));
             return null;
         });
@@ -131,18 +156,44 @@ public sealed class RoofPanelsModule : ILapinModule
                     if (RoofPanels.ChoiceOf(roof) == null) return new JsonObject { ["problem"] = "The roof names no panel profile." };
                     if (RoofPanels.Of(roof, q.Model) is { } own) return Out(own);
                     var c = RoofPanels.ChoiceOf(roof)!;
-                    return Out(RoofPanels.Lay(roof, q.Model, PanelProfiles.Resolve(JsonValue.Create(c.Profile)).WithMaxLength(c.MaxLength), c.Color, c.Options));
+                    return Out(RoofPanels.Lay(roof, q.Model, PanelProfiles.Resolve(JsonValue.Create(c.Profile), q.Model).WithMaxLength(c.MaxLength), c.Color, c.Options, c.Faces));
                 }
-                var profile = PanelProfiles.Resolve(a["profile"]).WithMaxLength(Json.Number(a["maxLength"]) is { } ml ? (int)ml : null);
+                var profile = PanelProfiles.Resolve(a["profile"], q.Model).WithMaxLength(Json.Number(a["maxLength"]) is { } ml ? (int)ml : null);
                 // A preview keeps the roof's own options where the profile has them, or takes the ones asked.
                 var mine = RoofPanels.ChoiceOf(roof);
                 var options = new Takeoff.Options((string?)a["support"] ?? mine?.Support, (string?)a["ridge"] ?? mine?.Ridge, (string?)a["fixing"] ?? mine?.Fixing,
                     a.ContainsKey("drainage") ? (string?)a["drainage"] : mine?.Drainage, a.ContainsKey("downpipes") ? (Json.Number(a["downpipes"]) is { } dp ? (int)dp : null) : mine?.Downpipes,
                     a.ContainsKey("rain") ? Json.Number(a["rain"]) : mine?.Rain);
-                return Out(RoofPanels.Lay(roof, q.Model, profile, (string?)a["color"], options));
+                // The roof's own exceptions on its slopes (S7), or those asked.
+                var rules = a.ContainsKey("faces") ? CheckFaces(a["faces"]) : mine?.Faces;
+                return Out(RoofPanels.Lay(roof, q.Model, profile, (string?)a["color"], options, rules));
             }
             catch (ArgumentException e) { return new JsonObject { ["problem"] = e.Message }; }
         });
+    }
+
+    static readonly System.Text.RegularExpressions.Regex FaceCode = new("^A[0-9]{2,3}$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    /// <summary>A phase given (mm, 0 to 10 000; null: none), whole millimetres.</summary>
+    static int? CheckPhase(JsonNode? n)
+    {
+        if (n is null) return null;
+        if (Json.Number(n) is not { } v || !double.IsFinite(v) || v < 0 || v > 10000) throw new CommandException("A phase is a distance along the eave in mm, from 0 to the profile's useful width.");
+        return (int)Math.Round(v);
+    }
+
+    /// <summary>The slopes' exceptions as a command gives them (<c>{"A02": {"skip": true}, "A03": {"phase": 120}}</c>), checked.</summary>
+    static Dictionary<string, RoofPanels.FaceRule> CheckFaces(JsonNode? n)
+    {
+        if (n is null) return [];
+        if (n is not JsonObject o) throw new CommandException("The slopes' exceptions are {\"A01\": {\"skip\": true}, \"A02\": {\"phase\": 120}}.");
+        foreach (var (k, v) in o)
+        {
+            if (!FaceCode.IsMatch(k)) throw new CommandException($"„{k}” is not a roof plane's code (A01, A02…).");
+            if (v is not JsonObject r) throw new CommandException($"{k}: an exception is {{skip, phase}}.");
+            CheckPhase(r["phase"]);
+        }
+        return RoofPanels.FacesOf(o);
     }
 
     /// <summary>

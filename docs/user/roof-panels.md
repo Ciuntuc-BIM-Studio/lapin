@@ -1,7 +1,7 @@
 ---
 title: Roof panels
 order: 41
-summary: Lay metal tiles or standing-seam panels on a roof's slopes: what to buy by length, the offcuts reused in the valleys, the accessories, fixings, battens and membrane, what it all costs from your price list, roof windows cut out, the panels drawn as the covering.
+summary: Lay metal tiles or standing-seam panels on a roof's slopes: what to buy by length, the offcuts reused in the valleys, the accessories, fixings, battens and membrane, what it all costs from your price list, roof windows cut out, the panels drawn as the covering; profiles of your own, slopes without panels.
 ---
 
 ## Metal tiles and panels on a roof
@@ -95,6 +95,31 @@ Change the profile, the colour, the ridge caps or the fixings and the table foll
 The same lines reach the **estimate** (**Construction → Estimate**) under the chapter **Roof**: they are the roof's quantities (the **Lapin_RoofPanelQuantities** set, which the properties, the schedules and the IFC export show too), priced by their codes. If the roof's type also has an article for its covering, take it off, or the covering is counted twice.
 
 **Your own prices.** Import your list with the same codes (code, description, unit, price; a source, a link and a date if you have them), then in the estimate's settings choose the price lists it prices by, yours first: a code takes the first list's price that has it, the template the rest. Or remove the template from **Price lists…**. A price in another unit than the line's (a price per metre for a line in 2 m pieces) is marked ⚠: change the unit or the price. These prices are indicative: check them when you order.
+
+## Profiles of your own
+
+Lapin's profiles stay as they are, in every project. To change one (another lap, the lengths your supplier stocks, a colour, an accessory), make a copy of it in the project: **Profiles…** in the Panels section, or **Architecture → Roof panels → Panel profiles…**, lists **Lapin's** profiles (read-only) and **This project's**.
+
+- **Duplicate to edit** on one of Lapin's makes a copy in the project (Bilka Balcanic (copy)). The copy keeps the original's article codes (the codes your price list prices), so until you change it, it lays, counts and prices exactly as the original.
+- The editor shows the sheet's numbers one by one: the name and id, the maker, the whole and useful widths, the slope lap, the module, the joints (on the module, a tile's; staggered, a standing seam's), the least pitches, the gap at valleys, whether hip offcuts are reused, the waves, the flashing length, the article code; **Sold** in stock lengths (typed: 1180, 2230, 2930) or made to order (the shortest, the regular lengths' start and step, the longest); the **Colours** (a code, a name, the colour the views show). The accessories, the support, the fixings, the ridge caps and the flat sheet are below as JSON, in the format of Lapin's own profiles. **Save** is one undo step; the roofs that use the profile follow.
+- A roof picks a profile of the project in **Profile** (under **This project's**), as it picks one of Lapin's.
+- **Delete** is refused while a roof uses the profile: choose another profile for it first.
+- **Export…** writes the project's profiles to a **.lapinpanels** file, the firm's library of profiles; **Import…** brings one into another project through the import preview: a profile the project lacks is added, one with the same id is updated (its roofs follow), kept beside or skipped, as you choose. With a firm folder set in **Preferences → Libraries**, its .lapinpanels files are listed in the dialog, and **Save to firm folder…** writes the project's there.
+
+![Roof panel profiles: a copy of Bilka Balcanic in the project, open in the editor](shots/roof-panel-profiles.webp)
+
+## A slope without panels, a fixed phase
+
+In **Panel layout…**, the **Per roof plane** table sets two exceptions for each slope, each one undo step:
+
+- **Laid**, unticked: the slope is left without panels (another covering there, a glazed slope, a part done later). Its panels go from the layout, the quantities, the takeoff (its share of the battens, counter-battens, membrane and fixings, its eave and verge flashings), the cost and the IFC panels; the slope keeps the roof's covering, in 3D and in IFC (a roof slab). The edges it shares with a slope that has panels (a ridge, a hip) keep their flashings. The rainwater system still drains it: the gutters take the rain whatever covers the roof. The Panels section names the slopes without panels; the drawing hatches them.
+- **Phase (mm)**: where the slope's columns start along its eave, from the slope's corner, modulo the useful width. Empty, the layout picks the phase that buys the least (and may pick another when the roof changes); the pin fixes the one it chose, or type one (to line the joints up with a dormer, a ridge vent or the slope beside). A phase that leaves a strip of eave narrower than 22 cm is laid anyway, with a warning. The cross gives the phase back to the layout.
+
+The exceptions are kept on the roof by the slopes' codes (A01, A02…) and stay when you change the profile or its colour; if the roof changes so a slope is gone, its exception is left aside, with a warning.
+
+![Panel layout with one slope left without panels (hatched) and the first slope's phase fixed](shots/roof-panels-slope-exceptions.webp)
+
+![In 3D the slope without panels keeps the roof's covering](shots/roof-panels-3d-slope-without.webp)
 
 ## Walls, roof windows and dormers
 

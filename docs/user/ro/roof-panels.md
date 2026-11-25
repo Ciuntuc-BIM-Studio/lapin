@@ -1,7 +1,7 @@
 ---
 title: Panouri de acoperiș
 order: 41
-summary: Așezi țiglă metalică sau panouri cu falț pe apele acoperișului: ce se cumpără pe lungimi, resturile refolosite în dolii, accesoriile, prinderile, șipcile și folia, cât costă toate din lista ta de prețuri, ferestrele de acoperiș decupate, panourile desenate ca învelitoare.
+summary: Așezi țiglă metalică sau panouri cu falț pe apele acoperișului: ce se cumpără pe lungimi, resturile refolosite în dolii, accesoriile, prinderile, șipcile și folia, cât costă toate din lista ta de prețuri, ferestrele de acoperiș decupate, panourile desenate ca învelitoare; profile proprii, ape fără panouri.
 ---
 
 ## Țiglă metalică și panouri pe un acoperiș
@@ -95,6 +95,31 @@ Schimbi profilul, culoarea, coamele sau prinderile și tabelul urmează imediat:
 Aceleași rânduri ajung în **deviz** (**Execuție → Deviz…**) la capitolul **Acoperiș**: sunt cantitățile acoperișului (setul **Lapin_RoofPanelQuantities**, pe care îl arată și proprietățile, extrasele și exportul IFC), cotate după codurile lor. Dacă tipul acoperișului are și el un articol pentru învelitoare, scoate-l, altfel învelitoarea se numără de două ori.
 
 **Prețurile tale.** Importă lista ta cu aceleași coduri (cod, denumire, unitate, preț; sursa, un link și o dată dacă le ai), apoi în setările devizului alege listele de prețuri după care cotează, a ta întâi: un cod ia prețul primei liste care îl are, șablonul pe celelalte. Sau scoate șablonul din **Liste de prețuri…**. Un preț în altă unitate decât a rândului (un preț pe metru pentru un rând în bucăți de 2 m) e marcat ⚠: schimbă unitatea sau prețul. Prețurile sunt orientative: verifică-le la comandă.
+
+## Profile proprii
+
+Profilurile Lapin rămân cum sunt, în orice proiect. Ca să schimbi unul (altă petrecere, lungimile pe care le are furnizorul tău, o culoare, un accesoriu), faci o copie a lui în proiect: **Profile…** în secțiunea Panouri sau **Arhitectură → Panouri de acoperiș → Profiluri de panouri…** arată profilurile **Ale Lapin** (doar citire) și pe cele **Ale acestui proiect**.
+
+- **Duplică pentru a edita** pe un profil Lapin face o copie în proiect (Bilka Balcanic (copy)). Copia păstrează codurile de articol ale originalului (codurile pe care le prețuiește lista ta de prețuri), deci până o schimbi panotează, numără și costă exact ca originalul.
+- Editorul arată pe rând numerele tablei: numele și id-ul, producătorul, lățimea totală și cea utilă, petrecerea pe pantă, modulul, îmbinările (pe modul, la țiglă; decalate, la falț), pantele minime, distanța la dolii, dacă resturile de la coame oblice se refolosesc, undele, lungimea accesoriilor, codul de articol; **Vândut** în lungimi de stoc (scrise: 1180, 2230, 2930) sau la comandă (cea mai scurtă, începutul și pasul lungimilor regulate, cea mai lungă); **Culorile** (un cod, un nume, culoarea din vederi). Accesoriile, suportul, prinderile, coamele și tabla plană sunt dedesubt, ca JSON, în formatul profilurilor Lapin. **Salvează** e un pas de anulare; acoperișurile care folosesc profilul îl urmează.
+- Un acoperiș alege un profil al proiectului în **Profil** (la **Ale acestui proiect**), cum alege unul Lapin.
+- **Șterge** e refuzat cât timp un acoperiș folosește profilul: alege-i întâi alt profil.
+- **Exportă…** scrie profilurile proiectului într-un fișier **.lapinpanels**, biblioteca de profile a firmei; **Importă…** îl aduce în alt proiect prin previzualizarea importului: un profil pe care proiectul nu îl are se adaugă, unul cu același id se actualizează (acoperișurile lui îl urmează), se păstrează alături sau se sare, cum alegi. Cu un folder al firmei setat în **Preferințe → Biblioteci**, fișierele .lapinpanels din el apar în dialog, iar **Salvează în folderul firmei…** le scrie acolo pe ale proiectului.
+
+![Profilurile de panouri: o copie a lui Bilka Balcanic în proiect, deschisă în editor](shots/roof-panel-profiles.webp)
+
+## O apă fără panouri, o fază fixată
+
+În **Panotaj…**, tabelul **Pe ape** dă două excepții pentru fiecare apă, fiecare un pas de anulare:
+
+- **Așezare** debifată: apa rămâne fără panouri (altă învelitoare acolo, o apă vitrată, o parte făcută mai târziu). Panourile ei ies din panotaj, din cantități, din extras (partea ei de șipci, contrașipci, folie și prinderi, accesoriile ei de streașină și fronton), din cost și din panourile IFC; apa își păstrează învelitoarea acoperișului, în 3D și în IFC (o placă de acoperiș). Muchiile pe care le are comune cu o apă cu panouri (o coamă, o coamă oblică) își păstrează accesoriile. Sistemul pluvial o drenează în continuare: jgheaburile iau ploaia orice ar acoperi acoperișul. Secțiunea Panouri numește apele fără panouri; desenul le hașurează.
+- **Fază (mm)**: unde încep coloanele apei de-a lungul streșinii, de la colțul apei, modulo lățimea utilă. Goală, panotajul alege faza care cumpără cel mai puțin (și poate alege alta când acoperișul se schimbă); pioneza fixează faza aleasă, sau scrii una (ca să aliniezi îmbinările cu o lucarnă, un aerator de coamă sau apa de alături). O fază care lasă o fâșie de streașină mai îngustă de 22 cm se așază oricum, cu un avertisment. Crucea dă faza înapoi panotajului.
+
+Excepțiile se păstrează pe acoperiș după codurile apelor (A01, A02…) și rămân când schimbi profilul sau culoarea; dacă acoperișul se schimbă și o apă nu mai există, excepția ei e lăsată deoparte, cu un avertisment.
+
+![Panotajul cu o apă fără panouri (hașurată) și faza primei ape fixată](shots/roof-panels-slope-exceptions.webp)
+
+![În 3D apa fără panouri își păstrează învelitoarea acoperișului](shots/roof-panels-3d-slope-without.webp)
 
 ## Pereți, ferestre de acoperiș și lucarne
 
