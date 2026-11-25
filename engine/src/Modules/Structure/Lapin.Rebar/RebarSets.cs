@@ -324,7 +324,7 @@ public static class RebarSets
             var mk = new ViewMark(e.Id);
             var color = Rebar3D.Draw(mk, c, st, dots, lines, s.Diameter, RebarShapes.LongitudinalLayer);
             var style = LabelStyle.Resolve("sets", st, element: RebarLabels.StyleOf(e));
-            var text = style.Text(new LabelFacts(laid.Lines.ToString(CultureInfo.InvariantCulture), s.Diameter, laid.StepText, null, RebarMarks.TextOf(st, e), e.Str("steel") ?? st.Steel, s.Layer));
+            var text = style.Text(new LabelFacts(laid.Lines.ToString(CultureInfo.InvariantCulture), s.Diameter, laid.StepText, null, RebarMarks.TextOf(st, e), e.Str("steel") ?? st.Steel, s.Layer), st.Notation);
             LabelString? path = null;
             if (faceOn && laid.Positions.Count >= 2)
             {
@@ -546,7 +546,7 @@ public static class RebarSets
             o["lengths"] = new JsonArray(specs.Select(x => (JsonNode)new JsonObject { ["shape"] = x.Spec.Shape, ["length"] = Math.Round(RebarShapes.Length(x.Spec), 3), ["count"] = x.Count }).ToArray());
             o["total"] = Math.Round(total, 3);
             o["mass"] = Math.Round(total * RebarShapes.MassPerMetre(laid.Spec.Diameter), 2);
-            o["label"] = LabelStyle.Resolve("sets", st, element: RebarLabels.StyleOf(e)).Text(new LabelFacts(laid.Lines.ToString(CultureInfo.InvariantCulture), laid.Spec.Diameter, laid.StepText, null, RebarMarks.TextOf(st, e), e.Str("steel") ?? st.Steel, laid.Spec.Layer));
+            o["label"] = LabelStyle.Resolve("sets", st, element: RebarLabels.StyleOf(e)).Text(new LabelFacts(laid.Lines.ToString(CultureInfo.InvariantCulture), laid.Spec.Diameter, laid.StepText, null, RebarMarks.TextOf(st, e), e.Str("steel") ?? st.Steel, laid.Spec.Layer), st.Notation);
             return o;
         });
     }

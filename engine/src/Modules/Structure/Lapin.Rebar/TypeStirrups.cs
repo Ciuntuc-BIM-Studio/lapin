@@ -242,7 +242,7 @@ public static class TypeStirrups
             if ((p1 - p0).Length > 4 * laid.Spec.Step && laid.Stations.Count > 0)
             {
                 var style = LabelStyle.Resolve("stirrups", st, laid.Spec.Label);
-                var text = style.Text(new LabelFacts(laid.CountText, d, laid.StepText, laid.BarLength(laid.LoopsAt(laid.Stations[0])[0]), StirrupText(m, st, e, laid.Spec.Mark, d), st.Steel));
+                var text = style.Text(new LabelFacts(laid.CountText, d, laid.StepText, laid.BarLength(laid.LoopsAt(laid.Stations[0])[0]), StirrupText(m, st, e, laid.Spec.Mark, d), st.Steel), st.Notation);
                 var segments = mk.Lines.Select(l => (l.A, l.B)).ToList();
                 var axis = new PathCurve(p0, p1, 0);
                 var seen = axis.Length / laid.Length;

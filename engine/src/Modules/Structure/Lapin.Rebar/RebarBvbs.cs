@@ -125,6 +125,8 @@ public static class RebarBvbs
         r.Query("bendingSchedule", (q, _) =>
         {
             var marks = Marks(q.Model, q.Geometry);
+            var n = RebarSettings.Of(q.Model).Notation;
+            string H(string key) => n.Format(key, _ => null);
             var most = marks.Count == 0 ? 0 : marks.Max(x => RebarShapeData.Dims(x.Spec).Count);
             var dims = Enumerable.Range(0, Math.Min(most, 8)).Select(i => ((char)('A' + i)).ToString()).ToList();
             var rows = new JsonArray();
@@ -139,7 +141,7 @@ public static class RebarBvbs
             }
             return new JsonObject
             {
-                ["columns"] = new JsonArray(new[] { "Mark", "Ø (mm)", "Shape" }.Concat(dims.Select(x => x + " (mm)")).Concat(["No.", "Length (m)", "Total (m)", "Mass (kg)"]).Select(c => (JsonNode)c).ToArray()),
+                ["columns"] = new JsonArray(new[] { H("heading.mark"), H("heading.diameter"), H("heading.shape") }.Concat(dims.Select(x => x + " (mm)")).Concat([H("heading.count"), H("heading.length"), H("heading.total"), H("heading.mass")]).Select(c => (JsonNode)c).ToArray()),
                 ["rows"] = rows,
             };
         });

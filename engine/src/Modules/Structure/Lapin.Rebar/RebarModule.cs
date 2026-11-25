@@ -26,13 +26,17 @@ public sealed record RebarSettings(bool ColorByDiameter = true, double TextHeigh
 
     public IReadOnlyDictionary<string, JsonObject> Labels { get; init; } = Labels ?? new Dictionary<string, JsonObject>();
 
+    /// <summary>How the project writes the diameter, the step, the length and the schedule's headings (decision 856; kept in the project's <c>notations</c>, not here).</summary>
+    public Notation Notation { get; init; } = RebarNotation.Default;
+
     /// <summary>The lap (m) for a bar of this diameter: the project's, or 50Ø.</summary>
     public double LapOf(double diameter) => LapLength ?? LapDiameters * diameter;
 
     public static RebarSettings Of(IModelView m)
     {
+        var notation = Notation.Of(m, RebarNotation.Domain);
         var o = Spatial.Project(m)?.Attrs[Key] as JsonObject;
-        if (o == null) return new RebarSettings();
+        if (o == null) return new RebarSettings { Notation = notation };
         var labels = new Dictionary<string, JsonObject>();
         if (o["labels"] is JsonObject lo)
             foreach (var (k, v) in lo) if (v is JsonObject so && LabelStyle.Kinds.Contains(k)) labels[k] = so;
@@ -44,7 +48,7 @@ public sealed record RebarSettings(bool ColorByDiameter = true, double TextHeigh
             Json.Number(o["textHeight"]) ?? 2.5, Json.Number(o["balloon"]) ?? 7.5, (string?)o["steel"] ?? RebarShapes.DefaultSteel,
             o["segmentLengths"] is JsonValue sv && sv.TryGetValue<bool>(out var sl) && sl, Json.Number(o["cover"]) ?? 0.025, labels,
             Json.Number(o["stockLength"]) is { } stock && stock > 0 ? stock : DefaultStock, Json.Number(o["lapLength"]) is { } lap && lap > 0 ? lap : null,
-            ((string?)o["marks"]?["pattern"])?.Trim() is { Length: > 0 } pattern ? pattern : RebarMarks.DefaultPattern, prefixes);
+            ((string?)o["marks"]?["pattern"])?.Trim() is { Length: > 0 } pattern ? pattern : RebarMarks.DefaultPattern, prefixes) { Notation = notation };
     }
 
     public JsonObject ToJson() => new()
@@ -122,18 +126,19 @@ public static class Rebars
 
     public static IEnumerable<Entity> On(IModelView m, string viewId, string cls) => m.OfClass(cls).Where(e => e.Str("viewId") == viewId);
 
-    /// <summary>What a label says of a bar: "4Ø12 L=2450".</summary>
-    public static string Label(Entity e, RebarSpec s) => $"{Pieces(e)}{RebarShapes.Dia(s.Diameter)} L={RebarShapes.Mm(RebarShapes.Length(s))}";
+    /// <summary>What a label says of a bar: "4Ø12 L=2450" (the project's notation, decision 856).</summary>
+    public static string Label(Entity e, RebarSpec s, Notation? n = null) =>
+        LabelStyle.Default("bars").Text(new LabelFacts(Pieces(e).ToString(CultureInfo.InvariantCulture), s.Diameter, null, RebarShapes.Length(s), "", ""), n);
 
     /// <summary>A run's path in its view, its positions, and what its label says ("11Ø8/100").</summary>
-    public static (PathCurve Path, List<double> Positions, string Step, string Label) RunOf(Entity e, RebarSpec s)
+    public static (PathCurve Path, List<double> Positions, string Step, string Label) RunOf(Entity e, RebarSpec s, Notation? n = null)
     {
         var path = new PathCurve(P(e.Attrs["start"]), P(e.Attrs["end"]), e.Num("rise"));
         var zones = (e.Attrs["zones"] as JsonArray)?.Select(Runs.Zone.From).OfType<Runs.Zone>().ToList();
         var step = e.NumOrNull("step") ?? 0.15;
         var positions = Runs.Positions(path.Length, step, zones);
         var text = Runs.StepText(path.Length, step, zones);
-        return (path, positions, text, $"{positions.Count * Count(e)}{RebarShapes.Dia(s.Diameter)}/{text}");
+        return (path, positions, text, LabelStyle.Default("runs").Text(new LabelFacts((positions.Count * Count(e)).ToString(CultureInfo.InvariantCulture), s.Diameter, text, null, "", ""), n));
     }
 
     /// <summary>
@@ -165,6 +170,11 @@ public sealed class RebarSchedule : IScheduleSource
     public string Kind => "rebar";
     public string Label => "Bar bending schedule";
     public static readonly string[] Columns = ["Mark", "Ø (mm)", "Shape", "No.", "Length (m)", "Total (m)", "Mass (kg)", "Note"];
+
+    static readonly string[] ColumnKeys = ["heading.mark", "heading.diameter", "heading.shape", "heading.count", "heading.length", "heading.total", "heading.mass", "heading.note"];
+
+    /// <summary>The columns' headings as the project's notation writes them (decision 856; Lapin's: <see cref="Columns"/>).</summary>
+    public static string[] ColumnsOf(Notation n) => [.. ColumnKeys.Select(k => n.Format(k, _ => null))];
 
     static string N(double v, int decimals = 2) => v.ToString(decimals == 2 ? "0.00" : "0.###", CultureInfo.InvariantCulture);
 
@@ -281,8 +291,11 @@ public sealed class RebarSchedule : IScheduleSource
     /// <paramref name="byPartition"/>: a first column with each bar's partition, its marks apart from the others' (a mark is a partition's own),
     /// and each partition's mass after its rows.
     /// </summary>
-    public static List<IReadOnlyList<string>> Rows(IEnumerable<Entry> entries, out double totalMass, bool byPartition = false)
+    public static List<IReadOnlyList<string>> Rows(IEnumerable<Entry> entries, out double totalMass, bool byPartition = false, Notation? notation = null)
     {
+        var n = notation ?? RebarNotation.Default;
+        var totalWord = n.Format("schedule.total", _ => null);
+        var differs = n.Format("schedule.differs", _ => null);
         var rows = new List<IReadOnlyList<string>>();
         var byDia = new SortedDictionary<int, (double Length, double Mass)>();
         totalMass = 0;
@@ -301,16 +314,16 @@ public sealed class RebarSchedule : IScheduleSource
             var conflict = g.Any(x => Math.Abs(x.Diameter - first.Diameter) > 1e-9 || Math.Abs(x.Length - first.Length) > 0.0005);
             var total = g.Sum(x => x.Count * x.Length);
             var mass = g.Sum(x => x.Count * x.Length * RebarShapes.MassPerMetre(x.Diameter));
-            rows.Add(Row(part, g.Key.Written, N(first.Diameter * 1000, 3), first.Shape, count.ToString(CultureInfo.InvariantCulture), N(first.Length), N(total), N(mass), conflict ? "Ø or length differs" : ""));
+            rows.Add(Row(part, g.Key.Written, N(first.Diameter * 1000, 3), first.Shape, count.ToString(CultureInfo.InvariantCulture), N(first.Length), N(total), N(mass), conflict ? differs : ""));
             var d = (int)Math.Round(first.Diameter * 1000);
             byDia[d] = byDia.TryGetValue(d, out var acc) ? (acc.Length + total, acc.Mass + mass) : (total, mass);
             totalMass += mass;
             partMass += mass;
         }
-            if (byPartition && parts.Count > 1) rows.Add(Row(part, "", "", "Total", "", "", "", N(partMass), ""));
+            if (byPartition && parts.Count > 1) rows.Add(Row(part, "", "", totalWord, "", "", "", N(partMass), ""));
         }
-        foreach (var (d, (length, mass)) in byDia) rows.Add(Row("", "", d.ToString(CultureInfo.InvariantCulture), "Total", "", "", N(length), N(mass), ""));
-        if (rows.Count > 0) rows.Add(Row("", "Total", "", "", "", "", "", N(totalMass), ""));
+        foreach (var (d, (length, mass)) in byDia) rows.Add(Row("", "", d.ToString(CultureInfo.InvariantCulture), totalWord, "", "", N(length), N(mass), ""));
+        if (rows.Count > 0) rows.Add(Row("", totalWord, "", "", "", "", "", N(totalMass), ""));
         return rows;
     }
 
@@ -328,7 +341,9 @@ public sealed class RebarSchedule : IScheduleSource
         var entries = Entries(q.Model, q.Geometry);
         var byPartition = entries.Any(x => x.Partition.Length > 0);
         if (PartitionsOf(schedule) is { } only) entries = [.. entries.Where(x => only.Contains(x.Partition))];
-        return new("Bar bending schedule", byPartition ? ["Partition", .. Columns] : Columns, Rows(entries, out _, byPartition));
+        var n = RebarSettings.Of(q.Model).Notation;
+        var columns = ColumnsOf(n);
+        return new(n.Format("schedule.title", _ => null), byPartition ? [n.Format("heading.partition", _ => null), .. columns] : columns, Rows(entries, out _, byPartition, n));
     }
 }
 
@@ -372,6 +387,8 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         });
 
         r.Service<IViewAnnotations>(this);
+        // How the project writes diameters, steps, lengths and the schedule's headings (decision 856).
+        RebarNotation.Register(r);
         // Rebar sets in slabs, footings and walls, with their multi-rebar tag (decision 730).
         RebarSets.Register(r);
         r.Service<IDeletionFollowers>(new RebarSetHosts());
@@ -614,7 +631,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             {
                 o["pieces"] = Rebars.Pieces(e);
                 o["mass"] = Math.Round(length * RebarShapes.MassPerMetre(s.Diameter) * Rebars.Pieces(e), 3);
-                o["label"] = Rebars.Label(e, s);
+                o["label"] = Rebars.Label(e, s, RebarSettings.Of(q.Model).Notation);
                 var at = Rebars.At(e);
                 o["grips"] = new JsonArray(RebarShapes.Grips(s).Select(g => (JsonNode)new JsonObject { ["key"] = g.Key, ["at"] = Rebars.J(RebarShapes.Place(s, at, g.At)) }).ToArray());
                 // The cover its anchors stand off by, where it comes from (own, host, settings), and the anchors themselves (decision 226).
@@ -631,7 +648,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             }
             else
             {
-                var (path, positions, step, label) = Rebars.RunOf(e, s);
+                var (path, positions, step, label) = Rebars.RunOf(e, s, RebarSettings.Of(q.Model).Notation);
                 o["positions"] = positions.Count;
                 o["pathLength"] = Math.Round(path.Length, 4);
                 o["step"] = step;
@@ -938,7 +955,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         // The mark's balloon with its leader, and what the bar is: drawn with the view's other labels, beside what was drawn here.
         var drawn = mk.Lines.Where(l => l.Layer == layer).Select(l => (l.A, l.B)).ToList();
         var style = LabelStyle.Resolve("bars", st, element: RebarLabels.StyleOf(e));
-        var text = style.Text(RebarLabels.FactsOf(e, s, st, Rebars.Pieces(e).ToString(CultureInfo.InvariantCulture)));
+        var text = style.Text(RebarLabels.FactsOf(e, s, st, Rebars.Pieces(e).ToString(CultureInfo.InvariantCulture)), st.Notation);
         labels.Add(new LabelRequest(mk, e.Id, "label", style, text, Rebars.Mark(e), color, drawn, view == "section" ? [at] : [], view == "section" ? null : RebarLabels.AlongOf(drawn), Rebars.LabelPlaceOf(e)) { Own = true, MarkText = RebarMarks.TextOf(st, e) });
         // What the interface drags: the shape's grips where they stand now, its point and its label.
         var grips = new JsonArray(RebarShapes.Grips(s).Select(g => (JsonNode)new JsonObject { ["key"] = g.Key, ["at"] = Rebars.J(RebarShapes.Place(s, at, g.At)) }).ToArray());
@@ -994,7 +1011,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         if (drawn.Count < positions.Count) mk.Polyline(path.Line(0, path.Length, side), false, layer, 0.25, color, [3, 1.5]);
         // The label, drawn with the view's other labels: as a dimension string along the path outside the bars (every position a tick), or beside them.
         var style = LabelStyle.Resolve("runs", st, element: RebarLabels.StyleOf(e));
-        var text = style.Text(RebarLabels.FactsOf(e, s, st, (positions.Count * Rebars.Count(e)).ToString(CultureInfo.InvariantCulture), stepText));
+        var text = style.Text(RebarLabels.FactsOf(e, s, st, (positions.Count * Rebars.Count(e)).ToString(CultureInfo.InvariantCulture), stepText), st.Notation);
         var bars = mk.Lines.Where(l => l.Layer == layer).Select(l => (l.A, l.B)).ToList();
         labels.Add(new LabelRequest(mk, e.Id, "label", style, text, Rebars.Mark(e), color, bars, [], path.TangentAt(path.Length / 2).Normalized(), Rebars.LabelPlaceOf(e))
         { Own = true, MarkText = RebarMarks.TextOf(st, e), String = new LabelString(path, positions, side - size / 2, side + size / 2) });

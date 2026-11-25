@@ -159,7 +159,7 @@ public static class ColumnBars
             var mk = new ViewMark($"{e.Id}:columnBars");
             var color = Rebar3D.Draw(mk, c, st, dots, lines, laid.Spec.Diameter, RebarShapes.LongitudinalLayer);
             var style = LabelStyle.Resolve("columnBars", st, laid.Spec.Label);
-            var text = style.Text(new LabelFacts(laid.Bars.Count.ToString(CultureInfo.InvariantCulture), laid.Spec.Diameter, null, laid.Length, ColumnBarsText(m, st, e, laid.Spec), st.Steel));
+            var text = style.Text(new LabelFacts(laid.Bars.Count.ToString(CultureInfo.InvariantCulture), laid.Spec.Diameter, null, laid.Length, ColumnBarsText(m, st, e, laid.Spec), st.Steel), st.Notation);
             labels.Add(new LabelRequest(mk, e.Id, "columnBars", style, text, laid.Spec.Mark, color, lines, dots, RebarLabels.AlongOf(lines), RebarLabels.PlacedOn(c.View, e.Id, "columnBars")) { MarkText = ColumnBarsText(m, st, e, laid.Spec) });
             yield return mk;
         }
