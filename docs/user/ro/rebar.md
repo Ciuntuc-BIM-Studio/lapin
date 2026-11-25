@@ -128,6 +128,21 @@ Mărcile barelor pot începe cu litere după forma barei, cum se scriu de obicei
 
 Mărcile sunt numerotate separat în fiecare prefix și partiție: R1, R2… lângă U1, U2…. Numerele deja date nu se schimbă singure; **Renumerotează mărcile** o ia de la 1 în fiecare partiție și prefix și spune câte mărci s-au schimbat.
 
+## Notația
+
+Simbolurile cu care se scriu listele de armare diferă de la o țară la alta: `5Ø12/200` în România, `5H12-200` în Regatul Unit, `5 #13 @ 200` în Statele Unite, `12 Ø 10 c/c 200` în alte părți. Lapin le scrie în felul lui dacă nu îl schimbi, în **Setări armare → Notație**, pentru tot proiectul:
+
+![Setări armare, Notație: presetarea Regatului Unit, textele cu exemplele lor](shots/rebar-notation.webp)
+
+- **Presetare:** notația unei țări ca punct de plecare (România și Eurocodul, adică a lui Lapin; Regatul Unit după BS 8666; Statele Unite după ACI 318 cu diametrele metrice; distanță interax). Presetările sunt orientative: verifică-le după standardul după care lucrezi.
+- **Simbolul diametrului:** alegi Ø, ⌀, φ, H, T, Y, R, B sau #, ori scrii unul al tău.
+- **Diametru, Număr, Distanță, Lungime, Marca oțelului:** fiecare e un text cu jetoane între acolade: `{symbol}{d}` scrie Ø12, `/{step}` scrie /200, `L={length}` scrie L=2500, `{steel}` oțelul. Un text care trebuie să stea la un spațiu distanță începe cu un spațiu (` @ {step}`). Merge și o formulă: `{= round(d / 25.4; 2)}` scrie diametrul în inci.
+- **Extras:** titlul extrasului de armătură, antetele coloanelor, rândul de total și observația la o marcă ce diferă. Extrasul după standard ia aceleași antete.
+
+Un text pe care îl scrii trece peste presetare; gol, revine la cel al presetării. **Înapoi la notația Lapin** pune totul la loc. Jetoanele etichetei spun în continuare ce scrie eticheta și în ce ordine; notația spune cum se scrie fiecare. Etichetele de pe desene și planșe, extrasele și exporturile lor citesc aceeași notație.
+
+![O secțiune cu notația Regatului Unit: 3H16 L=4000 și 21H8-200](shots/rebar-notation-drawing.webp)
+
 ## Seturi de armare
 
 Un **set de armare** așază dintr-un clic barele unei plăci, fundații sau perete întreg, ca o plasă, și e desenat și numărat de la gazdă: schimbi placa și barele o urmează. Grupul **Seturi** din fila Armare simplă are două unelte:

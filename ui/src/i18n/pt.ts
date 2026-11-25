@@ -6755,6 +6755,29 @@ export const PT: Record<string, string> = {
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "Mapa de acessórios dos painéis criado: está no navegador do projeto, em Mapas.",
   // A part of the window that stopped (PartBoundary, forum topic 258).
   "This part of Lapin stopped working; the rest of the window still works.": "Esta parte do Lapin deixou de funcionar; o resto da janela continua a funcionar.", "Report…": "Comunicar…", "Lapin's window stopped working.": "A janela do Lapin deixou de funcionar.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "Recarregue a janela para continuar. Comunique o que fez imediatamente antes, para que possa ser corrigido.", "Reload the window": "Recarregar a janela", "Report on the forum…": "Comunicar no fórum…",
+  // The project's notation (decision 861): Rebar settings → Notation.
+  "Notation": "Notação",
+  "Back to the preset's or Lapin's": "Voltar ao da predefinição ou ao do Lapin",
+  "Symbols, prefixes and spacing differ from one country to another. The presets are indicative: check them against the standard you work to. A text you type goes over the preset; empty, it goes back.": "Os símbolos, prefixos e espaçamentos variam de país para país. As predefinições são indicativas: verifique-as com a norma que usa. Um texto escrito sobrepõe-se à predefinição; vazio, volta o anterior.",
+  "A formula works in any text: {= round(d / 25.4; 2)} writes the diameter in inches.": "Uma fórmula funciona em qualquer texto: {= round(d / 25.4; 2)} escreve o diâmetro em polegadas.",
+  "Back to Lapin's notation": "Voltar à notação do Lapin",
+  "Diameter symbol": "Símbolo do diâmetro",
+  "Steel grade": "Classe do aço",
+  "Schedule title": "Título do mapa",
+  "Heading: partition": "Cabeçalho: partição",
+  "Heading: mark": "Cabeçalho: marca",
+  "Heading: diameter": "Cabeçalho: diâmetro",
+  "Heading: shape": "Cabeçalho: forma",
+  "Heading: number": "Cabeçalho: número",
+  "Heading: length": "Cabeçalho: comprimento",
+  "Heading: total length": "Cabeçalho: comprimento total",
+  "Heading: mass": "Cabeçalho: massa",
+  "Heading: note": "Cabeçalho: nota",
+  "Note: a mark that differs": "Nota: uma marca que difere",
+  "Romania, Eurocode (Lapin's)": "Roménia, Eurocódigo (do Lapin)",
+  "United Kingdom": "Reino Unido",
+  "United States": "Estados Unidos",
+  "Spacing centre to centre": "Espaçamento entre eixos",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

@@ -7,6 +7,7 @@ import { execute } from '../../engine/session';
 import { useRebarCatalog } from './RebarSection';
 import { steelChoices, useRebarRules } from './rebarRules';
 import { LengthField, NumberField } from '../../shell/cells';
+import { NotationFields } from '../../shell/NotationFields';
 import { LabelStyleFields, MARK_GROUPS, useRebarSettings, type LabelKind, type MarkGroup, type LabelStylePatch, type RebarSettings as Settings } from './LabelStyleFields';
 
 const KINDS: { id: LabelKind; label: string }[] = [{ id: 'bars', label: 'Bars' }, { id: 'stirrups', label: 'Stirrups on the type' }, { id: 'columnBars', label: 'Column bars' }, { id: 'runs', label: 'Distributions' }, { id: 'sets', label: 'Rebar sets' }];
@@ -105,6 +106,7 @@ export function RebarSettingsDialog() {
           <StockAndLapFields s={s} set={set} />
           <p className="muted small">A bar longer than the stock length is cut in two with Split bar, the lap where you put it (from one station to another along the bar); this lap length is taken when only one point is given. Each piece has its own mark in the schedule.</p>
           <MarksBlock s={s} />
+          <NotationFields domain="rebar" />
           <p className="eyebrow">Labels</p>
           <label className="field-line"><span className="eyebrow">For</span>
             <select value={kind} onChange={(e) => setKind(e.target.value as LabelKind)}>{KINDS.map((k) => <option key={k.id} value={k.id}>{k.label}</option>)}</select>

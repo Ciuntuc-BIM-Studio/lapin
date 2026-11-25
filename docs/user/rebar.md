@@ -128,6 +128,21 @@ Bar marks can start with letters by the shape of the bar, as bar lists are usual
 
 Marks are numbered apart in each prefix and partition: R1, R2… beside U1, U2…. Numbers already given never change by themselves; **Renumber marks** starts again from 1 in each partition and prefix, and says how many marks changed.
 
+## Notation
+
+The symbols bar lists are written with differ from one country to another: `5Ø12/200` in Romania, `5H12-200` in the UK, `5 #13 @ 200` in the US, `12 Ø 10 c/c 200` elsewhere. Lapin writes them its own way unless you change it, in **Rebar settings → Notation**, for the whole project:
+
+![Rebar settings, Notation: the UK's preset, the texts with their examples](shots/rebar-notation.webp)
+
+- **Preset:** a country's notation as a starting point (Romania and Eurocode, which is Lapin's own; the United Kingdom after BS 8666; the United States after ACI 318 with the metric bar sizes; spacing centre to centre). The presets are indicative: check them against the standard you work to.
+- **Diameter symbol:** pick Ø, ⌀, φ, H, T, Y, R, B or #, or type your own.
+- **Diameter, Count, Spacing, Length, Steel grade:** each a text with tokens in braces: `{symbol}{d}` writes Ø12, `/{step}` writes /200, `L={length}` writes L=2500, `{steel}` the steel. A text that should stand a space apart starts with a space (` @ {step}`). A formula works too: `{= round(d / 25.4; 2)}` writes the diameter in inches.
+- **Schedule:** the bar bending schedule's title, its column headings, its total row and the note on a mark that differs. The bending schedule by the standard takes the same headings.
+
+A text you type goes over the preset; empty, it goes back to the preset's. **Back to Lapin's notation** puts everything back. The labels' parts still say what a label holds and in which order; the notation says how each part is written. Labels on drawings and sheets, the schedules and their exports all read the same notation.
+
+![A section with the UK's notation: 3H16 L=4000 and 21H8-200](shots/rebar-notation-drawing.webp)
+
 ## Rebar sets
 
 A **rebar set** lays the bars of a whole slab, footing or wall as a mat, from one click, and is drawn and counted from the host: change the slab and the bars follow. The **Sets** group of the Simple rebar tab has two tools:

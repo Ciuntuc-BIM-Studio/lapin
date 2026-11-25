@@ -135,22 +135,23 @@ public sealed record LabelStyle(IReadOnlyList<string> Parts, bool Balloon, strin
     /// <summary>Never a balloon without a mark: an empty circle says nothing.</summary>
     public bool ShowsBalloon(int mark) => Balloon && mark > 0;
 
-    /// <summary>What a group's label says of it, part by part: "41Ø8/150", "3Ø16 L=6000".</summary>
-    public string Text(LabelFacts f)
+    /// <summary>What a group's label says of it, part by part: "41Ø8/150", "3Ø16 L=6000"; each part as the project's notation writes it (decision 861; null: Lapin's own).</summary>
+    public string Text(LabelFacts f, Notation? n = null)
     {
+        n ??= RebarNotation.Default;
         var sb = new System.Text.StringBuilder();
         string? last = null;
         foreach (var part in Parts)
         {
             string? s = part switch
             {
-                "count" => f.Count,
-                "diameter" => RebarShapes.Dia(f.Diameter),
-                "step" => f.Step != null ? "/" + f.Step : null,
-                "length" => f.Length is { } len ? "L=" + RebarShapes.Mm(len) : null,
+                "count" => f.Count.Length > 0 ? n.Format("count", k => k == "count" ? f.Count : null) : null,
+                "diameter" => RebarShapes.Dia(f.Diameter, n),
+                "step" => f.Step != null ? n.Format("step", k => k == "step" ? f.Step : null) : null,
+                "length" => f.Length is { } len ? n.Format("length", k => k == "length" ? RebarShapes.Mm(len) : null) : null,
                 "mark" => f.Mark.Length > 0 ? f.Mark : null,
                 "layer" => f.Layer,
-                "steel" => f.Steel,
+                "steel" => f.Steel.Length > 0 ? n.Format("steel", k => k == "steel" ? f.Steel : null) : null,
                 _ => part.StartsWith("text:", StringComparison.Ordinal) ? part[5..] : null,
             };
             if (string.IsNullOrEmpty(s)) continue;
@@ -160,7 +161,8 @@ public sealed record LabelStyle(IReadOnlyList<string> Parts, bool Balloon, strin
             sb.Append(s);
             last = part;
         }
-        return sb.ToString();
+        // A template may start with a space („ Ø 10”): none before the first part (Lapin's own notation has none, and its text stays as it was).
+        return n.IsDefault ? sb.ToString() : sb.ToString().Trim();
     }
 }
 

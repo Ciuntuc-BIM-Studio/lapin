@@ -6711,6 +6711,29 @@ export const RO: Record<string, string> = {
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "Extrasul accesoriilor panotajului a fost făcut: este în navigatorul proiectului, la Extrase.",
   // A part of the window that stopped (PartBoundary, forum topic 258).
   "This part of Lapin stopped working; the rest of the window still works.": "Această parte din Lapin s-a oprit; restul ferestrei funcționează în continuare.", "Report…": "Raportează…", "Lapin's window stopped working.": "Fereastra Lapin s-a oprit.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "Reîncarcă fereastra pentru a continua. Te rugăm să raportezi ce ai făcut chiar înainte, ca să poată fi reparat.", "Reload the window": "Reîncarcă fereastra", "Report on the forum…": "Raportează pe forum…",
+  // The project's notation (decision 861): Rebar settings → Notation.
+  "Notation": "Notație",
+  "Back to the preset's or Lapin's": "Înapoi la presetare sau la Lapin",
+  "Symbols, prefixes and spacing differ from one country to another. The presets are indicative: check them against the standard you work to. A text you type goes over the preset; empty, it goes back.": "Simbolurile, prefixele și distanțele diferă de la o țară la alta. Presetările sunt orientative: verifică-le după standardul după care lucrezi. Un text pe care îl scrii trece peste presetare; gol, revine.",
+  "A formula works in any text: {= round(d / 25.4; 2)} writes the diameter in inches.": "O formulă merge în orice text: {= round(d / 25.4; 2)} scrie diametrul în inci.",
+  "Back to Lapin's notation": "Înapoi la notația Lapin",
+  "Diameter symbol": "Simbolul diametrului",
+  "Steel grade": "Marca oțelului",
+  "Schedule title": "Titlul extrasului",
+  "Heading: partition": "Antet: partiție",
+  "Heading: mark": "Antet: marcă",
+  "Heading: diameter": "Antet: diametru",
+  "Heading: shape": "Antet: formă",
+  "Heading: number": "Antet: număr",
+  "Heading: length": "Antet: lungime",
+  "Heading: total length": "Antet: lungime totală",
+  "Heading: mass": "Antet: masă",
+  "Heading: note": "Antet: observație",
+  "Note: a mark that differs": "Observație: o marcă ce diferă",
+  "Romania, Eurocode (Lapin's)": "România, Eurocod (al Lapin)",
+  "United Kingdom": "Regatul Unit",
+  "United States": "Statele Unite",
+  "Spacing centre to centre": "Distanță interax",
 };
 
 /** Phrases with a number or a name in them. */

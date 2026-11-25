@@ -6715,6 +6715,29 @@ export const DE: Record<string, string> = {
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "Die Zubehörliste der Dachpaneele wurde erstellt: sie steht im Projektbrowser unter Listen.",
   // A part of the window that stopped (PartBoundary, forum topic 258).
   "This part of Lapin stopped working; the rest of the window still works.": "Dieser Teil von Lapin funktioniert nicht mehr; der Rest des Fensters funktioniert weiter.", "Report…": "Melden…", "Lapin's window stopped working.": "Das Lapin-Fenster funktioniert nicht mehr.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "Lade das Fenster neu, um weiterzuarbeiten. Bitte melde, was du kurz davor getan hast, damit es behoben werden kann.", "Reload the window": "Fenster neu laden", "Report on the forum…": "Im Forum melden…",
+  // The project's notation (decision 861): Rebar settings → Notation.
+  "Notation": "Notation",
+  "Back to the preset's or Lapin's": "Zurück zur Vorgabe oder zu Lapins",
+  "Symbols, prefixes and spacing differ from one country to another. The presets are indicative: check them against the standard you work to. A text you type goes over the preset; empty, it goes back.": "Symbole, Präfixe und Abstände sind von Land zu Land verschieden. Die Vorgaben sind Richtwerte: prüfe sie anhand der Norm, nach der du arbeitest. Ein eingegebener Text geht vor die Vorgabe; leer gilt wieder die Vorgabe.",
+  "A formula works in any text: {= round(d / 25.4; 2)} writes the diameter in inches.": "Eine Formel geht in jedem Text: {= round(d / 25.4; 2)} schreibt den Durchmesser in Zoll.",
+  "Back to Lapin's notation": "Zurück zu Lapins Notation",
+  "Diameter symbol": "Durchmesserzeichen",
+  "Steel grade": "Stahlsorte",
+  "Schedule title": "Titel der Liste",
+  "Heading: partition": "Überschrift: Partition",
+  "Heading: mark": "Überschrift: Position",
+  "Heading: diameter": "Überschrift: Durchmesser",
+  "Heading: shape": "Überschrift: Form",
+  "Heading: number": "Überschrift: Anzahl",
+  "Heading: length": "Überschrift: Länge",
+  "Heading: total length": "Überschrift: Gesamtlänge",
+  "Heading: mass": "Überschrift: Masse",
+  "Heading: note": "Überschrift: Hinweis",
+  "Note: a mark that differs": "Hinweis: eine abweichende Position",
+  "Romania, Eurocode (Lapin's)": "Rumänien, Eurocode (Lapins)",
+  "United Kingdom": "Vereinigtes Königreich",
+  "United States": "Vereinigte Staaten",
+  "Spacing centre to centre": "Achsabstand",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

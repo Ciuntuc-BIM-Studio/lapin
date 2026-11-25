@@ -12873,6 +12873,29 @@ export const EL: Record<string, string> = {
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "Ο πίνακας εξαρτημάτων πάνελ στέγης δημιουργήθηκε: βρίσκεται στον περιηγητή έργου, στους Πίνακες.",
   // A part of the window that stopped (PartBoundary, forum topic 258).
   "This part of Lapin stopped working; the rest of the window still works.": "Αυτό το μέρος του Lapin σταμάτησε να λειτουργεί· το υπόλοιπο παράθυρο λειτουργεί κανονικά.", "Report…": "Αναφορά…", "Lapin's window stopped working.": "Το παράθυρο του Lapin σταμάτησε να λειτουργεί.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "Φορτώστε ξανά το παράθυρο για να συνεχίσετε. Αναφέρετε τι κάνατε ακριβώς πριν, ώστε να διορθωθεί.", "Reload the window": "Επαναφόρτωση παραθύρου", "Report on the forum…": "Αναφορά στο φόρουμ…",
+  // The project's notation (decision 861): Rebar settings → Notation.
+  "Notation": "Συμβολισμός",
+  "Back to the preset's or Lapin's": "Επιστροφή στην προεπιλογή ή στου Lapin",
+  "Symbols, prefixes and spacing differ from one country to another. The presets are indicative: check them against the standard you work to. A text you type goes over the preset; empty, it goes back.": "Τα σύμβολα, τα προθέματα και οι αποστάσεις διαφέρουν από χώρα σε χώρα. Οι προεπιλογές είναι ενδεικτικές: έλεγξέ τες με το πρότυπο με το οποίο εργάζεσαι. Ένα κείμενο που γράφεις υπερισχύει της προεπιλογής· κενό, επιστρέφει.",
+  "A formula works in any text: {= round(d / 25.4; 2)} writes the diameter in inches.": "Ένας τύπος λειτουργεί σε κάθε κείμενο: το {= round(d / 25.4; 2)} γράφει τη διάμετρο σε ίντσες.",
+  "Back to Lapin's notation": "Επιστροφή στον συμβολισμό του Lapin",
+  "Diameter symbol": "Σύμβολο διαμέτρου",
+  "Steel grade": "Ποιότητα χάλυβα",
+  "Schedule title": "Τίτλος πίνακα",
+  "Heading: partition": "Επικεφαλίδα: διαμέρισμα",
+  "Heading: mark": "Επικεφαλίδα: σήμανση",
+  "Heading: diameter": "Επικεφαλίδα: διάμετρος",
+  "Heading: shape": "Επικεφαλίδα: σχήμα",
+  "Heading: number": "Επικεφαλίδα: πλήθος",
+  "Heading: length": "Επικεφαλίδα: μήκος",
+  "Heading: total length": "Επικεφαλίδα: συνολικό μήκος",
+  "Heading: mass": "Επικεφαλίδα: μάζα",
+  "Heading: note": "Επικεφαλίδα: σημείωση",
+  "Note: a mark that differs": "Σημείωση: σήμανση που διαφέρει",
+  "Romania, Eurocode (Lapin's)": "Ρουμανία, Ευρωκώδικας (του Lapin)",
+  "United Kingdom": "Ηνωμένο Βασίλειο",
+  "United States": "Ηνωμένες Πολιτείες",
+  "Spacing centre to centre": "Απόσταση αξόνων",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

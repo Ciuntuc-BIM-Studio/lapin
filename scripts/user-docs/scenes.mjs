@@ -14067,6 +14067,32 @@ export const scenes = [
     },
   },
   {
+    // The project's notation (decision 861): the UK's preset (H12, the spacing after a dash) on a section's bars, and the
+    // Notation block of Rebar settings with its preset, its texts and their examples.
+    id: 'rebar-notation',
+    touches: ['rebar', 'structure', 'architecture'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const view = (await t.cmd('view.create', { kind: 'section', start: [0, 0], end: [6, 0], name: 'Notation' })).id;
+      await t.cmd('rebar.add', { viewId: view, shape: 'straight', at: [0.5, 0.6], params: { length: 4 }, diameter: 0.016, count: 3, label: { at: [1.5, 0.9] } });
+      await t.cmd('rebar.addRun', { viewId: view, start: [0.5, 0.2], end: [4.5, 0.2], step: 0.2, params: { a: 0.3, b: 0.5 } });
+      await t.cmd('notation.set', { domain: 'rebar', preset: 'uk' });
+      const described = await t.call('doc.query', { name: 'notation.describe', args: { domain: 'rebar' } });
+      t.expect(described?.[0]?.preset === 'uk', 'the preset is the project\'s');
+      await t.ui({ view: 'drawing', drawingViewId: view, selection: null, selected: [], keyPlan: false });
+      await t.wait(1500);
+      await t.fit();
+      await t.wait(800);
+      await t.shot('rebar-notation-drawing', { of: '[data-testid=drawing]', pad: 0 });
+      await t.ui({ dialog: 'rebarSettings' });
+      await t.wait(1000);
+      t.expect(await page.locator('[data-field=notation-rebar]').count() === 1, 'Rebar settings has its Notation block');
+      await t.shot('rebar-notation', { of: '[data-field=notation-rebar]', pad: 6 });
+      await t.ui({ dialog: null, keyPlan: true });
+    },
+  },
+  {
     // An imported mesh's chair placed like any element (decision 448): six of them round a table with Modify → Array, their
     // triangles shared.
     id: 'reference-array',

@@ -214,7 +214,7 @@ public static class Rebar3D
             var mk = new ViewMark($"{e.Id}:projection");
             var color = Draw(mk, c, st, dots, lines, s.Diameter, layer);
             var style = LabelStyle.Resolve("bars", st, element: RebarLabels.StyleOf(e));
-            var text = style.Text(RebarLabels.FactsOf(e, s, st, Rebars.Pieces(e).ToString(CultureInfo.InvariantCulture)));
+            var text = style.Text(RebarLabels.FactsOf(e, s, st, Rebars.Pieces(e).ToString(CultureInfo.InvariantCulture)), st.Notation);
             labels.Add(new LabelRequest(mk, e.Id, "projection", style, text, Rebars.Mark(e), color, lines, dots, RebarLabels.AlongOf(lines), RebarLabels.PlacedOn(c.View, e.Id, "projection")) { MarkText = RebarMarks.TextOf(st, e) });
             yield return mk;
         }

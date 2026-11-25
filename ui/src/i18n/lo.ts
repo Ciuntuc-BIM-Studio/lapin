@@ -6811,6 +6811,29 @@ export const LO: Record<string, string> = {
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "ສ້າງຕາຕະລາງອຸປະກອນແຜ່ນຫຼັງຄາແລ້ວ: ຢູ່ໃນຕົວທ່ອງໂຄງການ, ພາຍໃຕ້ ຕາຕະລາງ.",
   // A part of the window that stopped (PartBoundary, forum topic 258).
   "This part of Lapin stopped working; the rest of the window still works.": "ສ່ວນນີ້ຂອງ Lapin ຢຸດເຮັດວຽກແລ້ວ; ສ່ວນທີ່ເຫຼືອຂອງໜ້າຕ່າງຍັງເຮັດວຽກຢູ່.", "Report…": "ລາຍງານ…", "Lapin's window stopped working.": "ໜ້າຕ່າງຂອງ Lapin ຢຸດເຮັດວຽກແລ້ວ.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "ໂຫຼດໜ້າຕ່າງຄືນໃໝ່ເພື່ອສືບຕໍ່. ກະລຸນາລາຍງານສິ່ງທີ່ທ່ານໄດ້ເຮັດກ່ອນໜ້ານັ້ນ ເພື່ອໃຫ້ແກ້ໄຂໄດ້.", "Reload the window": "ໂຫຼດໜ້າຕ່າງຄືນໃໝ່", "Report on the forum…": "ລາຍງານໃນຟໍຣັມ…",
+  // The project's notation (decision 861): Rebar settings → Notation.
+  "Notation": "ການຂຽນສັນຍາລັກ",
+  "Back to the preset's or Lapin's": "ກັບໄປຫາຄ່າທີ່ຕັ້ງໄວ້ ຫຼື ຂອງ Lapin",
+  "Symbols, prefixes and spacing differ from one country to another. The presets are indicative: check them against the standard you work to. A text you type goes over the preset; empty, it goes back.": "ສັນຍາລັກ, ຄຳນຳໜ້າ ແລະ ໄລຍະຫ່າງ ແຕກຕ່າງກັນໄປແຕ່ລະປະເທດ. ຄ່າທີ່ຕັ້ງໄວ້ເປັນພຽງການແນະນຳ: ກວດສອບກັບມາດຕະຖານທີ່ທ່ານໃຊ້. ຂໍ້ຄວາມທີ່ທ່ານພິມຈະແທນຄ່າທີ່ຕັ້ງໄວ້; ຖ້າຫວ່າງ, ຈະກັບຄືນ.",
+  "A formula works in any text: {= round(d / 25.4; 2)} writes the diameter in inches.": "ສູດໃຊ້ໄດ້ໃນທຸກຂໍ້ຄວາມ: {= round(d / 25.4; 2)} ຂຽນເສັ້ນຜ່ານສູນກາງເປັນນິ້ວ.",
+  "Back to Lapin's notation": "ກັບໄປຫາການຂຽນສັນຍາລັກຂອງ Lapin",
+  "Diameter symbol": "ສັນຍາລັກເສັ້ນຜ່ານສູນກາງ",
+  "Steel grade": "ເກຣດເຫຼັກ",
+  "Schedule title": "ຫົວຂໍ້ຕາຕະລາງ",
+  "Heading: partition": "ຫົວຖັນ: ສ່ວນ",
+  "Heading: mark": "ຫົວຖັນ: ເຄື່ອງໝາຍ",
+  "Heading: diameter": "ຫົວຖັນ: ເສັ້ນຜ່ານສູນກາງ",
+  "Heading: shape": "ຫົວຖັນ: ຮູບຮ່າງ",
+  "Heading: number": "ຫົວຖັນ: ຈຳນວນ",
+  "Heading: length": "ຫົວຖັນ: ຄວາມຍາວ",
+  "Heading: total length": "ຫົວຖັນ: ຄວາມຍາວທັງໝົດ",
+  "Heading: mass": "ຫົວຖັນ: ມວນ",
+  "Heading: note": "ຫົວຖັນ: ໝາຍເຫດ",
+  "Note: a mark that differs": "ໝາຍເຫດ: ເຄື່ອງໝາຍທີ່ແຕກຕ່າງ",
+  "Romania, Eurocode (Lapin's)": "ໂຣມາເນຍ, Eurocode (ຂອງ Lapin)",
+  "United Kingdom": "ສະຫະລາຊະອານາຈັກ",
+  "United States": "ສະຫະລັດອາເມລິກາ",
+  "Spacing centre to centre": "ໄລຍະຫ່າງຈາກສູນກາງຫາສູນກາງ",
 };
 
 /** Phrases with a number or a name in them. */

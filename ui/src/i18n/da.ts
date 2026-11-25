@@ -6752,6 +6752,29 @@ export const DA: Record<string, string> = {
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "Listen over tagpladetilbehør er lavet: den ligger i projektbrowseren under Lister.",
   // A part of the window that stopped (PartBoundary, forum topic 258).
   "This part of Lapin stopped working; the rest of the window still works.": "Denne del af Lapin holdt op med at virke; resten af vinduet virker stadig.", "Report…": "Rapportér…", "Lapin's window stopped working.": "Lapins vindue holdt op med at virke.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "Genindlæs vinduet for at fortsætte. Rapportér venligst, hvad du gjorde lige før, så det kan rettes.", "Reload the window": "Genindlæs vinduet", "Report on the forum…": "Rapportér på forummet…",
+  // The project's notation (decision 861): Rebar settings → Notation.
+  "Notation": "Notation",
+  "Back to the preset's or Lapin's": "Tilbage til forudindstillingens eller Lapins",
+  "Symbols, prefixes and spacing differ from one country to another. The presets are indicative: check them against the standard you work to. A text you type goes over the preset; empty, it goes back.": "Symboler, præfikser og afstande er forskellige fra land til land. Forudindstillingerne er vejledende: kontroller dem mod den standard, du arbejder efter. En tekst, du skriver, går foran forudindstillingen; tom vender den tilbage.",
+  "A formula works in any text: {= round(d / 25.4; 2)} writes the diameter in inches.": "En formel virker i enhver tekst: {= round(d / 25.4; 2)} skriver diameteren i tommer.",
+  "Back to Lapin's notation": "Tilbage til Lapins notation",
+  "Diameter symbol": "Diametersymbol",
+  "Steel grade": "Stålkvalitet",
+  "Schedule title": "Listens titel",
+  "Heading: partition": "Overskrift: partition",
+  "Heading: mark": "Overskrift: mærke",
+  "Heading: diameter": "Overskrift: diameter",
+  "Heading: shape": "Overskrift: form",
+  "Heading: number": "Overskrift: antal",
+  "Heading: length": "Overskrift: længde",
+  "Heading: total length": "Overskrift: samlet længde",
+  "Heading: mass": "Overskrift: masse",
+  "Heading: note": "Overskrift: note",
+  "Note: a mark that differs": "Note: et mærke, der afviger",
+  "Romania, Eurocode (Lapin's)": "Rumænien, Eurocode (Lapins)",
+  "United Kingdom": "Storbritannien",
+  "United States": "USA",
+  "Spacing centre to centre": "Afstand center til center",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

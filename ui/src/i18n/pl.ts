@@ -6758,6 +6758,29 @@ export const PL: Record<string, string> = {
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "Zestawienie akcesoriów paneli dachowych utworzone: jest w przeglądarce projektu, w Zestawieniach.",
   // A part of the window that stopped (PartBoundary, forum topic 258).
   "This part of Lapin stopped working; the rest of the window still works.": "Ta część Lapina przestała działać; reszta okna nadal działa.", "Report…": "Zgłoś…", "Lapin's window stopped working.": "Okno Lapina przestało działać.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "Wczytaj okno ponownie, aby kontynuować. Zgłoś, co zrobiłeś tuż przedtem, aby można było to naprawić.", "Reload the window": "Wczytaj okno ponownie", "Report on the forum…": "Zgłoś na forum…",
+  // The project's notation (decision 861): Rebar settings → Notation.
+  "Notation": "Notacja",
+  "Back to the preset's or Lapin's": "Powrót do ustawienia wstępnego lub Lapina",
+  "Symbols, prefixes and spacing differ from one country to another. The presets are indicative: check them against the standard you work to. A text you type goes over the preset; empty, it goes back.": "Symbole, przedrostki i rozstawy różnią się w zależności od kraju. Ustawienia wstępne są orientacyjne: sprawdź je z normą, według której pracujesz. Wpisany tekst ma pierwszeństwo przed ustawieniem; pusty – wraca poprzedni.",
+  "A formula works in any text: {= round(d / 25.4; 2)} writes the diameter in inches.": "Formuła działa w każdym tekście: {= round(d / 25.4; 2)} zapisuje średnicę w calach.",
+  "Back to Lapin's notation": "Powrót do notacji Lapina",
+  "Diameter symbol": "Symbol średnicy",
+  "Steel grade": "Gatunek stali",
+  "Schedule title": "Tytuł zestawienia",
+  "Heading: partition": "Nagłówek: partycja",
+  "Heading: mark": "Nagłówek: znak",
+  "Heading: diameter": "Nagłówek: średnica",
+  "Heading: shape": "Nagłówek: kształt",
+  "Heading: number": "Nagłówek: liczba",
+  "Heading: length": "Nagłówek: długość",
+  "Heading: total length": "Nagłówek: długość całkowita",
+  "Heading: mass": "Nagłówek: masa",
+  "Heading: note": "Nagłówek: uwaga",
+  "Note: a mark that differs": "Uwaga: znak, który się różni",
+  "Romania, Eurocode (Lapin's)": "Rumunia, Eurokod (Lapina)",
+  "United Kingdom": "Wielka Brytania",
+  "United States": "Stany Zjednoczone",
+  "Spacing centre to centre": "Rozstaw osiowy",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

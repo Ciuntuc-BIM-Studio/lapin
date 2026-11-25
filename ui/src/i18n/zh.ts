@@ -6754,6 +6754,29 @@ export const ZH: Record<string, string> = {
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "已创建屋面板配件明细表：位于项目浏览器的明细表下.",
   // A part of the window that stopped (PartBoundary, forum topic 258).
   "This part of Lapin stopped working; the rest of the window still works.": "Lapin 的这一部分已停止工作；窗口的其余部分仍可正常使用。", "Report…": "报告…", "Lapin's window stopped working.": "Lapin 窗口已停止工作。", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "重新加载窗口以继续。请报告您在此之前刚做的操作，以便修复。", "Reload the window": "重新加载窗口", "Report on the forum…": "在论坛上报告…",
+  // The project's notation (decision 861): Rebar settings → Notation.
+  "Notation": "标注法",
+  "Back to the preset's or Lapin's": "恢复为预设或 Lapin 的设置",
+  "Symbols, prefixes and spacing differ from one country to another. The presets are indicative: check them against the standard you work to. A text you type goes over the preset; empty, it goes back.": "符号、前缀和间距因国家而异。预设仅供参考：请按您采用的标准核对。输入的文字优先于预设；留空则恢复。",
+  "A formula works in any text: {= round(d / 25.4; 2)} writes the diameter in inches.": "任何文字中都可使用公式：{= round(d / 25.4; 2)} 以英寸写出直径。",
+  "Back to Lapin's notation": "恢复为 Lapin 的标注法",
+  "Diameter symbol": "直径符号",
+  "Steel grade": "钢筋牌号",
+  "Schedule title": "明细表标题",
+  "Heading: partition": "列标题：分区",
+  "Heading: mark": "列标题：编号",
+  "Heading: diameter": "列标题：直径",
+  "Heading: shape": "列标题：形状",
+  "Heading: number": "列标题：数量",
+  "Heading: length": "列标题：长度",
+  "Heading: total length": "列标题：总长度",
+  "Heading: mass": "列标题：质量",
+  "Heading: note": "列标题：备注",
+  "Note: a mark that differs": "备注：不一致的编号",
+  "Romania, Eurocode (Lapin's)": "罗马尼亚，欧洲规范（Lapin 默认）",
+  "United Kingdom": "英国",
+  "United States": "美国",
+  "Spacing centre to centre": "中心间距",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

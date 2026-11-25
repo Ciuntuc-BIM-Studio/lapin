@@ -6718,6 +6718,29 @@ export const IT: Record<string, string> = {
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "Abaco degli accessori dei pannelli creato: è nel browser di progetto, sotto Abachi.",
   // A part of the window that stopped (PartBoundary, forum topic 258).
   "This part of Lapin stopped working; the rest of the window still works.": "Questa parte di Lapin ha smesso di funzionare; il resto della finestra funziona ancora.", "Report…": "Segnala…", "Lapin's window stopped working.": "La finestra di Lapin ha smesso di funzionare.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "Ricarica la finestra per continuare. Segnala cosa hai fatto subito prima, così si potrà correggere.", "Reload the window": "Ricarica la finestra", "Report on the forum…": "Segnala sul forum…",
+  // The project's notation (decision 861): Rebar settings → Notation.
+  "Notation": "Notazione",
+  "Back to the preset's or Lapin's": "Torna al predefinito o a quello di Lapin",
+  "Symbols, prefixes and spacing differ from one country to another. The presets are indicative: check them against the standard you work to. A text you type goes over the preset; empty, it goes back.": "Simboli, prefissi e passi cambiano da un paese all'altro. I predefiniti sono indicativi: verificali con la norma che usi. Un testo scritto prevale sul predefinito; vuoto, torna quello.",
+  "A formula works in any text: {= round(d / 25.4; 2)} writes the diameter in inches.": "Una formula funziona in ogni testo: {= round(d / 25.4; 2)} scrive il diametro in pollici.",
+  "Back to Lapin's notation": "Torna alla notazione di Lapin",
+  "Diameter symbol": "Simbolo del diametro",
+  "Steel grade": "Classe dell'acciaio",
+  "Schedule title": "Titolo della distinta",
+  "Heading: partition": "Intestazione: partizione",
+  "Heading: mark": "Intestazione: posizione",
+  "Heading: diameter": "Intestazione: diametro",
+  "Heading: shape": "Intestazione: forma",
+  "Heading: number": "Intestazione: numero",
+  "Heading: length": "Intestazione: lunghezza",
+  "Heading: total length": "Intestazione: lunghezza totale",
+  "Heading: mass": "Intestazione: massa",
+  "Heading: note": "Intestazione: nota",
+  "Note: a mark that differs": "Nota: una posizione che differisce",
+  "Romania, Eurocode (Lapin's)": "Romania, Eurocodice (di Lapin)",
+  "United Kingdom": "Regno Unito",
+  "United States": "Stati Uniti",
+  "Spacing centre to centre": "Interasse",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
