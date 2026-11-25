@@ -340,6 +340,60 @@ public class AnalysisRunTests
         Assert.NotEmpty(BeamCheck(t)["checks"]!.AsArray());
     }
 
+    /// <summary>
+    /// Issue #121, finding 2: a Spanish designation (EHE-08, Código Estructural: HA reinforced, HM plain, HP prestressed, then
+    /// fck in MPa) is read as a C class is: concrete, fck from the name, Ecm by EN 1992-1-1 Table 3.1 (its row when the table has
+    /// that fck, else its formula); its bars are analysed and checked.
+    /// </summary>
+    [Theory]
+    [InlineData("HA-30/P/20/IIa", 30, 33e9)]
+    [InlineData("HM-20/B/40/I", 20, 30e9)]
+    [InlineData("HP-45/F/12/IIIa", 45, 36e9)]
+    [InlineData("HA-25", 25, 31e9)]
+    public void A_spanish_concrete_designation_gives_fck_and_Ecm_and_is_checked(string name, double fck, double ecm)
+    {
+        var t = Frame6x4(beamMaterial: name);
+        var mat = StructuralMaterials.Of(t.F.Model, t.F.Model.OfClass(IfcClass.Material).Single(m => m.Name == name));
+        Assert.Equal("concrete", mat.Kind);
+        Assert.Equal(fck * 1e6, mat.Fc!.Value, 1e-3);
+        Assert.Contains(name.Split('/')[0], mat.Fc.Source);
+        Assert.Equal(ecm, mat.E!.Value, 1e-3);
+        Assert.Contains("EN 1992-1-1:2004 Table 3.1", mat.E.Source);
+        Assert.True((bool)Run(t.F)["ok"]!);
+        var beam = BeamCheck(t);
+        Assert.NotEmpty(beam["checks"]!.AsArray());
+        Assert.DoesNotContain(beam["notes"]!.AsArray(), n => ((string)n!).StartsWith("No fck"));
+    }
+
+    /// <summary>Issue #121, finding 2: a material whose name says nothing but which carries Pset_MaterialConcrete (an IFC file's) is concrete.</summary>
+    [Fact]
+    public void A_material_with_pset_material_concrete_is_concrete_whatever_its_name()
+    {
+        var t = Frame6x4(beamMaterial: "M-07");
+        Give(t.F, "M-07", P("CompressiveStrength", 25e6, "Pset_MaterialConcrete"));
+        var mat = StructuralMaterials.Of(t.F.Model, t.F.Model.OfClass(IfcClass.Material).Single(m => m.Name == "M-07"));
+        Assert.Equal("concrete", mat.Kind);
+        Assert.Equal(22e9 * Math.Pow((25 + 8) / 10.0, 0.3), mat.E!.Value, 1e3);
+        Assert.True((bool)Run(t.F)["ok"]!);
+    }
+
+    /// <summary>Spanish words for concrete (hormigón) make a concrete as concrete and beton do; names the rules knew keep what they gave.</summary>
+    [Theory]
+    [InlineData("Hormigón armado", "concrete", null)]
+    [InlineData("hormigon en masa", "concrete", null)]
+    [InlineData("Concrete C25/30", "concrete", "C25/30")]
+    [InlineData("Steel S355", "steel", "S355")]
+    [InlineData("Timber C24", "timber", "C24")]
+    [InlineData("Mystery", "other", null)]
+    [InlineData("HAB-25", "other", null)]
+    public void A_materials_kind_by_its_name(string name, string kind, string? grade)
+    {
+        var f = LoadCaseTests.F();
+        var mat = StructuralMaterials.Of(f.Model, StructuralMaterials.EntityOf(f.Model, name));
+        Assert.Equal(kind, mat.Kind);
+        Assert.Equal(grade, mat.Grade);
+    }
+
     [Fact]
     public void A_standard_set_comes_before_the_materials_own_strength()
     {

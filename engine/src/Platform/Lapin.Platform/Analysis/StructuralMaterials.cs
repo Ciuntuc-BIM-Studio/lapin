@@ -19,8 +19,9 @@ public sealed record StructuralMaterial(string Id, string Name, string Kind, Mat
 /// A material's mechanical values (docs/jg-structures.md, Materials): first the project's own, IFC's standard sets
 /// (Pset_MaterialMechanical.YoungModulus, PoissonRatio; Pset_MaterialSteel.YieldStress; Pset_MaterialConcrete.CompressiveStrength;
 /// Pset_MaterialCommon.MassDensity) in IFC's SI units, a value outside what any building material has refused rather than
-/// guessed at another unit; then the strength class its name says (C25/30, S355) by EN 1992-1-1 Table 3.1 and EN 1993-1-1
-/// Table 3.1 and §3.2.6; the density of reinforced concrete and of steel by EN 1991-1-1 Annex A and EN 1993-1-1 §3.2.6.
+/// guessed at another unit; then the strength class its name says (C25/30, or HA-25 as Spanish names write it; S355) by
+/// EN 1992-1-1 Table 3.1 and EN 1993-1-1 Table 3.1 and §3.2.6; a concrete also by its words (concrete, beton, hormigón) or by
+/// carrying Pset_MaterialConcrete; the density of reinforced concrete and of steel by EN 1991-1-1 Annex A and EN 1993-1-1 §3.2.6.
 /// Anything else stays null.
 /// </summary>
 public static partial class StructuralMaterials
@@ -50,6 +51,8 @@ public static partial class StructuralMaterials
     [GeneratedRegex(@"\b(C(?:14|16|18|20|22|24|27|30)|GL(?:24h|28h|30c))\b(?!\s?/)", RegexOptions.IgnoreCase)] private static partial Regex TimberClass();
     [GeneratedRegex(@"\bC\s?(\d{2})\s?/\s?(\d{2,3})\b", RegexOptions.IgnoreCase)] private static partial Regex ConcreteClass();
     [GeneratedRegex(@"\bS\s?(235|275|355|420|450|460)", RegexOptions.IgnoreCase)] private static partial Regex SteelGrade();
+    /// <summary>A Spanish designation (EHE-08 art. 39.2, Código Estructural): HA reinforced, HM plain, HP prestressed, then fck in MPa (HA-25/B/20/IIa).</summary>
+    [GeneratedRegex(@"\bH([AMP])-(\d{2,3})(?![\d.,])")] private static partial Regex SpanishConcrete();
 
     /// <summary>The material an element names (its id, or a name): the model's own, the library's by name, else a bare one of that name (its values read from the name).</summary>
     public static Entity EntityOf(IModelView m, string id) =>
@@ -101,6 +104,18 @@ public static partial class StructuralMaterials
             fc ??= new(cc.Fck * 1e6, $"EN 1992-1-1:2004 Table 3.1, {grade}: fck = {cc.Fck} MPa (characteristic cylinder strength)");
             nu ??= new(0.2, "EN 1992-1-1:2004 §3.1.3(4): ν = 0.2 for uncracked concrete");
         }
+        else if (SpanishConcrete().Match(name) is { Success: true } hm && int.Parse(hm.Groups[2].Value, CultureInfo.InvariantCulture) is var named and >= 12 and <= 100)
+        {
+            // Its fck as the name says; Ecm of Table 3.1's row for that fck when it has one, else (below) by its formula.
+            kind = "concrete";
+            grade = hm.Value;
+            standard = "EN 1992-1-1:2004";
+            var what = hm.Groups[1].Value switch { "A" => "reinforced", "M" => "plain", _ => "prestressed" };
+            fc ??= new(named * 1e6, $"its name, {grade} (Spanish designation, {what} concrete): fck = {named} MPa");
+            if (Concrete.FirstOrDefault(c => c.Value.Fck == named) is { Key: not null } row)
+                e ??= new(row.Value.Ecm * 1e9, $"EN 1992-1-1:2004 Table 3.1, fck = {named} MPa ({grade}, as {row.Key}): Ecm = {row.Value.Ecm} GPa");
+            nu ??= new(0.2, "EN 1992-1-1:2004 §3.1.3(4): ν = 0.2 for uncracked concrete");
+        }
         else if (SteelGrade().Match(name) is { Success: true } sm && !lower.Contains("rebar") && !lower.Contains("b500"))
         {
             kind = "steel";
@@ -130,7 +145,7 @@ public static partial class StructuralMaterials
             nu ??= new(Masonry.Poisson, "EN 1996-1-1:2005 §3.7.3: G = 0.4 E, so ν = 0.25 for an isotropic shell (indicative)");
             density ??= m0.Density;
         }
-        else if (lower.Contains("concrete") || lower.Contains("beton")) kind = "concrete";
+        else if (lower.Contains("concrete") || lower.Contains("beton") || lower.Contains("hormig")) kind = "concrete";
         else if (lower.Contains("steel") || lower.Contains("oțel") || lower.Contains("otel"))
         {
             // Steel's E does not depend on its grade: a material that names none still has it (fy stays null without a grade).
@@ -144,6 +159,8 @@ public static partial class StructuralMaterials
             }
         }
         else if (lower.Contains("timber") || lower.Contains("wood") || lower.Contains("lemn") || lower.Contains("glulam") || lower.Contains("clt")) kind = "timber";
+        // A name that says nothing, but IFC's set for a concrete's properties (another program's file, issue #121): a concrete.
+        else if (fields.Params.Any(p => p.Pset == "Pset_MaterialConcrete")) kind = "concrete";
 
         // A concrete that names no class but gives its fck (Manage → Materials → Data): Ecm by EN 1992-1-1 Table 3.1's formula.
         if (kind == "concrete" && fc is { } fck && e == null)
