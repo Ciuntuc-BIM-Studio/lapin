@@ -14,6 +14,7 @@ describe('Hold-to-Peek X-Ray', () => {
   it('allows peeking only in 3D workspace when idle and not already in xray', () => {
     const base = { screen: 'workspace', view: '3d', dialog: null, visualStyle: 'shaded' as const, buffer: '', hasStep: false, liveActive: false, hasValueOwner: false, walking: false };
     expect(canStartXrayPeek(base)).toBe(true);
+    expect(canStartXrayPeek({ ...base, view: 'split' })).toBe(true);
     expect(canStartXrayPeek({ ...base, buffer: 'x' })).toBe(true);
     expect(canStartXrayPeek({ ...base, buffer: 'wa' })).toBe(false);
     expect(canStartXrayPeek({ ...base, view: 'plan' })).toBe(false);

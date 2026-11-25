@@ -33,7 +33,7 @@ export function canStartXrayPeek(state: {
   hasValueOwner: boolean;
   walking: boolean;
 }): boolean {
-  if (state.screen !== 'workspace' || state.view !== '3d' || state.dialog) return false;
+  if (state.screen !== 'workspace' || (state.view !== '3d' && state.view !== 'split') || state.dialog) return false;
   if (state.visualStyle === 'xray' || state.hasStep || state.liveActive || state.hasValueOwner || state.walking) return false;
   const b = state.buffer.trim().toLowerCase();
   return b === '' || b === 'x';
