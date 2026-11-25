@@ -45,6 +45,7 @@ import { LightRig, useLightBudget, whiteBalanceGains, type LightProfileDto, type
 import { onVoxels, placeProbes, probeBudget, weakGpu, type Vec3 as ProbeVec3 } from './probes';
 import { glossySamples, ReflectionProbes, roomOfObject } from './probes3d';
 import { KeyPlan } from './KeyPlan';
+import { ViewCube3D } from './ViewCube3D';
 import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
 import { Grips3D } from './Grips3D';
 import { AxisDrag3D } from './AxisDrag3D';
@@ -2519,6 +2520,7 @@ export function Viewport3D() {
       {!walkStart && <RefPlanes3D camera={camRef} canvas={host} />}
       {!walkStart && <Location3D camera={camRef} canvas={host} />}
       {!walkStart && overlays3d().map((Overlay, k) => <Overlay key={k} camera={camRef} canvas={host} scene={scene} invalidate={invalidate} />)}
+      {!walkStart && <ViewCube3D />}
       <KeyPlan mode="3d" />
     </>
   );

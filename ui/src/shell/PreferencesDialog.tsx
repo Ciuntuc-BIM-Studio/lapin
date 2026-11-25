@@ -161,6 +161,7 @@ export function PreferencesDialog() {
               <h4>Interface</h4>
               <p className="row small"><button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'interface' })}>Interface…</button>
                 <button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'shortcuts' })}>Keyboard shortcuts…</button></p>
+              <label className="row small"><input type="checkbox" data-field="prefs-tactile-sounds" checked={p.tactileSounds} onChange={(e) => setPrefs({ tactileSounds: e.target.checked })} /> Tactile feedback sounds (snap, place, undo)</label>
               <h4>Keyboard</h4>
               <label className="row small"><input type="checkbox" data-field="prefs-letters" checked={keys.letters} onChange={(e) => setKeymap({ ...keys, letters: e.target.checked })} /> Letter shortcuts (Revit-style)</label>
               <p className="muted small">Typed letters such as WA start a tool. Off: letters always go to the command line, and Enter or Space runs a command, an alias, or the command whose letters they are. The ` key gives the command line all typing, whichever is on. Your own aliases are in Keyboard shortcuts…</p>

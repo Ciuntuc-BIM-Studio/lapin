@@ -39,6 +39,8 @@ import { canPlace, findInBrowser, placeOnSheet, viewIdOfTab } from '../shell/bro
 import { BOOKMARK_SLOTS, gotoCameraBookmark, saveCameraBookmark } from './cameraBookmarks';
 import { openOnboarding } from './onboarding';
 import { togglePieMenu } from '../shell/PieMenu';
+import { openBuildReplay } from '../shell/BuildReplay';
+import { playSound, toggleTactileSounds } from './sounds';
 
 /**
  * Undo and redo while a gesture is under way (audit U11): a CAD step is cancelled first; a body drag or a 3D move is not
@@ -66,8 +68,8 @@ const zoom = (f: (h: NonNullable<ReturnType<typeof zoomHost>>) => void) => () =>
 function appCommands(): CommandDef[] {
   const general = 'General', views = 'Views', panels = 'Panels', draw = 'Drawing aids';
   return [
-    { id: 'app.undo', label: 'Undo', category: general, defaults: ['Ctrl+Z'], run: () => { if (gestureFree()) void undo(); } },
-    { id: 'app.redo', label: 'Redo', category: general, defaults: ['Ctrl+Y', 'Ctrl+Shift+Z'], run: () => { if (gestureFree()) void redo(); } },
+    { id: 'app.undo', label: 'Undo', category: general, defaults: ['Ctrl+Z'], run: () => { if (gestureFree()) { playSound('undo'); void undo(); } } },
+    { id: 'app.redo', label: 'Redo', category: general, defaults: ['Ctrl+Y', 'Ctrl+Shift+Z'], run: () => { if (gestureFree()) { playSound('undo'); void redo(); } } },
     { id: 'app.new', label: 'New project', category: general, defaults: ['Ctrl+N'], run: () => void runFileAction('file.new') },
     { id: 'app.open', label: 'Open…', category: general, defaults: ['Ctrl+O'], run: () => void runFileAction('file.open') },
     { id: 'app.save', label: 'Save', category: general, defaults: ['Ctrl+S'], run: () => void runFileAction('file.save') },
@@ -98,6 +100,8 @@ function appCommands(): CommandDef[] {
     { id: 'app.palette', label: 'Commands…', category: general, defaults: ['Ctrl+K'], run: dialog('palette') },
     { id: 'app.pieMenu', label: 'Radial menu', category: general, defaults: ['Alt+Q'], run: togglePieMenu },
     { id: 'app.missions', label: 'Interactive missions…', category: general, defaults: [], run: () => openOnboarding('role') },
+    { id: 'app.buildReplay', label: 'Build replay (time-lapse)', category: views, defaults: [], run: openBuildReplay },
+    { id: 'app.toggleSounds', label: 'Tactile sounds: on / off', category: general, defaults: [], run: () => { const on = toggleTactileSounds(); notify(on ? 'Tactile sounds enabled.' : 'Tactile sounds muted.'); } },
     ...BOOKMARK_SLOTS.map((slot) => ({ id: `app.bookmarkSave.${slot}`, label: `Save camera bookmark ${slot}`, category: views, defaults: [`Ctrl+Shift+${slot}`], run: () => { saveCameraBookmark(slot); } })),
     ...BOOKMARK_SLOTS.map((slot) => ({ id: `app.bookmarkGoto.${slot}`, label: `Jump to camera bookmark ${slot}`, category: views, defaults: [`Shift+${slot}`], run: () => { gotoCameraBookmark(slot); } })),
     { id: 'app.commandLine', label: 'Command line: take all typing', category: general, defaults: ['Backquote'], run: () => useCad.setState((s) => ({ takeAll: !s.takeAll })) },

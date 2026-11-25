@@ -90,6 +90,8 @@ export interface Prefs {
   crosshair: boolean;
   /** The arrow keys' nudge step, metres (forum topic 212): 0 follows the zoom (about four pixels), else this one; Shift is ten times as far. */
   nudgeStep: number;
+  /** Subtle synthetic tactile sounds on snap, placement, undo and mission completion (docs/plan-ux-game-like.md, P9). */
+  tactileSounds: boolean;
 }
 
 export const SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'tangent', 'nearest', 'wallAxis', 'gridAxis', 'division', 'distance'];
@@ -111,6 +113,7 @@ export const DEFAULT_PREFS: Prefs = {
   snapDivisions: [3, 4],
   snapDistance: 0.5,
   crosshair: false,
+  tactileSounds: true,
 };
 
 const names = (v: unknown): string[] | null => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim()))] : null);
@@ -158,6 +161,7 @@ export function readPrefs(stored: unknown): Prefs {
     snapDivisions: divisionsOf(o.snapDivisions) ?? d.snapDivisions,
     snapDistance: typeof o.snapDistance === 'number' && Number.isFinite(o.snapDistance) && o.snapDistance > 0 ? Math.min(1000, o.snapDistance) : d.snapDistance,
     crosshair: o.crosshair === true,
+    tactileSounds: o.tactileSounds !== false,
     openingAlong: {
       from: pick((o.openingAlong as { from?: unknown } | undefined)?.from, ['start', 'face', 'core'] as const, d.openingAlong.from),
       point: pick((o.openingAlong as { point?: unknown } | undefined)?.point, ['start', 'centre', 'end'] as const, d.openingAlong.point),

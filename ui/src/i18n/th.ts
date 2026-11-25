@@ -12927,6 +12927,15 @@ export const TH: Record<string, string> = {
   'Reset sandbox model': 'รีเซ็ตโมเดลแซนด์บ็อกซ์',
   'Missions': 'ภารกิจ',
   'Drag left/right to adjust · Shift: fine · Ctrl: coarse': 'ลากซ้าย/ขวาเพื่อปรับ · Shift: ละเอียด · Ctrl: หยาบ',
+  // Game-like UX Phase 3 (docs/plan-ux-game-like.md).
+  'Tactile feedback sounds (snap, place, undo)': 'เสียงตอบสนองแบบสัมผัส (สแนป วาง เลิกทำ)',
+  'Tactile sounds: on / off': 'เสียงสัมผัส: เปิด / ปิด',
+  'Tactile sounds enabled.': 'เปิดใช้งานเสียงสัมผัสแล้ว.',
+  'Tactile sounds muted.': 'ปิดเสียงสัมผัสแล้ว.',
+  'Model health radar': 'เรดาร์ตรวจสอบความสมบูรณ์โมเดล',
+  'Model OK': 'โมเดลปกติ',
+  'No geometric or storey issues detected.': 'ไม่พบปัญหาทางเรขาคณิตหรือระดับชั้น.',
+  'Build replay (time-lapse)': 'เล่นซ้ำการก่อสร้าง (ไทม์แลปส์)',
 };
 
 /** Phrases with a number or a name in them. */

@@ -31,6 +31,7 @@ import { insideView, projector, snapAt, type ViewRefs } from './scene3d';
 import { arrowLock3, type Lock3, type Snapped3 } from './snap3d';
 import { parseVcb } from './sketch/vcb';
 import { useMove3d } from './moveIn3d';
+import { playSound } from '../app/sounds';
 
 const HINT: Record<PointGesture['kind'], string> = {
   point: 'Click a point: on the level, or a corner or an edge of the model',
@@ -85,7 +86,8 @@ export function Place3D({ camera, canvas, scene }: ViewRefs) {
     setLock(null);
     // One click on a floor of another storey (a chair on the first floor's slab): the element goes on that storey.
     const on = g.kind === 'point' && hit && hit.kind !== 'On level' ? storeyOf(hit.point.z) : null;
-    if (step.done) void completeTool(tool, { points: step.done, heights, ...(typed != null ? { typed } : {}) }, undefined, on);
+    if (step.done) { playSound('place'); void completeTool(tool, { points: step.done, heights, ...(typed != null ? { typed } : {}) }, undefined, on); }
+    else playSound('snap');
   };
   /** Pixels a metre where the cursor is (how near closes a polygon). */
   const pxPerM = () => {
@@ -193,6 +195,19 @@ export function Place3D({ camera, canvas, scene }: ViewRefs) {
   const shape = previewOf(g, pts, aim);
   const screen = shape.pts.map((p, i) => project(w(p, space ? i : -1)));
   const path = screenPath(screen, !!shape.closed);
+  // Volumetric 3D ghost preview (docs/plan-ux-game-like.md, P4): extruded translucent walls/envelope at storey height.
+  const ghostH = !space && shape.pts.length >= 2 ? (tool.id.includes('slab') ? 0.25 : num(activeStorey() ?? undefined, 'height', 3)) : 0;
+  const topScreen = ghostH > 0 ? shape.pts.map((p) => project({ x: p.x, y: p.y, z: z + ghostH })) : [];
+  const topPath = topScreen.length >= 2 ? screenPath(topScreen, !!shape.closed) : null;
+  const ghostQuads: string[] = [];
+  if (ghostH > 0 && screen.length === topScreen.length && screen.length >= 2) {
+    const segs = shape.closed ? screen.length : screen.length - 1;
+    for (let i = 0; i < segs; i++) {
+      const j = (i + 1) % screen.length;
+      const a = screen[i], b = screen[j], c = topScreen[j], d = topScreen[i];
+      if (a && b && c && d) ghostQuads.push(`M${a.x.toFixed(1)} ${a.y.toFixed(1)}L${b.x.toFixed(1)} ${b.y.toFixed(1)}L${c.x.toFixed(1)} ${c.y.toFixed(1)}L${d.x.toFixed(1)} ${d.y.toFixed(1)}Z`);
+    }
+  }
   const cur = at ? project(at.point) : null;
   // A point snapped off the level (a beam's end, a slab's top above it): a plumb line down to where the tool takes it.
   const foot = at && Math.abs(at.point.z - z) > 1e-3 ? project({ x: at.point.x, y: at.point.y, z }) : null;
@@ -209,6 +224,8 @@ export function Place3D({ camera, canvas, scene }: ViewRefs) {
     <>
       <svg className="grip-overlay axis-drag face-sketch" data-place3d="overlay">
         {guide?.[0] && guide[1] && <line x1={guide[0].x} y1={guide[0].y} x2={guide[1].x} y2={guide[1].y} className={`sketch-guide ${at!.guide!.color}`} />}
+        {ghostQuads.map((d, i) => <path key={`gq-${i}`} d={d} className={`place3d-ghost-face${text && !typed ? ' bad' : ''}`} />)}
+        {topPath && <path d={topPath} className={`place3d-ghost-top${text && !typed ? ' bad' : ''}`} />}
         {path && <path d={path} className={shape.closed ? 'face-sketch-shape' : 'face-sketch-line'} />}
         {pts.map((p, i) => { const s = project(w(p, space ? i : -1)); return s && <circle key={i} cx={s.x} cy={s.y} r={3.5} className="axis-origin" />; })}
         {cur && foot && <line x1={cur.x} y1={cur.y} x2={foot.x} y2={foot.y} className="sketch-guide blue" strokeDasharray="3 3" />}

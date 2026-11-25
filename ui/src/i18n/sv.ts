@@ -12927,6 +12927,15 @@ export const SV: Record<string, string> = {
   'Reset sandbox model': 'Återställ sandlådemodell',
   'Missions': 'Uppdrag',
   'Drag left/right to adjust · Shift: fine · Ctrl: coarse': 'Dra vänster/höger för att justera · Shift: fin · Ctrl: grov',
+  // Game-like UX Phase 3 (docs/plan-ux-game-like.md).
+  'Tactile feedback sounds (snap, place, undo)': 'Taktila feedbackljud (snap, placera, ångra)',
+  'Tactile sounds: on / off': 'Taktila ljud: på / av',
+  'Tactile sounds enabled.': 'Taktila ljud aktiverade.',
+  'Tactile sounds muted.': 'Taktila ljud avstängda.',
+  'Model health radar': 'Modellhälsoradar',
+  'Model OK': 'Modell OK',
+  'No geometric or storey issues detected.': 'Inga geometri- eller våningsproblem hittades.',
+  'Build replay (time-lapse)': 'Bygguppspelning (time-lapse)',
 };
 
 /** Phrases with a number or a name in them. */
