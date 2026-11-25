@@ -47,5 +47,6 @@ describe('what the dialog says, in every language', () => {
       for (const p of phrases) expect(translate(p, id), `${id}: ${p}`).toBeTruthy();
       expect(translate(block, id), id).toContain('Okno-1');
     }
-  });
+    // Loading every language takes about 5 s on a busy machine, the default limit.
+  }, 30000);
 });

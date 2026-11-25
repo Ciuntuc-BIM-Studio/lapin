@@ -101,5 +101,6 @@ describe('a bool in the words of every language', () => {
     expect(parseCell('nein', 'bool', (t) => Number(t))).toEqual({ value: 0 });
     expect(parseCell('oui', 'bool', (t) => Number(t))).toEqual({ value: 1 });
     expect(parseCell('nie', 'bool', (t) => Number(t))).toEqual({ value: 0 });
-  });
+    // Loading every language takes about 5 s on a busy machine, the default limit.
+  }, 30000);
 });
