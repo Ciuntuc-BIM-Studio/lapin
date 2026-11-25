@@ -7160,6 +7160,13 @@ export const LO: Record<string, string> = {
   'Click corner → Opposite corner or W,H': 'ຄລິກມຸມ → ມຸມກົງກັນຂ້າມ ຫຼື ກວ້າງ,ສູງ',
   'Click a snapped point on the plan or 3D': 'ຄລິກຈຸດ snap ໃນແຜນຜັງ ຫຼື 3D',
   'Click to run on model or selection': 'ຄລິກເພື່ອໃຊ້ກັບໂມເດວ ຫຼື ສິ່ງທີ່ເລືອກ',
+  'Lean from: as the type': 'ຄວາມອຽງຈາກ: ຕາມຊະນິດ',
+  'Lean from: base': 'ຄວາມອຽງຈາກ: ຖານ',
+  'Lean from: top': 'ຄວາມອຽງຈາກ: ເທິງສຸດ',
+  'Lean from: mid-height': 'ຄວາມອຽງຈາກ: ກາງຄວາມສູງ',
+  'Openings: as the type': 'ຊ່ອງເປີດ: ຕາມຊະນິດ',
+  'Openings: leaning with the wall': 'ຊ່ອງເປີດ: ອຽງຕາມຝາ',
+  'Openings: plumb': 'ຊ່ອງເປີດ: ຕັ້ງສາກ',
 };
 
 /** Phrases with a number or a name in them. */

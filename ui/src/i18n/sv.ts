@@ -13223,6 +13223,13 @@ export const SV: Record<string, string> = {
   'Click corner → Opposite corner or W,H': 'Klicka hörn → Motsatt hörn eller B,H',
   'Click a snapped point on the plan or 3D': 'Klicka på en fästpunkt i plan eller 3D',
   'Click to run on model or selection': 'Klicka för att köra på modell eller markering',
+  "Lean from: as the type": "Lutning från: som typen",
+  "Lean from: base": "Lutning från: underkant",
+  "Lean from: top": "Lutning från: överkant",
+  "Lean from: mid-height": "Lutning från: mitt på höjden",
+  "Openings: as the type": "Öppningar: som typen",
+  "Openings: leaning with the wall": "Öppningar: lutar med väggen",
+  "Openings: plumb": "Öppningar: lodräta",
 };
 
 /** Phrases with a number or a name in them. */

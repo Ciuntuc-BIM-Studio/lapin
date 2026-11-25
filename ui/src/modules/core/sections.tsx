@@ -13,6 +13,7 @@ import { GitCommitHorizontal, Route, Spline } from 'lucide-react';
 import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import type { Grip, GripView, RefLine, ToolDef, Vec2 } from '../../platform/module';
+import { alongOfChain, keepLine } from '../../viewport/gripKit';
 import { useUi } from '../../app/store';
 import { frontDiscipline } from './disciplines';
 import { pt } from '../../platform/vec';
@@ -225,6 +226,7 @@ export function sectionGrips(node: NodeDto, view?: GripView): Grip[] {
     key: `p${i}`, kind: i === 0 || i === pts.length - 1 ? 'end' : 'vertex', at: p,
     title: isCurvedSection(node) ? 'Drag: the arc goes through the point' : 'Drag: move the point; Ctrl/⌘-click: take it out (a jog goes)',
     step: (to: Vec2) => set(pts.map((q, k) => (k === i ? to : q))),
+    ...(isCurvedSection(node) ? {} : keepLine(alongOfChain(pts, i))),
     remove: () => (!isCurvedSection(node) && pts.length > 2 ? set(pts.filter((_, k) => k !== i)) : null),
   }));
   if (!isCurvedSection(node))

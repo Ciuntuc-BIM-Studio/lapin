@@ -5,9 +5,11 @@
  * their thickness across the faces, the height stays vertical, the joins follow the faces' planes.
  */
 
+import { create } from 'zustand';
 import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
-import { NumberField } from '../../shell/cells';
+import { LengthField, NumberField } from '../../shell/cells';
+import { TAPER_TIP } from './WallTaperFields';
 import { sameKind } from '../../shell/params';
 
 export const LEAN_TIP = 'Degrees from vertical: + leans towards the left face (L), − towards the right face (R); empty: its type\'s. The layers keep their thickness across the faces and the height stays vertical. Not yet for curved walls, walls rising to a roof or with a top profile, wrapped ends or layer extents: those stand plumb and say so.';
@@ -110,6 +112,56 @@ export function WallLeanFields({ node, type }: { node: NodeDto; type: NodeDto | 
           <dd><CutSelect inherit value={own.openingCut} varies={!shared('openingCut')} disabled={disabled} onChange={(v) => set({ openingCut: v })} /></dd>
         </>
       )}
+    </>
+  );
+}
+
+/** The wall tool's lean and taper for the walls drawn next, for this session: empty means the wall type's own. */
+export interface WallSlantPrefs { lean: number | null; leanFrom: LeanFrom | null; openingCut: LeanCut | null; thicknessTop: number | null }
+export const useWallSlantPrefs = create<WallSlantPrefs>(() => ({ lean: null, leanFrom: null, openingCut: null, thicknessTop: null }));
+
+/** The addWall arguments for the wall tool's lean and thickness at top (none: as the type says). */
+export function wallSlantArgs(p: WallSlantPrefs = useWallSlantPrefs.getState()): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (p.lean != null) {
+    out.lean = p.lean;
+    if (p.leanFrom) out.leanFrom = p.leanFrom;
+    if (p.openingCut) out.openingCut = p.openingCut;
+  }
+  if (p.thicknessTop != null) out.thicknessTop = p.thicknessTop;
+  return out;
+}
+
+/** The wall tool's Lean (with its n:1 display), Lean from and Thickness at top in the command line's bar. */
+export function WallSlantOption() {
+  const p = useWallSlantPrefs();
+  const set = (v: Partial<WallSlantPrefs>) => useWallSlantPrefs.setState(v);
+  return (
+    <>
+      <span className="eyebrow" title={LEAN_TIP}>Lean</span>
+      <NumberField className="cad-length" value={p.lean} suffix="°" min={-60} max={60} blank testId="wall-tool-lean" title={LEAN_TIP} placeholder="0"
+        onCommit={(n) => set({ lean: n == null || Math.abs(n) < 1e-9 ? null : n })} />
+      {p.lean != null && (
+        <>
+          <span className="muted" data-testid="wall-tool-batter">{batter(p.lean)}</span>
+          <select className="cad-layer" data-testid="wall-tool-lean-from" title={LEAN_FROM_TIP} value={p.leanFrom ?? ''}
+            onChange={(e) => set({ leanFrom: e.target.value === '' ? null : (e.target.value as LeanFrom) })}>
+            <option value="">Lean from: as the type</option>
+            <option value="base">Lean from: base</option>
+            <option value="top">Lean from: top</option>
+            <option value="axis">Lean from: mid-height</option>
+          </select>
+          <select className="cad-layer" data-testid="wall-tool-lean-cut" title={LEAN_CUT_TIP} value={p.openingCut ?? ''}
+            onChange={(e) => set({ openingCut: e.target.value === '' ? null : (e.target.value as LeanCut) })}>
+            <option value="">Openings: as the type</option>
+            <option value="wall">Openings: leaning with the wall</option>
+            <option value="vertical">Openings: plumb</option>
+          </select>
+        </>
+      )}
+      <span className="eyebrow" title={TAPER_TIP}>Thickness at top</span>
+      <LengthField className="cad-length" metres={p.thicknessTop} min={0.01} max={10} blank testId="wall-tool-thickness-top" title={TAPER_TIP}
+        onCommit={(m) => set({ thicknessTop: m })} />
     </>
   );
 }

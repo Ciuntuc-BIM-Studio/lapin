@@ -12,6 +12,7 @@ import { useInterface } from '../../app/interface';
 import { bindingText, useBindings } from '../../app/commands';
 import { toolHint } from '../../shell/ViewportHud';
 import { LiveBar } from '../LiveBox';
+import { dragPrompt, useLive } from '../liveInput';
 import { findTool, useToolTick } from '../../platform/modules';
 import { ROLES, findCommand, roleLabel, useCad } from './session';
 import { useLayers } from './layers';
@@ -32,12 +33,14 @@ export function CadPrompt({ inline }: { inline?: boolean }) {
   useBindings();
   const layers = useLayers();
   useToolTick((s) => s.n); // Space while a tool is on changes what its hint says (a wall's line)
+  // An end grip is being dragged: its own prompt (decision 865).
+  const dragging = useLive((s) => dragPrompt(s));
   const hint = promptHere ? toolHint(tool) : null;
   const twoD = view === 'plan' || view === 'drawing';
   const key = (id: string) => { const k = bindingText(id).split(', ')[0]; return k ? ` (${k})` : ''; };
   return (
     <div className={`cad-prompt${inline ? ' inline' : ''}${takeAll ? ' takeall' : ''}`} data-takeall={takeAll ? 'on' : undefined}>
-      <span className="cad-label">{step ? `${command}: ${step.prompt}` : hint ?? 'Command'}</span>
+      <span className="cad-label">{dragging ? <span data-testid="angle-lock-prompt">{t(dragging)}</span> : step ? `${command}: ${step.prompt}` : hint ?? 'Command'}</span>
       <span className="cad-buffer">{buffer}<span className="caret" /></span>
       {takeAll && <span className="cad-takeall" data-no-i18n>{t('All typing goes to the command line')} · {(bindingText('app.commandLine').split(', ')[0] || '`')} {t('or Esc to leave')}</span>}
       {promptHere && !takeAll && <LiveBar inline />}

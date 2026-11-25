@@ -7104,6 +7104,13 @@ export const PT: Record<string, string> = {
   'Click corner → Opposite corner or W,H': 'Clique canto → Canto oposto ou L,A',
   'Click a snapped point on the plan or 3D': 'Clique num ponto de snap na planta ou 3D',
   'Click to run on model or selection': 'Clique para aplicar no modelo ou seleção',
+  'Lean from: as the type': 'Inclinação desde: como o tipo',
+  'Lean from: base': 'Inclinação desde: base',
+  'Lean from: top': 'Inclinação desde: topo',
+  'Lean from: mid-height': 'Inclinação desde: meia altura',
+  'Openings: as the type': 'Vãos: como o tipo',
+  'Openings: leaning with the wall': 'Vãos: inclinados com a parede',
+  'Openings: plumb': 'Vãos: a prumo',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

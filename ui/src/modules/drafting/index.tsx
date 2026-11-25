@@ -6,7 +6,7 @@ import { openTempDimProperties } from '../../viewport/tempDimProps';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, EllipseIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import { openPlaceCatalog } from '../../shell/placeCatalogStore';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
-import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
+import { alongOfChain, axisGrips, axisRef, keepLine, outlineGrips, pt } from '../../viewport/gripKit';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, select, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
@@ -732,6 +732,7 @@ function draftGrips(node: NodeDto): Grip[] {
         const out: Grip[] = s.pts.map((q, i) => ({
           key: `p${i}`, kind: 'vertex' as const, at: q,
           step: (p: Vec2) => save({ ...s, pts: s.pts.map((x, j) => (j === i ? p : x)) }),
+          ...keepLine(alongOfChain(s.pts, i)),
           remove: () => (s.pts.length > 2 ? save({ ...s, pts: s.pts.filter((_, j) => j !== i) }) : null),
         }));
         for (let i = 0; i + 1 < s.pts.length; i++) {

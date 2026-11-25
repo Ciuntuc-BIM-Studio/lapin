@@ -7103,6 +7103,13 @@ export const ZH: Record<string, string> = {
   'Click corner → Opposite corner or W,H': '点击角点 → 对角点或 宽,高',
   'Click a snapped point on the plan or 3D': '在平面或 3D 中点击捕捉点',
   'Click to run on model or selection': '点击以应用于模型或选中项',
+  'Lean from: as the type': '倾斜基准：与类型相同',
+  'Lean from: base': '倾斜基准：底部',
+  'Lean from: top': '倾斜基准：顶部',
+  'Lean from: mid-height': '倾斜基准：中间高度',
+  'Openings: as the type': '洞口：与类型相同',
+  'Openings: leaning with the wall': '洞口：随墙倾斜',
+  'Openings: plumb': '洞口：保持垂直',
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
