@@ -219,20 +219,22 @@ function Tables({ layout, roofId, choice, editable }: { layout: LayoutDto; roofI
         <dt>Sheet bought (m²)</dt><dd className="num" data-no-i18n>{n2(layout.totals.sheetArea)}</dd>
       </dl>
       <p className="eyebrow">Per roof plane</p>
-      <div style={{ overflowX: 'auto' }}>
-      <table className="layer-table small" data-testid="roof-panels-faces">
-        <thead><tr><th>Roof plane</th><th>Pitch</th><th>Area (m²)</th>
-          <th title="Untick to leave the slope without panels: the roof's covering there, nothing counted">Laid</th>
-          <th title="Where the columns start along the eave (mm from the slope's corner, modulo the useful width): the layout's own, or one you fix">Phase (mm)</th>
-          <th>Panels</th><th>Bought</th><th>Reused</th><th>Sheet bought (m²)</th></tr></thead>
+      <div>
+      <table className="layer-table small" data-testid="roof-panels-faces" style={{ fontSize: '0.9em' }}>
+        <thead><tr><th title="Untick to leave the slope without panels: the roof's covering there, nothing counted">Roof plane</th><th>Pitch</th><th>Area (m²)</th>
+          <th title="Where the columns start along the eave (mm from the slope's corner, modulo the useful width): the layout's own, or one you fix">Phase</th>
+          <th>Panels</th><th>Bought</th><th>Reused</th><th title="Sheet bought (m²)">m²</th></tr></thead>
         <tbody>
           {faces.map((f) => {
             const face = layout.faces.find((x) => x.id === f.id);
             return (
               <tr key={f.id} data-face={f.id} className={face?.skip ? 'muted' : undefined}>
-                <td data-no-i18n>{f.id}</td><td className="num" data-no-i18n>{`${f.pitch.toFixed(1)}°`}</td><td className="num" data-no-i18n>{n2(f.area)}</td>
-                <td><input type="checkbox" data-field="face-laid" checked={!face?.skip} disabled={!editable || !roofId || !choice}
-                  onChange={(e) => roofId && void execute('roofpanels.setFacePanels', faceArgs(roofId, f.id, { skip: !e.target.checked }))} /></td>
+                <td style={{ whiteSpace: 'nowrap' }}>
+                  <input type="checkbox" data-field="face-laid" checked={!face?.skip} disabled={!editable || !roofId || !choice} title="Laid"
+                    onChange={(e) => roofId && void execute('roofpanels.setFacePanels', faceArgs(roofId, f.id, { skip: !e.target.checked }))} />
+                  {' '}<span data-no-i18n>{f.id}</span>
+                </td>
+                <td className="num" data-no-i18n>{`${f.pitch.toFixed(1)}°`}</td><td className="num" data-no-i18n>{n2(f.area)}</td>
                 <td><PhaseCell roofId={roofId} face={f.id} laid={face?.phase ?? null} fixed={face?.fixedPhase ?? null} disabled={!editable || !roofId || !choice || !!face?.skip} /></td>
                 <td className="num" data-no-i18n>{f.panels}</td><td className="num" data-no-i18n>{f.bought}</td><td className="num" data-no-i18n>{f.reused}</td><td className="num" data-no-i18n>{n2(f.sheet)}</td>
               </tr>
@@ -312,7 +314,7 @@ function PhaseCell({ roofId, face, laid, fixed, disabled }: { roofId: string | n
   const send = (phase: number | null) => { if (roofId && phase !== fixed) void execute('roofpanels.setFacePanels', faceArgs(roofId, face, { phase })); };
   return (
     <span className="row" style={{ gap: 4, flexWrap: 'nowrap' }}>
-      <input className="cell num" style={{ width: 52, minWidth: 0 }} data-field="face-phase" inputMode="numeric" value={text} disabled={disabled}
+      <input className="cell num" style={{ width: 42, minWidth: 0, padding: '0 3px' }} data-field="face-phase" inputMode="numeric" value={text} disabled={disabled}
         placeholder={laid != null ? String(Math.round(laid)) : ''} title={fixed != null ? 'Fixed: the layout keeps the columns here' : 'The layout\'s own phase: type one to fix it'}
         onChange={(e) => setText(e.target.value)} onBlur={() => send(phaseOf(text))} onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
       {fixed == null && laid != null && !disabled && (

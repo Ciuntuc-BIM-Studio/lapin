@@ -333,4 +333,25 @@ public class RoofPanelProfileTests
         Assert.NotNull(h.Model.Get(e));
         Assert.Equal(mine.ToJsonString(), Layout(h, id).ToJsonString());
     }
+
+    [Fact]
+    public void A_dark_metal_sheet_covering_is_read_as_painted_so_a_slope_without_panels_is_not_black_in_3D()
+    {
+        // The roof's Metal sheet in its anthracite: fully metallic, its reflectance would be its dark colour (black in 3D); a
+        // painted sheet, as roofs are. A light bare metal, a polished one and one the user made metallic keep their look.
+        static Entity M(string name, JsonObject attrs) => new("m", IfcClass.Material, name, attrs);
+        Assert.Equal((0.1, 0.45), (MaterialLook.Of(M("Metal sheet", new() { ["color"] = "#3c4247" })).Metalness, MaterialLook.Of(M("Metal sheet", new() { ["color"] = "#3c4247" })).Roughness));
+        Assert.Equal(1, MaterialLook.Of(M("Metal sheet", new() { ["color"] = "#9a9fa6" })).Metalness);
+        Assert.Equal(1, MaterialLook.Of(M("Metal sheet", new() { ["color"] = "#3c4247", ["metalness"] = 1 })).Metalness);
+        Assert.Equal(1, MaterialLook.Of(M("Chrome", new() { ["color"] = "#202020" })).Metalness);
+        // The skipped slope's covering plate is made of the roof's covering material.
+        var (f, id) = RoofPanelTakeoffTests.Make("gable");
+        f.Run("architecture.updateRoof", new JsonObject { ["id"] = id, ["attrs"] = new JsonObject { ["covering"] = "Metal sheet" } });
+        Use(f, id, "bilka-clasic-35");
+        f.Run("roofpanels.setFacePanels", new JsonObject { ["id"] = id, ["face"] = "A02", ["skip"] = true });
+        var plate = f.Session.Geometry(id)!.Parts.Single(p => p.Key == "covering:A02");
+        var material = f.Model.Get(plate.Material!) ?? f.Model.OfClass(IfcClass.Material).First(m => m.Name == plate.Material);
+        Assert.Equal("Metal sheet", material.Name);
+        Assert.Equal(0.1, MaterialLook.Of(material).Metalness);
+    }
 }

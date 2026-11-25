@@ -26,6 +26,15 @@ describe('a material’s look (report #76)', () => {
     expect(lookOf(undefined)).toEqual(PLAIN);
   });
 
+  it('reads a bare metal darker than any bare metal as a painted sheet, which would draw black fully metallic', () => {
+    // A roof's Metal sheet in its anthracite: painted; the same name in a metal's grey, or made metallic by the user, keeps its look.
+    expect(lookOf(mat('Metal sheet', { color: '#3c4247' }))).toMatchObject({ metalness: 0.1, roughness: 0.45 });
+    expect(lookOf(mat('Metal sheet', { color: '#9a9fa6' }))).toMatchObject({ metalness: 1, roughness: 0.35 });
+    expect(lookOf(mat('Metal sheet', { color: '#3c4247', metalness: 1 })).metalness).toBe(1);
+    expect(lookOf(mat('Chrome', { color: '#202020' })).metalness).toBe(1);
+    expect(lookOf(mat('Clay tile', { color: '#3c4247' })).metalness).toBe(0);
+  });
+
   it('turns texture coordinates as the exports do', () => {
     const [u, v] = rotateUv(1, 0, 90);
     expect(u).toBeCloseTo(0);
