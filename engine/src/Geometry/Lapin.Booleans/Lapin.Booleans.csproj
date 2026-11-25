@@ -11,7 +11,7 @@
     <ProjectReference Include="../Lapin.Geometry/Lapin.Geometry.csproj" />
   </ItemGroup>
   <!--
-    The library of the platform built for: LapinNativeRid when the build names it (scripts/build-product.mjs does, as a
+    The library of the platform built for: LapinNativeRid when the build names it (scripts/build-product.mjs and build-web.mjs do, as a
     global property: a published app's runtime id does not reach the libraries it references), else the runtime id
     asked for, else the machine's own.
   -->
