@@ -90,9 +90,29 @@ export interface Prefs {
   crosshair: boolean;
   /** The arrow keys' nudge step, metres (forum topic 212): 0 follows the zoom (about four pixels), else this one; Shift is ten times as far. */
   nudgeStep: number;
-  /** Subtle synthetic tactile sounds on snap, placement, undo and mission completion (docs/plan-ux-game-like.md, P9). */
+  /** Subtle synthetic tactile sounds on snap, placement, undo and mission completion (docs/plan-ux-game-like.md, P9); off by default. */
   tactileSounds: boolean;
+  /**
+   * The Flow extras (docs/plan-ux-game-like.md): each off by default, so the interface reads as it did; picking the Flow
+   * preset (View → Interface…) turns them on (FLOW_EXTRAS), and Preferences → Flow extras switches each.
+   */
+  viewCube: boolean;
+  selectionToolbar: boolean;
+  healthRadar: boolean;
+  microTips: boolean;
+  quickWalkSplit: boolean;
+  keycapHints: boolean;
+  ghostPreview: boolean;
+  xrayPeek: boolean;
+  scrubFields: boolean;
+  roleCards: boolean;
+  /** The quick tools chosen for the workspace (architecture, structure, MEP, site, drafting): on only once a role card was picked, or here. */
+  roleHotbars: boolean;
 }
+
+/** The extras the Flow preset turns on, in the order Preferences shows them (tactile sounds and the role's quick tools stay their own choice). */
+export const FLOW_EXTRAS = ['viewCube', 'selectionToolbar', 'healthRadar', 'microTips', 'quickWalkSplit', 'keycapHints', 'ghostPreview', 'xrayPeek', 'scrubFields', 'roleCards'] as const;
+export type FlowExtra = (typeof FLOW_EXTRAS)[number];
 
 export const SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'tangent', 'nearest', 'wallAxis', 'gridAxis', 'division', 'distance'];
 /** The object snaps before forum topic 151 added Tangent and Wall axis: what settings kept with no list of known snaps knew. */
@@ -113,7 +133,9 @@ export const DEFAULT_PREFS: Prefs = {
   snapDivisions: [3, 4],
   snapDistance: 0.5,
   crosshair: false,
-  tactileSounds: true,
+  tactileSounds: false,
+  viewCube: false, selectionToolbar: false, healthRadar: false, microTips: false, quickWalkSplit: false,
+  keycapHints: false, ghostPreview: false, xrayPeek: false, scrubFields: false, roleCards: false, roleHotbars: false,
 };
 
 const names = (v: unknown): string[] | null => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim()))] : null);
@@ -161,7 +183,11 @@ export function readPrefs(stored: unknown): Prefs {
     snapDivisions: divisionsOf(o.snapDivisions) ?? d.snapDivisions,
     snapDistance: typeof o.snapDistance === 'number' && Number.isFinite(o.snapDistance) && o.snapDistance > 0 ? Math.min(1000, o.snapDistance) : d.snapDistance,
     crosshair: o.crosshair === true,
-    tactileSounds: o.tactileSounds !== false,
+    tactileSounds: o.tactileSounds === true,
+    viewCube: o.viewCube === true, selectionToolbar: o.selectionToolbar === true, healthRadar: o.healthRadar === true,
+    microTips: o.microTips === true, quickWalkSplit: o.quickWalkSplit === true, keycapHints: o.keycapHints === true,
+    ghostPreview: o.ghostPreview === true, xrayPeek: o.xrayPeek === true, scrubFields: o.scrubFields === true,
+    roleCards: o.roleCards === true, roleHotbars: o.roleHotbars === true,
     openingAlong: {
       from: pick((o.openingAlong as { from?: unknown } | undefined)?.from, ['start', 'face', 'core'] as const, d.openingAlong.from),
       point: pick((o.openingAlong as { point?: unknown } | undefined)?.point, ['start', 'centre', 'end'] as const, d.openingAlong.point),
@@ -180,6 +206,9 @@ export function setPrefs(patch: Partial<Prefs>): void {
   usePrefs.setState(readPrefs({ ...usePrefs.getState(), ...patch, ...lastLight }));
   try { localStorage.setItem(KEY, JSON.stringify(usePrefs.getState())); } catch { /* kept for this session */ }
 }
+
+/** The Flow preset's extras switched on together (picking the preset; each stays switchable in Preferences). */
+export const turnOnFlowExtras = (): void => setPrefs(Object.fromEntries(FLOW_EXTRAS.map((k) => [k, true])) as Partial<Prefs>);
 
 /** What the sun/moon button switches to: a light theme goes to dark (the choice is kept as the last light one), dark returns to it. */
 export function quickToggleTheme(current: ThemeName, lastLight: LightTheme): ThemeName {

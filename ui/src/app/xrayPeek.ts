@@ -3,7 +3,7 @@
  * the 3D view while idle temporarily switches the view to X-ray so you can see
  * rebar, structure or MEP behind finishes, then restores the previous visual
  * style the instant the key is released. A quick tap of X still goes to normal
- * two-letter shortcuts or the command line.
+ * two-letter shortcuts or the command line. A Flow extra, off by default.
  */
 
 import { useEffect } from 'react';
@@ -14,7 +14,8 @@ import { useCad } from '../viewport/cad/session';
 import { useLive } from '../viewport/liveInput';
 import { valueOwner } from './valueOwner';
 import { useWalk } from '../viewport/walk';
-import { noteMissionEvent } from './onboarding';
+import { noteMissionEvent, useOnboarding } from './onboarding';
+import { usePrefs } from './prefs';
 
 export const XRAY_PEEK_HOLD_MS = 200;
 
@@ -67,34 +68,50 @@ export function endXrayPeek(): void {
   if (prev) useUi.setState({ visualStyle: prev });
 }
 
-/** Installs the global hold-X listener for the workspace. */
+/** Holding X peeks only when chosen (a Flow extra, Preferences → General), or while the missions that teach it are open. */
+const peekAllowed = (): boolean => usePrefs.getState().xrayPeek || useOnboarding.getState().open;
+
+const isX = (e: KeyboardEvent): boolean => e.code === 'KeyX' || e.key.toLowerCase() === 'x';
+
+/**
+ * Installs the global hold-X listener for the workspace, in the capture phase: the first press goes on to the shortcuts
+ * and the command line as before (a tap is still X), while the key's autorepeat during a hold, and every repeat while the
+ * peek is on, is swallowed, so the command line never fills with "xxxx". The lone x the first press typed is taken back
+ * when the peek begins, and releasing leaves the command line as it was.
+ */
+export function xrayPeekHandlers() {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const clear = () => { if (timer) { clearTimeout(timer); timer = null; } };
+  const swallow = (e: KeyboardEvent) => { e.preventDefault(); e.stopImmediatePropagation(); };
+  const onDown = (e: KeyboardEvent) => {
+    if (!isX(e)) return;
+    if (useXrayPeek.getState().active || (e.repeat && timer)) { swallow(e); return; }
+    if (e.repeat || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || !peekAllowed()) return;
+    const target = e.target as HTMLElement | null;
+    if (target?.closest?.('input, textarea, select, [contenteditable]')) return;
+    clear();
+    timer = setTimeout(() => { timer = null; beginXrayPeek(); }, XRAY_PEEK_HOLD_MS);
+  };
+  const onUp = (e: KeyboardEvent) => {
+    if (!isX(e)) return;
+    clear();
+    endXrayPeek();
+  };
+  const onBlur = () => { clear(); endXrayPeek(); };
+  return { onDown, onUp, onBlur, dispose: () => { clear(); endXrayPeek(); } };
+}
+
 export function useXrayPeekKeys(): void {
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const clear = () => { if (timer) { clearTimeout(timer); timer = null; } };
-    const onDown = (e: KeyboardEvent) => {
-      if (e.repeat || e.ctrlKey || e.metaKey || e.shiftKey) return;
-      if (e.key.toLowerCase() !== 'x') return;
-      const target = e.target as HTMLElement | null;
-      if (target?.closest?.('input, textarea, select, [contenteditable]')) return;
-      clear();
-      timer = setTimeout(() => { timer = null; beginXrayPeek(); }, XRAY_PEEK_HOLD_MS);
-    };
-    const onUp = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() !== 'x') return;
-      clear();
-      endXrayPeek();
-    };
-    const onBlur = () => { clear(); endXrayPeek(); };
-    window.addEventListener('keydown', onDown);
-    window.addEventListener('keyup', onUp);
-    window.addEventListener('blur', onBlur);
+    const h = xrayPeekHandlers();
+    window.addEventListener('keydown', h.onDown, true);
+    window.addEventListener('keyup', h.onUp, true);
+    window.addEventListener('blur', h.onBlur);
     return () => {
-      clear();
-      endXrayPeek();
-      window.removeEventListener('keydown', onDown);
-      window.removeEventListener('keyup', onUp);
-      window.removeEventListener('blur', onBlur);
+      h.dispose();
+      window.removeEventListener('keydown', h.onDown, true);
+      window.removeEventListener('keyup', h.onUp, true);
+      window.removeEventListener('blur', h.onBlur);
     };
   }, []);
 }

@@ -2,7 +2,7 @@
  * Selection overlay over the view:
  * - In Focus mode (panels hidden): editable card with the selection's first
  *   properties and All properties….
- * - In all other modes: a compact 1-row Contextual Mini-Toolbar (Move, Copy,
+ * - In all other modes, when chosen (a Flow extra): a compact 1-row Contextual Mini-Toolbar (Move, Copy,
  *   Rotate, Create similar, Isolate, Hide, Delete) so common actions stay one
  *   click away without travelling to the ribbon (docs/plan-ux-game-like.md, P5).
  */
@@ -17,7 +17,8 @@ import { fieldShown } from '../engine/protocol';
 import { FieldRow } from './PropertiesPanel';
 import { startCommand } from '../viewport/cad/session';
 import { hideSelection, isolateSelection } from '../viewport/temporary';
-import { deleteElements } from '../engine/dependents';
+import { usePrefs } from '../app/prefs';
+import { findTool } from '../platform/modules';
 
 export function SelectionCard() {
   const hidden = useInterface((s) => s.parts.panels === 'hidden');
@@ -29,6 +30,7 @@ export function SelectionCard() {
   const count = selected.length;
   const node = useSession((s) => (selection ? s.nodes.get(selection) : undefined));
   const info = useSession((s) => s.info);
+  const miniBar = usePrefs((p) => p.selectionToolbar);
   useBindings();
 
   if (!node) return null;
@@ -48,26 +50,23 @@ export function SelectionCard() {
     );
   }
 
-  // Non-Focus modes: compact 1-row floating Contextual Mini-Toolbar (suppressed while a placing tool is active).
-  if (tool || !node.editable) return null;
-  const remove = () => {
-    const nodes = useSession.getState().nodes;
-    const ids = useUi.getState().selected.filter((id) => nodes.get(id)?.type !== 'LapinView');
-    if (ids.length) { void deleteElements(ids); useUi.setState({ selection: null, selected: [] }); }
-  };
+  // Non-Focus modes: the compact floating mini-toolbar, a Flow extra (Preferences → General); not while a placing tool is on.
+  if (!miniBar || tool || !node.editable) return null;
+  // Each button's keys as the user has them bound (Keyboard shortcuts…), not as written here.
+  const tip = (label: string, id: string) => { const keys = bindingText(id).split(', ')[0] || findTool(id)?.shortcut; return keys ? `${label} — ${keys}` : label; };
   return (
     <div className="sel-mini-bar" role="toolbar" aria-label="Selection actions" data-testid="selection-mini-bar">
       <span className="sel-mini-tag">
         <span data-i18n-ctx="class">{cls?.label ?? node.type}</span>
-        {count > 1 && <span className="muted"> · {count}</span>}
+        {count > 1 && <span className="muted" data-no-i18n> · {count}</span>}
       </span>
-      <button type="button" className="icon mini" title="Move (Ctrl+D)" aria-label="Move" onClick={() => void startCommand('MOVE')}><Move size={13} /></button>
-      <button type="button" className="icon mini" title="Copy (Ctrl+Shift+D)" aria-label="Copy" onClick={() => void startCommand('COPY')}><Copy size={13} /></button>
-      <button type="button" className="icon mini" title="Rotate (Ctrl+E)" aria-label="Rotate" onClick={() => void startCommand('ROTATE')}><RotateCw size={13} /></button>
-      <button type="button" className="icon mini" title="Pick & create similar (Alt+I)" aria-label="Pick & create similar" onClick={() => runCommand('app.eyedropper')}><CopyCheck size={13} /></button>
-      <button type="button" className="icon mini" title="Isolate (HI)" aria-label="Isolate" onClick={isolateSelection}><Eye size={13} /></button>
-      <button type="button" className="icon mini" title="Hide (HH)" aria-label="Hide" onClick={hideSelection}><EyeOff size={13} /></button>
-      <button type="button" className="icon mini danger" title="Delete" aria-label="Delete" onClick={remove}><Trash2 size={13} /></button>
+      <button type="button" className="icon mini" title={tip('Move', 'modify.move')} aria-label="Move" onClick={() => void startCommand('MOVE')}><Move size={13} /></button>
+      <button type="button" className="icon mini" title={tip('Copy', 'modify.copy')} aria-label="Copy" onClick={() => void startCommand('COPY')}><Copy size={13} /></button>
+      <button type="button" className="icon mini" title={tip('Rotate', 'modify.rotate')} aria-label="Rotate" onClick={() => void startCommand('ROTATE')}><RotateCw size={13} /></button>
+      <button type="button" className="icon mini" title={tip('Pick & create similar', 'app.eyedropper')} aria-label="Pick & create similar" onClick={() => runCommand('app.eyedropper')}><CopyCheck size={13} /></button>
+      <button type="button" className="icon mini" title={tip('Isolate', 'view.isolate')} aria-label="Isolate" onClick={isolateSelection}><Eye size={13} /></button>
+      <button type="button" className="icon mini" title={tip('Hide', 'view.hide')} aria-label="Hide" onClick={hideSelection}><EyeOff size={13} /></button>
+      <button type="button" className="icon mini danger" title={tip('Delete', 'app.delete')} aria-label="Delete" onClick={() => runCommand('app.delete')}><Trash2 size={13} /></button>
     </div>
   );
 }

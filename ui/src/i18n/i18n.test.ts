@@ -194,6 +194,18 @@ describe('the languages', () => {
     '2 task(s) moved; the schedule finishes on 2026-11-10 (4 working days later). Asking for more than a resource has, not moved: Placă etaj 2.',
     'Formwork as a resource: 3 formwork(s) on 2 task(s).',
     '12 / 48 lights, 4 with shadows',
+    // Game-like UX (docs/plan-ux-game-like.md).
+    'Tip: press WA to start Wall instantly.',
+    'The sandbox model could not be made: The project has no storey.',
+    '3 model health issues: click to inspect',
+    '4 issues',
+    'Very short wall (20 mm)',
+    'Save camera bookmark 2',
+    'Jump to camera bookmark 3',
+    'Camera bookmark 1 saved: Alt+1 jumps back to it.',
+    'Camera bookmark 1 saved.',
+    'Camera bookmark 4 is empty: Alt+Shift+4 in 3D keeps the current view there.',
+    'Camera bookmark 4 is empty.',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 
@@ -230,6 +242,12 @@ describe('the languages', () => {
       expect(translate(' Floor plans ', lang)).toMatch(/^ \S.*\S $/);
     });
   }
+
+  it('says the game-like UX notices in Romanian, a tool\'s name translated too', () => {
+    expect(translate('Tip: press WA to start Wall instantly.', 'ro')).toBe('Sfat: apasă WA ca să pornești Perete instant.');
+    expect(translate('Camera bookmark 2 saved: Alt+2 jumps back to it.', 'ro')).toBe('Semnul de cameră 2 salvat: Alt+2 revine la el.');
+    expect(translate('4 issues', 'ro')).toBe('4 probleme');
+  });
 
   it('put a pattern into Spanish with its numbers and names', () => {
     expect(translate('Fold the project browser (B)', 'es')).toBe('Plegar el navegador de proyectos (B)');

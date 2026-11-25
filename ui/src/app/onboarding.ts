@@ -15,7 +15,8 @@ import type { WorkspaceId } from './interface';
 import type { NodeDto } from '../engine/protocol';
 import { activeStorey, execute, useSession } from '../engine/session';
 import { newProject } from '../engine/files';
-import { useUi } from './store';
+import { notifyProblem, useUi } from './store';
+import { hasModule } from '../platform/brand';
 import { useWalk } from '../viewport/walk';
 import { playSound } from './sounds';
 
@@ -198,29 +199,32 @@ export function resetOnboarding(): void {
   useOnboarding.setState({ done: [], events: [], baseline });
 }
 
+/** The starter model's engine steps for a role (pure): three corners of a 6 m × 5 m bay, or three walls and the floor of a room. */
+export function sandboxSteps(workspace: WorkspaceId, storeyId: string | undefined, has: (module: string) => boolean): { command: string; args: Record<string, unknown> }[] {
+  if (workspace === 'structure' && has('structure')) {
+    // Three corners of the bay: the user places the 4th column and connects the beams.
+    return ([[0, 0], [6, 0], [0, 5]] as const).map(([x, y]) => ({ command: 'structure.addColumn', args: { storeyId, x, y } }));
+  }
+  if ((workspace === 'architecture' || workspace === 'all' || workspace === 'mine' || workspace === 'mep') && has('architecture')) {
+    // Three walls of the room (a U): the user closes the 4th, adds a door or a window, and walks in 3D.
+    const walls = [[0, 0, 6, 0], [6, 0, 6, 5], [0, 5, 0, 0]].map(([x1, y1, x2, y2]) => ({ command: 'architecture.addWall', args: { storeyId, x1, y1, x2, y2 } }));
+    return [...walls, { command: 'architecture.addSlab', args: { storeyId, points: [[0, 0], [6, 0], [6, 5], [0, 5]] } }];
+  }
+  return [];
+}
+
 /**
- * Starts a procedural ~70% pre-built Sandbox mini-project for the chosen role
- * using standard engine commands, then opens the interactive mission card.
+ * Starts a procedural ~70% pre-built Sandbox mini-project for the chosen role: a new project (nothing happens when the
+ * user keeps the one open), the starter model as one engine edit (`edit.batch`: one undo step), then the mission card.
+ * An edition without the role's module starts empty, with the missions; a failed edit is said, never swallowed.
  */
 export async function launchRoleSandbox(workspace: WorkspaceId): Promise<void> {
-  await newProject();
-  const storey = activeStorey();
-  const storeyId = storey?.id;
-  try {
-    if (workspace === 'structure') {
-      // Three corners of a 6 m × 5 m bay: user snaps the 4th column and connects beams.
-      for (const [x, y] of [[0, 0], [6, 0], [0, 5]] as const) {
-        await execute('column.create', { storeyId, x, y, width: 0.3, depth: 0.3 });
-      }
-    } else if (workspace === 'architecture' || workspace === 'all' || workspace === 'mine' || workspace === 'mep') {
-      // Three walls of a 6 m × 5 m room (U-shape): user closes the 4th wall, adds a door/window, and walks in 3D.
-      await execute('wall.create', { storeyId, start: [0, 0], end: [6, 0] });
-      await execute('wall.create', { storeyId, start: [6, 0], end: [6, 5] });
-      await execute('wall.create', { storeyId, start: [0, 5], end: [0, 0] });
-      await execute('slab.create', { storeyId, contour: [[0, 0], [6, 0], [6, 5], [0, 5]] });
-    }
-  } catch {
-    // Editions without a specific module still open cleanly with the guided mission.
+  if (!(await newProject())) return;
+  const steps = sandboxSteps(workspace, activeStorey()?.id, hasModule);
+  if (steps.length) {
+    const done = await execute('edit.batch', { steps });
+    const error = useSession.getState().error;
+    if (done == null && error) notifyProblem(`The sandbox model could not be made: ${error}`);
   }
   const baseline = countNodes(useSession.getState().nodes.values());
   useOnboarding.setState({ open: true, sandbox: true, track: 'role', baseline, events: [] });

@@ -46,6 +46,7 @@ function RecentThumb({ path }: { path: string }) {
 
 function LocalStart({ cde }: { cde: boolean }) {
   const lang = useLang((x) => x.lang);
+  const roleCards = usePrefs((p) => p.roleCards);
   const connected = useSession((s) => s.connected);
   const doc = useSession((s) => s.doc);
   const [work, setWork] = useState<RecoverableWork[]>([]);
@@ -93,7 +94,7 @@ function LocalStart({ cde }: { cde: boolean }) {
         </>}
       </section>
       <section className="start-right">
-        <RoleSelector />
+        {roleCards && <RoleSelector />}
         {(templates().length > 0 || saved.length > 0) && <>
           <p className="eyebrow">Start from</p>
           <div className="templates" role="group" aria-label="Start from">

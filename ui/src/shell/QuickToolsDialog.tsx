@@ -10,6 +10,7 @@
 import { X } from 'lucide-react';
 import { useUi } from '../app/store';
 import { useHotbars } from '../app/hotbar';
+import { usePrefs } from '../app/prefs';
 import { useInterface, WORKSPACE_LABELS } from '../app/interface';
 import { defaultHotbar, hotbarIds, putInSlot, quickSlot, resetSlots, ribbonTabs, typeSlot, typesOf } from '../platform/modules';
 import { parseSlot } from '../app/hotbar';
@@ -37,7 +38,8 @@ export function QuickToolsDialog() {
   const hotbars = useHotbars();
   const workspace = useInterface((s) => s.workspace);
   useSession((s) => s.nodes);
-  const slots = hotbarIds(hotbars, workspace);
+  const byRole = usePrefs((p) => p.roleHotbars);
+  const slots = hotbarIds(hotbars, workspace, byRole);
   const groups = choices();
   const close = () => useUi.setState({ dialog: null });
   return (

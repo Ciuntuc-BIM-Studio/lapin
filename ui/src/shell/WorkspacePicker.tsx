@@ -7,7 +7,7 @@
 import { Building2, Compass, Layers, PenTool, Play, Route, Wrench } from 'lucide-react';
 import { choosePreset, chooseWorkspace, useInterface, visibleTabIds, WORKSPACE_IDS, WORKSPACE_LABELS, type InterfacePreset, type WorkspaceId } from '../app/interface';
 import { NAV_STYLE_IDS, NAV_STYLES, type NavStyleId } from '../app/navStyle';
-import { setPrefs, usePrefs } from '../app/prefs';
+import { setPrefs, turnOnFlowExtras, usePrefs } from '../app/prefs';
 import { launchRoleSandbox } from '../app/onboarding';
 import { useSession } from '../engine/session';
 import { ribbonTabs } from '../platform/modules';
@@ -63,7 +63,10 @@ export function WorkspaceSelect() {
   );
 }
 
-/** Game-like role selector for the start screen: picks discipline tabs, curated 1–9 hotbar, interface mode & mouse style. */
+/**
+ * Game-like role selector for the start screen (a Flow extra, Preferences → General): picks discipline tabs, the role's
+ * 1–9 quick tools (roleHotbars), the interface mode and the mouse style.
+ */
 export function RoleSelector() {
   const s = useInterface();
   const navStyle = usePrefs((p) => p.navStyle);
@@ -81,7 +84,7 @@ export function RoleSelector() {
           <div className="role-pills" role="radiogroup" aria-label="Interface mode">
             {QUICK_PRESETS.map((p) => (
               <button type="button" key={p.id} role="radio" aria-checked={s.preset === p.id} className={`role-pill${s.preset === p.id ? ' on' : ''}`}
-                data-preset={p.id} onClick={() => choosePreset(p.id)}>{p.label}</button>
+                data-preset={p.id} onClick={() => { choosePreset(p.id); if (p.id === 'flow') turnOnFlowExtras(); }}>{p.label}</button>
             ))}
           </div>
           <label className="role-nav" title="Mouse navigation style">
@@ -97,7 +100,7 @@ export function RoleSelector() {
           const on = s.workspace === id;
           return (
             <button type="button" key={id} role="radio" aria-checked={on} data-role={id} className={`role-card${on ? ' on' : ''}`}
-              onClick={() => chooseWorkspace(id)}>
+              onClick={() => { chooseWorkspace(id); setPrefs({ roleHotbars: true }); }}>
               <span className="role-icon"><Icon size={17} strokeWidth={1.6} /></span>
               <span className="role-body">
                 <span className="role-title">{title}</span>

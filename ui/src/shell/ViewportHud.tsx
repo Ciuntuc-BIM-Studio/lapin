@@ -115,7 +115,8 @@ export function ViewportHud() {
   const facts = useHudFacts();
   const hotbars = useHotbars();
   const workspace = useInterface((s) => s.workspace);
-  const ids = hotbarIds(hotbars, workspace);
+  const byRole = usePrefs((p) => p.roleHotbars);
+  const ids = hotbarIds(hotbars, workspace, byRole);
   // The slots up to the last tool, and one empty after it to drop a tool on.
   const shown = ids.slice(0, Math.min(ids.length, reach(ids) + 1));
   const [over, setOver] = useState<number | null>(null);
@@ -154,6 +155,7 @@ export function ViewportHud() {
   useToolTick((s) => s.n); // Space while a tool is on changes what its hint says (a wall's line)
   const hintText = stepHint ?? toolHint(tool);
   const xrayPeeking = useXrayPeek((s) => s.active);
+  const keycaps = usePrefs((p) => p.keycapHints);
   return (
     <>
       {xrayPeeking && <div className="xray-peek-badge" role="status">X-Ray peek · release <kbd data-no-i18n>X</kbd></div>}
@@ -167,7 +169,8 @@ export function ViewportHud() {
         </div>
       )}
       <ScopeBar />
-      {hintText && parts.prompt === 'banner' && <KeycapHint text={hintText} />}
+      {/* Keys drawn as keycaps is a Flow extra (Preferences → General); off, the hint reads as it did. */}
+      {hintText && parts.prompt === 'banner' && (keycaps ? <KeycapHint text={hintText} /> : <div className="hud-hint">{hintText}</div>)}
       <DrillCrumbs />
       {parts.quickTools !== 'off' && hidden && (
         <button type="button" className={`hotbar-handle${docked ? ' docked' : ''}`} data-testid="quick-tools-show" title="Show the quick tools" onClick={() => setQuickToolsHidden(scope, false)}>

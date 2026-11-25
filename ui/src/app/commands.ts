@@ -102,8 +102,18 @@ function appCommands(): CommandDef[] {
     { id: 'app.missions', label: 'Interactive missions…', category: general, defaults: [], run: () => openOnboarding('role') },
     { id: 'app.buildReplay', label: 'Build replay (time-lapse)', category: views, defaults: [], run: openBuildReplay },
     { id: 'app.toggleSounds', label: 'Tactile sounds: on / off', category: general, defaults: [], run: () => { const on = toggleTactileSounds(); notify(on ? 'Tactile sounds enabled.' : 'Tactile sounds muted.'); } },
-    ...BOOKMARK_SLOTS.map((slot) => ({ id: `app.bookmarkSave.${slot}`, label: `Save camera bookmark ${slot}`, category: views, defaults: [`Ctrl+Shift+${slot}`], run: () => { saveCameraBookmark(slot); } })),
-    ...BOOKMARK_SLOTS.map((slot) => ({ id: `app.bookmarkGoto.${slot}`, label: `Jump to camera bookmark ${slot}`, category: views, defaults: [`Shift+${slot}`], run: () => { gotoCameraBookmark(slot); } })),
+    // Camera bookmarks (plan-ux-game-like.md, P7): Alt+1..4 jumps, Alt+Shift+1..4 keeps the view. Alt with a digit is read by
+    // the key's place (chordOf), so it works on any layout, and it is no system's screenshot or tab key; rebindable as any.
+    ...BOOKMARK_SLOTS.map((slot) => ({ id: `app.bookmarkSave.${slot}`, label: `Save camera bookmark ${slot}`, category: views, defaults: [`Alt+Shift+${slot}`], run: () => {
+      saveCameraBookmark(slot);
+      const keys = bindingText(`app.bookmarkGoto.${slot}`).split(', ')[0];
+      notify(keys ? `Camera bookmark ${slot} saved: ${keys} jumps back to it.` : `Camera bookmark ${slot} saved.`);
+    } })),
+    ...BOOKMARK_SLOTS.map((slot) => ({ id: `app.bookmarkGoto.${slot}`, label: `Jump to camera bookmark ${slot}`, category: views, defaults: [`Alt+${slot}`], run: () => {
+      if (gotoCameraBookmark(slot)) return;
+      const keys = bindingText(`app.bookmarkSave.${slot}`).split(', ')[0];
+      notify(keys ? `Camera bookmark ${slot} is empty: ${keys} in 3D keeps the current view there.` : `Camera bookmark ${slot} is empty.`);
+    } })),
     { id: 'app.commandLine', label: 'Command line: take all typing', category: general, defaults: ['Backquote'], run: () => useCad.setState((s) => ({ takeAll: !s.takeAll })) },
     { id: 'app.shortcuts', label: 'Keyboard shortcuts…', category: general, defaults: [], run: dialog('shortcuts') },
     { id: 'app.interface', label: 'Interface…', category: general, defaults: ['Ctrl+.'], run: dialog('interface') },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readPrefs, setPrefs, usePrefs } from '../app/prefs';
+import { FLOW_EXTRAS, readPrefs, setPrefs, turnOnFlowExtras, usePrefs } from '../app/prefs';
 import { playSound, toggleTactileSounds } from '../app/sounds';
 import { scanModelHealth } from '../app/modelHealth';
 import { buildSequence } from './BuildReplay';
@@ -7,18 +7,35 @@ import { cubeTransform } from '../viewport/ViewCube3D';
 import type { NodeDto } from '../engine/protocol';
 
 const node = (id: string, type: string, storeyId: string | null, props: NodeDto['props'] = {}, name = id): NodeDto => ({
-  id, type, name, storeyId, editable: true, props,
+  id, type, name, storeyId, parentId: null, px: 0, py: 0, module: null, editable: true, props,
 });
 
 describe('Phase 3 game-like UX', () => {
-  it('respects tactileSounds preference and allows disabling/enabling', () => {
-    expect(readPrefs(null).tactileSounds).toBe(true);
+  it('keeps tactile sounds off unless chosen, and allows enabling/disabling', () => {
+    expect(readPrefs(null).tactileSounds).toBe(false);
+    expect(readPrefs({}).tactileSounds).toBe(false);
+    expect(readPrefs({ tactileSounds: 'yes' }).tactileSounds).toBe(false);
+    expect(readPrefs({ tactileSounds: true }).tactileSounds).toBe(true);
     expect(readPrefs({ tactileSounds: false }).tactileSounds).toBe(false);
     setPrefs({ tactileSounds: false });
     expect(usePrefs.getState().tactileSounds).toBe(false);
     expect(playSound('snap')).toBe(false);
     expect(toggleTactileSounds()).toBe(true);
     expect(usePrefs.getState().tactileSounds).toBe(true);
+    setPrefs({ tactileSounds: false });
+  });
+
+  it('keeps every Flow extra off for settings kept before them, and the Flow preset turns them on', () => {
+    const before = readPrefs({ theme: 'graphite', gridStep: 0.5 });
+    for (const k of FLOW_EXTRAS) expect(before[k], k).toBe(false);
+    expect(before.roleHotbars).toBe(false);
+    expect(before.theme).toBe('graphite');
+    turnOnFlowExtras();
+    for (const k of FLOW_EXTRAS) expect(usePrefs.getState()[k], k).toBe(true);
+    // Sounds and the role's quick tools stay their own choice.
+    expect(usePrefs.getState().tactileSounds).toBe(false);
+    expect(usePrefs.getState().roleHotbars).toBe(false);
+    setPrefs(Object.fromEntries(FLOW_EXTRAS.map((k) => [k, false])));
   });
 
   it('computes 3D ViewCube CSS transform from camera azimuth and pitch', () => {

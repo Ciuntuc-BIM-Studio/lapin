@@ -15,7 +15,7 @@ import { useUi } from '../app/store';
 import { NAV_STYLES, NAV_STYLE_IDS, type NavStyleId } from '../app/navStyle';
 import { NUDGE_STEPS } from '../app/nudge';
 import { MaterialStandardChoice } from './MaterialStandardChoice';
-import { POLAR_STEPS, SNAP_MODES, resolveTheme, setPrefs, usePrefs, type CoordSystem, type ThemeChoice, type ViewportTheme } from '../app/prefs';
+import { FLOW_EXTRAS, POLAR_STEPS, SNAP_MODES, resolveTheme, setPrefs, turnOnFlowExtras, usePrefs, type CoordSystem, type FlowExtra, type ThemeChoice, type ViewportTheme } from '../app/prefs';
 import { setDisplay, useDisplay, type Display } from '../app/display';
 import { themeAccent3D, setHighlight, useHighlight } from '../app/highlight';
 import { ColourField, PaletteManager } from './ColourField';
@@ -41,6 +41,37 @@ const PAGES: { id: Page; label: string }[] = [
   { id: 'general', label: 'General' }, { id: 'grid', label: 'Grid and snaps' }, { id: 'coords', label: 'Coordinates' }, { id: 'display', label: 'Display' }, { id: 'colours', label: 'Colours' },
   { id: 'profiles', label: 'Profiles' }, { id: 'libraries', label: 'Libraries' },
 ];
+
+/** What each Flow extra is (docs/plan-ux-game-like.md); the Flow preset turns them all on. */
+const FLOW_EXTRA_LABELS: Record<FlowExtra, string> = {
+  viewCube: 'ViewCube in the 3D view',
+  selectionToolbar: 'Selection toolbar over the view',
+  healthRadar: 'Model health in the status line',
+  microTips: 'A shortcut tip after the same ribbon tool is clicked three times',
+  quickWalkSplit: 'Walk and Plan + 3D buttons before the view tabs',
+  keycapHints: 'Keys shown as keycaps in the tool hint',
+  ghostPreview: 'Volume preview while placing in 3D',
+  xrayPeek: 'Hold X in 3D to look through in X-ray',
+  scrubFields: 'Drag a field’s unit to change its value',
+  roleCards: 'Role cards on the start screen',
+};
+
+/** Preferences → General → Flow extras: each off until chosen here or by the Flow preset; tactile sounds and the role's quick tools on their own. */
+function FlowExtras() {
+  const p = usePrefs();
+  return <>
+    <h4>Flow extras</h4>
+    <p className="muted small">Off by default. The Flow preset (View → Interface…) turns these on; each can be switched here.</p>
+    {FLOW_EXTRAS.map((k) => (
+      <label className="row small" key={k}><input type="checkbox" data-field={`prefs-${k}`} checked={p[k]} onChange={(e) => setPrefs({ [k]: e.target.checked })} /> {FLOW_EXTRA_LABELS[k]}</label>
+    ))}
+    <p className="row small"><button type="button" className="btn" data-field="prefs-flow-all" onClick={turnOnFlowExtras}>Turn all on</button>
+      <button type="button" className="btn" onClick={() => setPrefs(Object.fromEntries(FLOW_EXTRAS.map((k) => [k, false])))}>Turn all off</button></p>
+    <label className="row small"><input type="checkbox" data-field="prefs-roleHotbars" checked={p.roleHotbars} onChange={(e) => setPrefs({ roleHotbars: e.target.checked })} /> Quick tools chosen for the workspace</label>
+    <p className="muted small">The 1–9 quick tools a workspace starts with (Architecture, Structure, MEP, Site, Drafting); on when a role card is picked. Off: the quick tools as before. Tools you put in the slots stay.</p>
+    <label className="row small"><input type="checkbox" data-field="prefs-tactile-sounds" checked={p.tactileSounds} onChange={(e) => setPrefs({ tactileSounds: e.target.checked })} /> Tactile feedback sounds (snap, place, undo)</label>
+  </>;
+}
 
 /** The profile standards (decision 457): those a new project offers, those the pickers show. */
 function ProfilesPage() {
@@ -161,7 +192,6 @@ export function PreferencesDialog() {
               <h4>Interface</h4>
               <p className="row small"><button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'interface' })}>Interface…</button>
                 <button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'shortcuts' })}>Keyboard shortcuts…</button></p>
-              <label className="row small"><input type="checkbox" data-field="prefs-tactile-sounds" checked={p.tactileSounds} onChange={(e) => setPrefs({ tactileSounds: e.target.checked })} /> Tactile feedback sounds (snap, place, undo)</label>
               <h4>Keyboard</h4>
               <label className="row small"><input type="checkbox" data-field="prefs-letters" checked={keys.letters} onChange={(e) => setKeymap({ ...keys, letters: e.target.checked })} /> Letter shortcuts (Revit-style)</label>
               <p className="muted small">Typed letters such as WA start a tool. Off: letters always go to the command line, and Enter or Space runs a command, an alias, or the command whose letters they are. The ` key gives the command line all typing, whichever is on. Your own aliases are in Keyboard shortcuts…</p>
@@ -179,6 +209,7 @@ export function PreferencesDialog() {
                 </dl>
               ))}
               {p.developerExtras && !engineInBrowser && <p className="muted small">Python 3.11 or newer, from python.org or your system: a path or a command (python3, py -3 is tried on Windows); empty, Lapin looks for it. The editor is a command such as code; empty, the system's text editor.</p>}
+              <FlowExtras />
             </>}
             {page === 'grid' && <>
               <h4 data-i18n-ctx="prefs">Grid</h4>

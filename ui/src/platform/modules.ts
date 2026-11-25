@@ -12,6 +12,7 @@ import { defaultHotbarFor, parseSlot, setSlots, slotsOf, useHotbars, withSlot, w
 import { useSession } from '../engine/session';
 import { typeOf } from '../engine/model';
 import { useInterface } from '../app/interface';
+import { usePrefs } from '../app/prefs';
 import { addSelectionExpander } from './groups';
 import { snapGrip } from '../viewport/grips';
 import { askPlacement as ask } from './placement';
@@ -120,10 +121,14 @@ export const allTools = (): ToolDef[] => {
 
 export const findTool = (id: string | null): ToolDef | null => (id ? allTools().find((t) => t.id === id) ?? null : null);
 
-/** The current workspace's quick tool ids, slot by slot (decision 259; per-role defaults from plan-ux-game-like.md). */
-export const hotbarIds = (hotbars = useHotbars.getState(), workspace = useInterface.getState().workspace): Slots => {
+/**
+ * The current workspace's quick tool ids, slot by slot (decision 259). The role's own defaults (plan-ux-game-like.md) only
+ * once a role was picked (Preferences' roleHotbars); else the modules' quick tools, as before.
+ */
+export const hotbarIds = (hotbars = useHotbars.getState(), workspace = useInterface.getState().workspace, byRole = usePrefs.getState().roleHotbars): Slots => {
   const known = (id: string) => findTool(id) !== null;
-  return slotsOf(hotbars, workspace, defaultHotbarFor(workspace, defaultHotbar().map((t) => t.id), known), known);
+  const fallback = defaultHotbar().map((t) => t.id);
+  return slotsOf(hotbars, workspace, byRole ? defaultHotbarFor(workspace, fallback, known) : fallback, known);
 };
 
 /** A quick slot as it stands: its tool, and its type by name with the project's type of that name (null when the project has none). */

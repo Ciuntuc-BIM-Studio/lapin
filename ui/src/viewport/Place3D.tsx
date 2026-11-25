@@ -32,6 +32,7 @@ import { arrowLock3, type Lock3, type Snapped3 } from './snap3d';
 import { parseVcb } from './sketch/vcb';
 import { useMove3d } from './moveIn3d';
 import { playSound } from '../app/sounds';
+import { usePrefs } from '../app/prefs';
 
 const HINT: Record<PointGesture['kind'], string> = {
   point: 'Click a point: on the level, or a corner or an edge of the model',
@@ -47,6 +48,7 @@ export const storeyOf = (z: number): string | null =>
   storeyAt(z, storeys(useSession.getState()).map((n) => ({ id: n.id, elevation: num(n, 'elevation') })));
 
 export function Place3D({ camera, canvas, scene }: ViewRefs) {
+  const ghost = usePrefs((p) => p.ghostPreview);
   useCamera();
   const toolId = useUi((s) => s.tool);
   const tool = findTool(toolId);
@@ -195,8 +197,8 @@ export function Place3D({ camera, canvas, scene }: ViewRefs) {
   const shape = previewOf(g, pts, aim);
   const screen = shape.pts.map((p, i) => project(w(p, space ? i : -1)));
   const path = screenPath(screen, !!shape.closed);
-  // Volumetric 3D ghost preview (docs/plan-ux-game-like.md, P4): extruded translucent walls/envelope at storey height.
-  const ghostH = !space && shape.pts.length >= 2 ? (tool.id.includes('slab') ? 0.25 : num(activeStorey() ?? undefined, 'height', 3)) : 0;
+  // Volumetric 3D ghost preview (docs/plan-ux-game-like.md, P4), a Flow extra: extruded translucent walls/envelope at storey height.
+  const ghostH = ghost && !space && shape.pts.length >= 2 ? (tool.id.includes('slab') ? 0.25 : num(activeStorey() ?? undefined, 'height', 3)) : 0;
   const topScreen = ghostH > 0 ? shape.pts.map((p) => project({ x: p.x, y: p.y, z: z + ghostH })) : [];
   const topPath = topScreen.length >= 2 ? screenPath(topScreen, !!shape.closed) : null;
   const ghostQuads: string[] = [];

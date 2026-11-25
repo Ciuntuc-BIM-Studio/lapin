@@ -11,6 +11,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useUi } from '../app/store';
 import { ALWAYS_SHOWN_TABS, CHOICES, choosePart, choosePreset, moveTab, showTab, useInterface, visibleTabIds, type InterfaceParts, type InterfacePreset } from '../app/interface';
 import { WorkspacePicker } from './WorkspacePicker';
+import { turnOnFlowExtras } from '../app/prefs';
 import { ribbonTabs } from '../platform/modules';
 import { bindingText } from '../app/commands';
 import { LAYOUTS, layoutName, setLayout, usePanels, type LayoutName } from '../app/panels';
@@ -19,7 +20,7 @@ const PRESET_LABELS: Record<InterfacePreset, { label: string; note: string }> = 
   comfortable: { label: 'Comfortable', note: 'The ribbon with names, a command line under each drawing, the HUD over the view.' },
   compact: { label: 'Compact', note: 'An icon band, one status line for the prompt and the command line, the quick tools on the view’s edge.' },
   focus: { label: 'Focus', note: 'The tabs and a command line: the ribbon drops from its tab, the panels hide (Tab brings them back).' },
-  flow: { label: 'Flow', note: 'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, dropdown ribbon.' },
+  flow: { label: 'Flow', note: 'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).' },
 };
 
 const PARTS: { key: keyof InterfaceParts; label: string; choices: Record<string, string> }[] = [
@@ -59,7 +60,7 @@ export function InterfaceDialog() {
           <p className="muted small">The tabs it shows, in its order; the project stays one. A tab shown, hidden or moved below makes it your own workspace, kept for next time.</p>
           <div className="seg presets" role="radiogroup" aria-label="Mode">
             {(Object.keys(PRESET_LABELS) as InterfacePreset[]).map((p) => (
-              <button type="button" key={p} role="radio" aria-checked={s.preset === p} className={`seg-item${s.preset === p ? ' on' : ''}`} onClick={() => choosePreset(p)}>
+              <button type="button" key={p} role="radio" aria-checked={s.preset === p} className={`seg-item${s.preset === p ? ' on' : ''}`} onClick={() => { choosePreset(p); if (p === 'flow') turnOnFlowExtras(); }}>
                 <b>{PRESET_LABELS[p].label}</b><span className="muted small">{PRESET_LABELS[p].note}</span>
               </button>
             ))}

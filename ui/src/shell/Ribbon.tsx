@@ -163,7 +163,8 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
   const press = (tl: ToolDef, el?: HTMLElement) => {
     pressTool(tl, el);
     if (!tl.items?.length) {
-      recordToolClick(tl.id, tl.label, bindingText(tl.id).split(', ')[0] || tl.shortcut);
+      // A shortcut tip after the third click (a Flow extra, Preferences → General; off by default).
+      if (usePrefs.getState().microTips) recordToolClick(tl.id, tl.label, bindingText(tl.id).split(', ')[0] || tl.shortcut);
       onPicked?.();
     }
   };

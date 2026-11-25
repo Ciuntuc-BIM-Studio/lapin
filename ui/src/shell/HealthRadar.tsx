@@ -1,7 +1,8 @@
 /**
  * Model Health Radar HUD pill (docs/plan-ux-game-like.md, P10):
  * sits discreetly in the status bar; clicking opens a compact list of
- * detected BIM hygiene issues with 1-click Select & Zoom.
+ * detected BIM hygiene issues with 1-click Select & Zoom. A Flow extra, off by
+ * default (Preferences → General).
  */
 
 import { useMemo, useState } from 'react';
@@ -27,10 +28,10 @@ export function HealthRadar() {
   return (
     <span className="health-radar-host">
       <button type="button" className={`status-link health-pill${count > 0 ? ' warn' : ' ok'}`} data-testid="health-radar"
-        title={count > 0 ? `${count} model health issue(s) — click to inspect` : 'Model health: clean'}
+        title={count === 1 ? '1 model health issue: click to inspect' : count > 0 ? `${count} model health issues: click to inspect` : 'Model health: clean'}
         onClick={() => setOpen((v) => !v)}>
         {count > 0 ? <AlertTriangle size={12} /> : <CheckCircle2 size={12} />}
-        <span>{count > 0 ? `${count} issue(s)` : 'Model OK'}</span>
+        <span>{count === 1 ? '1 issue' : count > 0 ? `${count} issues` : 'Model OK'}</span>
       </button>
       {open && (
         <div className="health-popover" role="dialog" aria-label="Model health radar" data-testid="health-popover">
@@ -45,7 +46,8 @@ export function HealthRadar() {
               {issues.slice(0, 25).map((it) => (
                 <li key={it.id} className="health-row">
                   <span className="health-text">
-                    <b>{it.label}</b>
+                    {/* The element's own name, as the user gave it. */}
+                    <b data-no-i18n>{it.label}</b>
                     <span className="muted small">{it.detail}</span>
                   </span>
                   <button type="button" className="icon mini" title="Select and zoom" onClick={() => focusIssue(it.nodeId)}><Crosshair size={13} /></button>

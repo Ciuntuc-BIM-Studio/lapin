@@ -63,7 +63,7 @@ export function OnboardingMissions() {
   return (
     <aside className="mission-card" role="region" aria-label="Interactive missions" data-testid="mission-card">
       <header className="mission-head">
-        <span className="mission-title"><Compass size={14} /><span>Missions · {WORKSPACE_LABELS[workspace]}</span></span>
+        <span className="mission-title"><Compass size={14} /><span>Missions</span><span data-no-i18n> · </span><span>{WORKSPACE_LABELS[workspace]}</span></span>
         <span className="mission-count">{totalDone}/{all.length}</span>
         <button type="button" className="icon mini" title="Reset progress" onClick={resetOnboarding}><RotateCcw size={12} /></button>
         <button type="button" className="icon mini" title="Minimize" onClick={() => setMinimized(true)}>–</button>

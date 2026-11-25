@@ -3467,6 +3467,8 @@ body.panel-dragging, body.panel-dragging * { cursor: grabbing !important; user-s
 .viewcube-host:hover { background: var(--hud); }
 /* When KeyPlan sits at top-right too, push ViewCube cleanly to its left so they never overlap. */
 .view-area:has(.hud-map) .viewcube-host { right: 202px; }
+/* The key plan folded to its button (Compact, Focus, Flow): the cube left of the button, which stays clickable. */
+.view-area:has(.key-plan-button):not(:has(.hud-map)) .viewcube-host { right: 52px; }
 .viewcube-scene { width: 52px; height: 52px; perspective: 220px; display: grid; place-items: center; }
 .viewcube { width: 38px; height: 38px; position: relative; transform-style: preserve-3d; transition: transform 0.08s linear; }
 .vc-face { position: absolute; inset: 0; display: grid; place-items: center; border: 1px solid var(--rule-strong); background: var(--panel); color: var(--ink); font: 700 8.5px var(--mono); letter-spacing: 0.04em; cursor: pointer; opacity: 0.92; padding: 0; }

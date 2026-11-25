@@ -6,14 +6,16 @@
  * be sums. LengthField and NumberField are the interface's one length and
  * number field, in the panel and outside it.
  *
- * Drag-to-Scrub (docs/plan-ux-game-like.md, P8): drag horizontally on the unit
- * badge (or Alt+drag on a numeric field) to adjust smoothly (Shift = fine,
- * Ctrl = coarse); commits once on release as a single undo step.
+ * Drag-to-Scrub (docs/plan-ux-game-like.md, P8), a Flow extra (Preferences →
+ * General; off by default): drag horizontally on the unit badge (or Alt+drag
+ * on a numeric field) to adjust smoothly (Shift = fine, Ctrl = coarse);
+ * commits once on release as a single undo step; integer fields stay whole.
  */
 
 import { useEffect, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { formatLength, unitLabel, useStandards } from '../engine/unitsStore';
 import { commitLength, commitNumber, NO_COMMIT, type CommitRules } from './fieldCommit';
+import { usePrefs } from '../app/prefs';
 
 export interface ScrubConfig {
   start: number;
@@ -22,15 +24,19 @@ export interface ScrubConfig {
   coarse: number;
   min?: number;
   max?: number;
+  /** Whole numbers only (a field's `integer` rule): every value it passes is rounded, a fine step is one. */
+  integer?: boolean;
   format: (v: number) => string;
   commit: (v: number) => void;
 }
 
 /** Pure value calculation for horizontal drag-to-scrub (4 px per step). */
-export function scrubValue(start: number, dx: number, cfg: Pick<ScrubConfig, 'step' | 'fine' | 'coarse' | 'min' | 'max'>, mods: { shift: boolean; ctrl: boolean }): number {
-  const unit = mods.shift ? cfg.fine : mods.ctrl ? cfg.coarse : cfg.step;
+export function scrubValue(start: number, dx: number, cfg: Pick<ScrubConfig, 'step' | 'fine' | 'coarse' | 'min' | 'max' | 'integer'>, mods: { shift: boolean; ctrl: boolean }): number {
+  let unit = mods.shift ? cfg.fine : mods.ctrl ? cfg.coarse : cfg.step;
+  if (cfg.integer) unit = Math.max(1, Math.round(unit));
   const ticks = Math.trunc(dx / 4);
   let next = Math.round((start + ticks * unit) * 1e6) / 1e6;
+  if (cfg.integer) next = Math.round(next);
   if (cfg.min != null && next < cfg.min) next = cfg.min;
   if (cfg.max != null && next > cfg.max) next = cfg.max;
   return next;
@@ -106,7 +112,8 @@ export interface FieldProps extends CommitRules {
 export function LengthField({ metres, onCommit, placeholder, className, readOnly, title, style, testId, noUnit, ...rules }: FieldProps & { metres: number | null | undefined; onCommit: (m: number | null) => void; noUnit?: boolean }) {
   const u = useStandards((s) => s.units);
   const shown = typeof metres === 'number' ? formatLength(metres, u) : '';
-  const scrub: ScrubConfig | undefined = typeof metres === 'number' && !readOnly ? {
+  const scrubOn = usePrefs((p) => p.scrubFields);
+  const scrub: ScrubConfig | undefined = scrubOn && typeof metres === 'number' && !readOnly ? {
     start: metres, step: 0.01, fine: 0.001, coarse: 0.1, min: rules.min, max: rules.max,
     format: (m) => formatLength(m, u),
     commit: (m) => onCommit(m),
@@ -119,8 +126,9 @@ export function LengthField({ metres, onCommit, placeholder, className, readOnly
 
 /** The one number field: sums allowed, a decimal comma too; the same commit rules as LengthField. */
 export function NumberField({ value, onCommit, suffix, placeholder, className, readOnly, title, style, testId, ...rules }: FieldProps & { value: number | null | undefined; onCommit: (n: number | null) => void; suffix?: string }) {
-  const scrub: ScrubConfig | undefined = typeof value === 'number' && !readOnly ? {
-    start: value, step: 1, fine: 0.1, coarse: 10, min: rules.min, max: rules.max,
+  const scrubOn = usePrefs((p) => p.scrubFields);
+  const scrub: ScrubConfig | undefined = scrubOn && typeof value === 'number' && !readOnly ? {
+    start: value, step: 1, fine: 0.1, coarse: 10, min: rules.min, max: rules.max, integer: rules.integer,
     format: (n) => String(n),
     commit: (n) => onCommit(n),
   } : undefined;

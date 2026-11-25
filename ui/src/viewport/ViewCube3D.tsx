@@ -2,11 +2,13 @@
  * Interactive 3D ViewCube (docs/plan-ux-game-like.md, P7):
  * a compact CSS 3D orientation cube synced live to `useCamera()`, with
  * one-click animated transitions to Top, Front, Back, Left, Right and ISO,
- * plus a quick Perspective / Orthographic toggle.
+ * plus a quick Perspective / Orthographic toggle. A Flow extra, off by default;
+ * it sits left of the key plan (or its button) so both stay reachable.
  */
 
 import { STANDARD, useCamera } from './camera';
 import { playSound } from '../app/sounds';
+import { usePrefs } from '../app/prefs';
 
 /** Converts camera azimuth & pitch (radians) into CSS rotateX / rotateZ degrees for the cube. */
 export function cubeTransform(azimuth: number, pitch: number): string {
@@ -20,12 +22,15 @@ export function ViewCube3D() {
   const pitch = useCamera((c) => c.pitch);
   const ortho = useCamera((c) => c.ortho);
   const api = useCamera((c) => c.api);
+  // A Flow extra (Preferences → General): off by default, the 3D view as it was.
+  const shown = usePrefs((p) => p.viewCube);
 
   const go = (pose: { azimuth: number; pitch: number }) => {
     playSound('click');
     api?.orbitTo(pose, true);
   };
 
+  if (!shown) return null;
   return (
     <div className="viewcube-host" aria-label="3D view cube" data-testid="viewcube-3d">
       <div className="viewcube-scene">
