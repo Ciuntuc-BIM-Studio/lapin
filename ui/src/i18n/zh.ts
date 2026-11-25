@@ -6752,6 +6752,8 @@ export const ZH: Record<string, string> = {
   // Roof panel layout, stage S3: the accessories schedule.
   "A schedule of the roofs' panel accessories: flashings, fixings, battens and membrane, each in its unit": "屋面板配件明细表：泛水、紧固件、挂瓦条和防水膜，各按其单位",
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "已创建屋面板配件明细表：位于项目浏览器的明细表下.",
+  // A part of the window that stopped (PartBoundary, forum topic 258).
+  "This part of Lapin stopped working; the rest of the window still works.": "Lapin 的这一部分已停止工作；窗口的其余部分仍可正常使用。", "Report…": "报告…", "Lapin's window stopped working.": "Lapin 窗口已停止工作。", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "重新加载窗口以继续。请报告您在此之前刚做的操作，以便修复。", "Reload the window": "重新加载窗口", "Report on the forum…": "在论坛上报告…",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

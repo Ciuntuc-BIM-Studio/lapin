@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import { HelpCircle, X } from 'lucide-react';
 import { notify } from '../app/store';
 import { useSession } from '../engine/session';
-import { RECENT, openForumTopic, openLink, reportParams, sendReport } from './support';
+import { RECENT, openForumTopic, openLink, reportParams, sendReport, useReportRequest, type ReportStart } from './support';
 import { contactFor, useReplies } from './replies';
 import { MessagesDialog } from './MessagesDialog';
 import { useDialogFocus, useEscapeClose } from './dialogFocus';
@@ -39,8 +39,6 @@ async function shrink(file: File): Promise<string> {
   return canvas.toDataURL('image/jpeg', 0.85);
 }
 
-/** What a report starts with: a question Ask Lapin could not answer comes in as one. */
-interface ReportStart { kind: 'bug' | 'idea' | 'question'; title: string; description: string }
 
 function ReportDialog({ onClose, start }: { onClose: () => void; start?: ReportStart }) {
   const [kind, setKind] = useState<'bug' | 'idea' | 'question'>(start?.kind ?? 'bug');
@@ -118,6 +116,9 @@ export function HelpMenu() {
   const unread = useReplies((s) => s.unread);
   const info = useSession((s) => s.info);
   const lang = useLang((s) => s.lang);
+  // A report asked for elsewhere (a part of the window that stopped): its form, filled in.
+  const asked = useReportRequest((s) => s.start);
+  useEffect(() => { if (asked) { setReport(asked); useReportRequest.setState({ start: null }); } }, [asked]);
   // F1: Ask Lapin, from anywhere.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'F1') { e.preventDefault(); setAsking(true); } };

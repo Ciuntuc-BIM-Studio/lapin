@@ -6756,6 +6756,8 @@ export const PL: Record<string, string> = {
   // Roof panel layout, stage S3: the accessories schedule.
   "A schedule of the roofs' panel accessories: flashings, fixings, battens and membrane, each in its unit": "Zestawienie akcesoriów paneli dachowych: obróbki, mocowania, łaty i membrana, każde w swojej jednostce",
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "Zestawienie akcesoriów paneli dachowych utworzone: jest w przeglądarce projektu, w Zestawieniach.",
+  // A part of the window that stopped (PartBoundary, forum topic 258).
+  "This part of Lapin stopped working; the rest of the window still works.": "Ta część Lapina przestała działać; reszta okna nadal działa.", "Report…": "Zgłoś…", "Lapin's window stopped working.": "Okno Lapina przestało działać.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "Wczytaj okno ponownie, aby kontynuować. Zgłoś, co zrobiłeś tuż przedtem, aby można było to naprawić.", "Reload the window": "Wczytaj okno ponownie", "Report on the forum…": "Zgłoś na forum…",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

@@ -60,6 +60,7 @@ import { connect } from './engine/session';
 import { AskBox } from './shell/AskBox';
 import { setBrowserFindHooks, useBrowserFind, viewIdOfTab, viewSheetItems } from './shell/browserFind';
 import { openPlaceOnSheet, PlaceOnSheetDialog } from './shell/PlaceOnSheetDialog';
+import { PartBoundary } from './shell/PartBoundary';
 
 // Find in project browser (forum topic 207): the browser unfolded (a floating one is always open), the view selected, and
 // the browser asked to show its row; Place on sheet… opens its picker.
@@ -282,7 +283,7 @@ function PaneBody({ i }: { i: number }) {
           {active && !isTableView(view) && <ViewportHud />}
           {active && !isTableView(view) && <SelectionCard />}
           {active && !isTableView(view) && <TabHoldList />}
-          {active && !isTableView(view) && overlays().map((Overlay, k) => <Overlay key={k} />)}
+          {active && !isTableView(view) && overlays().map((Overlay, k) => <PartBoundary key={k} part={Overlay.displayName ?? Overlay.name ?? 'Overlay'} overlay><Overlay /></PartBoundary>)}
           {active && error && <div className="error" role="alert" onClick={() => useSession.setState({ error: null })}>{error}</div>}
           {active && <Notice />}
         </div>
@@ -490,7 +491,7 @@ function Workspace() {
       <DockOverlay />
       <StatusBar />
       <TabDragOverlay />
-      {Dialog && <Dialog />}
+      {Dialog && <PartBoundary part={`Dialog ${open}`} overlay onClose={() => useUi.setState({ dialog: null })} resetKey={open}><Dialog /></PartBoundary>}
       <GuestBar />
       <PresenceReporter />
       <AskBox />
@@ -506,7 +507,7 @@ function ViewWindow() {
   return (
     <div className="workspace view-window">
       <main className="views"><PaneBody i={0} /></main>
-      {Dialog && <Dialog />}
+      {Dialog && <PartBoundary part={`Dialog ${open}`} overlay onClose={() => useUi.setState({ dialog: null })} resetKey={open}><Dialog /></PartBoundary>}
       <AskBox />
       {backgrounds().map((B, i) => <B key={i} />)}
     </div>

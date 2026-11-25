@@ -37,6 +37,7 @@ import { filterSets, importedSets } from './ifcProperties';
 import { MaterialPicker } from '../modules/core/MaterialPicker';
 import { hiddenHere, useShownHere } from '../viewport/cad/shown';
 import { ElementMarkField, hasMark, TypeMarkField } from '../modules/core/MarkField';
+import { PartBoundary } from './PartBoundary';
 
 /** An input that commits on Enter or when it loses focus, not on every key. */
 function Commit({ value, onCommit, suffix, className }: { value: string; onCommit: (v: string) => void; suffix?: string; className?: string }) {
@@ -328,7 +329,7 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
       {!node.editable && <p className="muted small pad">This element belongs to a module this edition does not have: it is shown and kept, not edited.</p>}
       {node.props.scriptOwned === true && <p className="muted small pad props-script-owned" data-testid="script-owned"><Code2 size={12} /> <span>Made by a script:</span> <b>{String(node.props.owner ?? '')}</b><br /><span>Its shape is changed in the script; here it moves, turns, copies and is cut like any element.</span></p>}
       {sections.map((s) => (
-        <Group key={s.id} id={s.id} label={s.label}><s.component node={node} /></Group>
+        <Group key={s.id} id={s.id} label={s.label}><PartBoundary part={`Properties: ${s.label}`} compact resetKey={node.id}><s.component node={node} /></PartBoundary></Group>
       ))}
       {node.editable && storey && node.type !== 'IfcBuildingStorey' && (
         <Group id="placement" label="Placement">

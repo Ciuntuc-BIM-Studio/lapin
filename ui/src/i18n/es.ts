@@ -6755,6 +6755,8 @@ export const ES: Record<string, string> = {
   // Roof panel layout, stage S3: the accessories schedule.
   "A schedule of the roofs' panel accessories: flashings, fixings, battens and membrane, each in its unit": "Una tabla de los accesorios de los paneles: remates, fijaciones, rastreles y lámina, cada uno en su unidad",
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "Tabla de accesorios de los paneles creada: está en el navegador del proyecto, en Tablas.",
+  // A part of the window that stopped (PartBoundary, forum topic 258).
+  "This part of Lapin stopped working; the rest of the window still works.": "Esta parte de Lapin dejó de funcionar; el resto de la ventana sigue funcionando.", "Report…": "Informar…", "Lapin's window stopped working.": "La ventana de Lapin dejó de funcionar.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "Recarga la ventana para continuar. Informa de lo que hiciste justo antes, para que se pueda corregir.", "Reload the window": "Recargar la ventana", "Report on the forum…": "Informar en el foro…",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

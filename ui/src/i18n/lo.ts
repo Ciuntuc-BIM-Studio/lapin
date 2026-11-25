@@ -6809,6 +6809,8 @@ export const LO: Record<string, string> = {
   // Roof panel layout, stage S3: the accessories schedule.
   "A schedule of the roofs' panel accessories: flashings, fixings, battens and membrane, each in its unit": "ຕາຕະລາງອຸປະກອນແຜ່ນຫຼັງຄາ: ແຜ່ນປິດຂອບ, ການຍຶດ, ໄມ້ລະແນງ ແລະ ແຜ່ນກັນ, ແຕ່ລະອັນຕາມຫົວໜ່ວຍ",
   "Roof panel accessories schedule made: it is in the project browser, under Schedules.": "ສ້າງຕາຕະລາງອຸປະກອນແຜ່ນຫຼັງຄາແລ້ວ: ຢູ່ໃນຕົວທ່ອງໂຄງການ, ພາຍໃຕ້ ຕາຕະລາງ.",
+  // A part of the window that stopped (PartBoundary, forum topic 258).
+  "This part of Lapin stopped working; the rest of the window still works.": "ສ່ວນນີ້ຂອງ Lapin ຢຸດເຮັດວຽກແລ້ວ; ສ່ວນທີ່ເຫຼືອຂອງໜ້າຕ່າງຍັງເຮັດວຽກຢູ່.", "Report…": "ລາຍງານ…", "Lapin's window stopped working.": "ໜ້າຕ່າງຂອງ Lapin ຢຸດເຮັດວຽກແລ້ວ.", "Reload the window to go on. Please report what you did just before, so it can be fixed.": "ໂຫຼດໜ້າຕ່າງຄືນໃໝ່ເພື່ອສືບຕໍ່. ກະລຸນາລາຍງານສິ່ງທີ່ທ່ານໄດ້ເຮັດກ່ອນໜ້ານັ້ນ ເພື່ອໃຫ້ແກ້ໄຂໄດ້.", "Reload the window": "ໂຫຼດໜ້າຕ່າງຄືນໃໝ່", "Report on the forum…": "ລາຍງານໃນຟໍຣັມ…",
 };
 
 /** Phrases with a number or a name in them. */
