@@ -106,16 +106,34 @@ try {
   const key = async (k) => { await send('Input.dispatchKeyEvent', { type: 'keyDown', key: k, code: k.length === 1 ? `Key${k.toUpperCase()}` : k, text: k.length === 1 ? k : undefined }); await send('Input.dispatchKeyEvent', { type: 'keyUp', key: k, code: k.length === 1 ? `Key${k.toUpperCase()}` : k }); };
   /** The lazy parts the engine has fetched so far (session.ts writes them on the page). */
   const parts = async () => String(await ev(`document.documentElement.dataset.lapinParts ?? ''`)).split(' ').filter(Boolean);
-  /** A File menu item clicked as a user does (a file input opens only on a real click). */
+  /** A File menu item clicked as a user does (a file input opens only on a real click). The File menu's Import, Export and
+   * Collaborate submenus (forum topic 257) are opened with it, so the item is on the page. */
   const fileItem = async (re) => {
     await key('Escape'); await key('Escape');
     await sleep(300);
-    for (let k = 0; k < 10 && !(await ev(`!![...document.querySelectorAll('[role=menuitem]')].find(x => ${re}.test(x.textContent))`)); k++) {
+    const has = () => ev(`!![...document.querySelectorAll('[role=menuitem]')].find(x => ${re}.test(x.textContent))`);
+    const centre = async (sel) => JSON.parse(await ev(`JSON.stringify(document.querySelector(${JSON.stringify(sel)})?.getBoundingClientRect() ?? null)`) ?? 'null');
+    for (let k = 0; k < 10 && !(await ev(`!!document.querySelector('[data-menu-sub]')`)) && !(await has()); k++) {
       await ev(`[...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'File')?.click()`);
       await sleep(300);
     }
+    // The item may be in a submenu: the pointer goes over each in turn (a hover opens it, leaving closes the one before).
+    if (!(await has())) {
+      const subs = JSON.parse(await ev(`JSON.stringify([...document.querySelectorAll('[data-menu-sub]')].map((x) => x.dataset.menuSub))`) ?? '[]');
+      for (const name of subs) {
+        const r = await centre(`[data-menu-sub="${name}"]`);
+        if (!r) continue;
+        await mouse('mouseMoved', r.x + r.width / 2, r.y + r.height / 2);
+        await sleep(250);
+        if (await has()) break;
+      }
+    }
     const item = JSON.parse(await ev(`JSON.stringify([...document.querySelectorAll('[role=menuitem]')].find(x => ${re}.test(x.textContent))?.getBoundingClientRect() ?? null)`) ?? 'null');
-    if (item) await click(item.x + item.width / 2, item.y + item.height / 2);
+    if (item) {
+      // Along the submenu's own row first, so the pointer never crosses another item of the File menu on its way.
+      await mouse('mouseMoved', item.x + 4, item.y + item.height / 2);
+      await click(item.x + item.width / 2, item.y + item.height / 2);
+    }
     return Boolean(item);
   };
   let chooser = null;
@@ -212,7 +230,7 @@ try {
     await ev(`(() => { window.showSaveFilePicker = undefined; setInterval(() => { document.querySelector('.ask-box[aria-label="Save as…"] .btn.primary')?.click(); }, 150); })()`);
     const MAGIC = { glb: (b) => b.readUInt32LE(0) === 0x46546c67, usdz: (b) => b.readUInt32LE(0) === 0x04034b50 && b.toString('utf8', 30, 40) === 'model.usda', dae: (b) => b.toString('utf8', 0, 200).includes('<COLLADA') };
     for (const format of ['glb', 'usdz', 'dae']) {
-      await ev(`[...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'File')?.click()`);
+      await ev(`(async () => { [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'File')?.click(); await new Promise((r) => setTimeout(r, 200)); for (const s of document.querySelectorAll('[data-menu-sub-of]:not([data-menu-sub-of="Open recent"]) > [data-menu-sub]')) { s.click(); await new Promise((r) => setTimeout(r, 100)); } })()`);
       await sleep(200);
       await ev(`[...document.querySelectorAll('[role=menuitem]')].find(x => /Export 3D/.test(x.textContent))?.click()`);
       await sleep(400);
@@ -235,7 +253,7 @@ try {
     }
     // File → Export IFC, Fragments or BOS…, IFC chosen as it is by default.
     if (!failed) {
-      await ev(`[...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'File')?.click()`);
+      await ev(`(async () => { [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'File')?.click(); await new Promise((r) => setTimeout(r, 200)); for (const s of document.querySelectorAll('[data-menu-sub-of]:not([data-menu-sub-of="Open recent"]) > [data-menu-sub]')) { s.click(); await new Promise((r) => setTimeout(r, 100)); } })()`);
       await sleep(200);
       await ev(`[...document.querySelectorAll('[role=menuitem]')].find(x => /Export IFC/.test(x.textContent))?.click()`);
       await sleep(600);
@@ -252,7 +270,7 @@ try {
     }
     // File → Lapin for the browser (.html)…: the page with its 3D model and the project after it (decision 482).
     if (!failed) {
-      await ev(`[...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'File')?.click()`);
+      await ev(`(async () => { [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'File')?.click(); await new Promise((r) => setTimeout(r, 200)); for (const s of document.querySelectorAll('[data-menu-sub-of]:not([data-menu-sub-of="Open recent"]) > [data-menu-sub]')) { s.click(); await new Promise((r) => setTimeout(r, 100)); } })()`);
       await sleep(200);
       await ev(`[...document.querySelectorAll('[role=menuitem]')].find(x => /Lapin for the browser/.test(x.textContent))?.click()`);
       let clicked = false;
@@ -272,7 +290,7 @@ try {
     }
     // A BIM Open Schema file: exported, then imported into a new project.
     if (!failed) {
-      await ev(`[...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'File')?.click()`);
+      await ev(`(async () => { [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'File')?.click(); await new Promise((r) => setTimeout(r, 200)); for (const s of document.querySelectorAll('[data-menu-sub-of]:not([data-menu-sub-of="Open recent"]) > [data-menu-sub]')) { s.click(); await new Promise((r) => setTimeout(r, 100)); } })()`);
       await sleep(200);
       await ev(`[...document.querySelectorAll('[role=menuitem]')].find(x => /Export IFC/.test(x.textContent))?.click()`);
       await sleep(600);
