@@ -1832,6 +1832,43 @@ export function Viewport3D() {
     renderer.domElement.addEventListener('pointerdown', onRightDown);
     renderer.domElement.addEventListener('contextmenu', onMenu);
 
+    // Direct Right-Click + WASD 3D fly-panning (docs/plan-ux-game-like.md, P7): Unreal/Twinmotion style without entering Walk mode.
+    let rmbHeld = false;
+    const flyKeys = new Set<string>();
+    let flyRaf = 0;
+    let flyLast = 0;
+    const flyTick = (now: number) => {
+      flyRaf = 0;
+      if (!rmbHeld || !flyKeys.size || walk) return;
+      const dt = Math.min(0.05, Math.max(0.004, (now - flyLast) / 1000));
+      flyLast = now;
+      const pose = useCamera.getState();
+      const wish = walkWish(pose.azimuth, flyKeys, flyKeys.has('ShiftLeft') || flyKeys.has('ShiftRight'));
+      const speed = Math.max(2, pose.distance * 0.45);
+      const scale = speed / 1.4;
+      const dx = wish.x * scale * dt, dy = wish.y * scale * dt, dz = wish.z * scale * dt;
+      cam.position.set(cam.position.x + dx, cam.position.y + dy, cam.position.z + dz);
+      controls.target.set(controls.target.x + dx, controls.target.y + dy, controls.target.z + dz);
+      controls.update();
+      invalidate.current();
+      flyRaf = requestAnimationFrame(flyTick);
+    };
+    const onRmbDown = (e: PointerEvent) => { if (e.button === 2 && !walk && usePrefs.getState().precisionTools) { rmbHeld = true; rightAt = { x: e.clientX, y: e.clientY }; } };
+    const onRmbUp = (e: PointerEvent) => { if (e.button === 2) { rmbHeld = false; flyKeys.clear(); cancelAnimationFrame(flyRaf); flyRaf = 0; } };
+    const onFlyKey = (e: KeyboardEvent) => {
+      if (!rmbHeld || walk || e.ctrlKey || e.metaKey || (e.target as HTMLElement | null)?.closest?.('input, select, textarea, [role="dialog"]')) return;
+      if (!WALK_KEYS.has(e.code) && e.code !== 'ShiftLeft' && e.code !== 'ShiftRight') return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (e.type === 'keyup') { flyKeys.delete(e.code); return; }
+      flyKeys.add(e.code);
+      if (!flyRaf) { flyLast = performance.now(); flyRaf = requestAnimationFrame(flyTick); }
+    };
+    renderer.domElement.addEventListener('pointerdown', onRmbDown);
+    window.addEventListener('pointerup', onRmbUp);
+    window.addEventListener('keydown', onFlyKey, true);
+    window.addEventListener('keyup', onFlyKey, true);
+
     // Selecting by a region (select3d.ts): with Select region on, a left drag draws it (Space: a lasso);
     // the right button turns the view, the middle one moves it.
     const buttons = () => {
@@ -1956,6 +1993,11 @@ export function Viewport3D() {
       cancelAnimationFrame(frame);
       clearTimeout(trailing);
       cancelAnimationFrame(flight);
+      cancelAnimationFrame(flyRaf);
+      renderer.domElement.removeEventListener('pointerdown', onRmbDown);
+      window.removeEventListener('pointerup', onRmbUp);
+      window.removeEventListener('keydown', onFlyKey, true);
+      window.removeEventListener('keyup', onFlyKey, true);
       unkeep();
       if (useCamera.getState().api === api) useCamera.setState({ api: null });
       unlisten();

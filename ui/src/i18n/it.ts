@@ -7013,6 +7013,7 @@ export const IT: Record<string, string> = {
   'Hold X in 3D to look through in X-ray': 'Tieni premuto X in 3D per guardare attraverso in raggi X',
   'Drag a field’s unit to change its value': 'Trascina l\'unità di un campo per cambiarne il valore',
   'Role cards on the start screen': 'Schede ruolo nella schermata iniziale',
+  'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight': 'Strumenti di precisione: pillola del cursore 3D, magneti a spaziatura uguale, suggerimenti animati degli strumenti, volo con clic destro + WASD',
   'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).': 'Prima la vista spaziale: strumenti rapidi 1–9 mobili in basso, barre laterali ripiegate, una barra multifunzione a discesa e gli extra Flow (Preferenze → Generale).',
   '1 model health issue: click to inspect': '1 problema di stato del modello: fai clic per ispezionare',
   '1 issue': '1 problema',
@@ -7042,6 +7043,11 @@ export const IT: Record<string, string> = {
   "LoadBearing in each element's Pset_…Common also where nothing says it, from the rule: a wall unless it is a partition, floors, roofs, columns, beams and footings; the elements whose Structural tick or LoadBearing property says it are written so either way": "LoadBearing nel Pset_…Common di ogni elemento anche dove nulla lo dice, secondo la regola: un muro salvo che sia un tramezzo, solai, tetti, pilastri, travi e fondazioni; gli elementi la cui spunta Strutturale o proprietà LoadBearing lo dice sono scritti così comunque",
   "Write derived LoadBearing": "Scrivi LoadBearing derivato",
   "The Structural tick (or Pset_WallCommon.LoadBearing) on the wall or its type": "La spunta Strutturale (o Pset_WallCommon.LoadBearing) sul muro o sul suo tipo",
+  // Game-like UX Phase 4 (docs/plan-ux-game-like.md).
+  'Click start → Click end or type length': 'Clic inizio → Clic fine o digita la lunghezza',
+  'Click corner → Opposite corner or W,H': 'Clic angolo → Angolo opposto o L,A',
+  'Click a snapped point on the plan or 3D': 'Clic su un punto agganciato in pianta o 3D',
+  'Click to run on model or selection': 'Clic per eseguire su modello o selezione',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

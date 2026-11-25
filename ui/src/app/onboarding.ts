@@ -136,6 +136,30 @@ export function roleStepsFor(workspace: WorkspaceId): MissionStepDef[] {
 
 export const allStepsFor = (workspace: WorkspaceId): MissionStepDef[] => [...roleStepsFor(workspace), ...BASICS_STEPS];
 
+export interface MissionGhostTarget {
+  id: string;
+  kind: 'line' | 'point';
+  a: { x: number; y: number };
+  b?: { x: number; y: number };
+  label: string;
+}
+
+/** World-space dashed Ghost Targets shown in the viewport during a Guided Sandbox mission. */
+export function missionTargets(workspace: WorkspaceId): MissionGhostTarget[] {
+  if (workspace === 'structure') {
+    return [
+      { id: 'target.col4', kind: 'point', a: { x: 6, y: 5 }, label: 'Column 4' },
+      { id: 'target.beam1', kind: 'line', a: { x: 0, y: 0 }, b: { x: 6, y: 0 }, label: '6000 mm' },
+    ];
+  }
+  if (workspace === 'architecture' || workspace === 'all' || workspace === 'mine' || workspace === 'mep') {
+    return [
+      { id: 'target.wall4', kind: 'line', a: { x: 6, y: 5 }, b: { x: 0, y: 5 }, label: '6000 mm' },
+    ];
+  }
+  return [];
+}
+
 const DONE_KEY = 'lapin.onboarding.done';
 const DISMISSED_KEY = 'lapin.onboarding.dismissed';
 

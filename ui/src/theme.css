@@ -3504,3 +3504,40 @@ body.panel-dragging, body.panel-dragging * { cursor: grabbing !important; user-s
 /* Build Replay floating timeline bar. */
 .replay-bar { position: fixed; left: 50%; bottom: 48px; transform: translateX(-50%); z-index: 45; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid var(--rule-strong); border-radius: 999px; background: var(--hud); backdrop-filter: blur(6px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16); }
 .replay-bar input[type=range] { width: 180px; accent-color: var(--accent); }
+
+/* Phase 4 game-like UX (docs/plan-ux-game-like.md): Unified PrecisionPill, Hold-to-Drag Ring, Onboarding Ghost Targets, Smart Magnets (= | =), and Rich Animated Ribbon Tooltips. */
+.precision-pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 6px; border: 1px solid var(--rule-strong); border-radius: 4px; background: var(--hud); backdrop-filter: blur(4px); box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12); }
+.precision-pill input { width: 76px; border: 0; background: transparent; padding: 1px 2px; font: 600 11.5px var(--mono); color: var(--ink); outline: none; }
+.precision-pill input.bad { color: var(--err); }
+.pill-badge { font: 700 9.5px var(--mono); letter-spacing: 0.04em; text-transform: uppercase; padding: 1px 4px; border-radius: 2px; background: var(--wash); color: var(--ink-muted); }
+.pill-badge.green { color: var(--trace-snap); }
+.pill-badge.blue { color: var(--trace-locked); }
+.pill-badge.red { color: var(--err); }
+.pill-preview { font: 600 10.5px var(--mono); color: var(--accent); white-space: nowrap; }
+
+/* 350 ms Hold-to-Drag progress ring in Move3D. */
+.hold-ring-overlay { pointer-events: none; z-index: 9; }
+.hold-ring-track { fill: none; stroke: var(--rule-strong); stroke-width: 2.5; opacity: 0.45; }
+.hold-ring-progress { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 88; stroke-dashoffset: 88; animation: hold-ring-fill 0.35s linear forwards; }
+@keyframes hold-ring-fill { to { stroke-dashoffset: 0; } }
+
+/* Sandbox Onboarding Ghost Targets & Smart Magnets (= | =) in PlanView. */
+.mission-ghost line, .mission-ghost circle { fill: var(--accent); fill-opacity: 0.08; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 6 4; }
+.mission-ghost text { fill: var(--accent); font: 700 11px var(--mono); paint-order: stroke; stroke: var(--bg); stroke-width: 3px; }
+.smart-magnet line { stroke: var(--trace-snap); stroke-width: 1.25; stroke-dasharray: 3 3; }
+.smart-magnet text { fill: var(--trace-snap); font: 700 11px var(--mono); paint-order: stroke; stroke: var(--bg); stroke-width: 3px; }
+
+/* Rich Animated Ribbon Tooltip (600 ms hover, inline 3s looping SVG). */
+.rich-tooltip { position: fixed; z-index: 200; width: 215px; display: flex; flex-direction: column; gap: 5px; padding: 8px 10px; border: 1px solid var(--rule-strong); border-radius: 5px; background: var(--panel); color: var(--ink); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16); pointer-events: none; }
+.rich-tip-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
+.rich-tip-svg { width: 100%; height: 40px; border-radius: 3px; background: var(--bg); border: 1px solid var(--rule); }
+.rich-tip-guide { stroke: var(--rule-strong); stroke-width: 1; stroke-dasharray: 3 3; }
+.rich-tip-draw { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 220; stroke-dashoffset: 220; animation: rich-tip-loop 3s ease-in-out infinite; }
+.rich-tip-pt1 { fill: var(--trace-snap); }
+.rich-tip-pt2 { fill: var(--accent); }
+.rich-tip-pulse { fill: var(--accent); fill-opacity: 0.15; stroke: var(--accent); stroke-width: 1.5; animation: rich-tip-pulse 1.5s ease-out infinite; }
+@keyframes rich-tip-loop { 0%, 15% { stroke-dashoffset: 220; } 65%, 90% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 220; } }
+@keyframes rich-tip-pulse { 0% { r: 4; opacity: 0.9; } 100% { r: 14; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .hold-ring-progress, .rich-tip-draw, .rich-tip-pulse { animation: none !important; stroke-dashoffset: 0; }
+}

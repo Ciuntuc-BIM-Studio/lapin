@@ -7047,6 +7047,7 @@ export const DA: Record<string, string> = {
   'Hold X in 3D to look through in X-ray': 'Hold X nede i 3D for at kigge igennem i røntgen',
   'Drag a field’s unit to change its value': 'Træk i et felts enhed for at ændre dets værdi',
   'Role cards on the start screen': 'Rollekort på startskærmen',
+  'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight': 'Præcisionsværktøjer: 3D-markørpille, ligeafstandsmagneter, animerede værktøjstips, højreklik + WASD-flyvning',
   'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).': 'Rumlig visning først: svævende hurtigværktøjer 1–9 nederst, foldede sidepaneler, et rullemenu-bånd og Flow-ekstra (Præferencer → Generelt).',
   '1 model health issue: click to inspect': '1 modelsundhedsproblem: klik for at undersøge',
   '1 issue': '1 problem',
@@ -7076,6 +7077,11 @@ export const DA: Record<string, string> = {
   "LoadBearing in each element's Pset_…Common also where nothing says it, from the rule: a wall unless it is a partition, floors, roofs, columns, beams and footings; the elements whose Structural tick or LoadBearing property says it are written so either way": "LoadBearing i hvert elements Pset_…Common også hvor intet angiver det, efter reglen: en væg medmindre den er en skillevæg, dæk, tage, søjler, bjælker og fundamenter; elementer, hvis Bærende-flueben eller egenskab LoadBearing angiver det, skrives sådan under alle omstændigheder",
   "Write derived LoadBearing": "Skriv afledt LoadBearing",
   "The Structural tick (or Pset_WallCommon.LoadBearing) on the wall or its type": "Bærende-fluebenet (eller Pset_WallCommon.LoadBearing) på væggen eller dens type",
+  // Game-like UX Phase 4 (docs/plan-ux-game-like.md).
+  'Click start → Click end or type length': 'Klik start → Klik slut eller indtast længde',
+  'Click corner → Opposite corner or W,H': 'Klik hjørne → Modsatte hjørne eller B,H',
+  'Click a snapped point on the plan or 3D': 'Klik på et snap-punkt i plan eller 3D',
+  'Click to run on model or selection': 'Klik for at køre på model eller markering',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

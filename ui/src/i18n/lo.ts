@@ -7106,6 +7106,7 @@ export const LO: Record<string, string> = {
   'Hold X in 3D to look through in X-ray': 'ກົດ X ຄ້າງໄວ້ໃນ 3D ເພື່ອເບິ່ງທະລຸແບບ X-ray',
   'Drag a field’s unit to change its value': 'ລາກໜ່ວຍຂອງຊ່ອງເພື່ອປ່ຽນຄ່າ',
   'Role cards on the start screen': 'ບັດບົດບາດໃນໜ້າຈໍເລີ່ມຕົ້ນ',
+  'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight': 'ເຄື່ອງມືຄວາມແມ່ນຍຳ: ແຄບຊູນຕົວຊີ້ 3D, ແມ່ເຫຼັກໄລຍະເທົ່າກັນ, ຄຳແນະນຳເຄື່ອງມືແບບເຄື່ອນໄຫວ, ບິນດ້ວຍຄລິກຂວາ + WASD',
   'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).': 'ມຸມມອງເຊີງພື້ນທີ່ກ່ອນ: ເຄື່ອງມືດ່ວນ 1–9 ແບບລອຍຢູ່ທາງລຸ່ມ, ແຖບຂ້າງທີ່ພັບເກັບ, ຣິບບອນແບບດຣອບດາວ ແລະ ສ່ວນເສີມຂອງ Flow (ການຕັ້ງຄ່າ → ທົ່ວໄປ).',
   '1 model health issue: click to inspect': 'ພົບບັນຫາສຸຂະພາບໂມເດວ 1 ລາຍການ: ຄລິກເພື່ອກວດສອບ',
   '1 issue': '1 ບັນຫາ',
@@ -7135,6 +7136,11 @@ export const LO: Record<string, string> = {
   "LoadBearing in each element's Pset_…Common also where nothing says it, from the rule: a wall unless it is a partition, floors, roofs, columns, beams and footings; the elements whose Structural tick or LoadBearing property says it are written so either way": "LoadBearing ໃນ Pset_…Common ຂອງແຕ່ລະອົງປະກອບ ເຖິງບ່ອນທີ່ບໍ່ມີຫຍັງບອກ, ຕາມກົດເກນ: ຝາ ເວັ້ນແຕ່ເປັນຝາກັ້ນ, ພື້ນ, ຫຼັງຄາ, ເສົາ, ຄານ ແລະ ຮາກຖານ; ອົງປະກອບທີ່ເຄື່ອງໝາຍ ໂຄງສ້າງ ຫຼື ຄຸນສົມບັດ LoadBearing ບອກ ຈະຖືກຂຽນແບບນັ້ນຢູ່ແລ້ວ",
   "Write derived LoadBearing": "ຂຽນ LoadBearing ທີ່ອະນຸມານ",
   "The Structural tick (or Pset_WallCommon.LoadBearing) on the wall or its type": "ເຄື່ອງໝາຍ ໂຄງສ້າງ (ຫຼື Pset_WallCommon.LoadBearing) ຢູ່ຝາ ຫຼື ປະເພດຂອງມັນ",
+  // Game-like UX Phase 4 (docs/plan-ux-game-like.md).
+  'Click start → Click end or type length': 'ຄລິກຈຸດເລີ່ມ → ຄລິກຈຸດສິ້ນສຸດ ຫຼື ພິມຄວາມຍາວ',
+  'Click corner → Opposite corner or W,H': 'ຄລິກມຸມ → ມຸມກົງກັນຂ້າມ ຫຼື ກວ້າງ,ສູງ',
+  'Click a snapped point on the plan or 3D': 'ຄລິກຈຸດ snap ໃນແຜນຜັງ ຫຼື 3D',
+  'Click to run on model or selection': 'ຄລິກເພື່ອໃຊ້ກັບໂມເດວ ຫຼື ສິ່ງທີ່ເລືອກ',
 };
 
 /** Phrases with a number or a name in them. */
