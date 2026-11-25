@@ -21,13 +21,15 @@ import {
   BUILTIN_LOAD_SETS, LOAD_SET_FIELDS, addLoadSet, addSnowZone, languageFrom, loadSetProblem, removeLoadSet, removeSafetyClass, removeSnowZone, setLoadSet, setPsi,
   setSafetyClass, setSnowZone, sourcesFrom, type LoadSet, type LoadsSection,
 } from './rulesModel';
+import { AccessibilityEditor, ClimateEditor } from './ClimateAccessEditors';
+import type { AccessibilitySection, ClimateSection } from './rulesModel';
 import {
   BUILTIN_SETS, STAIR_FIELDS, addGrade, removeGrade, renameGrade, addStairSet, addStep, diametersText, findingsByModule, parseDiameters, removeStairSet, removeStep, removeSteel, addSteel,
   setPitch, setStairValue, setStep, stairProblem, stepsProblem, type Finding, type RulePack, type RulesList, type Section, type Step,
 } from './rulesModel';
 
-const SECTION_LABELS: Record<string, string> = { stairs: 'Stairs', rebar: 'Reinforcement', roofs: 'Roofs', bolts: 'Bolts', loads: 'Loads' };
-const EDITED = ['stairs', 'rebar', 'roofs', 'bolts', 'loads'];
+const SECTION_LABELS: Record<string, string> = { stairs: 'Stairs', rebar: 'Reinforcement', roofs: 'Roofs', bolts: 'Bolts', loads: 'Loads', climate: 'Climate', accessibility: 'Accessibility' };
+const EDITED = ['stairs', 'rebar', 'roofs', 'bolts', 'loads', 'climate', 'accessibility'];
 
 export function RulesDialog() {
   const version = useSession((s) => s.version);
@@ -141,6 +143,8 @@ export function RulesDialog() {
             {section === 'roofs' && pack.sections.roofs && <RoofsEditor values={pack.sections.roofs} readOnly={readOnly} onChange={(v) => void update('roofs', v)} />}
             {section === 'bolts' && pack.sections.bolts && <BoltsEditor values={pack.sections.bolts} readOnly={readOnly} onChange={(v) => void update('bolts', v)} setProblem={setProblem} />}
             {section === 'loads' && pack.sections.loads && <LoadsEditor values={pack.sections.loads as unknown as LoadsSection} readOnly={readOnly} onChange={(v) => void update('loads', v as unknown as Section)} setProblem={setProblem} />}
+            {section === 'climate' && pack.sections.climate && <ClimateEditor values={pack.sections.climate as unknown as ClimateSection} readOnly={readOnly} onChange={(v) => void update('climate', v as unknown as Section)} setProblem={setProblem} />}
+            {section === 'accessibility' && pack.sections.accessibility && <AccessibilityEditor values={pack.sections.accessibility as unknown as AccessibilitySection} readOnly={readOnly} onChange={(v) => void update('accessibility', v as unknown as Section)} setProblem={setProblem} />}
             {!EDITED.includes(section) && <p className="muted small">This section has no table here: it comes and goes with the pack's file.</p>}
           </main>
         </div>

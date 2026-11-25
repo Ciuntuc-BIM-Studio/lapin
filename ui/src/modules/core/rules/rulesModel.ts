@@ -245,3 +245,137 @@ export function loadSetProblem(set: LoadSet): string | null {
   if (psis.some((p) => [p['0'], p['1'], p['2']].some((v) => !(v >= 0 && v <= 1)))) return 'ψ0, ψ1 and ψ2 are between 0 and 1';
   return null;
 }
+
+// ─── Climate (docs/plan-national-packs.md N2) ────────────────────────────────
+
+/** A region of a pack's climate list: its name, sk (kN/m²), vb,0 (m/s) or qb (kN/m²), a note. */
+export interface Region { name: string; sk?: number; vb0?: number; qb?: number; note?: string }
+export interface ClimateSection { regionLabel: string; regions: Region[] }
+
+/** qb from vb,0 as the engine works it out: ½ · 1.25 kg/m³ · vb,0², in kN/m² (four decimals). */
+export const qbFromVb0 = (vb0: number): number => Math.round(0.5 * 1.25 * vb0 * vb0 / 1000 * 1e4) / 1e4;
+
+/** What the engine would refuse in a region, in words; null when it reads. */
+export function regionProblem(r: Region): string | null {
+  const n = r.name.trim();
+  if (!n || n.length > 80) return "a region's name is 1 to 80 characters";
+  if (r.sk != null && !(r.sk >= 0 && r.sk <= 20)) return `${n}: sk is between 0 and 20 kN/m²`;
+  if (r.vb0 != null && !(r.vb0 >= 0 && r.vb0 <= 60)) return `${n}: vb,0 is between 0 and 60 m/s`;
+  if (r.qb != null && !(r.qb >= 0 && r.qb <= 10)) return `${n}: qb is between 0 and 10 kN/m²`;
+  if (r.vb0 != null && r.qb != null) return `${n}: give vb,0 or qb, not both`;
+  if (r.sk == null && r.vb0 == null && r.qb == null) return `${n}: a region gives sk, vb,0 or qb`;
+  return null;
+}
+
+export function regionsProblem(c: ClimateSection): string | null {
+  const seen = new Set<string>();
+  for (const r of c.regions) {
+    const p = regionProblem(r);
+    if (p) return p;
+    const k = r.name.trim().toLowerCase();
+    if (seen.has(k)) return `the region ${r.name.trim()} is listed twice`;
+    seen.add(k);
+  }
+  return c.regions.length > 500 ? 'a pack lists at most 500 regions' : null;
+}
+
+/** A region changed in place; a value set to null is taken off. */
+export function setRegion(c: ClimateSection, at: number, patch: { name?: string; sk?: number | null; vb0?: number | null; qb?: number | null; note?: string | null }): ClimateSection {
+  return {
+    ...c,
+    regions: c.regions.map((r, i) => {
+      if (i !== at) return r;
+      const next: Record<string, unknown> = { ...r, ...patch };
+      for (const k of Object.keys(next)) if (next[k] == null || next[k] === '') delete next[k];
+      return next as unknown as Region;
+    }),
+  };
+}
+
+/** A region added at the end (its values empty until typed); null when the name is empty, too long or taken. */
+export function addRegion(c: ClimateSection, name: string): ClimateSection | null {
+  const n = name.trim();
+  if (!n || n.length > 80 || c.regions.some((r) => r.name.toLowerCase() === n.toLowerCase())) return null;
+  return { ...c, regions: [...c.regions, { name: n, sk: 0 }] };
+}
+
+export function removeRegion(c: ClimateSection, at: number): ClimateSection {
+  return { ...c, regions: c.regions.filter((_, i) => i !== at) };
+}
+
+const numberIn = (t: string | undefined): number | undefined => {
+  const s = (t ?? '').trim().replace(',', '.');
+  if (s === '') return undefined;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : NaN;
+};
+
+/**
+ * Regions pasted from a table, one a line: name, sk, vb,0 (and a note), the columns split by tabs or semicolons (a decimal comma
+ * reads). A first line whose sk does not read is a header, left out. The regions, or the first line that does not read.
+ */
+export function parseRegions(text: string): { regions: Region[]; problem: string | null } {
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0);
+  const regions: Region[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const cells = lines[i]!.split(/\t|;/).map((c) => c.trim());
+    const [name, skText, vbText, ...rest] = cells;
+    const sk = numberIn(skText);
+    const vb0 = numberIn(vbText);
+    if (i === 0 && (Number.isNaN(sk) || Number.isNaN(vb0))) continue;
+    if (Number.isNaN(sk) || Number.isNaN(vb0)) return { regions, problem: `line ${i + 1} does not read: name; sk; vb,0` };
+    const r: Region = { name: (name ?? '').trim() };
+    if (sk != null) r.sk = sk;
+    if (vb0 != null) r.vb0 = vb0;
+    const note = rest.join(' ').trim();
+    if (note) r.note = note;
+    const p = regionProblem(r);
+    if (p) return { regions, problem: `line ${i + 1}: ${p}` };
+    regions.push(r);
+  }
+  return { regions, problem: null };
+}
+
+/** Regions pasted into a list: one of a name already there replaced, a new one added at the end. */
+export function mergeRegions(c: ClimateSection, regions: Region[]): ClimateSection {
+  const next = [...c.regions];
+  for (const r of regions) {
+    const at = next.findIndex((x) => x.name.toLowerCase() === r.name.toLowerCase());
+    if (at >= 0) next[at] = r; else next.push(r);
+  }
+  return { ...c, regions: next };
+}
+
+// ─── Accessibility (docs/plan-national-packs.md N3) ──────────────────────────
+
+/** The limits a pack checks (null: not checked), whether ramps are checked against the stairs' set ramp, the rooms' functions. */
+export interface AccessibilitySection {
+  doorClearWidth: number | null; corridorWidth: number | null; turningDiameter: number | null; checkRamps: boolean;
+  corridorFunctions: string[]; turningFunctions: string[];
+}
+
+/** Each limit, its label and its range in metres (as the engine checks it). */
+export const ACCESS_LIMITS: { key: 'doorClearWidth' | 'corridorWidth' | 'turningDiameter'; label: string; min: number; max: number }[] = [
+  { key: 'doorClearWidth', label: "A door's least clear width", min: 0.5, max: 2.5 },
+  { key: 'corridorWidth', label: "A corridor's least width", min: 0.6, max: 5 },
+  { key: 'turningDiameter', label: 'Turning circle, diameter', min: 1, max: 3 },
+];
+
+/** A limit set (null: not checked); null when it is out of its range. */
+export function setAccessLimit(a: AccessibilitySection, key: typeof ACCESS_LIMITS[number]['key'], metres: number | null): AccessibilitySection | null {
+  const f = ACCESS_LIMITS.find((x) => x.key === key)!;
+  if (metres != null && !(metres >= f.min && metres <= f.max)) return null;
+  return { ...a, [key]: metres };
+}
+
+/** Room functions typed as a list (Bath, WC; Bedroom): trimmed, each once (whatever its case), at most 30. */
+export function functionsFrom(text: string): string[] {
+  const out: string[] = [];
+  for (const t of text.split(/[,;\n]+/).map((x) => x.trim()).filter((x) => x.length > 0 && x.length <= 60))
+    if (!out.some((o) => o.toLowerCase() === t.toLowerCase())) out.push(t);
+  return out.slice(0, 30);
+}
+
+/** Whether a pack checks anything of accessibility. */
+export const checksAccessibility = (a: AccessibilitySection): boolean =>
+  a.doorClearWidth != null || a.corridorWidth != null || a.turningDiameter != null || a.checkRamps;
