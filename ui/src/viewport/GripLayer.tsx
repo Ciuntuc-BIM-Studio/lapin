@@ -26,7 +26,7 @@ import { offsetAll, offsetDistance, offsetOutline } from './outlineOffset';
 import { outlinePoints } from './contour';
 import { gripsOf, gripSnapped, referencesOf } from '../platform/modules';
 import { throughInset, viaOf } from './insetMap';
-import { dropGrips, groupGrips, movers, runSteps, setHotRemove, useGripRev, type GripGroup } from './grips';
+import { dropGrips, groupGrips, movers, nearestGroup, runSteps, setHotRemove, useGripRev, type GripGroup } from './grips';
 import { edgeOfGrip, nearestOnLine } from './gripKit';
 import { askLength } from '../shell/AskBox';
 import { openContextMenu, type MenuItem } from '../shell/ContextMenu';
@@ -216,14 +216,10 @@ export function useGripEditor(o: GripEditorOptions) {
   }, [o.svg]);
   const hit = useCallback((e: { clientX: number; clientY: number }) => {
     const p = local(e);
-    let best: GripGroup | null = null, bd = 12;
-    for (const g of groups) {
+    return nearestGroup(groups, (g) => {
       const q = screenOf(g);
-      const limit = g.members[0].kind === 'slope' ? 12 : 8;
-      const d = Math.hypot(q.x - p.x, q.y - p.y);
-      if (d < limit && d < bd) { bd = d; best = g; }
-    }
-    return best;
+      return { d: Math.hypot(q.x - p.x, q.y - p.y), limit: g.members[0].kind === 'slope' ? 12 : 8 };
+    }, 12);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groups, local, o]);
 
