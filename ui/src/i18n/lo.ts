@@ -7100,6 +7100,7 @@ export const LO: Record<string, string> = {
   'Hold X in 3D to look through in X-ray': 'ກົດ X ຄ້າງໄວ້ໃນ 3D ເພື່ອເບິ່ງທະລຸແບບ X-ray',
   'Drag a field’s unit to change its value': 'ລາກໜ່ວຍຂອງຊ່ອງເພື່ອປ່ຽນຄ່າ',
   'Role cards on the start screen': 'ບັດບົດບາດໃນໜ້າຈໍເລີ່ມຕົ້ນ',
+  'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight': 'ເຄື່ອງມືຄວາມແມ່ນຍຳ: ແຄບຊູນຕົວຊີ້ 3D, ແມ່ເຫຼັກໄລຍະເທົ່າກັນ, ຄຳແນະນຳເຄື່ອງມືແບບເຄື່ອນໄຫວ, ບິນດ້ວຍຄລິກຂວາ + WASD',
   'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).': 'ມຸມມອງເຊີງພື້ນທີ່ກ່ອນ: ເຄື່ອງມືດ່ວນ 1–9 ແບບລອຍຢູ່ທາງລຸ່ມ, ແຖບຂ້າງທີ່ພັບເກັບ, ຣິບບອນແບບດຣອບດາວ ແລະ ສ່ວນເສີມຂອງ Flow (ການຕັ້ງຄ່າ → ທົ່ວໄປ).',
   '1 model health issue: click to inspect': 'ພົບບັນຫາສຸຂະພາບໂມເດວ 1 ລາຍການ: ຄລິກເພື່ອກວດສອບ',
   '1 issue': '1 ບັນຫາ',

@@ -13163,6 +13163,7 @@ export const SV: Record<string, string> = {
   'Hold X in 3D to look through in X-ray': 'Håll ned X i 3D för att se igenom i röntgen',
   'Drag a field’s unit to change its value': 'Dra i ett fälts enhet för att ändra dess värde',
   'Role cards on the start screen': 'Rollkort på startskärmen',
+  'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight': 'Precisionsverktyg: 3D-markörpiller, magneter för lika avstånd, animerade verktygstips, högerklick + WASD-flygning',
   'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).': 'Rumslig vy först: svävande snabbverktyg 1–9 längst ned, hopfällda sidopaneler, ett rullgardinsband och Flow-extrafunktionerna (Inställningar → Allmänt).',
   '1 model health issue: click to inspect': '1 modellhälsoproblem: klicka för att granska',
   '1 issue': '1 problem',

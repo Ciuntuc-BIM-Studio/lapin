@@ -1128,11 +1128,12 @@ export function PlanView() {
   const obOpen = useOnboarding((s) => s.open && s.sandbox);
   const workspace = useInterface((s) => s.workspace);
   const ghostTargets = obOpen ? missionTargets(workspace) : [];
+  const precisionTools = usePrefs((p) => p.precisionTools);
   const magnets = useMemo(() => {
-    if (!hover || !tool?.gesture || !storey) return [];
+    if (!precisionTools || !hover || !tool?.gesture || !storey) return [];
     const anchors = storeyAnchorPoints(nodes.values(), storey.id);
     return equalSpacingMagnets(hover.point, anchors);
-  }, [hover, tool?.gesture, storey, nodes]);
+  }, [precisionTools, hover, tool?.gesture, storey, nodes]);
 
   return (
     <div className="view-pane">

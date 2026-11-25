@@ -7004,6 +7004,7 @@ export const DE: Record<string, string> = {
   'Hold X in 3D to look through in X-ray': 'X in 3D gedrückt halten, um im Röntgenmodus hindurchzusehen',
   'Drag a field’s unit to change its value': 'Die Einheit eines Feldes ziehen, um seinen Wert zu ändern',
   'Role cards on the start screen': 'Rollenkarten auf dem Startbildschirm',
+  'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight': 'Präzisionswerkzeuge: 3D-Cursor-Pille, Magnete für gleiche Abstände, animierte Werkzeugtipps, Rechtsklick + WASD-Flug',
   'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).': 'Zuerst die räumliche Ansicht: schwebende Schnellwerkzeuge 1–9 unten, eingeklappte Seitenleisten, ein Dropdown-Ribbon und die Flow-Extras (Einstellungen → Allgemein).',
   '1 model health issue: click to inspect': '1 Modellproblem: zum Prüfen klicken',
   '1 issue': '1 Problem',

@@ -7041,6 +7041,7 @@ export const DA: Record<string, string> = {
   'Hold X in 3D to look through in X-ray': 'Hold X nede i 3D for at kigge igennem i røntgen',
   'Drag a field’s unit to change its value': 'Træk i et felts enhed for at ændre dets værdi',
   'Role cards on the start screen': 'Rollekort på startskærmen',
+  'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight': 'Præcisionsværktøjer: 3D-markørpille, ligeafstandsmagneter, animerede værktøjstips, højreklik + WASD-flyvning',
   'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).': 'Rumlig visning først: svævende hurtigværktøjer 1–9 nederst, foldede sidepaneler, et rullemenu-bånd og Flow-ekstra (Præferencer → Generelt).',
   '1 model health issue: click to inspect': '1 modelsundhedsproblem: klik for at undersøge',
   '1 issue': '1 problem',

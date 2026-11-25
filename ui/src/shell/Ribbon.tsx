@@ -172,7 +172,7 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
   const [tip, setTip] = useState<{ tool: ToolDef; shortcut?: string; x: number; y: number } | null>(null);
   const tipTimer = useRef(0);
   useEffect(() => () => clearTimeout(tipTimer.current), []);
-  const tipProps = (tl: ToolDef, shortcut?: string) => ({
+  const tipProps = (tl: ToolDef, shortcut?: string) => !usePrefs.getState().precisionTools ? {} : ({
     onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
       clearTimeout(tipTimer.current);
       const r = e.currentTarget.getBoundingClientRect();

@@ -1853,7 +1853,7 @@ export function Viewport3D() {
       invalidate.current();
       flyRaf = requestAnimationFrame(flyTick);
     };
-    const onRmbDown = (e: PointerEvent) => { if (e.button === 2 && !walk) { rmbHeld = true; rightAt = { x: e.clientX, y: e.clientY }; } };
+    const onRmbDown = (e: PointerEvent) => { if (e.button === 2 && !walk && usePrefs.getState().precisionTools) { rmbHeld = true; rightAt = { x: e.clientX, y: e.clientY }; } };
     const onRmbUp = (e: PointerEvent) => { if (e.button === 2) { rmbHeld = false; flyKeys.clear(); cancelAnimationFrame(flyRaf); flyRaf = 0; } };
     const onFlyKey = (e: KeyboardEvent) => {
       if (!rmbHeld || walk || e.ctrlKey || e.metaKey || (e.target as HTMLElement | null)?.closest?.('input, select, textarea, [role="dialog"]')) return;

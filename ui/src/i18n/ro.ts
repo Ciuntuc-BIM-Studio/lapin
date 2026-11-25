@@ -7000,6 +7000,7 @@ export const RO: Record<string, string> = {
   'Hold X in 3D to look through in X-ray': 'Ține apăsat X în 3D ca să privești prin obiecte în raze X',
   'Drag a field’s unit to change its value': 'Trage unitatea unui câmp ca să-i schimbi valoarea',
   'Role cards on the start screen': 'Cărți de rol pe ecranul de start',
+  'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight': 'Unelte de precizie: pastila cursorului 3D, magneți de distanțe egale, indicii animate ale uneltelor, zbor cu clic dreapta + WASD',
   'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).': 'Vederea spațială mai întâi: unelte rapide 1–9 plutitoare jos, bare laterale pliate, o panglică derulantă și extra Flow (Preferințe → General).',
   '1 model health issue: click to inspect': '1 problemă de stare a modelului: dă clic pentru a inspecta',
   '1 issue': '1 problemă',

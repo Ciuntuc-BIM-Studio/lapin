@@ -6,6 +6,7 @@
  */
 
 import type { RefObject } from 'react';
+import { usePrefs } from '../app/prefs';
 import { formatLength, parseLength } from './liveInput';
 
 /** Evaluates simple arithmetic expressions (+, -, *, /) for live preview before Enter. */
@@ -64,10 +65,11 @@ export function PrecisionPill({
   onEnter: () => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }) {
-  const preview = !bad ? evalMathPreview(text) : null;
+  const on = usePrefs((p) => p.precisionTools);
+  const preview = on && !bad ? evalMathPreview(text) : null;
   return (
-    <div className="axis-drag-value precision-pill" style={{ left: x, top: y }} {...dataContainerAttr}>
-      {badge && <span className={`pill-badge ${badgeColor ?? ''}`} style={badgeColor?.startsWith('#') || badgeColor?.startsWith('var') ? { color: badgeColor } : undefined}>{badge}</span>}
+    <div className={on ? 'axis-drag-value precision-pill' : 'axis-drag-value'} style={{ left: x, top: y }} {...dataContainerAttr}>
+      {on && badge && <span className={`pill-badge ${badgeColor ?? ''}`} style={badgeColor?.startsWith('#') || badgeColor?.startsWith('var') ? { color: badgeColor } : undefined}>{badge}</span>}
       <input
         ref={inputRef}
         value={text}

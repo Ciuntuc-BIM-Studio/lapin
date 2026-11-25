@@ -13163,6 +13163,7 @@ export const TH: Record<string, string> = {
   'Hold X in 3D to look through in X-ray': 'กด X ค้างใน 3D เพื่อมองทะลุแบบ X-ray',
   'Drag a field’s unit to change its value': 'ลากหน่วยของช่องเพื่อเปลี่ยนค่า',
   'Role cards on the start screen': 'การ์ดบทบาทบนหน้าจอเริ่มต้น',
+  'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight': 'เครื่องมือความแม่นยำ: แคปซูลเคอร์เซอร์ 3D, แม่เหล็กระยะเท่ากัน, คำแนะนำเครื่องมือแบบเคลื่อนไหว, บินด้วยคลิกขวา + WASD',
   'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).': 'มุมมองเชิงพื้นที่เป็นหลัก: เครื่องมือด่วน 1–9 แบบลอยที่ด้านล่าง แถบด้านข้างที่พับเก็บ ริบบอนแบบดรอปดาวน์ และส่วนเสริมของ Flow (ค่ากำหนด → ทั่วไป).',
   '1 model health issue: click to inspect': 'พบปัญหาสุขภาพแบบจำลอง 1 รายการ: คลิกเพื่อตรวจสอบ',
   '1 issue': '1 ปัญหา',

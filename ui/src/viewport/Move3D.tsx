@@ -15,6 +15,7 @@ import { keyIsForField } from './overlayKeys';
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { X } from 'lucide-react';
+import { usePrefs } from '../app/prefs';
 import { PrecisionPill } from './PrecisionPill';
 import { notify, useUi } from '../app/store';
 import { useDisplay } from '../app/display';
@@ -236,7 +237,7 @@ export function Move3D({ camera, canvas, scene, invalidate }: ViewRefs & { inval
       // The press goes on to the orbit (and to the click that picks); only the hold makes it a move's.
       press = { x: e.clientX, y: e.clientY, id: hit.nodeId, pointer: e.pointerId, held: false };
       const rect = canvas.current?.getBoundingClientRect();
-      if (rect) setHoldRing({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+      if (rect && usePrefs.getState().precisionTools) setHoldRing({ x: e.clientX - rect.left, y: e.clientY - rect.top });
       timer = window.setTimeout(hold, HOLD_MS);
     };
     const onMove = (e: PointerEvent) => {

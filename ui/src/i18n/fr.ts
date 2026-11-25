@@ -7008,6 +7008,7 @@ export const FR: Record<string, string> = {
   'Hold X in 3D to look through in X-ray': 'Maintenez X en 3D pour voir à travers en rayons X',
   'Drag a field’s unit to change its value': 'Faites glisser l’unité d’un champ pour changer sa valeur',
   'Role cards on the start screen': 'Cartes de rôle sur l’écran d’accueil',
+  'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight': 'Outils de précision : pastille du curseur 3D, aimants d’espacement égal, info-bulles animées, vol par clic droit + WASD',
   'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).': 'Vue spatiale d’abord : outils rapides 1–9 flottants en bas, barres latérales repliées, un ruban déroulant et les extras Flow (Préférences → Général).',
   '1 model health issue: click to inspect': '1 problème d’état du modèle : cliquez pour inspecter',
   '1 issue': '1 problème',

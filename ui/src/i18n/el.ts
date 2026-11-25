@@ -13165,6 +13165,7 @@ export const EL: Record<string, string> = {
   'Hold X in 3D to look through in X-ray': 'Κρατήστε το X σε 3D για να βλέπετε διαμέσου με ακτίνες Χ',
   'Drag a field’s unit to change its value': 'Σύρετε τη μονάδα ενός πεδίου για να αλλάξετε την τιμή του',
   'Role cards on the start screen': 'Κάρτες ρόλων στην αρχική οθόνη',
+  'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight': 'Εργαλεία ακρίβειας: κάψουλα δρομέα 3D, μαγνήτες ίσων αποστάσεων, κινούμενες υποδείξεις εργαλείων, πτήση με δεξί κλικ + WASD',
   'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).': 'Πρώτα η χωρική προβολή: αιωρούμενα γρήγορα εργαλεία 1–9 στο κάτω μέρος, αναδιπλωμένες πλευρικές μπάρες, αναπτυσσόμενη κορδέλα και τα πρόσθετα Flow (Προτιμήσεις → Γενικά).',
   '1 model health issue: click to inspect': '1 πρόβλημα υγείας μοντέλου: κάντε κλικ για έλεγχο',
   '1 issue': '1 πρόβλημα',

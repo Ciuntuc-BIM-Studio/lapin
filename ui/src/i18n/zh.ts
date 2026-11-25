@@ -7043,6 +7043,7 @@ export const ZH: Record<string, string> = {
   'Hold X in 3D to look through in X-ray': '在 3D 中按住 X 以 X 光透视',
   'Drag a field’s unit to change its value': '拖动字段的单位以更改其值',
   'Role cards on the start screen': '起始屏幕上的角色卡片',
+  'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight': '精确工具：3D 光标胶囊、等距磁吸、动画工具提示、右键 + WASD 飞行',
   'Spatial view first: floating 1–9 quick tools at the bottom, folded side rails, a dropdown ribbon, and the Flow extras (Preferences → General).': '空间视图优先：底部浮动的 1–9 号快捷工具、折叠的侧栏、下拉式功能区，以及 Flow 附加功能（偏好设置 → 常规）.',
   '1 model health issue: click to inspect': '1 个模型健康问题：点击查看',
   '1 issue': '1 个问题',
