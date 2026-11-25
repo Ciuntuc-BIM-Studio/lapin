@@ -1,10 +1,13 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json.Nodes;
 using Lapin.Ifc;
+using Lapin.Model;
 using Lapin.Package;
 using Lapin.Package.Remote;
 using Lapin.Platform;
 using Lapin.Platform.Cde.Remarks;
+using RefDocs = Lapin.Platform.Cde.References.References;
+using RefFile = Lapin.Platform.Cde.References.ReferenceFile;
 
 namespace Lapin.Protocol;
 
@@ -223,6 +226,8 @@ public sealed partial class EngineDispatcher
                 return (o, null);
             }
             case "remote.syncIssues": return await SyncIssues(p, me, tokens, now, asBytes);
+            case "remote.syncReferences": return await SyncReferences(p, me, tokens, now, asBytes);
+            case "remote.referenceFile": return await ReferenceFile(p, me, tokens);
             case "remote.issueInfo":
             {
                 var h = files.History(session);
@@ -416,7 +421,14 @@ public sealed partial class EngineDispatcher
         catch (InvalidDataException ex) { throw new CommandException(ex.Message); }
         var (entities, relations) = session.Upgraded(content.Entities, content.Relations);
         // A server's issues are synced on their own (remote.syncIssues): the remarks here stay as they are, whatever the commit held.
-        if (IssuesApart(h) != null) entities = [.. entities.Where(x => x.Class != Remarks.Class), .. session.Model.OfClass(Remarks.Class)];
+        // So are its reference documents (remote.syncReferences): the server's register is their truth.
+        if (IssuesApart(h) != null)
+        {
+            entities = [.. entities.Where(x => x.Class != Remarks.Class && x.Class != RefDocs.Class), .. session.Model.OfClass(Remarks.Class), .. session.Model.OfClass(RefDocs.Class)];
+            // Their folders, types and checklist too (kept on the project): what the commit held would read as a change made here.
+            if (Spatial.Project(session.Model) is { } here)
+                entities = [.. entities.Select(x => x.Id != here.Id ? x : x.With(attrs: KeepReferenceSettings(x.CloneAttrs(), here)))];
+        }
         var diff = session.Edit("Pull", edit => { ModelCompare.Apply(edit, entities, relations); session.AdoptClasses(content.Classes); });
         h.Move(h.Head, theirs, me, "pull", now);
         var (r, saved) = files.WriteHistory(session, h, ProjectPackage.Build(session), asBytes, o);
@@ -426,6 +438,12 @@ public sealed partial class EngineDispatcher
         r["status"] = Status(files.History(session));
         // The edit's diff carries the model's change; the save's (the title, saved) follows it.
         return (r, saved == null ? diff : Merge(diff, saved));
+    }
+
+    static System.Text.Json.Nodes.JsonObject KeepReferenceSettings(JsonObject attrs, Entity here)
+    {
+        if (here.Attrs[RefDocs.Key] is { } mine) attrs[RefDocs.Key] = mine.DeepClone(); else attrs.Remove(RefDocs.Key);
+        return attrs;
     }
 
     static Diff Merge(Diff edit, Diff saved) => edit with { Version = saved.Version, State = saved.State };
@@ -469,13 +487,14 @@ public sealed partial class EngineDispatcher
     // ------------------------------------------------------------ issues (Atrium docs/plan-cde-web.md W3)
 
     /// <summary>
-    /// When the project's remote is a server, its remarks are the server's issues, synced on their own (<see cref="IssueSync"/>): their
+    /// When the project's remote is a server, its remarks are the server's issues and its reference documents the server's register, synced on their own (<see cref="IssueSync"/>): their
     /// parts are left out of "uncommitted" and of a commit's "nothing changed", and a pull keeps the remarks here. A folder remote has no
     /// issues of its own: remarks travel with the commits there, as everything else.
     /// </summary>
     static Func<string, bool>? IssuesApart(PackageHistory h) => h.Remotes.Any(r => r.Kind == "server") ? IsIssuePart : null;
 
-    static bool IsIssuePart(string path) => path.StartsWith("model/", StringComparison.Ordinal) && path.Contains($"/{Remarks.Class}/", StringComparison.Ordinal);
+    static bool IsIssuePart(string path) => path.StartsWith("model/", StringComparison.Ordinal)
+        && (path.Contains($"/{Remarks.Class}/", StringComparison.Ordinal) || path.Contains($"/{RefDocs.Class}/", StringComparison.Ordinal));
 
     static RemoteEntry? IssueRemote(PackageHistory h, JsonObject p)
     {
@@ -558,6 +577,122 @@ public sealed partial class EngineDispatcher
         o["info"] = IssueInfo(h, e);
         o["status"] = Status(h);
         return (o, diff);
+    }
+
+    // ------------------------------------------------------------ reference documents (docs/plan-cde-references.md R4)
+
+    /// <summary>A reference document's file found here: the project's file, else its copy in the project folder, else where it was added from (each checked against its hash).</summary>
+    byte[]? HeldReferenceBytes(Entity e, RefFile f)
+    {
+        var store = session.ReferenceFiles;
+        if (store.Has(f.Sha256)) return store.Get(f.Sha256);
+        foreach (var path in new[] { Lapin.Platform.Cde.References.ReferenceDisk.CopyPath(session.Model, e.Str("folder"), f.Name), f.Source }.OfType<string>())
+        {
+            try
+            {
+                if (!File.Exists(path)) continue;
+                var bytes = File.ReadAllBytes(path);
+                if (Lapin.Model.Hashes.Sha256Hex(bytes) == f.Sha256) return bytes;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// The reference documents synced with the server project's register (<see cref="ReferenceSync"/>): what came from the server (documents,
+    /// folders, types, checklist) applied in one undo step ("Sync reference documents"), the state kept with the history (remotes.json, never in
+    /// a commit), as <see cref="SyncIssues"/>. A server without the register (an older one) answers <c>offered: false</c> and nothing changes.
+    /// </summary>
+    async Task<(object? Result, Diff? Diff)> SyncReferences(JsonObject p, RemoteAuthor me, RemoteTokens tokens, DateTime now, bool asBytes)
+    {
+        var h = files.History(session).Clone();
+        var e = IssueRemote(h, p) ?? throw new CommandException("Reference documents are synced with a server: connect one in File → Collaborate….");
+        var m = session.Model;
+        var docs = RefDocs.All(m).Select(x => new ReferenceSync.Doc(x.Id, x.Name, x.CloneAttrs())).ToList();
+        var own = RefDocs.Settings(m);
+        var localSettings = new JsonObject
+        {
+            ["folders"] = RefDocs.Folders(m), ["typeFolders"] = RefDocs.TypeFolders(m), ["roleFolders"] = RefDocs.RoleFolders(m), ["language"] = RefDocs.Language(m),
+            ["types"] = RefDocs.Types(m), ["checklist"] = RefDocs.ChecklistOptions(m),
+        };
+        var custom = ReferenceSync.SettingKeys.Any(own.ContainsKey);
+        ReferenceSync.Outcome outcome;
+        using (var remote = (HttpRemote)await OpenRemote(e, me, tokens))
+        {
+            ReportProgress("Syncing reference documents", 0, 0);
+            outcome = await new ReferenceSync(remote, e.Project).RunAsync(docs, localSettings, custom, h.References.GetValueOrDefault(e.Name), e.Url, RefDocs.KeepLimit(m),
+                session.ReferenceFiles, (d, f) => session.Model.Get(d.Id) is { } ent ? HeldReferenceBytes(ent, f) : null, now);
+        }
+        if (outcome.Report["offered"] is JsonValue ov && ov.TryGetValue<bool>(out var offered) && !offered)
+        {
+            var none = new JsonObject { ["report"] = outcome.Report, ["status"] = Status(h) };
+            Tokens(none, tokens);
+            return (none, null);
+        }
+        h.References[e.Name] = outcome.State;
+        Diff? diff = null;
+        if (outcome.Documents.Count > 0 || outcome.Settings != null)
+            diff = session.Edit("Sync reference documents", edit =>
+            {
+                if (outcome.Settings is { } given && Spatial.Project(edit.Model) is { } projectEntity)
+                {
+                    var attrs = projectEntity.CloneAttrs();
+                    var settings = (attrs[RefDocs.Key] as JsonObject)?.DeepClone() as JsonObject ?? new JsonObject();
+                    foreach (var k in ReferenceSync.SettingKeys) settings[k] = given[k]?.DeepClone();
+                    attrs[RefDocs.Key] = settings;
+                    edit.Replace(projectEntity.With(attrs: attrs));
+                }
+                foreach (var (id, d) in outcome.Documents)
+                {
+                    var existing = edit.Model.Get(id);
+                    if (d == null) { if (existing is { Class: RefDocs.Class }) edit.Remove(id); }
+                    else if (existing is { Class: RefDocs.Class }) edit.Replace(existing.With(name: d.Title, attrs: d.Attrs));
+                    else if (existing == null) edit.Add(new Entity(id, RefDocs.Class, d.Title, d.Attrs));
+                }
+            });
+        var o = new JsonObject { ["report"] = outcome.Report };
+        Tokens(o, tokens);
+        if (asBytes)
+        {
+            var (r, saved) = files.WriteHistory(session, h, ProjectPackage.Build(session), true, o);
+            r["status"] = Status(files.History(session));
+            return (r, diff == null ? saved : saved == null ? diff : Merge(diff, saved));
+        }
+        files.KeepHistory(session, h);
+        o["status"] = Status(h);
+        return (o, diff);
+    }
+
+    /// <summary>
+    /// A reference document's file (<c>remote.referenceFile {id, name}</c>), as <c>references.file</c> answers it: the project's copy when it
+    /// holds one, else fetched from the server's object store (a file above the keep limit, which a sync leaves there), checked against its hash.
+    /// </summary>
+    async Task<(object? Result, Diff? Diff)> ReferenceFile(JsonObject p, RemoteAuthor me, RemoteTokens tokens)
+    {
+        var e = session.Model.Get((string?)p["id"] ?? "") is { Class: RefDocs.Class } x ? x : throw new CommandException("There is no such reference document.");
+        var all = RefDocs.Files(e);
+        var name = (string?)p["name"];
+        var f = (name is { Length: > 0 } ? all.FirstOrDefault(y => y.Name == name) : all.FirstOrDefault())
+                ?? throw new CommandException(all.Count == 0 ? "This document has no file (it is requested)." : $"The document has no file {name}.");
+        var bytes = HeldReferenceBytes(e, f);
+        if (bytes == null)
+        {
+            var h = files.History(session);
+            var remoteEntry = IssueRemote(h, p) ?? throw new CommandException($"{f.Name} is not held in this project, and the project has no server to fetch it from.");
+            using var remote = (HttpRemote)await OpenRemote(remoteEntry, me, tokens);
+            ReportProgress("Fetching the file from the server", 0, 0);
+            bytes = await remote.GetAsync(f.Sha256);
+            if (bytes == null)
+            {
+                var a = await remote.ApiAsync(HttpMethod.Get, $"atrium/1.0/projects/{Uri.EscapeDataString(remoteEntry.Project)}/references/{Uri.EscapeDataString(e.Id)}/files/{Uri.EscapeDataString(f.Name)}", bytes: true);
+                if (a.Ok && a.Bytes is { } b && Lapin.Model.Hashes.Sha256Hex(b) == f.Sha256) bytes = b;
+            }
+            if (bytes == null) throw new CommandException($"{f.Name} is neither in this project nor on the server.");
+        }
+        var o = new JsonObject { ["name"] = f.Name, ["mime"] = f.Mime, ["size"] = bytes.LongLength, ["sha256"] = f.Sha256, ["data"] = Convert.ToBase64String(bytes) };
+        Tokens(o, tokens);
+        return (o, null);
     }
 
     static readonly string[] AtriumMethods = ["GET", "POST", "PUT", "PATCH", "DELETE"];

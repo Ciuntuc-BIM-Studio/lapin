@@ -51,6 +51,13 @@ public sealed class PackageHistory
     /// </summary>
     public Dictionary<string, JsonObject> Issues { get; private init; } = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// The reference documents' sync state per remote (docs/plan-cde-references.md R4), as <see cref="Issues"/>: the server project and
+    /// account, the journal's last seq, each document's ETag and the server values last seen, the folders' and types' version and values.
+    /// Kept in <c>remotes.json</c> (member <c>references</c>), never in a commit.
+    /// </summary>
+    public Dictionary<string, JsonObject> References { get; private init; } = new(StringComparer.Ordinal);
+
     /// <summary>Commits and tags, by id: their canonical bytes.</summary>
     readonly Dictionary<string, byte[]> _commits = new(StringComparer.Ordinal);
     /// <summary>Trees, by id.</summary>
@@ -81,7 +88,8 @@ public sealed class PackageHistory
         var c = new PackageHistory
         {
             Head = Head, Refs = new(Refs, StringComparer.Ordinal), Seen = Seen.ToDictionary(kv => kv.Key, kv => kv.Value.Clone(), StringComparer.Ordinal),
-            Log = [.. Log], Remotes = [.. Remotes], Issues = Issues.ToDictionary(kv => kv.Key, kv => (JsonObject)kv.Value.DeepClone(), StringComparer.Ordinal), _refsExtra = (JsonObject)_refsExtra.DeepClone(), _remotesExtra = (JsonObject)_remotesExtra.DeepClone(),
+            Log = [.. Log], Remotes = [.. Remotes], Issues = Issues.ToDictionary(kv => kv.Key, kv => (JsonObject)kv.Value.DeepClone(), StringComparer.Ordinal),
+            References = References.ToDictionary(kv => kv.Key, kv => (JsonObject)kv.Value.DeepClone(), StringComparer.Ordinal), _refsExtra = (JsonObject)_refsExtra.DeepClone(), _remotesExtra = (JsonObject)_remotesExtra.DeepClone(),
             _source = _source, Unreadable = Unreadable,
         };
         foreach (var (k, v) in _commits) c._commits[k] = v;
@@ -166,6 +174,11 @@ public sealed class PackageHistory
                 {
                     foreach (var (rn, state) in issues)
                         if (state is JsonObject so) Issues[rn] = (JsonObject)so.DeepClone();
+                }
+                else if (k == "references" && val is JsonObject references)
+                {
+                    foreach (var (rn, state) in references)
+                        if (state is JsonObject so) References[rn] = (JsonObject)so.DeepClone();
                 }
                 else if (k is not ("format" or "v")) _remotesExtra[k] = val?.DeepClone();
         }
@@ -586,6 +599,8 @@ public sealed class PackageHistory
         };
         if (Issues.Count > 0)
             o["issues"] = new JsonObject(Issues.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value.DeepClone())));
+        if (References.Count > 0)
+            o["references"] = new JsonObject(References.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value.DeepClone())));
         foreach (var (k, v) in _remotesExtra) o[k] = v?.DeepClone();
         return o;
     }

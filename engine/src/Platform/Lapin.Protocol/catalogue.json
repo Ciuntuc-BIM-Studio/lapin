@@ -672,6 +672,7 @@
     {"name":"references.delete","module":"core","label":"Delete reference document","args":[{"name":"id","type":"str"}]},
     {"name":"references.detach","module":"core","label":"Remove file from reference document","args":[{"name":"id","type":"str"},{"name":"name","type":"str"},{"name":"author","type":"str"}]},
     {"name":"references.move","module":"core","label":"Move reference documents","args":[{"name":"folder","type":"str"},{"name":"ids","type":"list"},{"name":"id","type":"str"},{"name":"author","type":"str"}]},
+    {"name":"references.setChecklist","module":"core","label":"Reference documents' checklist","args":[{"name":"checklist","type":"list"}]},
     {"name":"references.setFolders","module":"core","label":"Reference document folders","args":[{"name":"folders","type":"list"},{"name":"typeFolders"},{"name":"roleFolders"},{"name":"language","type":"str"}]},
     {"name":"references.setKeepLimit","module":"core","label":"Reference documents' size limit","args":[{"name":"bytes","type":"float"}]},
     {"name":"references.setTypes","module":"core","label":"Reference document types","args":[{"name":"types","type":"list"}]},

@@ -61,6 +61,9 @@ public static class References
     /// <summary>The issued deliverables' roles (A, S, E…) to folders, for the derived view (docs/plan-cde-references.md §2); none by default.</summary>
     public static JsonObject RoleFolders(IModelView m) => Settings(m)["roleFolders"] is JsonObject o ? (JsonObject)o.DeepClone() : [];
 
+    /// <summary>The certificate's checklist items offered (§3.3): the project's list, else the indicative defaults.</summary>
+    public static JsonArray ChecklistOptions(IModelView m) => Settings(m)["checklist"] is JsonArray a ? (JsonArray)a.DeepClone() : ReferenceDefaults.Checklist();
+
     public static long KeepLimit(IModelView m) => Json.Number(Settings(m)["keepLimit"]) is { } v && v >= 0 ? (long)v : DefaultKeepLimit;
 
     /// <summary>The language the folders are named in on disk (<c>ro</c> or <c>en</c>; the project's choice, English by default).</summary>
@@ -263,7 +266,7 @@ public static class References
     /// <summary>A certificate's checklist as given: each item a key (a default's, or made from its label), a label, and the document that answers it.</summary>
     static JsonArray Requires(IModelView m, JsonArray list, string? selfId)
     {
-        var defaults = ReferenceDefaults.Checklist().OfType<JsonObject>().ToDictionary(x => (string)x["key"]!, StringComparer.Ordinal);
+        var defaults = ChecklistOptions(m).OfType<JsonObject>().Where(x => (string?)x["key"] != null).GroupBy(x => (string)x["key"]!).ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
         var o = new JsonArray();
         var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var n in list)
@@ -468,7 +471,7 @@ public static class References
             o["state"] = state;
             items.Add((JsonNode)o);
         }
-        var options = ReferenceDefaults.Checklist().OfType<JsonObject>().Where(x => !chosen.Contains((string)x["key"]!)).Select(x =>
+        var options = ChecklistOptions(m).OfType<JsonObject>().Where(x => (string?)x["key"] is { } k && !chosen.Contains(k)).Select(x =>
         {
             var o = (JsonObject)x.DeepClone();
             o["text"] = NameOf(o["label"], lang);
@@ -776,6 +779,33 @@ public static class References
             return Types(ctx.Model);
         });
 
+        // The certificate's checklist items offered (the project's own list from now on; null: the indicative defaults again). Items a
+        // certificate ticked stay on it whatever the list becomes.
+        r.Command("references.setChecklist", "Reference documents' checklist", (ctx, a) =>
+        {
+            JsonArray? items = null;
+            if (a["checklist"] is JsonArray given)
+            {
+                items = [];
+                var keys = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var n in given)
+                {
+                    if (n is not JsonObject item) throw new CommandException("A checklist item is {key, label, group?, folder?}.");
+                    var label = item["label"]?.DeepClone();
+                    var key = ((string?)item["key"])?.Trim() is { Length: > 0 } k ? k : Slug(NameOf(label, "en"));
+                    if (key.Length == 0 || label == null || NameOf(label, "en").Trim().Length == 0) throw new CommandException("Each checklist item has a key and a label.");
+                    if (!keys.Add(key)) throw new CommandException($"The checklist names {key} twice.");
+                    var o = new JsonObject { ["key"] = key, ["label"] = label };
+                    if (((string?)item["group"])?.Trim() is { Length: > 0 } g) o["group"] = g;
+                    if (((string?)item["folder"])?.Trim() is { Length: > 0 } f) o["folder"] = CheckFolder(Index(Folders(ctx.Model)), f);
+                    items.Add((JsonNode)o);
+                }
+            }
+            else if (a["checklist"] != null) throw new CommandException("The checklist is a list of items, or null for the defaults.");
+            WriteSettings(ctx, s => { if (items != null) s["checklist"] = items; else s.Remove("checklist"); });
+            return ChecklistOptions(ctx.Model);
+        });
+
         // The largest file kept in the project's file, in bytes (question R-Q1: 50 MB by default); null: the default again.
         r.Command("references.setKeepLimit", "Reference documents' size limit", (ctx, a) =>
         {
@@ -862,7 +892,7 @@ public static class References
         // The type list, and the issuers the project's documents name (remembered: derived from them) before the defaults.
         r.Query("references.types", (q, _) => new JsonObject
         {
-            ["types"] = Types(q.Model), ["typeFolders"] = TypeFolders(q.Model), ["checklist"] = ReferenceDefaults.Checklist(),
+            ["types"] = Types(q.Model), ["typeFolders"] = TypeFolders(q.Model), ["checklist"] = ChecklistOptions(q.Model),
             ["issuers"] = new JsonArray([.. All(q.Model).Select(e => e.Str("issuer")).OfType<string>().Concat(ReferenceDefaults.Issuers).Distinct(StringComparer.OrdinalIgnoreCase).Select(x => (JsonNode)x)]),
             ["statuses"] = new JsonArray([.. Statuses.Append("expired").Select(x => (JsonNode)x)]),
         });

@@ -24,8 +24,7 @@ public static class ReferenceDefaults
     /// The default tree (§3.2). Folders 05–06 hold no reference documents: they are the derived view of the issues (<c>derived</c>:
     /// the written documents, the sheets).
     /// </summary>
-    public static JsonArray Folders() =>
-    [
+    public static JsonArray Folders() => new(
         Folder("admin", "00 Administrativ", "00 Administrative"),
         Folder("input", "01 Date de intrare", "01 Input data", null,
             Folder("input-cu", "Certificat de urbanism", "Urbanism certificate"),
@@ -42,8 +41,8 @@ public static class ReferenceDefaults
         Folder("authorisations", "03 Autorizații", "03 Authorisations"),
         Folder("models", "04 Modele de referință", "04 Reference models"),
         Folder("issued-documents", "05 Piese scrise emise", "05 Issued written documents", "documents"),
-        Folder("issued-sheets", "06 Piese desenate emise", "06 Issued drawings", "sheets"),
-    ];
+        Folder("issued-sheets", "06 Piese desenate emise", "06 Issued drawings", "sheets")
+    );
 
     static JsonObject Field(string key, string ro, string en, string kind = "text") => new() { ["key"] = key, ["label"] = Name(ro, en), ["kind"] = kind };
 
@@ -59,8 +58,7 @@ public static class ReferenceDefaults
     /// The default types (§3.1, §3.3) with their default folders, extra fields and default validity in months. The validity is
     /// indicative, used only to suggest a "valid until" the document itself does not write; what the document says counts.
     /// </summary>
-    public static JsonArray Types() =>
-    [
+    public static JsonArray Types() => new(
         Type("cu", "Certificat de urbanism", "Urbanism certificate", "input-cu", 12, checklist: true,
             fields: [Field("purpose", "Scopul emiterii", "Purpose"), Field("parcel", "Număr cadastral", "Cadastral number")]),
         Type("aviz", "Aviz", "Permit (aviz)", "permits-other", 12),
@@ -77,8 +75,8 @@ public static class ReferenceDefaults
         Type("contract", "Contract", "Contract", "admin"),
         Type("corespondenta", "Corespondență", "Correspondence", "admin"),
         Type("model", "Model de referință", "Reference model", "models"),
-        Type("altul", "Altul", "Other", "admin"),
-    ];
+        Type("altul", "Altul", "Other", "admin")
+    );
 
     /// <summary>Each type's default folder, as <c>typeFolders</c> keeps it.</summary>
     public static JsonObject TypeFolders(JsonArray types)
@@ -96,8 +94,7 @@ public static class ReferenceDefaults
     /// The permits an urbanism certificate commonly asks for (§3.3), as items to tick: indicative, never a list of what the law
     /// requires. Each names the folder its document goes into by default.
     /// </summary>
-    public static JsonArray Checklist() =>
-    [
+    public static JsonArray Checklist() => new(
         Item("water", "utilities", "Alimentare cu apă", "Water supply", "permits-utilities"),
         Item("sewerage", "utilities", "Canalizare", "Sewerage", "permits-utilities"),
         Item("electricity", "utilities", "Alimentare cu energie electrică", "Electricity", "permits-utilities"),
@@ -110,8 +107,8 @@ public static class ReferenceDefaults
         Item("health", "health", "Sănătatea populației", "Public health", "permits-health"),
         Item("environment", "environment", "Actul administrativ al autorității pentru protecția mediului", "The environmental agency's decision", "permits-environment"),
         Item("study-geo", "studies", "Studiu geotehnic", "Geotechnical study", "input-geo"),
-        Item("study-topo", "studies", "Ridicare topografică", "Topographic survey", "input-topo"),
-    ];
+        Item("study-topo", "studies", "Ridicare topografică", "Topographic survey", "input-topo")
+    );
 
     /// <summary>The issuers proposed before a project has its own (it remembers those its documents name).</summary>
     public static readonly string[] Issuers = ["Primăria", "Consiliul Județean", "ISU", "DSP", "APM", "OCPI", "Apă-Canal", "Distribuție Energie Electrică", "Distribuție Gaze Naturale", "Telekom", "Salubritate"];
