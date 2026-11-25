@@ -100,7 +100,7 @@ The history of what was built, decision by decision, is in `docs/history.md`; th
 - Other formats: `docs/dxf-import.md`, `docs/fragments.md`, `docs/bos.md`, `docs/sdnf.md`, `docs/plan-mesh-export.md`, `docs/html-export.md`
 - Large models, display: `docs/plan-instancing.md`, `docs/plan-display-precision.md`
 - Browser engine, multiplayer, assistant, MCP: `docs/plan-browser-engine.md`, `docs/plan-multiplayer.md`, `docs/plan-assistant.md`, `docs/mcp.md`
-- CDE, documents, tags: `docs/plan-cde.md`, `docs/plan-documents.md`, `docs/plan-buildup-tags.md`
+- CDE, documents, tags: `docs/plan-cde.md`, `docs/plan-documents.md`, `docs/plan-buildup-tags.md`; reference documents (certificates, permits), folders, the generator's CDE fields and MCP on Atrium Server (proposed): `docs/plan-cde-references.md`
 - 4D and 5D (`planning`, `cost`): `docs/plan-4d5d.md`
 - Roofs, timber, steel, rebar, site works: `docs/plan-roof-framing.md`, `docs/plan-wood.md`, `docs/plan-steel.md`, `docs/plan-rebar.md`, `docs/plan-site-works.md`
 - MEP, furniture, elevators: `docs/plan-mep.md`, `docs/plan-furniture.md`, `docs/plan-elevators.md`
