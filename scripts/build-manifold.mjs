@@ -4,7 +4,7 @@
 // Everything is linked statically (manifold, Clipper2, no TBB), so the library
 // depends on the system only and travels next to the engine.
 //
-//   node scripts/build-manifold.mjs        (needs git, cmake and a C++ compiler)
+//   node scripts/build-manifold.mjs        (needs git, cmake and a C++ compiler; on Linux also libstdc++.a: engine/native/README.md)
 //   node scripts/build-manifold.mjs --browser-wasm
 // The engine in the browser (docs/plan-browser-engine.md): static libraries in
 // engine/native/browser-wasm/, linked into the engine's WebAssembly, built by
