@@ -242,3 +242,17 @@ export async function retimeFromFields(): Promise<void> {
   const r = await execute('planning.retimeFromFields', {}) as { timed: number; changed: number } | null;
   if (r) notify(r.timed ? `${t('Retimed from fields')}: ${r.changed}/${r.timed}` : 'No task takes its duration or quantity from a field.');
 }
+
+// ── The location-based schedule ──────────────────────────────────────────────
+
+/** The location-based schedule (time across, the model's locations up) in a pane of its own under the view, or brought in front. */
+export function openLbs(): void { openUnder('lbs'); }
+
+/** The location-based schedule on a new sheet (A3 landscape), opened. */
+export async function lbsOnSheet(): Promise<void> {
+  const r = await execute('planning.lbsSheet', {}) as { sheetId: string } | null;
+  if (r?.sheetId) {
+    useUi.setState({ view: 'sheet', sheetId: r.sheetId });
+    notify('The location-based schedule is on a new sheet.');
+  }
+}
