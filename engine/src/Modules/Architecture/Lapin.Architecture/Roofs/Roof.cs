@@ -440,17 +440,19 @@ public static class Roof
                 var tag = $"layer:{li}";
                 var matId = layer.Material.Length > 0 ? Materials.Find(m, layer.Material)?.Id ?? layer.Material : null;
                 var color = layer.Material.Length > 0 ? Materials.ColorOf(m, matId) : "#c9ced6";
-                var solids = Band(r, lShape, openings, from, layer.Thickness, tag);
-                if (solids.Count > 0)
-                    parts.Add(new GeometryPart(layer.DisplayName, color, Openings.Combine(solids, tag), matId, tag));
+                var band = Slopes(r, lShape, openings, from, layer.Thickness, tag);
+                if (band.Count > 0)
+                    parts.Add(new GeometryPart(layer.DisplayName, color, Openings.Combine([.. band.Select(x => x.Solid)], tag), matId, tag) { Pieces = Pieces(r, band, layer.DisplayName) });
                 from += layer.Thickness;
             }
         }
         else
         {
-            if (!r.Framed && Band(r, shape, openings, 0, r.StructureDepth, "deck") is { Count: > 0 } deckBody) parts.Add(DeckPart(Openings.Combine(deckBody, "deck")));
-            var covering = Band(r, shape, openings, r.StructureDepth, r.Covering.Thickness, "covering");
-            if (covering.Count > 0) parts.Add(new GeometryPart("Covering", coveringColor, Openings.Combine(covering, "covering"), coveringMaterial, "covering"));
+            if (!r.Framed && Slopes(r, shape, openings, 0, r.StructureDepth, "deck") is { Count: > 0 } deckBody)
+                parts.Add(DeckPart(Openings.Combine([.. deckBody.Select(x => x.Solid)], "deck")) with { Pieces = Pieces(r, deckBody, "Deck") });
+            var covering = Slopes(r, shape, openings, r.StructureDepth, r.Covering.Thickness, "covering");
+            if (covering.Count > 0)
+                parts.Add(new GeometryPart("Covering", coveringColor, Openings.Combine([.. covering.Select(x => x.Solid)], "covering"), coveringMaterial, "covering") { Pieces = Pieces(r, covering, "Covering") });
         }
 
         // Its roof windows and dormers, as parts of it.
@@ -528,14 +530,24 @@ public static class Roof
     /// on slopes measured plumb (planes of one pitch share their hips and ridges), the holes of its roof windows and dormers
     /// cut; on a vault out along the circle's radius, so its strips meet on their shared edges.
     /// </summary>
-    static List<Solid> Band(Resolved r, RoofShape shape, IReadOnlyList<RoofOpenings.Placed> openings, double from, double depth, string tag)
+    static List<Solid> Band(Resolved r, RoofShape shape, IReadOnlyList<RoofOpenings.Placed> openings, double from, double depth, string tag) =>
+        [.. Slopes(r, shape, openings, from, depth, tag).Select(x => x.Solid)];
+
+    /// <summary>
+    /// A band's bodies by its slopes (issue #139): each with the index of its plane, in the planes' order, so its pieces keep
+    /// their keys (and their GlobalIds) while the roof keeps its shape.
+    /// </summary>
+    static List<(int Plane, Solid Solid)> Slopes(Resolved r, RoofShape shape, IReadOnlyList<RoofOpenings.Placed> openings, double from, double depth, string tag)
     {
-        var o = new List<Solid>();
+        var o = new List<(int, Solid)>();
         if (r.Barrel)
         {
             if (shape.Arc is { } arc)
-                foreach (var p in shape.Planes)
-                    if (Shell(from == 0 ? p.Points : p.Points.Select(q => arc.Out(q, from)).ToList(), p.Points.Select(q => arc.Out(q, from + depth)).ToList(), tag) is { } s) o.Add(s);
+                for (var i = 0; i < shape.Planes.Count; i++)
+                {
+                    var p = shape.Planes[i];
+                    if (Shell(from == 0 ? p.Points : p.Points.Select(q => arc.Out(q, from)).ToList(), p.Points.Select(q => arc.Out(q, from + depth)).ToList(), tag) is { } s) o.Add((i, s));
+                }
             return o;
         }
         for (var i = 0; i < shape.Planes.Count; i++)
@@ -545,10 +557,17 @@ public static class Roof
             var below = from / cos;
             Vec3 Lift(Vec3 q) => q with { Z = q.Z + below };
             var holes = openings.Where(x => x.Host.PlaneIndex == i).Select(x => (IReadOnlyList<Vec3>)x.Hole.Select(Lift).ToArray()).ToList();
-            if (Prism.Extrude(p.Points.Select(Lift).ToArray(), holes, new Vec3(0, 0, depth / cos), tag) is { } s) o.Add(s);
+            if (Prism.Extrude(p.Points.Select(Lift).ToArray(), holes, new Vec3(0, 0, depth / cos), tag) is { } s) o.Add((i, s));
         }
         return o;
     }
+
+    /// <summary>
+    /// A band's slopes as its part's pieces ("slope:1", "slope:2" by plane, issue #139), null with one slope; a vault's strips
+    /// are one curved surface, never pieces.
+    /// </summary>
+    static List<PartPiece>? Pieces(Resolved r, List<(int Plane, Solid Solid)> band, string name) =>
+        r.Barrel || band.Count < 2 ? null : [.. band.Select(x => new PartPiece($"slope:{x.Plane + 1}", $"{name}, slope {x.Plane + 1}", x.Solid))];
 
     /// <summary>
     /// What a roof cuts walls and Studio solids with (the cut order): its covering, and without framing its deck with it, as

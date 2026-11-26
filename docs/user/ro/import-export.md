@@ -70,6 +70,8 @@ O referință își păstrează golurile pe care i le-a tăiat fișierul ei, cu 
 
 **Încăperi.** Unele programe nu citesc profilul extrudat cu care e scris un IfcSpace (CYPECAD MEP e unul). Bifează **Încăperi: exportă ca B-rep fațetat (în loc de SweptSolid)** în **Exportă IFC, Fragments sau BOS…** și fiecare încăpere se scrie în schimb ca B-rep fațetat din geometria ei. Nebifat (implicit), fișierul e ca întotdeauna.
 
+**Acoperișuri: o placă pe fiecare apă.** Învelitoarea unui acoperiș în pantă se scrie ca un singur IfcSlab ROOF cu toate apele lui. Unele programe potrivesc un singur plan pe fiecare placă (CYPECAD MEP e unul), așa că un acoperiș în două ape intră ca unul într-o apă. Bifează **Acoperișuri: o placă pe fiecare apă** în **Exportă IFC, Fragments sau BOS…** și învelitoarea (și placa unui acoperiș fără șarpantă, și straturile tale) se scrie ca un IfcSlab ROOF pe fiecare apă, fiecare parte a IfcRoof, cu un GlobalId care rămâne același de la un export la altul; lemnul, jgheaburile, burlanele și parazăpezile se scriu ca înainte, iar acoperișul se scrie peste apele lui chiar și cu **un corp fiecare**. O boltă rămâne o singură placă curbă. Nebifat (implicit), fișierul e ca întotdeauna. Lapin citește un astfel de fișier înapoi ca un singur acoperiș.
+
 Pe desktop, **Stiluri de desen Bonsai** scrie lângă IFC o foaie de stil (`nume.css`) și hașurile ei (`nume-patterns.svg`) pentru Bonsai (BlenderBIM), ale cărui desene se stilizează cu CSS: hașura secțiunii, umplerea și hașura de fațadă ale fiecărui material, liniile de secțiune și de proiecție din stilurile de obiect și textul din standardele de desen. IFC-ul numește ambele fișiere, deci un desen pe care îl faceți în Bonsai din el le ia.
 
 ![Exportă IFC, Fragments sau BOS](shots/export-exchange.webp)

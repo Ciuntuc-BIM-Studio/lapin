@@ -24,8 +24,11 @@ namespace Lapin.Ifc;
 /// <summary><paramref name="Voids"/>: the openings also as solid voids (IfcBuildingElementProxy PROVISIONFORVOID, decision 289), of the kinds asked, their sides moved by the offset; off by default.</summary>
 public sealed record IfcExportOptions(string Schema = "IFC4", string Detail = "group", string? Phase = null, string Geometry = "brep", double Tolerance = 0, IReadOnlySet<string>? Exclude = null,
     bool Voids = false, IReadOnlySet<string>? VoidKinds = null, double VoidOffset = 0, bool BonsaiStyles = false, bool Structural = false, bool TypePropertiesOnOccurrences = false, bool SpaceBrep = false,
-    bool AdvancedBrep = false, bool DerivedLoadBearing = false)
+    bool AdvancedBrep = false, bool DerivedLoadBearing = false, bool RoofSlopes = false)
 {
+    // RoofSlopes (issue #139): a sloped roof's covering (its deck, its layers) one IfcSlab ROOF per slope (each a part of the IfcRoof,
+    // its GlobalId from the roof's and the slope's), for readers that fit one plane to a slab (CYPECAD MEP); a roof written over its
+    // parts then even with one body each. Off: the covering one slab of all its slopes, as decisions 328 and 329 have it.
     // DerivedLoadBearing (docs/plan-structural-usage.md, the user's answer 4): Pset_…Common.LoadBearing also on the elements nothing
     // says it of, from the views' rule (StructuralUsage.ForViews: a wall unless a partition, floors, roofs, columns, beams); off by
     // default, on for a CDE issue and an IDS check. Off: written only where it is said (the Structural tick, a Pset value), and on
@@ -959,9 +962,13 @@ public static partial class IfcExport
             if (railPart != null && LinearPlace(e) is { } along) (place, fr) = along;
             var kind = KindOf(e);
             var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
+            // A roof's slopes, each an element of its own when asked (issue #139): the pieces of its covering, deck and layers in their
+            // part's place, keyed "covering:slope:1" (a GlobalId of the roof's and the slope's), of the part's material and colour.
+            var slopes = o.RoofSlopes && kind.Class == IfcClass.Roof && e.Attrs[IfcSource.Key] == null && parts.Any(p => p.Pieces is { Count: > 1 });
+            if (slopes) parts = [.. parts.SelectMany(p => p.Pieces is { Count: > 1 } pcs ? pcs.Select(pc => new GeometryPart(pc.Name, p.Color, pc.Solid, p.Material, $"{p.Key}:{pc.Key}")) : [p])];
             // A wall of layers only is one body with its layer set; one with zones, lintels or a ring beam (a roof with its planes and timber, a footing with its sole) is a parent over its parts.
             // A door's frame and leaf, a column's body, a terrain: one element. Only a wall, a roof and a footing hold parts that are elements of their own.
-            var grouped = o.Grouped && (kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing or "IfcCurtainWall" or IfcClass.Stair or IfcClass.Ramp or "IfcElementAssembly"
+            var grouped = slopes || o.Grouped && (kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing or "IfcCurtainWall" or IfcClass.Stair or IfcClass.Ramp or "IfcElementAssembly"
                 || kind.Class == IfcClass.Slab && parts.Any(p => p.Key?.StartsWith("clt:", StringComparison.Ordinal) == true || p.Key?.StartsWith("wood:", StringComparison.Ordinal) == true || p.Key?.StartsWith("bb-", StringComparison.Ordinal) == true)) && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
             // A door or window: placed with its local +Y the way its panels open, which IFC's left and right are seen along.
             var joinery = e.Class is IfcClass.Door or IfcClass.Window && !grouped ? s.Catalog.Get<IJoineryIfc>() : null;
