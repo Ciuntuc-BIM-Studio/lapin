@@ -75,6 +75,10 @@ The catalogue also lists **Python scripts**. On the desktop you can install one 
 
 ![A script's details: what it asks for, and that it is not runnable yet](shots/extensions-script.webp)
 
+## Extension modules
+
+An **extension module** adds tools to Lapin itself: ribbon tabs and buttons, views, dialogs, with the code behind them. It runs on the desktop only, never in the browser. Its interface is loaded when Lapin starts, from the files the engine has checked (the store's signature and each file's fingerprint), so a change to the extensions installed shows at the next start. If one cannot run in this version of Lapin (it needs a newer one) or fails while it loads, Lapin starts without it and says **Some extensions were left out:** with their names.
+
 ## Paid extensions
 
 Some extensions are **sold by their authors**, through their own shop (today Gumroad). They are marked **Paid** in the list, with their price; the price is *indicative*: the one that counts is the seller's, at the checkout. Lapin Extensions takes no commission and is not part of the sale: the seller takes the payment, issues the invoice and handles refunds, under the terms that **Seller's terms** opens.

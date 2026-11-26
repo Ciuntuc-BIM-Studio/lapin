@@ -1,7 +1,7 @@
 /** The modules of the product this build was made for (`virtual:lapin-modules`, from products/<id>.json). */
 
 import { create } from 'zustand';
-import loaded, { product } from 'virtual:lapin-modules';
+import builtIn, { product } from 'virtual:lapin-modules';
 import type { ComponentType } from 'react';
 import type { PlacementRequest, Vec2, Grip, Grip3D, GripView, LapinModule, ModuleViewDef, Overlay3DProps, PlaceSourceDef, PlanOverlayProps, DrawingOverlayProps, RefLine, RibbonTabDef, ToolDef } from './module';
 import type { NodeDto } from '../engine/protocol';
@@ -18,6 +18,13 @@ import { snapGrip } from '../viewport/grips';
 import { askPlacement as ask } from './placement';
 import { replacementsOf, replacesAny, through, withReplacedTools, type Replacement } from './replaces';
 import { extraTools } from './extraTools';
+import { extensionModules } from './extensions/plugins';
+
+/**
+ * The product's modules, then the extensions' (their interface plug-ins, loaded before this file is evaluated: main.tsx,
+ * platform/extensions/host.ts; docs/plan-extension-modules.md §3.1). None in the browser edition.
+ */
+const loaded: readonly LapinModule[] = [...builtIn, ...extensionModules()];
 
 /** The product's modules, with the tools some of them replace in place (docs/overrides.md); as loaded when none does. */
 export const modules: readonly LapinModule[] = withReplacedTools(loaded);
