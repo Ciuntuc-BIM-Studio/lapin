@@ -23,3 +23,10 @@ export const floorSlopeMarksArg = (value: number): number | null => (value === D
 
 /** What standards.options is given for a drawing language: null for English (as drawings were written before). */
 export const drawingLangArg = (lang: string): string | null => (lang === 'en' ? null : lang);
+
+/**
+ * Whether a door's clear height ({clearHeight}) takes its threshold off (forum topic 204): ticked by default, as Lapin wrote it;
+ * the Czech rule unticks it (the void less the frame only, 2050 − 50 = 2000). What standards.options is given: null for the default.
+ */
+export const clearHeightLessThreshold = (stored?: boolean | null): boolean => stored !== false;
+export const clearHeightLessThresholdArg = (ticked: boolean): false | null => (ticked ? null : false);

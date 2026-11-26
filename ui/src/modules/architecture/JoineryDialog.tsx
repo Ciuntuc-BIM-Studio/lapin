@@ -73,6 +73,8 @@ interface Spec {
   /** How two door leaves meeting over a boundary without a mullion are made; one setting for the type. */
   meeting?: Meeting | null;
   board: { interior: number; exterior: number }; threshold: number;
+  /** A door's plan draws its threshold seen under the cut (forum topic 204); null or false: not, as before. */
+  thresholdInPlan?: boolean | null;
   colors: { frame: string; glass: string; leaf: string }; isExternal: boolean; thermalTransmittance?: number | null;
   lintel?: Rule | null;
   details?: Details | null;
@@ -1161,6 +1163,8 @@ export function JoineryDialog() {
                 <Mm label="Threshold height" value={details.threshold.height} onChange={(v) => setDetails({ threshold: { ...details.threshold!, height: v } })} />
                 <Material label="Threshold material" value={details.threshold.material} onChange={(material) => setDetails({ threshold: { ...details.threshold!, material } })} />
               </>}
+              {spec.kind === 'door' && <label className="field-line check" title="Draws the door's threshold seen under the plan's cut (LOD 200 and up): the detailed threshold across the wall, else the frame's bottom member. Sections cut it as the door has it">
+                <input type="checkbox" data-field="threshold-in-plan" checked={spec.thresholdInPlan === true} onChange={(e) => set({ thresholdInPlan: e.target.checked ? true : null })} /><span>Threshold drawn in plan</span></label>}
               <DressingFields kind={spec.kind} height={spec.height} details={details} onChange={setDetails} />
               <HardwareFields spec={spec} onChange={set} />
               {spec.kind === 'door' && !spec.materials?.leaf && <label className="field-line"><span className="eyebrow">Leaf</span><ColourField value={spec.colors.leaf} onChange={(v) => set({ colors: { ...spec.colors, leaf: v } })} /></label>}

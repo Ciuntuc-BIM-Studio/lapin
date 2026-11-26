@@ -3,6 +3,11 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  // Forum topic 204, stage R5: the clear height and the threshold in plan.
+  'Door clear height less the threshold': 'Wysokość w świetle drzwi minus próg',
+  'A door\'s clear height ({clearHeight} in tags, schedules and formulas): ticked, the head\'s inside less the threshold, as before; unticked, less the frame only, the threshold left in (the Czech rule: a 2050 void, a 50 frame → 2000)': 'Wysokość drzwi w świetle ({clearHeight} w etykietach, zestawieniach i formułach): zaznaczone, wnętrze górnej części ościeżnicy minus próg, jak dotąd; odznaczone, tylko minus ościeżnica, próg wliczony (reguła czeska: otwór 2050, ościeżnica 50 → 2000)',
+  'Threshold drawn in plan': 'Próg rysowany w rzucie',
+  'Draws the door\'s threshold seen under the plan\'s cut (LOD 200 and up): the detailed threshold across the wall, else the frame\'s bottom member. Sections cut it as the door has it': 'Rysuje próg drzwi widoczny pod płaszczyzną cięcia rzutu (od LOD 200): szczegółowy próg w poprzek ściany, w przeciwnym razie dolny element ościeżnicy. Przekroje tną go tak, jak mają go drzwi',
   "Same class, in this view": "Ta sama klasa, w tym widoku",
   "Nothing of what this tool places is in this view.": "W tym widoku nie ma niczego, co wstawia to narzędzie.",
   "Select an element first: Select similar takes the others of its class and type.": "Najpierw zaznacz element: Zaznacz podobne bierze pozostałe tej samej klasy i typu.",

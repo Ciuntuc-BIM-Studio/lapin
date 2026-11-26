@@ -255,6 +255,12 @@ public sealed record StyleBook(
     /// the material has a code of its own (<c>Lapin.Platform.MaterialKeys</c>); null: <c>{n}</c>, the number alone.
     /// </summary>
     public string? MaterialKeyFormat { get; init; }
+    /// <summary>
+    /// Whether a door's clear height (<c>{clearHeight}</c> in tags, the field schedules and formulas read) takes its threshold off
+    /// (forum topic 204): a local convention; the Czech rule writes the void less the frame only (2050, frame 50 → 2000). Null:
+    /// yes, as Lapin wrote it before; only false is stored.
+    /// </summary>
+    public bool? ClearHeightLessThreshold { get; init; }
 
     /// <summary>Whether floors' slope marks are drawn at a view's scale (its denominator).</summary>
     public bool ShowsFloorSlopeMarks(double scale) => scale <= (FloorSlopeMarks ?? Standards.DefaultFloorSlopeMarks) + 1e-9;
@@ -560,8 +566,12 @@ public static class Standards
         DateFormat = DrawingDates.Of(raw?["dateFormat"]),
         FloorSlopeMarks = FloorSlopeMarksOf(raw?["floorSlopeMarks"]),
         DrawingLang = DrawingLanguage.Known((string?)(raw?["drawingLang"] as JsonValue)),
+        ClearHeightLessThreshold = ClearHeightLessThresholdOf(raw?["clearHeightLessThreshold"]),
         MaterialKeyFormat = raw?["materialKeyFormat"] is JsonValue kf && kf.TryGetValue<string>(out var kfs) && kfs.Trim() is { Length: > 0 and <= 24 } kft && kft.Contains("{n", StringComparison.Ordinal) ? kft : null,
     };
+
+    /// <summary>The clear-height option as stored: false when it says the threshold stays in, else null (the default, the threshold off).</summary>
+    public static bool? ClearHeightLessThresholdOf(JsonNode? n) => n is JsonValue v && v.TryGetValue<bool>(out var b) && !b ? false : null;
 
     /// <summary>Floors' slope marks drawn at 1:50 and larger unless the standards say otherwise.</summary>
     public const int DefaultFloorSlopeMarks = 50;

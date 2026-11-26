@@ -206,6 +206,20 @@ public static class JoinerySymbols
         return o;
     }
 
+    /// <summary>
+    /// A door's threshold seen in plan under the cut (forum topic 204), for a type that asks for it (<see cref="JoinerySpec.ThresholdInPlan"/>):
+    /// the detailed threshold across a wall <paramref name="thickness"/> thick, as wide as the opening, when the type has one; else
+    /// the frame's bottom member between the jambs. None for a window, a type that does not ask, or a door with no threshold.
+    /// </summary>
+    public static List<JStroke> ThresholdPlan(JoinerySpec s, double thickness)
+    {
+        if (!s.IsDoor || s.ThresholdInPlan != true) return [];
+        if (s.Details?.Threshold is { On: true }) return [Rect(-s.Width / 2, -thickness / 2, s.Width / 2, thickness / 2, "outline")];
+        if (s.Threshold <= 1e-9) return [];
+        var bottom = Joinery.Boxes(s).Where(b => b.Role == "frame" && b.Min.Z < 1e-9 && b.Max.Z <= s.Threshold + 1e-9 && b.Max.X - b.Min.X > s.Width - s.Frame.Width * 2 - 1e-9).ToList();
+        return bottom.Count == 0 ? [] : [Rect(bottom.Min(b => b.Min.X), bottom.Min(b => b.Min.Y), bottom.Max(b => b.Max.X), bottom.Max(b => b.Max.Y), "outline")];
+    }
+
     // ─── Elevation ─────────────────────────────────────────────────────────
 
     /// <summary>

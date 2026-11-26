@@ -3,6 +3,11 @@
 import type { Language } from './index';
 
 export const IT: Record<string, string> = {
+  // Forum topic 204, stage R5: the clear height and the threshold in plan.
+  'Door clear height less the threshold': 'Altezza netta della porta meno la soglia',
+  'A door\'s clear height ({clearHeight} in tags, schedules and formulas): ticked, the head\'s inside less the threshold, as before; unticked, less the frame only, the threshold left in (the Czech rule: a 2050 void, a 50 frame → 2000)': 'L\'altezza netta di una porta ({clearHeight} in etichette, abachi e formule): spuntata, l\'interno della traversa superiore meno la soglia, come prima; non spuntata, meno solo il telaio, la soglia inclusa (la regola ceca: un vano di 2050 e un telaio di 50 → 2000)',
+  'Threshold drawn in plan': 'Soglia disegnata in pianta',
+  'Draws the door\'s threshold seen under the plan\'s cut (LOD 200 and up): the detailed threshold across the wall, else the frame\'s bottom member. Sections cut it as the door has it': 'Disegna la soglia della porta vista sotto il piano di taglio della pianta (LOD 200 e oltre): la soglia dettagliata attraverso il muro, altrimenti la traversa inferiore del telaio. Le sezioni la tagliano così come la porta la prevede',
   "Same class, in this view": "Stessa classe, in questa vista",
   "Nothing of what this tool places is in this view.": "Niente di ciò che questo strumento posiziona è in questa vista.",
   "Select an element first: Select similar takes the others of its class and type.": "Seleziona prima un elemento: Seleziona simili prende gli altri della sua classe e del suo tipo.",

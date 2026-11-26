@@ -483,7 +483,7 @@ public static class StandardsLibrary
                 raw[key] = list;
             }
             if (withOptions)
-                foreach (var k in new[] { "units", "lineCap", "areaRounding", "suppressZeros", "levelDecimals", "levelZeros", "dimAutoText", "dimTextLeader", "sectionMarkSize", "sectionMarkText", "elevationMarkSize", "elevationMarkText", "scales", "planScale", "sectionScale", "elevationScale", "defaultAxisStyle", "dateFormat", "floorSlopeMarks", "drawingLang", "materialKeyFormat" })
+                foreach (var k in new[] { "units", "lineCap", "areaRounding", "suppressZeros", "levelDecimals", "levelZeros", "dimAutoText", "dimTextLeader", "sectionMarkSize", "sectionMarkText", "elevationMarkSize", "elevationMarkText", "scales", "planScale", "sectionScale", "elevationScale", "defaultAxisStyle", "dateFormat", "floorSlopeMarks", "drawingLang", "materialKeyFormat", "clearHeightLessThreshold" })
                     if (theirs[k] != null) raw[k] = theirs[k]!.DeepClone();
             // How callouts' boundaries and insets' frames are drawn (issue #73).
             if (withOptions)

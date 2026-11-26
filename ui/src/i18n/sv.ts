@@ -1,6 +1,11 @@
 /** The interface in Swedish: each English phrase as the interface shows it, and its Swedish. */
 
 export const SV: Record<string, string> = {
+  // Forum topic 204, stage R5: the clear height and the threshold in plan.
+  'Door clear height less the threshold': 'Dörrens fria höjd minus tröskeln',
+  'A door\'s clear height ({clearHeight} in tags, schedules and formulas): ticked, the head\'s inside less the threshold, as before; unticked, less the frame only, the threshold left in (the Czech rule: a 2050 void, a 50 frame → 2000)': 'En dörrs fria höjd ({clearHeight} i etiketter, förteckningar och formler): markerad, insidan av överstycket minus tröskeln, som tidigare; omarkerad, bara minus karmen, tröskeln räknas med (den tjeckiska regeln: en öppning på 2050 och en karm på 50 → 2000)',
+  'Threshold drawn in plan': 'Tröskel ritad i plan',
+  'Draws the door\'s threshold seen under the plan\'s cut (LOD 200 and up): the detailed threshold across the wall, else the frame\'s bottom member. Sections cut it as the door has it': 'Ritar dörrens tröskel sedd under planens snitt (LOD 200 och uppåt): den detaljerade tröskeln tvärs över väggen, annars karmens underdel. Sektioner skär den som dörren har den',
   "Same class, in this view": "Samma klass, i den här vyn",
   "Nothing of what this tool places is in this view.": "Inget av det som det här verktyget placerar finns i den här vyn.",
   "Select an element first: Select similar takes the others of its class and type.": "Markera först ett element: Markera liknande tar de andra av samma klass och typ.",

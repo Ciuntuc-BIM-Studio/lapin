@@ -246,7 +246,13 @@ public sealed record JoinerySpec(
     /// <summary>How two leaves meet where no mullion parts them (decision 466); null: butt, both leaves with their handles (as before).</summary>
     JoineryMeeting? Meeting = null,
     /// <summary>A garage door's settings (topic #48, decision 530), for a type whose panel is a garage door's operation; null: the defaults.</summary>
-    JoineryGarage? Garage = null)
+    JoineryGarage? Garage = null,
+    /// <summary>
+    /// Whether a door's plan draws its threshold, seen under the cut (forum topic 204): true, the frame's bottom member or the detailed
+    /// threshold across the wall, whichever the door has (<see cref="JoinerySymbols.ThresholdPlan"/>); null or false: not drawn, as
+    /// before. Sections cut it as the body has it either way.
+    /// </summary>
+    bool? ThresholdInPlan = null)
 {
     public static JoinerySpec DefaultWindow(string name = "Window") => new(
         "window", name, "W", 1.2, 1.5, 0.9,
@@ -484,16 +490,27 @@ public static class Joinery
     /// the frame's face width on both jambs; its height the head's inside (an arched or headed type's at its middle, its inner
     /// apex) less the bottom: a door's threshold (it has no bottom member), a window's bottom frame member, the frame's face
     /// width. A round window's is the ring's inside both ways; frameless glass's is the opening less its gaps. Never below 0.
+    /// <paramref name="lessThreshold"/> false (the Czech rule, forum topic 204: the drafting standards'
+    /// <c>clearHeightLessThreshold</c>, <see cref="ClearHeightLessThreshold"/>): a door's height is the void's less its head only,
+    /// its threshold left in (2050, frame 50 → 2000); a window's bottom member is its frame and stays off either way.
     /// </summary>
-    public static (double Width, double Height) ClearOpening(JoinerySpec s)
+    public static (double Width, double Height) ClearOpening(JoinerySpec s, bool lessThreshold = true)
     {
         if (s.Frameless != null) { var r = Frameless.Inner(s); return (Math.Max(0, r.X1 - r.X0), Math.Max(0, r.Z1 - r.Z0)); }
         var f = s.Frame.Width;
         if (JoineryShapes.Round(s)) return (Math.Max(0, s.Width - 2 * f), Math.Max(0, s.Height - 2 * f));
-        var bottom = s.IsDoor ? Math.Max(0, s.Threshold) : f;
+        var bottom = s.IsDoor ? (lessThreshold ? Math.Max(0, s.Threshold) : 0) : f;
         var top = JoineryShapes.Headed(s) ? JoineryShapes.Top(s, 0, f) : s.Height - f;
         return (Math.Max(0, s.Width - 2 * f), Math.Max(0, top - bottom));
     }
+
+    /// <summary>
+    /// Whether a door's clear height takes its threshold off, as the project's drafting standards say (<c>drafting.clearHeightLessThreshold</c>,
+    /// forum topic 204; <see cref="Lapin.Drawing.StyleBook.ClearHeightLessThreshold"/>): yes unless they say false. Read from the stored
+    /// option alone, as every tag asks it.
+    /// </summary>
+    public static bool ClearHeightLessThreshold(IModelView m) =>
+        Lapin.Drawing.Standards.ClearHeightLessThresholdOf(Spatial.Project(m)?.Attrs["drafting"]?["clearHeightLessThreshold"]) != false;
 
     static List<(double A, double B)> Splits(double[] weights, double from, double to, double[] bars)
     {

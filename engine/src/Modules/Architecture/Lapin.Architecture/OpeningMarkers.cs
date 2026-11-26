@@ -222,7 +222,8 @@ public static class OpeningMarkers
     /// <item><c>width</c>, <c>height</c>: its own size (its type's, or its own), as before;</item>
     /// <item><c>openingWidth</c>, <c>openingHeight</c>: the wall opening, the hole in the wall it fills: its size, or the hole an
     /// imported file cuts round it where that differs;</item>
-    /// <item><c>clearWidth</c>, <c>clearHeight</c>: the clear opening inside its frame (<see cref="Joinery.ClearOpening"/>); none for
+    /// <item><c>clearWidth</c>, <c>clearHeight</c>: the clear opening inside its frame (<see cref="Joinery.ClearOpening"/>, a door's
+    /// threshold taken off unless the drafting standards say not, <see cref="Joinery.ClearHeightLessThreshold"/>); none for
     /// one without a configuration (nothing says where its frame is);</item>
     /// <item><c>sill</c>: its sill over what it is measured from (forum topic 192), as before; <c>sillFinished</c>: over the wall's
     /// finished floor, whatever it is measured from (the structural level when the wall has none).</item>
@@ -239,7 +240,7 @@ public static class OpeningMarkers
             ["openingHeight"] = p.Height,
             ["sillFinished"] = p.FillSill - (wall is { Class: IfcClass.Wall } ? OpeningSills.FinishedFloor(m, wall) : 0),
         };
-        if (p.Spec is { } spec) (o["clearWidth"], o["clearHeight"]) = Joinery.ClearOpening(spec);
+        if (p.Spec is { } spec) (o["clearWidth"], o["clearHeight"]) = Joinery.ClearOpening(spec, Joinery.ClearHeightLessThreshold(m));
         return o;
     }
 

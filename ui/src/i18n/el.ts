@@ -1,6 +1,11 @@
 /** The interface in Greek: each English phrase as the interface shows it, and its Greek. */
 
 export const EL: Record<string, string> = {
+  // Forum topic 204, stage R5: the clear height and the threshold in plan.
+  'Door clear height less the threshold': 'Καθαρό ύψος πόρτας μείον το κατώφλι',
+  'A door\'s clear height ({clearHeight} in tags, schedules and formulas): ticked, the head\'s inside less the threshold, as before; unticked, less the frame only, the threshold left in (the Czech rule: a 2050 void, a 50 frame → 2000)': 'Το καθαρό ύψος μιας πόρτας ({clearHeight} σε ετικέτες, πίνακες και τύπους): επιλεγμένο, το εσωτερικό της άνω τραβέρσας μείον το κατώφλι, όπως πριν· μη επιλεγμένο, μείον μόνο την κάσα, με το κατώφλι μέσα (ο τσεχικός κανόνας: άνοιγμα 2050, κάσα 50 → 2000)',
+  'Threshold drawn in plan': 'Κατώφλι σχεδιασμένο στην κάτοψη',
+  'Draws the door\'s threshold seen under the plan\'s cut (LOD 200 and up): the detailed threshold across the wall, else the frame\'s bottom member. Sections cut it as the door has it': 'Σχεδιάζει το κατώφλι της πόρτας όπως φαίνεται κάτω από την τομή της κάτοψης (LOD 200 και πάνω): το λεπτομερές κατώφλι κατά πλάτος του τοίχου, αλλιώς το κάτω μέλος της κάσας. Οι τομές το τέμνουν όπως το έχει η πόρτα',
   'Suffix': 'Επίθημα',
   'Help': 'Βοήθεια',
   'Names': 'Ονόματα',

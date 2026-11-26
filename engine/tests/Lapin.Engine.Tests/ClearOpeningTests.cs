@@ -106,4 +106,96 @@ public sealed class ClearOpeningTests
         Assert.Contains(DerivedFields.Of(IfcClass.Door), x => x.Key == "clearWidth");
         Assert.Contains(DerivedFields.Of(IfcClass.Window), x => x.Key == "openingHeight");
     }
+
+    [Fact]
+    public void The_clear_height_leaves_the_threshold_in_where_the_standards_say_so()
+    {
+        // Lapin's default as before: 900 × 2100, frame 60, threshold 20 → 780/2020.
+        var door = JoinerySpec.DefaultDoor() with { Frame = new JoineryFrame(0.1, 0.06, 0.06, 0.06, 0) };
+        Assert.Equal(0.78, Joinery.ClearOpening(door).Width, 9);
+        Assert.Equal(2.02, Joinery.ClearOpening(door).Height, 9);
+        Assert.Equal(2.02, Joinery.ClearOpening(door, lessThreshold: true).Height, 9);
+        // The Czech rule (forum topic 204): the void less the frame only, whatever the threshold: 2050, frame 50 → 2000.
+        var cz = JoinerySpec.DefaultDoor() with { Height = 2.05, Frame = new JoineryFrame(0.1, 0.05, 0.06, 0.06, 0), Threshold = 0.03 };
+        Assert.Equal(2.0, Joinery.ClearOpening(cz, lessThreshold: false).Height, 9);
+        Assert.Equal(2.0, Joinery.ClearOpening(cz with { Threshold = 0 }, lessThreshold: false).Height, 9);
+        Assert.Equal(2.04, Joinery.ClearOpening(door, lessThreshold: false).Height, 9);
+        // A window's bottom member stays subtracted either way: it is the frame.
+        var window = JoinerySpec.DefaultWindow();
+        Assert.Equal(1.38, Joinery.ClearOpening(window, lessThreshold: false).Height, 9);
+    }
+
+    [Fact]
+    public void The_drafting_standards_option_reaches_tags_rules_and_fields_and_is_one_undo_step()
+    {
+        var (f, door, window, plan) = Project();
+        var d = f.Model.Get(door)!;
+        Assert.True(DraftingResources.Book(f.Model).ClearHeightLessThreshold is null);
+        Assert.Equal("2020", TagText.Value(f.Model, d, "clearHeight"));
+        f.Run("architecture.tagOpenings", new JsonObject { ["viewId"] = plan });
+        f.Run("standards.set", new JsonObject { ["kind"] = "tag", ["entry"] = new JsonObject { ["id"] = "door", ["inner"] = "{clearWidth}/{clearHeight}", ["unit"] = "mm" } });
+        Assert.Contains(Texts(f, plan), t => t.Text == "780/2020");
+        // The Czech way: the threshold is not taken off.
+        f.Run("standards.options", new JsonObject { ["clearHeightLessThreshold"] = false });
+        Assert.False(DraftingResources.Book(f.Model).ClearHeightLessThreshold);
+        Assert.Equal("2040", TagText.Value(f.Model, f.Model.Get(door)!, "clearHeight"));
+        Assert.Equal(2.04, OpeningMarkers.Measure(f.Model, f.Model.Get(door)!, "clearHeight")!.Value, 9);
+        Assert.Contains(Texts(f, plan), t => t.Text == "780/2040");
+        // The width and a window are as they were.
+        Assert.Equal("780", TagText.Value(f.Model, f.Model.Get(door)!, "clearWidth"));
+        Assert.Equal("1380", TagText.Value(f.Model, f.Model.Get(window)!, "clearHeight"));
+        // One undo step back to Lapin's default; true (the default) stores nothing.
+        f.Session.Undo();
+        Assert.Equal("2020", TagText.Value(f.Model, f.Model.Get(door)!, "clearHeight"));
+        f.Run("standards.options", new JsonObject { ["clearHeightLessThreshold"] = false });
+        f.Run("standards.options", new JsonObject { ["clearHeightLessThreshold"] = true });
+        Assert.Null(Spatial.Project(f.Model)!.Attrs["drafting"]?["clearHeightLessThreshold"]);
+        Assert.Throws<CommandException>(() => f.Run("standards.options", new JsonObject { ["clearHeightLessThreshold"] = "no" }));
+        // A standards file carries it to another project with the options.
+        f.Run("standards.options", new JsonObject { ["clearHeightLessThreshold"] = false });
+        var text = (string)f.Session.Query("standards.export", new JsonObject())!["text"]!;
+        var (g, gDoor, _, _) = Project();
+        g.Run("standards.importFrom", new JsonObject { ["text"] = text, ["options"] = true });
+        Assert.Equal("2040", TagText.Value(g.Model, g.Model.Get(gDoor)!, "clearHeight"));
+    }
+
+    [Fact]
+    public void A_door_type_draws_its_threshold_in_plan_when_it_says_so()
+    {
+        // Today's plan draws no threshold (it lies under the cut): a type that says nothing draws as before.
+        var door = JoinerySpec.DefaultDoor();
+        Assert.Empty(JoinerySymbols.ThresholdPlan(door, 0.3));
+        // Shown: the frame's bottom member seen under the cut, between the jambs, as deep as the frame.
+        var shown = door with { ThresholdInPlan = true };
+        var frame = Assert.Single(JoinerySymbols.ThresholdPlan(shown, 0.3));
+        Assert.Equal("outline", frame.Weight);
+        var (mn, mx) = JoinerySymbols.Bounds([frame]);
+        Assert.Equal(door.Width - 2 * door.Frame.Width, mx.X - mn.X, 6);
+        Assert.Equal(door.Frame.Depth, mx.Y - mn.Y, 6);
+        // A detailed threshold across the wall: as wide as the opening, as deep as the wall.
+        var detailed = shown with { Details = new JoineryDetails(Threshold: new JoineryThreshold(On: true)) };
+        (mn, mx) = JoinerySymbols.Bounds(JoinerySymbols.ThresholdPlan(detailed, 0.3));
+        Assert.Equal((door.Width, 0.3), (Math.Round(mx.X - mn.X, 6), Math.Round(mx.Y - mn.Y, 6)));
+        // None to draw: no threshold, or a window.
+        Assert.Empty(JoinerySymbols.ThresholdPlan(shown with { Threshold = 0 }, 0.3));
+        Assert.Empty(JoinerySymbols.ThresholdPlan(JoinerySpec.DefaultWindow() with { ThresholdInPlan = true }, 0.3));
+        Assert.Empty(JoinerySymbols.ThresholdPlan(door with { ThresholdInPlan = false }, 0.3));
+
+        // In a project: the door's plan gains the threshold's outline at LOD 200 and up, nothing else changes.
+        var f = new Fixture(new ArchitectureModule());
+        var wall = f.Wall(0, 0, 6, 0);
+        string Door(JoinerySpec s, double along)
+        {
+            var type = (string)f.Run("architecture.createJoineryType", new JsonObject { ["spec"] = s.ToJson() })!["id"]!;
+            return (string)f.Run("architecture.addDoor", new JsonObject { ["wallId"] = wall, ["along"] = along, ["typeId"] = type })!["id"]!;
+        }
+        var plain = f.Session.Geometry(Door(door, 1.5))!.Plan!;
+        var drawn = f.Session.Geometry(Door(shown, 4))!.Plan!;
+        Assert.Equal(plain.Count + 1, drawn.Count);
+        Assert.Contains(drawn, i => i.Closed && i.MinDetail == PlanDetail.Medium && i.MaxDetail == PlanDetail.Fine);
+        // The spec keeps nothing new until asked: its JSON as before.
+        Assert.Null(door.ToJson()["thresholdInPlan"]);
+        Assert.True((bool)shown.ToJson()["thresholdInPlan"]!);
+        Assert.True(JoinerySpec.From(shown.ToJson())!.ThresholdInPlan);
+    }
 }
