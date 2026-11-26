@@ -72,6 +72,8 @@ A reference keeps the openings its file cut into it, with the doors and windows 
 
 **Spaces.** Some programs fail on the extruded profile an IfcSpace is written with (CYPECAD MEP is one). Tick **Spaces: export as faceted B-rep (instead of SweptSolid)** in **Export IFC, Fragments or BOS…** and each space is written as a faceted B-rep of its own geometry instead. Unticked (the default), the file is as it always was.
 
+**Roofs: one slab per slope.** A sloped roof's covering is written as one IfcSlab ROOF holding all its slopes. Some programs fit one plane to each slab (CYPECAD MEP is one), so a gable roof comes in as a mono-pitch. Tick **Roofs: one slab per slope** in **Export IFC, Fragments or BOS…** and the covering (and the deck of a roof without framing, and your own layers) is written as one IfcSlab ROOF per slope, each a part of the IfcRoof, with a GlobalId that stays the same from one export to the next; the timber, gutters, downpipes and snow guards are written as before, and the roof is written over its slopes even with **one body each**. A barrel vault stays one curved slab. Unticked (the default), the file is as it always was. Lapin reads such a file back as the one roof.
+
 On the desktop, **Bonsai drawing styles** (in **Export IFC, Fragments or BOS…**) writes beside the IFC a stylesheet (`name.css`) and its hatches (`name-patterns.svg`) for Bonsai (BlenderBIM), whose drawings are styled by CSS: each material's cut hatch, fill and elevation hatch, the cut and seen lines of your object styles and the text of your drafting standards. The IFC names both files, so a drawing you create in Bonsai from it takes them.
 
 ![Export IFC, Fragments or BOS](shots/export-exchange.webp)

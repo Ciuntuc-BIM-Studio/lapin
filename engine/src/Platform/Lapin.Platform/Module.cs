@@ -454,7 +454,14 @@ public sealed record GeometryPart
     /// and open edges, which the copies hold to within their error.
     /// </summary>
     public bool LodKeepsEdges { get; init; }
+    /// <summary>
+    /// The part in pieces its element knows apart (a roof covering's slopes, issue #139): each a key of its own within the part
+    /// ("slope:1") and its body, the part's <see cref="Solid"/> being them together. The IFC export writes each piece an element
+    /// of its own when asked; nothing else reads them. A solid given anew drops them (a cut part's pieces are its maker's to give).
+    /// </summary>
+    public IReadOnlyList<PartPiece>? Pieces { get => _pieces; init => _pieces = value; }
 
+    IReadOnlyList<PartPiece>? _pieces;
     Solid? _solid;
     Func<Solid>? _make;
 
@@ -476,7 +483,7 @@ public sealed record GeometryPart
             if (_solid != null) return _solid;
             lock (_make!) return _solid ??= _make();
         }
-        init { _solid = value; _make = null; Mesh = null; }
+        init { _solid = value; _make = null; Mesh = null; _pieces = null; }
     }
 
     /// <summary>Whether the solid is there (made, or given): a mesh part's is not until asked for.</summary>
@@ -491,6 +498,9 @@ public sealed record GeometryPart
     /// <summary>The part's render: a mesh drawn as one (shared vertices, smooth, crease edges), a solid tessellated face by face.</summary>
     public TriMesh Tessellate() => Mesh is { } m ? MeshShading.Smooth(m.Xyz, m.Tris) : Tessellator.Tessellate(Solid);
 }
+
+/// <summary>One piece of a part (<see cref="GeometryPart.Pieces"/>): its key within the part, its name, its body.</summary>
+public sealed record PartPiece(string Key, string Name, Solid Solid);
 
 /// <summary>
 /// A number of a part's own for IFC: <see cref="Kind"/> LENGTH (m), AREA (m²), ANGLE (degrees, written in the file's radians),

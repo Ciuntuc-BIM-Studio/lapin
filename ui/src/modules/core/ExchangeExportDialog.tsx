@@ -52,6 +52,7 @@ export function ExchangeExportDialog() {
   // A type's properties also on each of its elements (issue #30), for programs that read only the element: off, the export is as it was.
   const [typeProps, setTypeProps] = useState(false);
   const [spaceBrep, setSpaceBrep] = useState(false);
+  const [roofSlopes, setRoofSlopes] = useState(false);
   // Pset_…Common.LoadBearing also where only the rule says it (docs/plan-structural-usage.md): off, written where the Structural tick or a Pset value says it.
   const [derivedLoadBearing, setDerivedLoadBearing] = useState(false);
   // Studio solids known exactly as IfcAdvancedBrep (docs/plan-studio-freeform.md §9): off, every body is written as its facets, as before.
@@ -87,7 +88,7 @@ export function ExchangeExportDialog() {
       } catch (e) {
         notify(e instanceof Error ? e.message : String(e));
       }
-    } else if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}), ...(bonsai && isDesktop() ? { bonsaiStyles: true } : {}), ...(structural ? { structural: true } : {}), ...(typeProps ? { typePropertiesOnOccurrences: true } : {}), ...(spaceBrep ? { spaceBrep: true } : {}), ...(derivedLoadBearing ? { derivedLoadBearing: true } : {}), ...(advancedBrep ? { advancedBrep: true } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
+    } else if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}), ...(bonsai && isDesktop() ? { bonsaiStyles: true } : {}), ...(structural ? { structural: true } : {}), ...(typeProps ? { typePropertiesOnOccurrences: true } : {}), ...(spaceBrep ? { spaceBrep: true } : {}), ...(roofSlopes ? { roofSlopes: true } : {}), ...(derivedLoadBearing ? { derivedLoadBearing: true } : {}), ...(advancedBrep ? { advancedBrep: true } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
     else if (format === 'step') {
       const { phase: _phase, voids: _voids, ...chosen } = common as Record<string, unknown>;
       await exportFile('project.exportStep', { ...chosen, entourage: true }, `${projectTitle(path)}.step`, 'step');
@@ -164,6 +165,8 @@ export function ExchangeExportDialog() {
                 <dd><label><input type="checkbox" data-testid="export-structural" style={{ width: 'auto', marginRight: 6 }} checked={structural} onChange={(e) => setStructural(e.target.checked)} /> Structural analysis view (analytical model and loads)</label></dd>
                 <dt title="Export IfcSpace geometry as faceted B-rep (or face set) instead of SweptSolid extrusions, for IFC readers such as CYPECAD MEP that fail on extruded space profiles">Spaces</dt>
                 <dd><label><input type="checkbox" data-testid="export-space-brep" style={{ width: 'auto', marginRight: 6 }} checked={spaceBrep} onChange={(e) => setSpaceBrep(e.target.checked)} /> export as faceted B-rep (instead of SweptSolid)</label></dd>
+                <dt title="A sloped roof's covering (its deck, its layers) written as one IfcSlab ROOF per slope under the IfcRoof, for IFC readers such as CYPECAD MEP that fit one plane to each slab; timber, gutters and downpipes as before">Roofs</dt>
+                <dd><label><input type="checkbox" data-testid="export-roof-slopes" style={{ width: 'auto', marginRight: 6 }} checked={roofSlopes} onChange={(e) => setRoofSlopes(e.target.checked)} /> one slab per slope</label></dd>
                 <dt title="Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before">Exact surfaces</dt>
                 <dd><label><input type="checkbox" data-testid="export-advanced-brep" style={{ width: 'auto', marginRight: 6 }} checked={advancedBrep} onChange={(e) => setAdvancedBrep(e.target.checked)} /> Studio solids as advanced B-rep on their exact surfaces</label></dd>
                 <dt>Simplify</dt>
