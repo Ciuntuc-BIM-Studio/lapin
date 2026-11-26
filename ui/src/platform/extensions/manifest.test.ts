@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { compareVersions, compatibility, isNonCommercial, isNonCommercialId, isPermissive, isSpdx, readIndex, runnable, satisfies, validateManifest } from './manifest';
+import { compareVersions, compatibility, isNonCommercial, isNonCommercialId, isPermissive, isSpdx, moduleIdOf, PAID_KINDS, readIndex, runnable, satisfies, UI_LANGUAGES, validateManifest } from './manifest';
 import { furniturePack } from './fixtures';
+import { LANGUAGES } from '../../i18n';
 
 const app = (over: Partial<{ version: string; browser: boolean; modules: string[] }> = {}) => {
   const modules = over.modules ?? ['core', 'architecture', 'furniture', 'cost'];
@@ -138,5 +139,72 @@ describe('the library kinds of extension', () => {
     expect(compatibility(m as never, app({ modules: ['core'] }))).toEqual({ ok: false, reason: 'This edition of Lapin has no rebar module.' });
     expect(compatibility(m as never, app({ modules: ['core', 'rebar'] })).ok).toBe(true);
     expect(compatibility(lib('families', 'a.lapinfamily') as never, app()).ok).toBe(false);
+  });
+});
+
+describe('the module kind (docs/plan-extension-modules.md)', () => {
+  const mod = (over: Record<string, unknown> = {}) => furniturePack({
+    id: 'ro.ciuntucbimstudio.planning-plus', name: 'Planning+', kind: 'module', license: 'LicenseRef-PlanningPlus',
+    permissions: ['full', 'model.write'], requires: ['planning', 'cost'],
+    engine: { assembly: 'Lapin.PlanningPlus.dll' }, contract: '1.x', ui: { css: true }, sdk: '1.0',
+    eula: { file: 'EULA.txt', version: '1' },
+    contents: { file: 'planning-plus-1.0.0.lapinext' },
+    ...over,
+  } as never);
+  const errs = (o: unknown) => validateManifest(o).join(' ');
+
+  it('takes a good one: engine and interface halves, either alone, a LicenseRef licence, a EULA', () => {
+    expect(validateManifest(mod())).toEqual([]);
+    expect(validateManifest(mod({ ui: undefined, sdk: undefined }))).toEqual([]);
+    expect(validateManifest(mod({ engine: undefined, contract: undefined }))).toEqual([]);
+    expect(validateManifest(mod({ eula: undefined, license: 'MIT' }))).toEqual([]);
+    expect(validateManifest(mod({ ui: {} }))).toEqual([]);
+    expect(moduleIdOf('ro.ciuntucbimstudio.planning-plus')).toBe('planning-plus');
+  });
+
+  it('needs full access, a listed author, a .lapinext and one half at least', () => {
+    expect(errs(mod({ permissions: ['model.write'] }))).toMatch(/permissions must include full/);
+    expect(errs(mod({ permissions: undefined }))).toMatch(/permissions must include full/);
+    expect(errs(mod({ author: { name: 'Someone', github: 'someone' } }))).toMatch(/authors the maintainer lists/);
+    expect(errs(mod({ author: { name: 'Someone' } }))).toMatch(/authors the maintainer lists/);
+    expect(validateManifest(mod({ author: { name: 'C', github: 'ciuntuc-bim-studio' } }))).toEqual([]);
+    expect(errs(mod({ contents: { file: 'planning-plus.zip' } }))).toMatch(/A module package is a \.lapinext file/);
+    expect(errs(mod({ engine: undefined, contract: undefined, ui: undefined, sdk: undefined }))).toMatch(/engine or ui is required/);
+  });
+
+  it('checks the halves, their versions and the EULA', () => {
+    expect(errs(mod({ engine: { assembly: '../x.dll' } }))).toMatch(/engine must be/);
+    expect(errs(mod({ engine: { assembly: 'x.so' } }))).toMatch(/engine must be/);
+    expect(errs(mod({ engine: { assembly: 'x.dll', path: 'y' } }))).toMatch(/engine must be/);
+    expect(errs(mod({ contract: undefined }))).toMatch(/contract must be/);
+    expect(errs(mod({ contract: '>=1' }))).toMatch(/contract must be/);
+    expect(errs(mod({ sdk: 'v1' }))).toMatch(/sdk must be/);
+    expect(errs(mod({ ui: { css: 'yes' } }))).toMatch(/ui must be/);
+    expect(errs(mod({ engine: undefined }))).toMatch(/contract goes with engine/);
+    expect(errs(mod({ ui: undefined }))).toMatch(/sdk goes with ui/);
+    expect(errs(mod({ eula: { file: 'LICENSE.txt', version: '1' } }))).toMatch(/eula must be/);
+    expect(errs(mod({ eula: { file: 'docs/eula.txt', version: '1' } }))).toMatch(/eula must be/);
+    expect(errs(mod({ eula: { file: 'EULA.pdf', version: '1' } }))).toMatch(/eula must be/);
+    expect(errs(mod({ eula: { file: 'EULA.txt' } }))).toMatch(/eula must be/);
+  });
+
+  it('is not for sale (not a paid kind) and its fields and full access are for modules only', () => {
+    expect(PAID_KINDS).not.toContain('module');
+    const sold = mod({ purchase: { provider: 'gumroad', productId: '1', checkoutUrl: 'https://x.ro', terms: 'https://x.ro' }, package: { url: 'https://store.lapinbim.com/api/licensed/ro.ciuntucbimstudio.planning-plus/1.0.0', sha256: 'a'.repeat(64), size: 9 } });
+    expect(validateManifest(sold)).toContain('A module extension cannot be sold yet.');
+    expect(errs(furniturePack({ kind: 'script', contents: { file: 'x.py' }, permissions: ['full'] }))).toMatch(/Only an extension module asks for full access/);
+    expect(errs(furniturePack({ sdk: '1.x' } as never))).toMatch(/sdk is for an extension module only/);
+    expect(errs(furniturePack({ eula: { file: 'EULA.txt', version: '1' } } as never))).toMatch(/eula is for an extension module only/);
+  });
+
+  it('is desktop only, and needs no Python console to run', () => {
+    expect(compatibility(mod(), app({ browser: true }))).toEqual({ ok: false, reason: 'Desktop app only.' });
+    expect(compatibility(mod(), app()).ok).toBe(true);
+    expect(runnable(mod(), app({ modules: ['planning', 'cost'] }))).toBe(true);
+    expect(runnable(mod(), app({ modules: ['planning'] }))).toBe(false);
+  });
+
+  it('names a phrase table for every language of the interface but English', () => {
+    expect([...UI_LANGUAGES].sort()).toEqual(LANGUAGES.map((l) => l.id).filter((l) => l !== 'en').sort());
   });
 });

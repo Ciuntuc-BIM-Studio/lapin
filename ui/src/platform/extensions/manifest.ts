@@ -6,8 +6,11 @@
  * accepted by the other.
  */
 
-/** The kinds of extension: content packs (no code) first; Python scripts, which run once the Python console exists. */
-export const KINDS = ['furniture', 'template', 'types', 'profiles', 'hatches', 'titleBlock', 'priceList', 'symbols', 'lineTypes', 'standards', 'rules', 'barShapes', 'parameters', 'mapping', 'families', 'script'] as const;
+/**
+ * The kinds of extension: content packs (no code) first; Python scripts, which run once the Python console exists; extension
+ * modules (docs/plan-extension-modules.md): a signed C# engine module and/or a JS interface plug-in, desktop only.
+ */
+export const KINDS = ['furniture', 'template', 'types', 'profiles', 'hatches', 'titleBlock', 'priceList', 'symbols', 'lineTypes', 'standards', 'rules', 'barShapes', 'parameters', 'mapping', 'families', 'script', 'module'] as const;
 export type ExtensionKind = (typeof KINDS)[number];
 
 export interface KindInfo {
@@ -39,10 +42,16 @@ export const KIND_INFO: Record<ExtensionKind, KindInfo> = {
   mapping: { label: 'Table and layer mappings', extensions: ['lapinmapping'], code: false, module: 'core' },
   families: { label: 'Families', extensions: ['lapinfamily', 'lapinpart'], code: false, module: 'studio' },
   script: { label: 'Python scripts', extensions: ['py'], code: true },
+  // A .lapinext (a zip, docs/plan-extension-modules.md §1.1): engine/ assemblies, ui/plugin.js, its phrase tables, its licence.
+  module: { label: 'Extension modules', extensions: ['lapinext'], code: true },
 };
 
-/** What a script may ask for, said to the user before it is installed (enforced for JS plug-ins later; a script on the desktop can do what the user can). */
-export const PERMISSIONS = ['model.read', 'model.write', 'files.read', 'files.write', 'network', 'process'] as const;
+/**
+ * What a script may ask for, said to the user before it is installed (a script on the desktop can do what the user can).
+ * `full`: an extension module's, which nothing restricts (docs/plan-extension-modules.md §4.2): required for kind `module`,
+ * asked by no other kind; its other permissions describe what it does.
+ */
+export const PERMISSIONS = ['model.read', 'model.write', 'files.read', 'files.write', 'network', 'process', 'full'] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 export const PERMISSION_LABELS: Record<Permission, string> = {
   'model.read': 'Read the open project',
@@ -51,7 +60,26 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   'files.write': 'Write files on this computer',
   network: 'Reach the internet',
   process: 'Start other programs',
+  full: 'Runs code with everything you can do on this computer: read and change your files, use the network, start programs',
 };
+
+/**
+ * Who may publish an extension module (docs/plan-extension-modules.md §4.1): GitHub accounts the maintainer lists, matched
+ * with author.github. The same list is in lapin-extensions' tools/lib.mjs.
+ */
+export const MODULE_AUTHORS: readonly string[] = ['Ciuntuc-BIM-Studio'];
+
+/**
+ * The interface's languages besides English (ui/src/i18n): an extension module with an interface half ships one phrase table
+ * for each (`ui/i18n/<lang>.json`, §3.3). A test keeps this equal to the translator's list; lapin-extensions' tools/lib.mjs has it too.
+ */
+export const UI_LANGUAGES: readonly string[] = ['da', 'de', 'el', 'es', 'fr', 'it', 'lo', 'pl', 'pt', 'ro', 'ru', 'sv', 'th', 'uk', 'zh'];
+
+/** A contract or SDK version an extension module is built against: `1.x` (any minor) or `1.2` (that minor or later). */
+export const CONTRACT = /^(0|[1-9]\d*)\.(x|0|[1-9]\d*)$/;
+
+/** The module id of an extension module: its id's last part (`ro.ciuntucbimstudio.planning-plus` → `planning-plus`), the prefix of its commands and CSS classes. */
+export const moduleIdOf = (id: string): string => id.slice(id.lastIndexOf('.') + 1);
 
 /**
  * Paid extensions (docs/plan-extensions.md §12, stage 2a): sold by their authors through their own shop, the licence key
@@ -60,7 +88,8 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
  * lapin-extensions' tools/lib.mjs.
  */
 // Gumroad only: Lemon Squeezy closed sign-ups on 16.11.2026 and stops on 31.03.2027 (decision 660); merchants without a
-// licence API (Stripe Managed Payments, Paddle) wait for store-issued keys (docs/plan-extensions.md §12.10).
+// licence API (Stripe Managed Payments, Paddle) wait for store-issued keys (docs/plan-extensions.md §12.10). Extension modules
+// are free for now: `module` is not among the kinds for sale until the user decides (docs/plan-extension-modules.md §5).
 export const PROVIDERS = { gumroad: 'Gumroad' } as const;
 export type Provider = keyof typeof PROVIDERS;
 export const PAID_KINDS: readonly ExtensionKind[] = ['furniture', 'template', 'types', 'profiles', 'hatches', 'titleBlock', 'priceList', 'symbols', 'lineTypes', 'standards', 'rules', 'barShapes', 'parameters', 'mapping', 'families', 'script'];
@@ -123,6 +152,16 @@ export interface Manifest {
   indicative?: boolean;
   /** Sold by its author through their own shop (stage 2a): its package comes from the store, for a valid licence key. */
   purchase?: Purchase;
+  /** An extension module's engine half: its assembly, a file of the package's engine/ folder (module.json's `assembly`). */
+  engine?: { assembly: string };
+  /** The engine contract its engine half is built against (`1.x`, `1.2`): required with `engine`. */
+  contract?: string;
+  /** An extension module's interface half: ui/plugin.js, and ui/plugin.css when `css`. */
+  ui?: { css?: boolean };
+  /** The interface SDK its plug-in is built against (`1.x`, `1.2`): required with `ui`. */
+  sdk?: string;
+  /** A licence the user accepts before installing (I accept / Cancel): a text file at the package's root, and its version (a new one asks again). */
+  eula?: { file: string; version: string };
 }
 
 export interface CatalogueIndex {
@@ -231,6 +270,11 @@ export function validateManifest(m: unknown, opts: { local?: boolean } = {}): st
   const perms = o.permissions;
   if (perms !== undefined && (!Array.isArray(perms) || perms.some((p) => !PERMISSIONS.includes(p as Permission)))) e.push(`permissions must be among ${PERMISSIONS.join(', ')}.`);
   if (KINDS.includes(kind) && !KIND_INFO[kind].code && Array.isArray(perms) && perms.length) e.push('A content pack asks for no permission: it holds no code.');
+  if (kind === 'module') validateModule(o, e);
+  else {
+    if (Array.isArray(perms) && perms.includes('full')) e.push('Only an extension module asks for full access.');
+    for (const k of ['engine', 'contract', 'ui', 'sdk', 'eula'] as const) if (o[k] !== undefined) e.push(`${k} is for an extension module only.`);
+  }
   if (o.requires !== undefined && (!Array.isArray(o.requires) || o.requires.some((r) => !str(r) || !ID.test(r)))) e.push('requires must be module ids.');
   const c = o.contents as Record<string, unknown> | undefined;
   if (!c || typeof c !== 'object' || !str(c.file) || /[\\/]/.test(c.file)) e.push('contents.file is required: the package file\'s name.');
@@ -275,6 +319,34 @@ export function validateManifest(m: unknown, opts: { local?: boolean } = {}): st
   }
   return e;
 }
+
+/** An extension module's own fields (docs/plan-extension-modules.md §1, §4, §5); its package's layout is checked by the catalogue's CI and the engine. */
+function validateModule(o: Record<string, unknown>, e: string[]): void {
+  const a = o.author as Record<string, unknown> | undefined;
+  if (!a || typeof a !== 'object' || typeof a.github !== 'string' || !MODULE_AUTHORS.some((x) => x.toLowerCase() === (a.github as string).toLowerCase())) e.push(`An extension module is published by the authors the maintainer lists (author.github one of ${MODULE_AUTHORS.join(', ')}).`);
+  if (!Array.isArray(o.permissions) || !o.permissions.includes('full')) e.push('An extension module runs code with full access: permissions must include full.');
+  if (o.engine === undefined && o.ui === undefined) e.push('An extension module has an engine half, an interface half, or both: engine or ui is required.');
+  if (o.engine !== undefined) {
+    const g = o.engine as Record<string, unknown> | null;
+    if (!g || typeof g !== 'object' || Array.isArray(g) || Object.keys(g).some((k) => k !== 'assembly') || typeof g.assembly !== 'string' || !PACKAGE_NAME.test(g.assembly) || !g.assembly.toLowerCase().endsWith('.dll')) e.push("engine must be { assembly }: the engine module's .dll, a file name in the package's engine/ folder.");
+    if (typeof o.contract !== 'string' || !CONTRACT.test(o.contract)) e.push('contract must be the engine contract it is built against (1.x, 1.2).');
+  } else if (o.contract !== undefined) e.push('contract goes with engine.');
+  if (o.ui !== undefined) {
+    const u = o.ui as Record<string, unknown> | null;
+    if (!u || typeof u !== 'object' || Array.isArray(u) || Object.keys(u).some((k) => k !== 'css') || (u.css !== undefined && typeof u.css !== 'boolean')) e.push('ui must be { css? }: the plug-in is ui/plugin.js, its styles ui/plugin.css when css is true.');
+    if (typeof o.sdk !== 'string' || !CONTRACT.test(o.sdk)) e.push('sdk must be the interface SDK it is built against (1.x, 1.2).');
+  } else if (o.sdk !== undefined) e.push('sdk goes with ui.');
+  if (o.eula !== undefined) {
+    const l = o.eula as Record<string, unknown> | null;
+    if (!l || typeof l !== 'object' || Array.isArray(l) || typeof l.file !== 'string' || !EULA_FILE.test(l.file) || RESERVED_ROOT.includes(l.file) || !str(l.version) || l.version.length > 40) e.push('eula must be { file, version }: a .txt or .md file at the package\'s root (not LICENSE.txt) and its version.');
+  }
+}
+
+/** A file or folder name inside a .lapinext: letters, digits, dots, dashes and underscores. */
+export const PACKAGE_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const EULA_FILE = /^[A-Za-z0-9][A-Za-z0-9._-]*\.(?:txt|md)$/;
+/** The fixed files at a .lapinext's root. */
+export const RESERVED_ROOT = ['manifest.json', 'module.json', 'LICENSE.txt', 'FILES.sha256'];
 
 /** An index read: its good manifests, and what was wrong with the others (an entry left out, never the whole index). */
 export function readIndex(json: unknown, opts: { local?: boolean } = {}): { extensions: Manifest[]; problems: string[] } {
@@ -377,10 +449,11 @@ export interface AppFacts { version: string; browser: boolean; hasModule: (id: s
 export function compatibility(m: Manifest, app: AppFacts): { ok: true } | { ok: false; reason: string } {
   if (!satisfies(app.version, m.lapin)) return { ok: false, reason: `It works with Lapin ${m.lapin}; this is Lapin ${app.version}.` };
   const info = KIND_INFO[m.kind];
+  if (m.kind === 'module' && app.browser) return { ok: false, reason: 'Desktop app only.' };
   if (info.code && app.browser) return { ok: false, reason: 'Scripts are installed in the desktop app; the browser takes content packs only.' };
   if (info.module && !app.hasModule(info.module)) return { ok: false, reason: `This edition of Lapin has no ${info.module} module.` };
   return { ok: true };
 }
 
 /** Whether a script can run yet: it needs the Python console (the scripting module, docs/plan-python-scripting.md). */
-export const runnable = (m: Manifest, app: Pick<AppFacts, 'hasModule'>): boolean => (m.requires ?? []).every((r) => app.hasModule(r)) && (!KIND_INFO[m.kind].code || app.hasModule('scripting'));
+export const runnable = (m: Manifest, app: Pick<AppFacts, 'hasModule'>): boolean => (m.requires ?? []).every((r) => app.hasModule(r)) && (m.kind !== 'script' || app.hasModule('scripting'));
