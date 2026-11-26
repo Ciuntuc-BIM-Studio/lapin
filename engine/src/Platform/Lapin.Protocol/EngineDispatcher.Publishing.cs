@@ -223,7 +223,8 @@ public sealed partial class EngineDispatcher
             list.Add((new TagFile(f.Name, f.Sha256, f.Size), store.Get(f.Sha256)));
         }
         // A document is a file's name without its status and revision (CdeNaming.WithRevision) and its extension: the drawing whatever its revision.
-        var documents = record.Files.Select(f => System.Text.RegularExpressions.Regex.Replace(Path.GetFileNameWithoutExtension(f.Name), @"_([SAB][0-9]|CR|S0)_[PC][0-9]{2,3}$", ""))
+        // The reference documents sent with it (stage R5) are files of the tag, never documents of the register: the project received them.
+        var documents = record.Files.Where(f => f.ReferenceId == null).Select(f => System.Text.RegularExpressions.Regex.Replace(Path.GetFileNameWithoutExtension(f.Name), @"_([SAB][0-9]|CR|S0)_[PC][0-9]{2,3}$", ""))
             .Where(n => n.Length is > 0 and <= 255).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         return new ServerIssue(record, purpose, suitability, $"refs/tags/issue/{record.Number}-{record.Revision}", list, documents, notes);
     }

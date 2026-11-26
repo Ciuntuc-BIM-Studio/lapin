@@ -1,0 +1,63 @@
+{
+  "id": "borderou-avize",
+  "title": "Borderou de avize și acorduri",
+  "description": "Model indicativ: avizele și acordurile cerute prin certificatul de urbanism, fiecare cu documentul care îl răspunde (emitent, număr, dată, valabilitate, stare), din documentele de referință ale proiectului. Verifică-l după cerințele autorității care emite autorizația.",
+  "lang": "ro",
+  "isoType": "SH",
+  "indicative": true,
+  "page": {
+    "size": "A4",
+    "orientation": "portrait",
+    "margins": [20, 20, 20, 25],
+    "header": "{{project.name}} · {{project.number}}",
+    "footer": "{{project.designer}} · pagina {{page}} din {{pages}}"
+  },
+  "inputs": [],
+  "blocks": [
+    { "kind": "heading", "level": 1, "text": "Borderou de avize și acorduri" },
+    {
+      "kind": "fields",
+      "rows": [
+        ["Proiect", "{{project.name}}"],
+        ["Amplasament", "{{project.address}}"],
+        ["Număr proiect", "{{project.number}}"],
+        ["Faza", "{{project.phase}}"],
+        ["Beneficiar", "{{project.client}}"],
+        ["Proiectant", "{{project.designer}}"],
+        ["Data", "{{date.today}}"]
+      ]
+    },
+
+    { "kind": "heading", "level": 2, "text": "Certificatul de urbanism" },
+    {
+      "kind": "if", "field": "ref.cu.title",
+      "blocks": [
+        {
+          "kind": "fields",
+          "rows": [
+            ["Număr", "{{ref.cu.number}}"],
+            ["Data emiterii", "{{ref.cu.date}}"],
+            ["Emitent", "{{ref.cu.issuer}}"],
+            ["Valabil până la", "{{ref.cu.validUntil}}"]
+          ]
+        },
+        { "kind": "heading", "level": 2, "text": "Avize și acorduri cerute" },
+        { "kind": "table", "source": "references:permits" }
+      ],
+      "else": [
+        { "kind": "paragraph", "style": "note", "text": "Proiectul nu are încă un certificat de urbanism primit și valabil: adaugă-l din Gestionare → Documente de referință și bifează avizele pe care le cere." }
+      ]
+    },
+
+    { "kind": "heading", "level": 2, "text": "Avize și acorduri primite" },
+    { "kind": "table", "source": "references:documents?folder=permits&status=received", "title": "" },
+
+    {
+      "kind": "fields",
+      "rows": [
+        ["Întocmit", "{{project.author}}"],
+        ["Verificat", "{{project.checkedBy}}"]
+      ]
+    }
+  ]
+}

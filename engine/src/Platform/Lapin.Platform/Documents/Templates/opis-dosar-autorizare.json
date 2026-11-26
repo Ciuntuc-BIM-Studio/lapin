@@ -1,0 +1,59 @@
+{
+  "id": "opis-dosar-autorizare",
+  "title": "Opis dosar de autorizare",
+  "description": "Model indicativ: opisul dosarului pentru autorizarea executării lucrărilor, cu documentele de referință primite (certificatul de urbanism, extrasul de carte funciară, avizele și acordurile), piesele scrise și piesele desenate, cu numărul de pagini unde se cunoaște. Ordinea și conținutul dosarului sunt cele cerute de autoritate: verifică-le.",
+  "lang": "ro",
+  "isoType": "SH",
+  "indicative": true,
+  "page": {
+    "size": "A4",
+    "orientation": "portrait",
+    "margins": [20, 20, 20, 25],
+    "header": "{{project.name}} · {{project.number}}",
+    "footer": "{{project.designer}} · pagina {{page}} din {{pages}}"
+  },
+  "inputs": [],
+  "blocks": [
+    { "kind": "heading", "level": 1, "text": "Opis" },
+    { "kind": "paragraph", "text": "Documentele dosarului pentru autorizarea executării lucrărilor la **{{project.name}}**, {{project.address}}." },
+    {
+      "kind": "fields",
+      "rows": [
+        ["Beneficiar", "{{project.client}}"],
+        ["Proiectant", "{{project.designer}}"],
+        ["Număr proiect", "{{project.number}}"],
+        ["Faza", "{{project.phase}}"],
+        ["Data", "{{date.today}}"]
+      ]
+    },
+
+    { "kind": "heading", "level": 2, "text": "Documente de referință" },
+    { "kind": "table", "source": "references:documents?status=received", "title": "", "columns": ["Nr.", "Tip", "Titlu", "Emitent", "Număr", "Data", "Pagini"] },
+
+    { "kind": "heading", "level": 2, "text": "Piese scrise" },
+    {
+      "kind": "repeat",
+      "over": "documents", "empty": [{ "kind": "paragraph", "text": "Proiectul nu are încă piese scrise." }],
+      "blocks": [
+        { "kind": "paragraph", "text": "{{doc.index}}. {{doc.name}}" }
+      ]
+    },
+
+    { "kind": "heading", "level": 2, "text": "Piese desenate" },
+    {
+      "kind": "repeat",
+      "over": "sheets", "empty": [{ "kind": "paragraph", "text": "Proiectul nu are încă planșe." }],
+      "blocks": [
+        { "kind": "paragraph", "text": "{{sheet.index}}. **{{sheet.number}}** {{sheet.title}} · 1 planșă" }
+      ]
+    },
+
+    {
+      "kind": "fields",
+      "rows": [
+        ["Întocmit", "{{project.author}}"],
+        ["Data", "{{date.today}}"]
+      ]
+    }
+  ]
+}

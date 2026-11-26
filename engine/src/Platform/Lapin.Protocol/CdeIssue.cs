@@ -7,6 +7,7 @@ using Lapin.Package;
 using Lapin.Platform;
 using Lapin.Platform.Cde;
 using Lapin.Platform.Documents;
+using Refs = Lapin.Platform.Cde.References.References;
 
 namespace Lapin.Protocol;
 
@@ -15,7 +16,10 @@ namespace Lapin.Protocol;
 /// exports. The checks run first and a blocking finding refuses the issue;
 /// then each sheet's PDF (and the set, the IFC model, the DXFs when asked) is
 /// made, named by the convention with the status and revision, and hashed;
-/// the transmittal (PDF and CSV) and the manifest are made beside them. Every
+/// the transmittal (PDF and CSV) and the manifest are made beside them. The
+/// reference documents asked for (stage R5: <see cref="ReferencesOf"/>) go
+/// with it as copies of their files under their own names, listed and hashed
+/// like the rest (<see cref="IssuedFile.ReferenceId"/>). Every
 /// file is kept in the project's file (<see cref="PackageIssues"/>, the IFC
 /// only on request) and, when the project has a folder on this computer, also
 /// written into its container. The issue is recorded in the project (one undo
@@ -36,7 +40,8 @@ public static class CdeIssue
         var model = Flag(p, "model");
         // The written documents only when asked (docs/plan-documents.md): each as a PDF, and as a DOCX too with documentsDocx.
         var documents = p["documents"] is JsonArray ? Cde.DocumentsOf(m, p["documents"]) : [];
-        if (sheets.Count == 0 && !model && documents.Count == 0) throw new CommandException("Choose at least one sheet, a document, or the model.");
+        var references = ReferencesOf(m, p["references"], p["referenceFolders"]);
+        if (sheets.Count == 0 && !model && documents.Count == 0 && references.Count == 0) throw new CommandException("Choose at least one sheet, a document, a reference document, or the model.");
         var names = Cde.Names(m, p);
         var revision = (string)names["revision"]!;
         var status = (string)names["status"]!;
@@ -79,12 +84,12 @@ public static class CdeIssue
         var rows = new List<CdeTransmittal.Row>();
         // A file kept in the project (by its hash, once), written into the container when there is one; `Put` also lists it in the transmittal
         // (the transmittal's own files are not).
-        IssuedFile Write(string fileName, byte[] bytes, string kind, Entity? sheet = null, string? hash = null, string? documentId = null)
+        IssuedFile Write(string fileName, byte[] bytes, string kind, Entity? sheet = null, string? hash = null, string? documentId = null, string? referenceId = null, bool? keep = null)
         {
-            var stored = kind != "ifc" || keepModel;
+            var stored = keep ?? (kind != "ifc" || keepModel);
             var sha = stored ? store.Put(bytes) : CdeTransmittal.Sha256(bytes);
             if (into != null) File.WriteAllBytes(Path.Combine(into, fileName), bytes);
-            var f = new IssuedFile(fileName, kind, sheet?.Id, sha, bytes.LongLength, hash, stored, documentId);
+            var f = new IssuedFile(fileName, kind, sheet?.Id, sha, bytes.LongLength, hash, stored, documentId, referenceId);
             files.Add(f);
             return f;
         }
@@ -120,6 +125,35 @@ public static class CdeIssue
             rows.Add(new CdeTransmittal.Row(Write(CdeNaming.WithRevision(stem, status, revision, "pdf"), writer(filled, "pdf", null), "document", documentId: doc.Id), null, doc.Name));
             if (docx) rows.Add(new CdeTransmittal.Row(Write(CdeNaming.WithRevision(stem, status, revision, "docx"), writer(filled, "docx", DocumentExport.Pictures(pictures?[doc.Id])), "document", documentId: doc.Id), null, doc.Name));
         }
+        // The reference documents asked for: each file a copy under its own name (a number after it when two share one), its bytes from
+        // the project's file, the project folder's copy or where it was added from, else as the interface fetched them from the server
+        // (referenceData: {sha256: base64}, checked against the hash). A file found nowhere is left out and said, never the issue refused.
+        // A file above the project's keep limit goes into the folder and is listed with its hash, but is not kept again in the project's file.
+        var skipped = new List<string>();
+        var fetched = p["referenceData"] as JsonObject;
+        var keepLimit = Refs.KeepLimit(m);
+        var used = new HashSet<string>(files.Select(f => f.Name), StringComparer.OrdinalIgnoreCase);
+        foreach (var e in references)
+            foreach (var rf in Refs.Files(e))
+            {
+                byte[]? bytes = null;
+                try { bytes = Refs.Bytes(q, e, rf.Name).Bytes; }
+                catch (CommandException) { }
+                if (bytes == null && (string?)fetched?[rf.Sha256] is { } b64)
+                {
+                    try { bytes = Convert.FromBase64String(b64); }
+                    catch (FormatException) { bytes = null; }
+                    if (bytes != null && CdeTransmittal.Sha256(bytes) != rf.Sha256) bytes = null;
+                }
+                if (bytes == null)
+                {
+                    skipped.Add($"{e.Name}: {rf.Name} is not held here (larger than the project keeps, and not in the project folder): it was left out of the issue.");
+                    continue;
+                }
+                var fileName = rf.Name;
+                for (var i = 2; !used.Add(fileName); i++) fileName = $"{Path.GetFileNameWithoutExtension(rf.Name)} ({i}){Path.GetExtension(rf.Name)}";
+                rows.Add(new CdeTransmittal.Row(Write(fileName, bytes, "reference", referenceId: e.Id, keep: bytes.LongLength <= keepLimit), e.Str("number"), e.Name));
+            }
         if (model)
         {
             using var ms = new MemoryStream();
@@ -150,7 +184,36 @@ public static class CdeIssue
         result["path"] = into;
         if (folderProblem != null) result["folderProblem"] = folderProblem;
         result["warnings"] = new JsonArray(findings.Where(f => !f.Blocking).Select(f => (JsonNode)f.ToJson()).ToArray());
+        if (skipped.Count > 0) result["skipped"] = new JsonArray([.. skipped.Select(x => (JsonNode)x)]);
         return (result, diff);
+    }
+
+    /// <summary>
+    /// The reference documents an issue sends (stage R5): those named (<c>references</c>: ids) and those in the folders named
+    /// (<c>referenceFolders</c>: ids, each with its subfolders), once each, in the folder tree's order; superseded and withdrawn ones
+    /// only when named, never through a folder, and requested ones (no file yet) never.
+    /// </summary>
+    public static List<Entity> ReferencesOf(IModelView m, JsonNode? ids, JsonNode? folders)
+    {
+        var named = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var id in (ids as JsonArray ?? []).Select(x => (string?)x).OfType<string>())
+        {
+            if (m.Get(id) is not { Class: Refs.Class }) throw new CommandException("There is no such reference document.");
+            named.Add(id);
+        }
+        var tree = Refs.Index(Refs.Folders(m));
+        var inFolders = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var f in (folders as JsonArray ?? []).Select(x => (string?)x).OfType<string>())
+        {
+            if (!tree.ContainsKey(f)) throw new CommandException($"There is no folder {f} in the project's tree.");
+            inFolders.Add(f);
+            foreach (var fi in tree.Values)
+                for (var p = fi.Parent; p != null; p = tree.GetValueOrDefault(p)?.Parent)
+                    if (p == f) { inFolders.Add(fi.Id); break; }
+        }
+        var today = ReferenceDocumentFields.Today();
+        return ReferenceDocumentFields.Ordered(m, tree).Where(e => Refs.Files(e).Count > 0 && (named.Contains(e.Id)
+            || inFolders.Contains(e.Str("folder") ?? "") && Refs.StatusOf(e, today) is not ("superseded" or "withdrawn"))).ToList();
     }
 
     static bool Flag(JsonObject p, string key) => p[key] is JsonValue v && v.TryGetValue<bool>(out var b) && b;

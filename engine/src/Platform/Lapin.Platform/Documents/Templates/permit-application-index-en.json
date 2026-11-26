@@ -1,0 +1,59 @@
+{
+  "id": "permit-application-index-en",
+  "title": "Building permit application index",
+  "description": "Indicative: the index of the building permit application package, with the reference documents received (the urbanism certificate, the land-book extract, the permits and agreements), the written parts and the drawings, with their page counts where known. The package's order and content are the authority's: check them.",
+  "lang": "en",
+  "isoType": "SH",
+  "indicative": true,
+  "page": {
+    "size": "A4",
+    "orientation": "portrait",
+    "margins": [20, 20, 20, 25],
+    "header": "{{project.name}} · {{project.number}}",
+    "footer": "{{project.designer}} · page {{page}} of {{pages}}"
+  },
+  "inputs": [],
+  "blocks": [
+    { "kind": "heading", "level": 1, "text": "Index" },
+    { "kind": "paragraph", "text": "The documents of the building permit application for **{{project.name}}**, {{project.address}}." },
+    {
+      "kind": "fields",
+      "rows": [
+        ["Client", "{{project.client}}"],
+        ["Designer", "{{project.designer}}"],
+        ["Project number", "{{project.number}}"],
+        ["Phase", "{{project.phase}}"],
+        ["Date", "{{date.today}}"]
+      ]
+    },
+
+    { "kind": "heading", "level": 2, "text": "Reference documents" },
+    { "kind": "table", "source": "references:documents?status=received", "title": "", "columns": ["No.", "Type", "Title", "Issuer", "Number", "Date", "Pages"] },
+
+    { "kind": "heading", "level": 2, "text": "Written parts" },
+    {
+      "kind": "repeat",
+      "over": "documents", "empty": [{ "kind": "paragraph", "text": "The project has no written parts yet." }],
+      "blocks": [
+        { "kind": "paragraph", "text": "{{doc.index}}. {{doc.name}}" }
+      ]
+    },
+
+    { "kind": "heading", "level": 2, "text": "Drawings" },
+    {
+      "kind": "repeat",
+      "over": "sheets", "empty": [{ "kind": "paragraph", "text": "The project has no sheets yet." }],
+      "blocks": [
+        { "kind": "paragraph", "text": "{{sheet.index}}. **{{sheet.number}}** {{sheet.title}} · 1 sheet" }
+      ]
+    },
+
+    {
+      "kind": "fields",
+      "rows": [
+        ["Drawn by", "{{project.author}}"],
+        ["Date", "{{date.today}}"]
+      ]
+    }
+  ]
+}

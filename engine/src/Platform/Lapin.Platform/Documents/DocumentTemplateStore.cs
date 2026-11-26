@@ -42,11 +42,16 @@ public static class DocumentTemplateStore
     };
 
     /// <summary>A template whole, as it is kept and exported.</summary>
-    public static JsonObject Json(DocTemplate t) => new()
+    public static JsonObject Json(DocTemplate t)
     {
-        ["id"] = t.Id, ["title"] = t.Title, ["description"] = t.Description, ["lang"] = t.Lang, ["isoType"] = t.IsoType,
-        ["page"] = t.Page.DeepClone(), ["inputs"] = new JsonArray(t.Inputs.Select(i => (JsonNode)i.ToJson()).ToArray()), ["blocks"] = t.Blocks.DeepClone(),
-    };
+        var o = new JsonObject
+        {
+            ["id"] = t.Id, ["title"] = t.Title, ["description"] = t.Description, ["lang"] = t.Lang, ["isoType"] = t.IsoType,
+            ["page"] = t.Page.DeepClone(), ["inputs"] = new JsonArray(t.Inputs.Select(i => (JsonNode)i.ToJson()).ToArray()), ["blocks"] = t.Blocks.DeepClone(),
+        };
+        if (t.Indicative) o["indicative"] = true;
+        return o;
+    }
 
     /// <summary>A document's shape as a template: its page (and style), blocks, declared inputs, language and type, under a title.</summary>
     public static DocTemplate FromDocument(Entity doc, string id, string title, string? description) => new(

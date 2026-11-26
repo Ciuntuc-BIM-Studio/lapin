@@ -1,0 +1,53 @@
+{
+  "id": "foaie-de-capat",
+  "title": "Foaie de capăt",
+  "description": "Model indicativ: foaia de capăt a proiectului, cu denumirea, amplasamentul, beneficiarul, proiectantul, numărul și faza, certificatul de urbanism și lista de semnături.",
+  "lang": "ro",
+  "isoType": "RP",
+  "indicative": true,
+  "page": {
+    "size": "A4",
+    "orientation": "portrait",
+    "margins": [25, 20, 20, 25],
+    "header": "",
+    "footer": "{{project.designer}}"
+  },
+  "inputs": [],
+  "blocks": [
+    { "kind": "heading", "level": 1, "text": "Foaie de capăt" },
+    {
+      "kind": "fields",
+      "rows": [
+        ["Denumirea proiectului", "**{{project.name}}**"],
+        ["Amplasament", "{{project.address}}"],
+        ["Număr cadastral", "{{project.cadastral}}"],
+        ["Beneficiar", "{{project.client}}"],
+        ["Proiectant general", "{{project.designer}}"],
+        ["Număr proiect", "{{project.number}}"],
+        ["Faza de proiectare", "{{project.phase}}"],
+        ["Data", "{{date.today}}"]
+      ]
+    },
+    {
+      "kind": "if", "field": "ref.cu.title",
+      "blocks": [
+        {
+          "kind": "fields",
+          "rows": [
+            ["Certificat de urbanism", "nr. {{ref.cu.number}} din {{ref.cu.date}}, emis de {{ref.cu.issuer}}"]
+          ]
+        }
+      ]
+    },
+
+    { "kind": "heading", "level": 2, "text": "Lista de semnături" },
+    {
+      "kind": "fields",
+      "rows": [
+        ["Șef de proiect", "{{project.chiefArchitect}}"],
+        ["Proiectat", "{{project.author}}"],
+        ["Verificat", "{{project.checkedBy}}"]
+      ]
+    }
+  ]
+}

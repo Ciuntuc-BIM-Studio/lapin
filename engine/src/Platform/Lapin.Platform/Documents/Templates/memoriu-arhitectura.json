@@ -91,6 +91,8 @@
         ["Amplasamentul", "{{project.address}}"],
         ["Număr cadastral", "{{project.cadastral}}"],
         ["Carte funciară", "{{project.landBook}}"],
+        ["Certificat de urbanism", "nr. {{ref.cu.number}} din {{ref.cu.date}}"],
+        ["Emitentul certificatului", "{{ref.cu.issuer}}"],
         ["Beneficiar", "{{project.client}}"],
         ["Adresa beneficiarului", "{{project.clientAddress}}"],
         ["Proiectant general", "{{project.designer}}"],

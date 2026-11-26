@@ -1,0 +1,53 @@
+{
+  "id": "cover-page-en",
+  "title": "Cover page",
+  "description": "Indicative: the project's cover page, with its name, site, client, designer, number and phase, the urbanism certificate and the list of signatures.",
+  "lang": "en",
+  "isoType": "RP",
+  "indicative": true,
+  "page": {
+    "size": "A4",
+    "orientation": "portrait",
+    "margins": [25, 20, 20, 25],
+    "header": "",
+    "footer": "{{project.designer}}"
+  },
+  "inputs": [],
+  "blocks": [
+    { "kind": "heading", "level": 1, "text": "Cover page" },
+    {
+      "kind": "fields",
+      "rows": [
+        ["Project", "**{{project.name}}**"],
+        ["Site", "{{project.address}}"],
+        ["Cadastral number", "{{project.cadastral}}"],
+        ["Client", "{{project.client}}"],
+        ["Designer", "{{project.designer}}"],
+        ["Project number", "{{project.number}}"],
+        ["Phase", "{{project.phase}}"],
+        ["Date", "{{date.today}}"]
+      ]
+    },
+    {
+      "kind": "if", "field": "ref.cu.title",
+      "blocks": [
+        {
+          "kind": "fields",
+          "rows": [
+            ["Urbanism certificate", "no. {{ref.cu.number}} of {{ref.cu.date}}, issued by {{ref.cu.issuer}}"]
+          ]
+        }
+      ]
+    },
+
+    { "kind": "heading", "level": 2, "text": "Signatures" },
+    {
+      "kind": "fields",
+      "rows": [
+        ["Chief architect", "{{project.chiefArchitect}}"],
+        ["Designed by", "{{project.author}}"],
+        ["Checked by", "{{project.checkedBy}}"]
+      ]
+    }
+  ]
+}

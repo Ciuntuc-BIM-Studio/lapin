@@ -132,7 +132,6 @@ public static class DocumentFill
         readonly List<string> _missing = [];
         readonly HashSet<string> _seen = [];
         readonly IReadOnlyDictionary<string, DocCollection> _collections = AllCollections(q).ToDictionary(c => c.Key);
-        readonly IDocumentTables _tables = q.Services.Get<IDocumentTables>() ?? new ScheduleSourceTables();
         public double TextWidth { get; set; } = DocPage.A4.TextWidth;
         public IReadOnlyList<string> Missing => _missing;
 
@@ -287,7 +286,7 @@ public static class DocumentFill
         {
             var source = (string?)b["source"] ?? "";
             ScheduleGrid? grid;
-            try { grid = _tables.Table(q, source); }
+            try { grid = DocumentTables.Table(q, source, f); }
             catch (CommandException) { grid = null; }
             if (grid == null)
             {

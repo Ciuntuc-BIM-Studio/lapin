@@ -10,7 +10,7 @@ namespace Lapin.Platform.Cde;
 /// request, and none once the user deletes an old issue's stored files, its name and hash staying in the record); a written document's (kind
 /// <c>document</c>: its PDF, or its DOCX) names the document (<see cref="DocumentId"/>).
 /// </summary>
-public sealed record IssuedFile(string Name, string Kind, string? SheetId, string Sha256, long Size, string? DrawingHash = null, bool Stored = false, string? DocumentId = null)
+public sealed record IssuedFile(string Name, string Kind, string? SheetId, string Sha256, long Size, string? DrawingHash = null, bool Stored = false, string? DocumentId = null, string? ReferenceId = null)
 {
     public JsonObject ToJson()
     {
@@ -19,12 +19,13 @@ public sealed record IssuedFile(string Name, string Kind, string? SheetId, strin
         if (DrawingHash != null) o["drawingHash"] = DrawingHash;
         if (Stored) o["stored"] = true;
         if (DocumentId != null) o["documentId"] = DocumentId;
+        if (ReferenceId != null) o["referenceId"] = ReferenceId;
         return o;
     }
 
     public static IssuedFile? From(JsonNode? n) => n is JsonObject o && (string?)o["name"] is { } name
         ? new IssuedFile(name, (string?)o["kind"] ?? "", (string?)o["sheetId"], (string?)o["sha256"] ?? "", (long)(Json.Number(o["size"]) ?? 0), (string?)o["drawingHash"],
-            o["stored"] is JsonValue sv && sv.TryGetValue<bool>(out var stored) && stored, (string?)o["documentId"])
+            o["stored"] is JsonValue sv && sv.TryGetValue<bool>(out var stored) && stored, (string?)o["documentId"], (string?)o["referenceId"])
         : null;
 }
 
@@ -62,7 +63,7 @@ public static class CdeIssues
 
         /// <summary>
         /// What the issue sent, as a set to compare issues by: its sheets, its written documents and the model (the set PDF, the DXFs and
-        /// the transmittal follow from those).
+        /// the transmittal follow from those; the reference documents sent with it go beside, never part of the set).
         /// </summary>
         public SortedSet<string> DocumentKeys => new(Files.Select(f => f.SheetId is { } s ? $"sheet:{s}" : f.DocumentId is { } d ? $"document:{d}" : f.Kind == "ifc" ? "model" : null)
             .OfType<string>(), StringComparer.Ordinal);

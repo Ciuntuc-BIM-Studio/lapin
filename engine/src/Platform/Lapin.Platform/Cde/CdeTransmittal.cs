@@ -25,7 +25,10 @@ public static class CdeTransmittal
 
     static readonly string[] Columns = ["File", "Kind", "Sheet", "Title", "Revision", "Status", "SHA-256", "Size"];
 
-    /// <summary>A row of the transmittal: the file, what it is, the sheet number and title (empty for the model).</summary>
+    /// <summary>
+    /// A row of the transmittal: the file, what it is, the sheet number and title (empty for the model); for a reference document
+    /// sent with the issue (kind <c>reference</c>), the document's own number and title.
+    /// </summary>
     public sealed record Row(IssuedFile File, string? SheetNumber, string? SheetTitle);
 
     static string Csv(string s) => CsvText.Field(s);
@@ -57,8 +60,9 @@ public static class CdeTransmittal
             ["files"] = new JsonArray(rows.Select(r =>
             {
                 var f = r.File.ToJson();
-                if (r.SheetNumber != null) f["sheetNumber"] = r.SheetNumber;
-                if (r.SheetTitle != null) f["sheetTitle"] = r.SheetTitle;
+                var reference = r.File.ReferenceId != null;
+                if (r.SheetNumber != null) f[reference ? "documentNumber" : "sheetNumber"] = r.SheetNumber;
+                if (r.SheetTitle != null) f[reference ? "documentTitle" : "sheetTitle"] = r.SheetTitle;
                 return (JsonNode)f;
             }).ToArray()),
         };
@@ -90,13 +94,14 @@ public static class CdeTransmittal
             foreach (var r in chunks[pi])
             {
                 y += Line;
-                T(cols[0], r.File.Name, 2.6); T(cols[1], r.File.Kind.ToUpperInvariant(), 2.6); T(cols[2], r.SheetNumber ?? "", 2.6);
+                T(cols[0], r.File.Name, 2.6); T(cols[1], r.File.Kind == "reference" ? "REF" : r.File.Kind.ToUpperInvariant(), 2.6); T(cols[2], Fit(r.SheetNumber ?? "", 12), 2.6);
                 T(cols[3], Fit(r.SheetTitle ?? (r.File.Kind == "ifc" ? "Model (IFC)" : ""), 40), 2.6); T(cols[4], Size(r.File.Size), 2.6, anchor: "end");
             }
             y += 2; rules.Segments.Add((new Vec2(M, y), new Vec2(W - M, y)));
             if (pi == chunks.Count - 1)
             {
                 y += 7; T(M, $"{rows.Count} file(s). Each file's SHA-256 is in the manifest beside this transmittal.", 2.6);
+                if (rows.Any(r => r.File.Kind == "reference")) { y += 4.5; T(M, "REF: a reference document the project received, sent with the issue as a copy of its file; its number in the Sheet column.", 2.6); }
                 if (h.Note is { Length: > 0 })
                 {
                     y += 7; T(M, "Note", 3, true);

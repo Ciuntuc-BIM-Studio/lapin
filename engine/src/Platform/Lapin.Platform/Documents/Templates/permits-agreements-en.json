@@ -1,0 +1,63 @@
+{
+  "id": "permits-agreements-en",
+  "title": "List of permits and agreements",
+  "description": "Indicative: the permits and agreements the urbanism certificate asks for, each with the document that answers it (issuer, number, date, validity, state), from the project's reference documents. Check it against the requirements of the authority that issues the permit.",
+  "lang": "en",
+  "isoType": "SH",
+  "indicative": true,
+  "page": {
+    "size": "A4",
+    "orientation": "portrait",
+    "margins": [20, 20, 20, 25],
+    "header": "{{project.name}} · {{project.number}}",
+    "footer": "{{project.designer}} · page {{page}} of {{pages}}"
+  },
+  "inputs": [],
+  "blocks": [
+    { "kind": "heading", "level": 1, "text": "List of permits and agreements" },
+    {
+      "kind": "fields",
+      "rows": [
+        ["Project", "{{project.name}}"],
+        ["Site", "{{project.address}}"],
+        ["Project number", "{{project.number}}"],
+        ["Phase", "{{project.phase}}"],
+        ["Client", "{{project.client}}"],
+        ["Designer", "{{project.designer}}"],
+        ["Date", "{{date.today}}"]
+      ]
+    },
+
+    { "kind": "heading", "level": 2, "text": "Urbanism certificate" },
+    {
+      "kind": "if", "field": "ref.cu.title",
+      "blocks": [
+        {
+          "kind": "fields",
+          "rows": [
+            ["Number", "{{ref.cu.number}}"],
+            ["Issued on", "{{ref.cu.date}}"],
+            ["Issuer", "{{ref.cu.issuer}}"],
+            ["Valid until", "{{ref.cu.validUntil}}"]
+          ]
+        },
+        { "kind": "heading", "level": 2, "text": "Permits and agreements required" },
+        { "kind": "table", "source": "references:permits" }
+      ],
+      "else": [
+        { "kind": "paragraph", "style": "note", "text": "The project has no urbanism certificate received and valid yet: add it from Manage → Reference documents and tick the permits it asks for." }
+      ]
+    },
+
+    { "kind": "heading", "level": 2, "text": "Permits and agreements received" },
+    { "kind": "table", "source": "references:documents?folder=permits&status=received", "title": "" },
+
+    {
+      "kind": "fields",
+      "rows": [
+        ["Drawn by", "{{project.author}}"],
+        ["Checked by", "{{project.checkedBy}}"]
+      ]
+    }
+  ]
+}

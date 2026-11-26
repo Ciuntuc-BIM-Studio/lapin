@@ -57,6 +57,7 @@ public static class Documents
     {
         r.Class(new(Class, "Document", [], "#4a6fa5", Kind: "resource", Template: false));
         r.Service<IDocumentFields>(new CoreDocumentFields());
+        r.Service<IDocumentFields>(new ReferenceDocumentFields());
         ProjectInfo.Register(r);
         DocumentEditing.Register(r);
         DocumentTemplateStore.Register(r);
@@ -133,7 +134,6 @@ public static class Documents
             var doc = (string?)a["id"] is { } id ? Require(q.Model, id) : null;
             var f = doc != null ? DocumentFill.FormatOf(q.Model, doc) : new DocFormat((string?)a["lang"] ?? "ro", DraftingResources.Book(q.Model).Units, DraftingResources.Book(q.Model).AreaRounding) { DateFormat = DraftingResources.Book(q.Model).DateFormat, Book = DraftingResources.Book(q.Model), Datum = LevelDatum.Of(q.Model) };
             var fields = (doc != null ? DocumentFill.OwnFields(doc) : []).Concat(DocumentFill.AllFields(q, f));
-            var tables = q.Services.Get<IDocumentTables>() ?? new ScheduleSourceTables();
             return new JsonObject
             {
                 ["fields"] = new JsonArray(fields.Select(x => (JsonNode)new JsonObject { ["key"] = x.Key, ["label"] = x.Label, ["value"] = x.Value }).ToArray()),
@@ -144,7 +144,7 @@ public static class Documents
                     ["fields"] = new JsonArray(DocumentFill.Items(q, c.Key, f).FirstOrDefault()?.Keys.Select(k => (JsonNode)k).ToArray() ?? []),
                     ["count"] = DocumentFill.Items(q, c.Key, f).Count,
                 }).ToArray()),
-                ["tables"] = new JsonArray(tables.Choices(q).Select(t => (JsonNode)new JsonObject { ["source"] = t.Source, ["label"] = t.Label }).ToArray()),
+                ["tables"] = new JsonArray(DocumentTables.Choices(q).Select(t => (JsonNode)new JsonObject { ["source"] = t.Source, ["label"] = t.Label }).ToArray()),
             };
         });
 

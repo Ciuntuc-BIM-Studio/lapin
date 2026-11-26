@@ -18,14 +18,21 @@ public sealed record DocInput(string Key, string Label, bool Multiline = true, s
 /// <summary>
 /// A document template (docs/plan-documents.md): a document's shape with an id, a title and a description, the inputs it declares,
 /// and the ISO 19650 type its issued file is named with (<c>isoType</c>: RP a report, SP a specification; RP when not said).
+/// <c>indicative</c>: a starting point Lapin ships whose content the user checks against the authority's current requirements
+/// (decision 878: Lapin ships no normative text it cannot check); the interface marks it so.
 /// </summary>
-public sealed record DocTemplate(string Id, string Title, string Description, string Lang, JsonObject Page, IReadOnlyList<DocInput> Inputs, JsonArray Blocks, string IsoType = "RP")
+public sealed record DocTemplate(string Id, string Title, string Description, string Lang, JsonObject Page, IReadOnlyList<DocInput> Inputs, JsonArray Blocks, string IsoType = "RP", bool Indicative = false)
 {
-    public JsonObject Summary() => new()
+    public JsonObject Summary()
     {
-        ["id"] = Id, ["title"] = Title, ["description"] = Description, ["lang"] = Lang, ["isoType"] = IsoType,
-        ["inputs"] = new JsonArray(Inputs.Select(i => (JsonNode)i.ToJson()).ToArray()),
-    };
+        var o = new JsonObject
+        {
+            ["id"] = Id, ["title"] = Title, ["description"] = Description, ["lang"] = Lang, ["isoType"] = IsoType,
+            ["inputs"] = new JsonArray(Inputs.Select(i => (JsonNode)i.ToJson()).ToArray()),
+        };
+        if (Indicative) o["indicative"] = true;
+        return o;
+    }
 }
 
 /// <summary>
@@ -71,7 +78,8 @@ public static class DocumentTemplates
         var inputs = o["inputs"] is JsonArray ins ? ins.Select(DocInput.From).OfType<DocInput>().ToList() : [];
         return new DocTemplate(id, (string?)o["title"] ?? id, (string?)o["description"] ?? "", (string?)o["lang"] is { Length: > 0 } l ? l : "ro",
             o["page"] is JsonObject page ? (JsonObject)page.DeepClone() : [], inputs, (JsonArray)blocks.DeepClone(),
-            (string?)o["isoType"] is { Length: 2 } iso ? iso.ToUpperInvariant() : "RP");
+            (string?)o["isoType"] is { Length: 2 } iso ? iso.ToUpperInvariant() : "RP",
+            o["indicative"] is JsonValue iv && iv.TryGetValue<bool>(out var indicative) && indicative);
     }
 
     /// <summary>The template a command names: by id among the built-in ones, or given whole as JSON.</summary>
