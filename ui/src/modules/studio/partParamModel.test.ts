@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  FLEX_OFF, cellsOf, defaultChanges, flexChanged, flexKeepPlan, flexPreviewValues, flexSet, freeKey, groupParams, moveTarget, newParam, parseCell,
+  FLEX_OFF, MEASURE_LABELS, canMeasure, cellsOf, defaultChanges, measureChanges, measureOptions, flexChanged, flexKeepPlan, flexPreviewValues, flexSet, freeKey, groupParams, moveTarget, newParam, parseCell,
   previewVolume, publishedRows, type ParamDto,
 } from './partParamModel';
 
@@ -54,6 +54,24 @@ describe('the parameter table', () => {
     expect(freeKey([p('P1'), p('P2')])).toBe('P3');
     expect(newParam([p('L1')], 'length')).toMatchObject({ key: 'L2', kind: 'length', instance: true });
     expect(newParam([], 'bool')).toMatchObject({ key: 'B1', default: 0 });
+  });
+});
+
+describe('the Measure column (R6)', () => {
+  it('offers a measure for lengths and numbers only, none first, the likely one next', () => {
+    expect(measureOptions('length')).toEqual(['none', 'length', 'count', 'area', 'volume']);
+    expect(measureOptions('integer')).toEqual(['none', 'count', 'length', 'area', 'volume']);
+    expect(measureOptions('number')).toEqual(['none', 'length', 'count', 'area', 'volume']);
+    for (const k of ['text', 'bool', 'angle'] as const) { expect(canMeasure(k)).toBe(false); expect(measureOptions(k)).toEqual(['none']); }
+    expect(MEASURE_LABELS.none).toBe('No measure');
+  });
+
+  it('sends a measure picked, clears it with none, and nothing when it is the same', () => {
+    expect(measureChanges(p('L'), 'length')).toEqual({ measure: 'length' });
+    expect(measureChanges(p('L', { measure: 'length' }), 'none')).toEqual({ measure: null });
+    expect(measureChanges(p('L', { measure: 'length' }), 'length')).toBeNull();
+    expect(measureChanges(p('L'), 'none')).toBeNull();
+    expect(measureChanges(p('N', { kind: 'integer', measure: 'count' }), 'area')).toEqual({ measure: 'area' });
   });
 });
 

@@ -7213,6 +7213,10 @@ export const DA: Record<string, string> = {
   "Change roof panel profile": "Ændr tagpladeprofil",
   "Delete roof panel profile": "Slet tagpladeprofil",
   "Import roof panel profiles": "Importér tagpladeprofiler",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "Måles som",
+  "No measure": "Intet mål",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "En placeret del giver denne parameter som en mængde af den art, til omkostningsposter, skemaer og IFC",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

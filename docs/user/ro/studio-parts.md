@@ -48,6 +48,7 @@ Panoul din stânga vederii arată din ce e făcută piesa și se citește din no
 - **Acest obiect**: valoarea proprie a obiectului, pentru un parametru de *instanță*. Un parametru de *tip* arată doar valoarea implicită, aceeași pentru fiecare obiect, iar unul derivat arată `= valoare`, cu formula la trecerea mouse-ului.
 - **Inst.**: instanță (fiecare obiect poate avea valoarea lui) sau tip (valoarea piesei pentru toate). Dacă schimbi un parametru de instanță în tip, valorile proprii ale obiectelor se pierd, iar tabelul o spune.
 - **Publ.**: publicat, adică apare în Proprietățile obiectului din model. Un parametru nepublicat rămâne treaba internă a piesei.
+- **Măsurat ca**: *Fără măsură* (implicit), sau **Lungime**, **Număr**, **Arie** ori **Volum**: o piesă pusă dă atunci acest parametru ca o cantitate de acel fel, ca devizul să o poată prețui după ea (vezi mai jos). Doar o lungime sau un număr poate fi o măsură.
 - **⋯**: meniul rândului deschide restul: cheia (redenumirea ei o redenumește și în formule), eticheta, descrierea, grupul, minimul și maximul, felul și unitatea, **Mută în sus**, **Mută în jos** și **Șterge**. Motorul refuză **Șterge** cât timp o formulă sau o cotă de schiță încă folosește parametrul, și spune unde, sub rând.
 
 **+ Parametru** adaugă unul din felul ales alături: lungime, număr, unghi, da/nu, text sau număr întreg. Fiecare schimbare este un pas de anulare.
@@ -65,6 +66,12 @@ Panoul din stânga vederii arată din ce e făcută piesa și se citește din no
 ## În model: parametrii publicați
 
 Înapoi în model, Proprietățile unei piese puse arată **doar parametrii ei publicați**. Un parametru de instanță este un câmp de editat pentru acest obiect (un câmp gol e valoarea implicită a piesei); unul de tip este doar de citit, cu insigna *tip*, fiindcă ține de piesă; unul derivat este doar de citit, cu insigna *formulă* și formula la trecerea mouse-ului. **Editează piesa (Tab)** intră în modul de editare, unde se pun la punct restul.
+
+## Valorile piesei în extrase, filtre și deviz
+
+**Parametrii publicați** ai unei piese puse, și cei derivați, sunt câmpuri ale elementului, numite după cheile lor: coloana **L** a unui extras de câmpuri listează lungimea fiecărei piese puse, **N** numărul ei derivat de stâlpi, o coloană-formulă `= L * N` le calculează, regula unui filtru *L este mai mare decât 10* le ia pe cele mai lungi, iar o etichetă sau un text viu scrie `{L}` (în unitatea proiectului). Se calculează la fiecare cerere din piesă și din valorile proprii ale obiectului, așa că un extras urmărește pe loc o valoare schimbată; nimic nu se păstrează pe element. În alegătorul de câmpuri sunt la **Parametrii lui**, în setul `Lapin_PartParameters` (`Lapin_PartParameters.L` îl numește când alt câmp are același nume). Un parametru nepublicat nu e câmp.
+
+Un parametru marcat în tabel la **Măsurat ca** este și o **cantitate** a piesei puse, în setul propriu Lapin `Lapin_PartQuantities` (`Lapin_PartQuantities.L` într-un extras, la cantități în alegătorul de câmpuri). Articolele de deviz de pe piesă (**Execuție → Atribuie articole…**; piesa e un tip ca oricare altul) o citesc întâi: o piesă de gard al cărei **L** e marcat Lungime, prețuită de un articol pe metru, costă 20 m pentru un gard cu L = 20 m, nu după volumul lui; un număr întreg **N** marcat Număr, prețuit pe bucată, dă N bucăți pe piesă pusă. Un articol după o măsură pe care piesa n-a marcat-o citește corpul piesei, ca înainte (volumul, suprafața). Exportul IFC scrie parametrii marcați ca setul de cantități `Lapin_PartQuantities` al elementului, lângă cantitățile lui de bază.
 
 ## Constrânge piesa: schițele proprii ale piesei
 

@@ -175,6 +175,10 @@ public static partial class FieldCatalog
                     Once("params", set is { } s1 ? $"{s1}.{name}" : name, name, text, kind, set, ParamFormulas.IsFormula(p) ? "Your parameter, worked out by its formula" : "Your parameter");
                 }
 
+            // The parameters its own definition names (a placed part's), worked out on every ask.
+            foreach (var nf in DerivedFields.NamedOf(m, e))
+                Once("params", nf.Key, nf.Label, nf.Shown, nf.Kind == "text" ? 't' : nf.Kind == "bool" ? 'b' : 'n', nf.Set, nf.Description ?? "A parameter of its part, worked out on every ask");
+
             // Its type's: its name and mark, its attributes and parameters (scope type.).
             var type = reader.Type;
             if (type != null)

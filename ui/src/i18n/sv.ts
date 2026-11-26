@@ -13335,6 +13335,10 @@ export const SV: Record<string, string> = {
   "Change roof panel profile": "Ändra takpanelprofil",
   "Delete roof panel profile": "Ta bort takpanelprofil",
   "Import roof panel profiles": "Importera takpanelprofiler",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "Mäts som",
+  "No measure": "Inget mått",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "En placerad del ger denna parameter som en mängd av det slaget, för kostnadsposter, förteckningar och IFC",
 };
 
 /** Phrases with a number or a name in them. */

@@ -58,7 +58,60 @@ public static class DerivedFields
     /// <summary>Its value on <paramref name="e"/>, when its class has such a field and the element no attribute of that key.</summary>
     public static string? Value(IModelView m, Entity e, string key) =>
         Find(e, key) is { } f && e.Attrs[f.Key] is null ? f.Value(m, e) : null;
+
+    // ------------------------------------------------------------ fields named by the element's own definition
+
+    static readonly ConcurrentDictionary<(string Owner, string Class), NamedFieldsOf> Named = new();
+
+    /// <summary>
+    /// Fields of an element of <paramref name="cls"/> whose names its own definition gives (a placed Studio part's parameters, named
+    /// by its part's table, R6 of docs/plan-forum-round-1126.md), worked out by <paramref name="of"/> on every ask and never stored;
+    /// <paramref name="owner"/> names who adds them, so adding again replaces them. Read by formulas, tags, schedules and filters
+    /// after the user's own parameters and before the element's attributes and quantities.
+    /// </summary>
+    public static void AddNamed(string owner, string cls, NamedFieldsOf of) => Named[(owner, cls)] = of;
+
+    /// <summary>The fields named by <paramref name="e"/>'s own definition, in their order (none when nothing gives it any).</summary>
+    public static IReadOnlyList<NamedField> NamedOf(IModelView m, Entity e)
+    {
+        List<NamedField>? o = null;
+        foreach (var ((_, cls), of) in Named)
+            if (cls == e.Class && of(m, e) is { Count: > 0 } l) (o ??= []).AddRange(l);
+        return o ?? (IReadOnlyList<NamedField>)[];
+    }
+
+    /// <summary>
+    /// The field <paramref name="name"/> names among <paramref name="e"/>'s named fields (case and spaces aside), alone or after its
+    /// set (<c>Lapin_PartParameters.L</c>); null when none has that name.
+    /// </summary>
+    public static NamedField? FindNamed(IModelView m, Entity e, string name)
+    {
+        if (Named.IsEmpty || name.Length == 0) return null;
+        var dot = name.LastIndexOf('.');
+        var key = TagText.Squash(dot >= 0 ? name[(dot + 1)..] : name);
+        var set = dot > 0 ? TagText.Squash(name[..dot]) : null;
+        foreach (var f in NamedOf(m, e))
+            if (TagText.Squash(f.Key) == key && (set == null || f.Set != null && TagText.Squash(f.Set) == set)) return f;
+        return null;
+    }
 }
+
+/// <summary>
+/// A field named by an element's own definition (<see cref="DerivedFields.AddNamed"/>): its key (what tokens, formulas and schedule
+/// columns name), its label, its kind (length, number, integer, angle, bool, text), its value (a number in SI as formulas read it —
+/// metres, degrees, 1 or 0 — and the text a tag writes) and the property set it is written in.
+/// </summary>
+public sealed record NamedField(string Key, string Label, string Kind, double? Number, string? Text, string? Set = null, string? Description = null)
+{
+    /// <summary>As a tag writes it: its text, else its number.</summary>
+    public string Shown => Text ?? (Number is { } n ? Expr.Format(n, null) : "");
+
+    /// <summary>As a formula reads it: a yes/no as one, a number as a number, a text as a text.</summary>
+    public XValue AsValue => Kind == "bool" && Number is { } b ? XValue.Of(b != 0) : Number is { } n ? XValue.Of(n) : XValue.Read(Text ?? "");
+}
+
+/// <summary>The fields named by one element's own definition, worked out from the model as it is.</summary>
+public delegate IReadOnlyList<NamedField> NamedFieldsOf(IModelView m, Entity e);
 
 /// <summary>
 /// Every field an element's tags, live texts and formulas can read (forum topic 84, the Parameters inspector): its own — the
@@ -161,6 +214,9 @@ public static partial class FieldCatalog
             if (((string?)p["name"])?.Trim() is { Length: > 0 } name)
                 Add(parameters, Params.SetOf(p) is { } set ? $"{set}.{name}" : name, name,
                     ParamFormulas.IsFormula(p) ? "Your parameter, worked out by its formula" : "Your parameter", (string?)p["kind"]);
+        // The parameters its own definition names (a placed part's: its part's table), worked out on every ask.
+        foreach (var nf in DerivedFields.NamedOf(m, e))
+            Add(parameters, nf.Key, nf.Label, nf.Description ?? "A parameter of its part, worked out on every ask", nf.Kind, Value(nf.Key));
         groups.Add(parameters);
 
         var standard = new Group("standard", "IFC standard properties", null, e);

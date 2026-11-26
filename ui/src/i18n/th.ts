@@ -13335,6 +13335,10 @@ export const TH: Record<string, string> = {
   "Change roof panel profile": "เปลี่ยนโปรไฟล์แผงหลังคา",
   "Delete roof panel profile": "ลบโปรไฟล์แผงหลังคา",
   "Import roof panel profiles": "นำเข้าโปรไฟล์แผงหลังคา",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "วัดเป็น",
+  "No measure": "ไม่มีการวัด",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "ชิ้นส่วนที่วางแล้วให้พารามิเตอร์นี้เป็นปริมาณชนิดนั้น สำหรับรายการต้นทุน ตารางรายการ และ IFC",
 };
 
 /** Phrases with a number or a name in them. */

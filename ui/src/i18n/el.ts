@@ -13337,6 +13337,10 @@ export const EL: Record<string, string> = {
   "Change roof panel profile": "Αλλαγή προφίλ πάνελ στέγης",
   "Delete roof panel profile": "Διαγραφή προφίλ πάνελ στέγης",
   "Import roof panel profiles": "Εισαγωγή προφίλ πάνελ στέγης",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "Μετριέται ως",
+  "No measure": "Καμία μέτρηση",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "Ένα τοποθετημένο εξάρτημα δίνει αυτή την παράμετρο ως ποσότητα αυτού του είδους, για άρθρα κόστους, πίνακες και IFC",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

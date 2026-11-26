@@ -12,6 +12,30 @@ export const PARAM_KINDS: ParamKind[] = ['length', 'number', 'angle', 'bool', 't
 export interface ParamDto {
   key: string; label: string; kind: ParamKind; default: number | string; value: number | string; formula?: string; derived?: boolean;
   instance: boolean; published: boolean; unit?: string; group?: string; description?: string; min?: number; max?: number;
+  /** What a placed part gives it as, a quantity of that kind (R6): none when absent, as before. */
+  measure?: ParamMeasure;
+}
+
+/** The measures a parameter may be marked as (cost articles, schedules and IFC read them as the placed part's quantities). */
+export type ParamMeasure = 'length' | 'count' | 'area' | 'volume';
+export const PARAM_MEASURES: ParamMeasure[] = ['length', 'count', 'area', 'volume'];
+export const MEASURE_LABELS: Record<ParamMeasure | 'none', string> = { none: 'No measure', length: 'Length', count: 'Count', area: 'Area', volume: 'Volume' };
+
+/** Whether a parameter of a kind can be a measure: a length or a number can, a text, a yes/no or an angle cannot. */
+export const canMeasure = (kind: ParamKind): boolean => kind === 'length' || kind === 'number' || kind === 'integer';
+
+/** The measures offered for a kind, `none` first: a length is offered as a length first, a count first for a whole number. */
+export function measureOptions(kind: ParamKind): (ParamMeasure | 'none')[] {
+  if (!canMeasure(kind)) return ['none'];
+  const first: ParamMeasure = kind === 'length' ? 'length' : kind === 'integer' ? 'count' : 'length';
+  return ['none', first, ...PARAM_MEASURES.filter((m) => m !== first)];
+}
+
+/** The `changes` of `studio.updatePartParam` for a measure picked: `none` clears it; null when nothing changes. */
+export function measureChanges(p: Pick<ParamDto, 'measure'>, picked: string): Record<string, unknown> | null {
+  const next = (PARAM_MEASURES as string[]).includes(picked) ? (picked as ParamMeasure) : null;
+  if ((p.measure ?? null) === next) return null;
+  return { measure: next };
 }
 /** One entry of `studio.partValues`: where the object's value comes from. */
 export interface ValueDto { key: string; value: number | string; source: 'default' | 'instance' | 'formula' | 'type'; problem?: string }

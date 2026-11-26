@@ -7272,6 +7272,10 @@ export const LO: Record<string, string> = {
   "Change roof panel profile": "ປ່ຽນໂປຣໄຟລ໌ແຜ່ນຫຼັງຄາ",
   "Delete roof panel profile": "ລຶບໂປຣໄຟລ໌ແຜ່ນຫຼັງຄາ",
   "Import roof panel profiles": "ນຳເຂົ້າໂປຣໄຟລ໌ແຜ່ນຫຼັງຄາ",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "ວັດແທກເປັນ",
+  "No measure": "ບໍ່ມີການວັດແທກ",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "ຊິ້ນສ່ວນທີ່ວາງໄວ້ໃຫ້ພາລາມິເຕີນີ້ເປັນປະລິມານຂອງປະເພດນັ້ນ, ສຳລັບລາຍການຕົ້ນທຶນ, ຕາຕະລາງ ແລະ IFC",
 };
 
 /** Phrases with a number or a name in them. */

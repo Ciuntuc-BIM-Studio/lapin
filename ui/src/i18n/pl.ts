@@ -7219,6 +7219,10 @@ export const PL: Record<string, string> = {
   "Change roof panel profile": "Zmień profil paneli dachowych",
   "Delete roof panel profile": "Usuń profil paneli dachowych",
   "Import roof panel profiles": "Importuj profile paneli dachowych",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "Mierzony jako",
+  "No measure": "Bez miary",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "Wstawiony element podaje ten parametr jako ilość tego rodzaju, dla pozycji kosztorysu, zestawień i IFC",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
