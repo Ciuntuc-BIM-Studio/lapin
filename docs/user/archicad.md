@@ -29,6 +29,18 @@ Pick the Archicad, and the dialog reads its model and says what a receive would 
 
 To keep the received model on the server: receive it, then **File → Collaborate → Save to server**.
 
+### The project information
+
+A receive also reads Archicad's **Project Info** (File → Info → Project Info…) and puts it into Lapin's project information (**Manage → Project information…**), in the same undo step:
+
+- An **empty** field of the project is filled: the project's name from *Project Name*, its number from *Project Number* (else *Project Code*, else *Project ID*), the phase from *Project Status* when it is one of Lapin's phases (DTAC, PT…; otherwise it is the phase name), the client and their address, the site's address (the full address, else its lines, town, county, postcode and country joined), the designer (Archicad's *Company*) with their address, registration number, phone and e-mail, the project manager (the company's contact) and who drew it (*CAD Technician*).
+- A field the project **already has** with another value is **never overwritten**. The report lists it with both values (In Lapin, In Archicad); tick the ones to take and click **Take the ticked values** (one more undo step).
+- What Archicad says that no field takes (the project's description, keywords, the site's name, custom autotexts…) is kept apart, read-only: Project information shows it under **From Archicad**. It is replaced at each receive.
+
+Before you receive, the dialog says how many fields Archicad would fill and how many differ. If Archicad has a dialog open (for example the Project Info dialog), its Project Info is not read: the model is received anyway and the report says so.
+
+Lapin and Atrium Server map Archicad's fields with the same table, so a value lands under the same field on both sides. The project's geolocation is not taken from Archicad: Archicad gives a default location (Budapest) to projects that never set one, which cannot be told from a real one.
+
 ### What becomes native
 
 - **Walls**: straight walls, basic and composite. A composite wall becomes a wall type with its skins.
@@ -50,7 +62,7 @@ The elements keep **Archicad's own IFC ids** as their GlobalIds, so they are the
 - the **discipline**, if you want one;
 - the **file name**.
 
-Lapin has Archicad save the IFC with the translator, puts the file in the project's store on the server, makes its reference document there (a model, received) and updates the project's register of reference documents. The dialog tells each step and, at the end, where the model is. A copy of Archicad that cannot save (a demo or education copy may refuse; Archicad 29's demo did save IFC when this was tested) gives Archicad's own message, and the dialog offers the other route: receive the model, then **File → Collaborate → Save to server**.
+Lapin has Archicad save the IFC with the translator, puts the file in the project's store on the server, makes its reference document there (a model, received) and updates the project's register of reference documents. With **Also propose the project information** (on by default), Archicad's Project Info then goes to the server as a **proposal** for the project's information: an owner applies it, in part or whole, in **Publishing → Project information** ([CDE server](cde-server.md#project-information)); nothing on the server changes until then. When Archicad says nothing the server lacks, nothing is proposed. The dialog tells each step and, at the end, where the model is. A copy of Archicad that cannot save (a demo or education copy may refuse; Archicad 29's demo did save IFC when this was tested) gives Archicad's own message, and the dialog offers the other route: receive the model, then **File → Collaborate → Save to server**.
 
 ## Limits
 

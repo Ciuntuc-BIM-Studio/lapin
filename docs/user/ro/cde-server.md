@@ -104,11 +104,23 @@ Pagina proiectului (în browser) și **Fișier → Colaborare → Colaborează�
   - **Retrage** e a autorului.
   - Ce nu permit rolul tău și regulile proiectului e dezactivat; autorul nu își aprobă propria propunere (decât dacă e singurul proprietar al proiectului).
 - **Diferențe la predare**: alege două revizii emise, **Compară**: documentele adăugate, eliminate, schimbate (alt fișier) și neschimbate între ele, și câte părți ale modelului s-au schimbat. **Exportă în XLSX** scrie raportul de predare cu aceste diferențe.
+- **Datele proiectului** (când serverul le păstrează; vezi [Datele proiectului](#datele-proiectului) mai jos).
 - **Registru** (când serverul verifică documentele): registrul de documente al proiectului. Proprietarii aleg **Importă un registru (CSV sau XLSX)…**: primul rând numește coloanele, codul (obligatoriu: `code`, `document`, `cod`…), titlul, revizia așteptată și orice valoare pe care cartușul trebuie s-o arate (`client`, `beneficiar`…). Fila arată documentele, ce coloane s-au citit și **avertismentele la import** (un rând fără cod, un cod întâlnit de două ori). Un import nou îl înlocuiește; **Șterge** îl scoate. Membrii îl citesc.
 
 **Raport de predare (XLSX)** scrie un registru Excel al proiectului deschis aici: o foaie **Report** (proiectul, serverul, când, de cine, numărătorile), **Issues** (numărul, titlul, tipul, starea, prioritatea, cui e atribuită, termenul, etichetele, datele și autorii, comentariile), **Comments**, **Journal** (fiecare schimbare a problemelor pe server: cine, când, valoarea veche și cea nouă) și, din Diferențe la predare, foaia **Handover diff**. Lapin îl scrie singur; se deschide în Excel, LibreOffice și Numbers.
 
-## Verificările documentelor
+## Datele proiectului
+
+Serverul păstrează pentru fiecare proiect o fișă cu **datele proiectului**, cu aceleași câmpuri ca **Gestionare → Datele proiectului…** din Lapin: numele, numărul și faza proiectului, beneficiarul, amplasamentul și autorizația, proiectantul, cei care semnează și parametrii proprii ai proiectului. **Salvează pe server**, **Ia ultima versiune de pe server** și **Sincronizează problemele și documentele** le sincronizează cu proiectul deschis în Lapin, câmp cu câmp: un câmp schimbat în Lapin merge pe server, un câmp schimbat pe server vine în Lapin (un pas de anulare), iar când doi oameni au schimbat același câmp rămâne valoarea ultimului care a salvat. O sincronizare care aduce câmpuri de pe server nu e o schimbare de salvat din nou. La prima sincronizare rămân valorile serverului, iar Lapin trimite doar câmpurile pe care serverul nu le are.
+
+Fila **Datele proiectului** din Publicare (în browser, iar pe desktop în **Fișier → Colaborare → Colaborează… → Publicare**) arată fișa:
+
+- **Câmpurile**: cei care văd doar le citesc; editorii și proprietarii le schimbă și apasă **Salvează**. Se trimit doar câmpurile schimbate. Dacă altcineva a schimbat fișa în același timp, ea se citește din nou, modificările tale rămân în formular și salvezi din nou. Pe desktop, proiectul deschis ia schimbarea imediat.
+- **Propuneri deschise**: valori propuse de Archicad ([Trimitere în Atrium](archicad.md) sau [scriptul Archicad către Atrium](archicad-to-atrium.md)) ori de un model IFC încărcat în proiect. Fiecare schimbare arată valoarea de acum și cea propusă. Proprietarii bifează valorile de luat și apasă **Aplică valorile bifate**; proprietarii și cel care a făcut propunerea o pot **Respinge**. O propunere mai nouă din aceeași sursă o înlocuiește pe cea deschisă.
+- **Din modele**: ce au spus Archicad sau modelele IFC și nu ia niciun câmp (o descriere, cuvinte cheie, numele amplasamentului…), doar pentru citire.
+
+Parametrii proprii ai proiectului sunt listați; îi schimbi în Lapin.
+
 
 Un server CDE precum cde.lapinbim.com verifică fiecare planșă PDF și DXF pe care o emite o propunere, adesea venită din alte programe, de îndată ce e propusă. Doar **erorile** opresc aprobarea; avertismentele și notele se arată.
 

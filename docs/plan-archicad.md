@@ -87,6 +87,7 @@ Still not measured: zones, doors, curtain walls, railings, morphs, objects, curv
 |---|---|---|
 | **A0** | Measurement (§2). | done |
 | **A1** | **Receive.** See below. | done (26.11.2026) |
+| **A1b** | **Project information.** See below. | done (26.11.2026) |
 | **A2** | **Updates.** See below. | 3–4 |
 | **A3** | **To Atrium without Lapin open.** See below. | done (26.11.2026) |
 | **A4** | **More native types.** See below. | 5–8 |
@@ -97,6 +98,15 @@ Still not measured: zones, doors, curtain walls, railings, morphs, objects, curv
 - Then the client and instance discovery; storeys; walls (straight, composite and basic, with their types); slabs (polygon, holes, thickness, level); columns and beams (`GetDetailsOfElements` sections; profiles through `GetProfiles`); doors and windows as native openings in their host walls; zones as rooms (`IfcSpace`, `GetZoneBoundaries`, with their number and name); the rest as references.
 - Also properties, classifications, the fidelity report and the guide page.
 - UI: File → Archicad → Receive…, with the instance, storeys, origin, "Recognise elements", the report (native and references, and why), progress and Cancel.
+
+**A1b, project information**
+- Archicad's Project Info (`GetProjectInfoFields`) into Lapin's project information, and Lapin's project information synced with Atrium Server's project information record (Atrium `docs/atrium-server.md`, "Project information (A1b)").
+- **Done (26.11.2026).** One mapping table for both sides: `engine/src/Platform/Lapin.Platform/Documents/project-info-mapping.json` is Atrium Server's `docs/project-info-mapping.json` byte for byte (a test compares them when the server's repository is beside this one), read by `ProjectInfoMapping` (first id with a value, parts joined, phase codes routed to `phase` or `phaseName`, the rest kept as extras).
+  - **Receive** (`archicad.receive`; `archicad.survey` says it beforehand): the project's empty fields are filled in the receive's undo step; a field set with another value is never overwritten and is listed in the report (`projectInfo: {filled, differs: [{key, lapin, archicad}], same, kept}`); the Receive dialog takes the ticked ones with `project.setInfo` (one undo step: no command of its own was needed). What no field takes is kept read-only as `info.source.archicad` (an attribute, not the user's parameters: it is not editable, not exported, not synced; Project information shows it as "From Archicad"), replaced at each receive. Archicad busy with a dialog: the model is received, a note says the Project Info was not read.
+  - **Sync** (`remote.syncProjectInfo`, `ProjectInfoSync`), with the issues and the documents (Save to server, Get latest, Sync issues and documents), skipped when the server lacks `project.info`: field by field against the values last seen (state in `history/remotes.json`, member `projectInfo`), only the changed members in a merge patch with If-Match, a 412 read again and sent again; the parameters list ↔ map by key, Lapin's order kept; `source` never sent. A first sync keeps the server's values and sends what the server lacks. Once synced apart, a pull keeps the project's name and information, and they are compared as last committed for "uncommitted" (so a sync is not a change to commit).
+  - **Proposals**: Send to Atrium posts `POST …/info/proposals {source: "archicad", raw, sourceRef: {file, referenceId}}` after the upload (a tick, on by default); the A3 script calls `cde_project_info_propose` (`--no-project-info` skips it).
+  - **CDE web and desktop**: Publishing → Project information (when the server offers `project.info`): the record (edited by editors and owners with If-Match), the open proposals with their changes (owners tick and apply; owners and their author dismiss), and "From the models".
+  - Not done: the georeference from `GetGeoLocation` (Archicad gives an untouched project a default location, Budapest, that cannot be told from a real one: left for A2 with the survey point's rotation); the IFC import does not fill the project information from a foreign file's IfcProject, site and actors (it reads Lapin's own `Lapin_ProjectInformation`; the server proposes from uploaded IFC models with the same table); the project's own parameters are read-only in the CDE tab.
 
 **A2, updates**
 - Get latest from Archicad: `CaptureElementState` after each receive. The state id is kept in the project's history, never in a commit.

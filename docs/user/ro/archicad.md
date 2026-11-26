@@ -29,6 +29,18 @@ Alege Archicad-ul, iar dialogul îi citește modelul și spune ce ar face o prim
 
 Ca să păstrezi modelul primit pe server: primește-l, apoi **Fișier → Colaborare → Salvează pe server**.
 
+### Datele proiectului
+
+Primirea citește și **Project Info** din Archicad (File → Info → Project Info…) și o pune în datele proiectului din Lapin (**Gestionare → Datele proiectului…**), în același pas de anulare:
+
+- Un câmp **gol** al proiectului se completează: numele proiectului din *Project Name*, numărul din *Project Number* (altfel *Project Code*, altfel *Project ID*), faza din *Project Status* când e una din fazele Lapin (DTAC, PT…; altfel devine numele fazei), beneficiarul și adresa lui, adresa amplasamentului (adresa completă, altfel rândurile, localitatea, județul, codul poștal și țara unite), proiectantul (*Company* din Archicad) cu adresa, numărul de înregistrare, telefonul și e-mailul, șeful de proiect (persoana de contact a firmei) și cine a desenat (*CAD Technician*).
+- Un câmp pe care proiectul îl are **deja** cu altă valoare **nu se suprascrie niciodată**. Raportul îl arată cu ambele valori (În Lapin, În Archicad); bifează-le pe cele de luat și apasă **Ia valorile bifate** (încă un pas de anulare).
+- Ce spune Archicad și nu ia niciun câmp (descrierea proiectului, cuvintele cheie, numele amplasamentului, autotextele proprii…) se păstrează separat, doar pentru citire: Datele proiectului le arată sub **Din Archicad**. Se înlocuiesc la fiecare primire.
+
+Înainte de primire, dialogul spune câte câmpuri ar completa Archicad și câte diferă. Dacă Archicad are un dialog deschis (de exemplu chiar Project Info), Project Info nu se citește: modelul se primește oricum, iar raportul o spune.
+
+Lapin și Atrium Server potrivesc câmpurile din Archicad după același tabel, așa că o valoare ajunge în același câmp de ambele părți. Geolocația proiectului nu se ia din Archicad: Archicad dă o locație implicită (Budapesta) proiectelor care n-au pus niciuna, iar ea nu se poate deosebi de una adevărată.
+
 ### Ce devine nativ
 
 - **Pereți**: pereți drepți, simpli și compoziți. Un perete compozit devine un tip de perete cu straturile (skin-urile) lui.
@@ -50,7 +62,7 @@ Elementele păstrează **id-urile IFC proprii ale Archicad** drept GlobalId, dec
 - **disciplina**, dacă vrei una;
 - **numele fișierului**.
 
-Lapin pune Archicad să salveze IFC-ul cu traducătorul ales, pune fișierul în depozitul proiectului de pe server, face acolo documentul lui de referință (un model, primit) și actualizează registrul documentelor de referință ale proiectului. Dialogul spune fiecare pas și, la sfârșit, unde se află modelul. Un Archicad care nu poate salva (o copie demo sau educațională poate refuza; demo-ul Archicad 29 a salvat IFC când a fost încercat) dă mesajul lui, iar dialogul oferă celălalt drum: primești modelul, apoi **Fișier → Colaborare → Salvează pe server**.
+Lapin pune Archicad să salveze IFC-ul cu traducătorul ales, pune fișierul în depozitul proiectului de pe server, face acolo documentul lui de referință (un model, primit) și actualizează registrul documentelor de referință ale proiectului. Cu **Propune și datele proiectului** (bifat implicit), Project Info din Archicad merge apoi pe server ca **propunere** pentru datele proiectului: un proprietar o aplică, în parte sau toată, în **Publicare → Datele proiectului** ([Serverul CDE](cde-server.md#datele-proiectului)); până atunci nimic nu se schimbă pe server. Când Archicad nu spune nimic ce serverul nu are deja, nu se propune nimic. Dialogul spune fiecare pas și, la sfârșit, unde se află modelul. Un Archicad care nu poate salva (o copie demo sau educațională poate refuza; demo-ul Archicad 29 a salvat IFC când a fost încercat) dă mesajul lui, iar dialogul oferă celălalt drum: primești modelul, apoi **Fișier → Colaborare → Salvează pe server**.
 
 ## Limite
 

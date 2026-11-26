@@ -104,11 +104,23 @@ The project's page (in the browser) and **File → Collaborate → Collaborate�
   - **Withdraw** is the author's.
   - What your role and the project's rules do not allow is greyed out; the author does not approve their own submission (unless they are the project's only owner).
 - **Handover diff**: pick two issued revisions, **Compare**: the documents added, removed, changed (another file) and unchanged between them, and how many model parts changed. **Export to XLSX** writes the handover report with this diff.
+- **Project information** (when the server keeps it; see [Project information](#project-information) below).
 - **Register** (when the server checks documents): the project's document register. Owners **Import a register (CSV or XLSX)…**: its first row names the columns, the code (required: `code`, `document`, `cod`…), the title, the expected revision, and any value the title block must show (`client`, `beneficiar`…). The tab shows the documents, which columns were read, and the **import warnings** (a row without a code, a code met twice). Importing again replaces it; **Delete** removes it. Members read it.
 
 **Handover report (XLSX)** writes an Excel workbook of the project open here: a **Report** sheet (project, server, when, by whom, the counts), **Issues** (number, title, type, status, priority, assigned to, due date, labels, dates and authors, comments), **Comments**, the **Journal** (every change to the issues on the server: who, when, the old and the new value) and, from the Handover diff, the **Handover diff** sheet. Lapin writes it itself; it opens in Excel, LibreOffice and Numbers.
 
-## Checks on the documents
+## Project information
+
+The server keeps one **project information** record per project, with the same fields as Lapin's **Manage → Project information…**: the project's name, number and phase, the client, the site and its permit, the designer, the people who sign, and the project's own parameters. **Save to server**, **Get latest** and **Sync issues and documents** sync it with the project open in Lapin, field by field: a field changed in Lapin goes to the server, a field changed on the server comes to Lapin (one undo step), and when two people changed the same field the last one to save wins. A sync that brings fields from the server is not a change to save again. On a first sync the server's values are kept and Lapin sends only the fields the server lacks.
+
+The **Project information** tab of Publishing (in the browser, and in **File → Collaborate → Collaborate… → Publishing** on the desktop) shows the record:
+
+- **The fields**: viewers read them; editors and owners change them and click **Save**. Only the fields you changed are sent. If someone changed the record at the same time, it is read again, your edits stay in the form, and you save again. On the desktop, the open project takes the change at once.
+- **Open proposals**: values that Archicad ([Send to Atrium](archicad.md#send-to-atrium), or the [Archicad to Atrium script](archicad-to-atrium.md)) or an IFC model uploaded to the project propose. Each change shows the current value and the proposed one. Owners tick the values to take and click **Apply the ticked values**; owners, and whoever made a proposal, can **Dismiss** it. A newer proposal from the same source replaces the open one.
+- **From the models**: what Archicad or the IFC models said that no field takes (a description, keywords, the site's name…), read-only.
+
+The project's own parameters are listed; you change them in Lapin.
+
 
 A CDE server such as cde.lapinbim.com checks every PDF and DXF sheet a submission issues, which often come from other tools, as soon as it is submitted. Only **errors** stop the approval; warnings and notes are shown.
 

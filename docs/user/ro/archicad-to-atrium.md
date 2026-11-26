@@ -39,9 +39,12 @@ Scriptul găsește Archicad-ul care rulează (porturile 19723–19744), salveaz�
 | `--translator <nume>` | Un translator de export IFC după nume; `--list-translators` îi arată. `--elements` alege atunci ce se exportă. |
 | `--ifczip` | Salvează un `.ifczip` comprimat (îl scrie Archicad), mult mai mic. |
 | `--out <fișier>` | Păstrează IFC-ul la această cale. |
+| `--no-project-info` | Nu propune Project Info din Archicad (vezi mai jos). |
 | `--dry-run` | Exportă fișierul și se oprește; nimic nu ajunge pe server. |
 
 Coduri de ieșire: 0 făcut, 1 eșuat, 2 folosire greșită, 3 Archicad sau Tapir, 4 serverul (token, drepturi, refuz).
+
+După model, scriptul citește **Project Info** din Archicad și o propune pentru datele proiectului de pe server (unealta MCP `cde_project_info_propose`, sursa Archicad, cu documentul tocmai adăugat). Scrie numărul propunerii și câte schimbări are, sau că nu diferă nimic. Un proprietar o aplică în fila **Publicare → Datele proiectului** din CDE; până atunci nimic nu se schimbă pe server. Dacă Archicad are un dialog deschis sau serverul e mai vechi decât această funcție, scriptul o spune, iar modelul rămâne adăugat. `--no-project-info` o sare.
 
 ## Bine de știut
 

@@ -39,9 +39,12 @@ It finds the running Archicad (ports 19723–19744), saves the IFC to a temporar
 | `--translator <name>` | An IFC export translator by name; `--list-translators` shows them. `--elements` then chooses what is exported. |
 | `--ifczip` | Saves a compressed `.ifczip` (Archicad writes it), much smaller. |
 | `--out <file>` | Keeps the IFC at this path. |
+| `--no-project-info` | Does not propose Archicad's Project Info (see below). |
 | `--dry-run` | Exports the file and stops; nothing goes to the server. |
 
 Exit codes: 0 done, 1 failed, 2 wrong use, 3 Archicad or Tapir, 4 the server (token, rights, refusal).
+
+After the model, the script reads Archicad's **Project Info** and proposes it to the project's information on the server (the MCP tool `cde_project_info_propose`, source Archicad, naming the document just added). It prints the proposal's number and how many changes it holds, or that nothing differs. An owner applies it in the CDE's **Publishing → Project information** tab; nothing changes on the server until then. If Archicad has a dialog open, or the server is older than this feature, the script says so and the model stays added. `--no-project-info` skips it.
 
 ## Good to know
 
