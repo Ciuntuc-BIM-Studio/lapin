@@ -1859,33 +1859,6 @@ button.mode-chip:hover { color: var(--accent); }
 .gantt-handle { fill: var(--panel); stroke: var(--accent); stroke-width: 1.5; cursor: crosshair; }
 .gantt-ghost { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 4 2; pointer-events: none; }
 .gantt-drag-label { font-size: 11px; fill: var(--accent); font-weight: 600; font-family: var(--font); pointer-events: none; }
-/* The location-based schedule (planning.lbs): the locations up the left, the segments over the time scale. */
-.lbs-pane .gantt-top { flex-shrink: 0; }
-.lbs-axis { position: absolute; left: 0; overflow: hidden; background: var(--panel); border-right: 1px solid var(--rule); }
-.lbs-loc { position: absolute; right: 0; display: flex; align-items: center; gap: 2px; font-size: 11px; padding-right: 4px; border-bottom: 1px solid var(--rule); box-sizing: border-box; overflow: hidden; }
-.lbs-loc.parent { right: auto; width: 18px; flex-direction: column; align-items: center; padding: 2px 0; font-weight: 600; border-bottom: none; border-right: 1px solid var(--rule); }
-.lbs-loc.parent .lbs-loc-name { writing-mode: vertical-rl; transform: rotate(180deg); flex: 1 1 auto; }
-.lbs-loc.parent .lbs-elev { display: none; }
-.lbs-loc.row { background: var(--panel); }
-.lbs-loc-name { flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lbs-elev { align-self: flex-end; color: var(--ink-muted); font-size: 10px; font-variant-numeric: tabular-nums; }
-.lbs-band { stroke: var(--rule-strong); stroke-width: 0.75; }
-.lbs-band.lv-zone { stroke: var(--rule); stroke-dasharray: 3 3; }
-.lbs-seg.line { stroke-width: 3; stroke-linecap: round; }
-.lbs-seg.block { fill-opacity: 0.35; stroke-width: 1.5; }
-.lbs-seg.milestone { fill: none; stroke-width: 2; }
-.lbs-seg.critical.line, .lbs-seg.critical.block { stroke: #d64545; }
-.lbs-seg.critical.line { stroke-width: 4; }
-.lbs-seg.done { opacity: 0.55; }
-.lbs-seg.on.line { stroke-width: 6; }
-.lbs-seg.on.block { fill-opacity: 0.6; stroke: var(--accent); stroke-width: 2.5; }
-.lbs-label { font-size: 11px; fill: var(--ink); font-family: var(--font); cursor: move; user-select: none; paint-order: stroke; stroke: var(--panel); stroke-width: 3px; }
-.lbs-label.on { font-weight: 600; }
-.lbs-note { font-size: 11px; font-style: italic; fill: #2f6db5; font-family: var(--font); cursor: text; }
-.lbs-chart.noting { cursor: crosshair; }
-.lbs-zone-field { display: inline-flex; align-items: center; gap: 4px; min-width: 180px; }
-.lbs-whole { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 4px 10px; font-size: 12px; border-bottom: 1px solid var(--rule); background: var(--panel); }
-.lbs-whole input[type="number"] { width: 56px; }
 .gantt-link-line { fill: none; stroke: var(--ink-muted); stroke-width: 1.2; }
 .gantt-link-line.critical { stroke: var(--gantt-critical); }
 .gantt-link-hit { fill: none; stroke: transparent; stroke-width: 8; cursor: pointer; }
@@ -2088,29 +2061,6 @@ dl.fields label.check input { width: auto; margin: 0; }
 [data-theme="graphite"] .cost-chart .bar-planned, [data-theme="graphite"] .cost-legend .key-bar-planned { fill: #36506e; background: #36506e; }
 [data-theme="graphite"] .cost-chart .bar-done, [data-theme="graphite"] .cost-legend .key-bar-done { fill: #2f6b4b; background: #2f6b4b; }
 [data-theme="graphite"] .cost-chart .curve-planned { stroke: #6f9fd0; }
-/* The cash flow (docs/plan-4d5d.md): net bars in and out, the cumulative line, the peak; the terms beside the chart. */
-.cash-chart .bar-in, .cost-legend .key-bar-in { fill: #8fc9a8; background: #8fc9a8; }
-.cash-chart .bar-out, .cost-legend .key-bar-out { fill: #e8a9a0; background: #e8a9a0; }
-.cash-chart .axis.zero { stroke: var(--ink); }
-.cash-chart .curve-cash { stroke: #2f6db3; stroke-width: 2; }
-.cash-chart .peak { fill: var(--err); stroke: var(--panel); stroke-width: 1.5; }
-.cash-chart .peak-label { fill: var(--err); font-weight: 600; }
-.cost-legend .key-bar-in, .cost-legend .key-bar-out { height: 10px; border: 0; }
-.cost-legend .key-cash { border-top: 2px solid #2f6db3; }
-.cost-legend .key-peak { width: 10px; height: 10px; border: 0; border-radius: 50%; background: var(--err); }
-[data-theme="graphite"] .cash-chart .bar-in, [data-theme="graphite"] .cost-legend .key-bar-in { fill: #2f6b4b; background: #2f6b4b; }
-[data-theme="graphite"] .cash-chart .bar-out, [data-theme="graphite"] .cost-legend .key-bar-out { fill: #7a3b34; background: #7a3b34; }
-[data-theme="graphite"] .cash-chart .curve-cash { stroke: #6f9fd0; }
-.cash-top { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; padding: 0 12px; }
-.cash-chart-wrap { flex: 1 1 520px; min-width: 0; }
-.cash-terms { flex: 0 1 300px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
-.cash-terms fieldset { border: 1px solid var(--rule); border-radius: 4px; padding: 4px 8px 6px; margin: 0; display: flex; flex-direction: column; gap: 4px; }
-.cash-terms legend { font-weight: 600; padding: 0 4px; }
-.cash-field { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.cash-field > span:first-child { flex: 0 0 130px; }
-.cash-field input[type="number"] { width: 80px; }
-.cash-indicative { margin: 0; font-size: 11px; }
-.cash-certificates { margin-top: 12px; }
 .estimate-scroll, .estimate-form { flex: 1; min-height: 0; min-width: 0; overflow: auto; padding: 0 0 24px; }
 .estimate-form { padding: 8px 12px 24px; }
 .estimate-form h3 { margin: 4px 0 0; font-size: 14px; }

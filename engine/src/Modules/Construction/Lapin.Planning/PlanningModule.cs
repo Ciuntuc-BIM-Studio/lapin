@@ -609,11 +609,9 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
         });
 
         RegisterGenerator(r);
-        RegisterBreakdowns(r);
         RegisterSimulation(r);
         RegisterProgress(r);
         RegisterResources(r);
-        RegisterLbs(r);
         r.Service<IVersionCompare>(new ScheduleCompare());
         // The schedule read by others (stage 7: the cost module lays its estimate on it).
         r.Service<IWorkSchedules>(new ScheduleTimesOf());
@@ -774,10 +772,6 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
             ["demolished"] = new JsonArray(ph.Phases.Select(p => (p, n: links.Candidates.Count(f => f.Demolished == p.Id))).Where(x => x.n > 0)
                 .Select(x => (JsonNode)new JsonObject { ["id"] = x.p.Id, ["name"] = x.p.Name, ["kind"] = x.p.Kind, ["count"] = x.n }).ToArray()),
             ["categories"] = new JsonArray(Platform.Materials.Categories.Select(c => (JsonNode)c).ToArray()),
-            // The GBS (the building, its storeys and their rooms) and the PBS's items, counted (Product × Location).
-            ["locations"] = Breakdowns.Locations(m, links.Candidates),
-            ["products"] = Breakdowns.Pbs(m) is { } pbs ? Breakdowns.Counted(m, pbs, links.Candidates).Items : new JsonArray(),
-            ["pbs"] = Breakdowns.Pbs(m) is { } ps ? new JsonObject { ["id"] = ps.Id, ["name"] = ps.Name } : null,
         };
     }
 

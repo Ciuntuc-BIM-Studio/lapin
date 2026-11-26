@@ -65,17 +65,6 @@ The norms are yours. Lapin does not ship any norm book. **Import norms…** read
 
 Under the norms, each step picks its **Norm**, its **Crew** (0: the norm's own) and its **Days**, used when no norm times it. The Calendar tab shows the calendar the durations count in; its hours a day divide the man-hours.
 
-### The Procurement tab
-
-What is bought for the works (the steel structure, the windows, the kitchens, a lift) is drawn, approved, made and brought to site before it is installed. Tick **Procurement chains** and each package gets its chain of tasks before its installation:
-
-- the **chain** is a list of steps with their days: by default **Design and shop drawings**, **Client approval**, **Manufacturing** and **Transport to site**, 5 working days each. These are Lapin's indicative values, and the tab says so: rename the steps, change their days, add or remove steps to make the chain your own. **Transport** marks a step as IFC's logistic task. The chain is saved with the spec, so **Save as style…** keeps it in the project's schedule styles;
-- **Milestone at the start** names the milestone the chains start from (**Drawings received**). If your schedule already has a milestone of that name, the chains start from yours;
-- under **Packages of the steps**, click a step to give it a package of its own, named after the step. **Package…** adds a package you name (the kitchens, the sanitary fixtures, a special zone's equipment) and **Before** picks the step it comes before;
-- in the packages' table each package can change the days of any chain step for itself alone (a façade's manufacturing of 30 days), switch off, and take a **Lag** between the delivery and the installation. **Total** is the whole chain.
-
-The tasks go under a **Procurement** summary, one summary a package. Each step follows the one before (FS), the first follows the milestone, and the last comes before the first task of the package's step (the lowest storey's, for a step split by storey). A long chain on the critical path moves the finish by its length: the preview shows it before you apply. These tasks are left out of location-based charts (see *A task in Properties*). Generated again, a chain task you edited keeps its days like any other edited task. Switched off, the generator makes exactly what it made before. None of the templates switches procurement on, not even the steel hall: you choose the packages.
-
 ### Generated again
 
 Open the generator again and **Apply**: the schedule is made again over the same tasks, so their ids stay. What you changed by hand stays:
@@ -142,7 +131,6 @@ Select a task and Properties shows it: its name, its IFC kind, its duration, whe
 - **Wet works**: concrete, screeds, plaster. A wet task does not work in the calendar's winter break, when the break is on.
 - **Total float** and **Free float**: how many working days the task can slip without moving the finish, or without moving what follows it. **Late start** and **Late finish** are the latest dates that keep the finish.
 - **Predecessors**: each link in, with its type and lag to change, or removed. **Successors** lists what follows the task.
-- **Show in location charts**: untick it to leave the task out of charts that draw the works by location (procurement, management). The Gantt still shows every task. The generator's procurement tasks come unticked. The setting goes to IFC (in `Lapin_Task`) and to MS Project (the flag field Flag1, named *Lapin not in charts*), and it comes back when read.
 
 ## Level of effort tasks
 
@@ -182,17 +170,6 @@ In **Generate schedule…**, the pencil of a step opens **Only the elements with
 
 **Reset** takes the display off; **Field names…** opens your office's names. The Gantt on a sheet draws what the window shows.
 
-## The location-based schedule
-
-**Construction → Location-based schedule** opens a time–location chart (a flow-line or line-of-balance chart) under the view, like the Gantt. Time runs across, with days, weeks or months; the model's locations run up, at their elevations. Each task gets a segment for every location its elements are in. A task on one storey is a line rising across that storey's band, from its start to its finish. A task over neighbouring storeys is a block over them. Tasks whose names differ only by the location's name ("Masonry · Ground floor", "Masonry · First floor") are one trade, with one colour in the legend. When the Gantt colours its bars by a field, the chart uses those colours. Critical segments are red; today and the status date are drawn as lines. Tasks with no elements in a location are counted in the toolbar, not drawn.
-
-- **Locations** chooses the level: **Buildings**, **Storeys** (the default) or **Zones**. With Zones, **Zones by** picks a field or formula of the elements (a property "Zone", a parameter, an alias), and its values divide each storey. The arrow next to a building or storey folds the locations under it into one row.
-- **Click** a segment to select its task. Drag its bottom handle to move its start: the task then starts no earlier than that day, as when a Gantt bar is dragged. Drag its top handle to change its finish, which sets its duration. **Click it again** to select the trade across all its locations. A bar under the legend then sets the duration or the constraint of every one of those tasks in one step. The selection is shared with the Gantt and the 3D.
-- **Labels** can be dragged; Alt+drag turns them, and a double-click puts one back. **Note** pins a note to a date and a location: click where it goes. Double-click a note to change it; an empty note is deleted. Labels and notes are saved in the view.
-- **Ctrl+wheel** zooms the time, **Shift+wheel** zooms the locations, and a double-click on the background fits the whole chart. **On sheet** (or **Location-based schedule on sheet** in the 4D simulation group) puts the chart on a new A3 sheet. The engine draws it, so the PDF prints what the pane shows.
-
-The dates come from the critical path, so a predecessor that slips moves every segment after it.
-
 ## The critical path
 
 Lapin works out the schedule after every change. A forward pass finds the earliest dates and a backward pass the latest. The tasks with no float make the critical path, and a delay to any of them moves the finish. A link to a summary holds every task under it. A link from a summary starts at its first task's start and ends at its last task's finish. Lapin refuses a link that would make a loop. Tasks as late as possible are then moved to their latest dates, the last first, and level of effort tasks are placed on the tasks they span. Neither changes the other tasks' dates, the finish or the critical path.
@@ -209,15 +186,9 @@ A task takes elements of the model, so the schedule knows what is built when. Se
 
 Under **Elements** in Properties, tick **Find them by a rule** and pick what the task takes, as in a schedule's filter: **Kinds**, **Storeys**, **Types**, **Materials**, **Groups** and **Phases**, each value with how many elements have it. Every condition you set must hold; one left empty lets everything through. The rule is kept, not the elements: a wall drawn tomorrow on the ground floor joins the task "Masonry ground floor" by itself. **Rule from the selection** makes a rule of the kinds and storeys of the elements selected.
 
-### Product × location
+### Products and locations
 
-A planner reads a task as three things: the **activity** (what is done: "Install doors"), the **product** (what it builds: doors, partition walls of type A) and the **location** (where: floor 1, a room). In Lapin the activity is the task itself; the product is a code of the project's **product breakdown (PBS)**; the location is a place of the building. Above the other conditions, the rule has a **Product (PBS) × Location (GBS)** pair: pick a product (a node takes everything under it, so *40 Interior* takes the doors and the partitions) and one or more locations (the building, a storey, a room; any of them), and the task takes the elements labelled with that product that stand there. The line under the pair counts them, and gives their quantity in the unit of the task's norm when it has one. "Install doors" × "Ground floor" takes the doors of the ground floor, and a door drawn there tomorrow joins it.
-
-The PBS is one of the project's classifications (**Manage → Classifications…**): your own codes and names, imported from a CSV or Excel table (code, title, parent) or added as you label elements, or Lapin's small **starter PBS** (a few products by trade, its own codes, marked indicative) to change or replace. **Tasks from product × location…** chooses which classification is the PBS; with none chosen, the one named *PBS*, else the project's only one. Label the **types** (every door of a type is then a door) or single elements in **Properties → Classification**, for the whole selection at once; an element's own code wins over its type's. The codes go to IFC as IfcClassificationReference and come back when the file is read.
-
-A room holds what stands in it, and the doors and walls on its edge (up to 30 cm off its outline): a door between two rooms is in both.
-
-**Construction → Tasks from product × location…** makes the tasks of an activity at once: pick the product, name the activity ("Install doors" is suggested from the product), tick the locations (every storey to start with) and maybe a norm. It makes a summary with one task a location ("Install doors · Ground floor", "Install doors · Floor 2"), each with its rule, linked finish-to-start in the order of the locations, as the generator links a step's storeys; with a norm, each task's duration is its elements' quantity × the norm's hours ÷ (crew × hours a day). One step to undo.
+A rule can also name **products** and **locations**. A product is a code of the project's product breakdown (PBS): the classification named *PBS*, else the project's only classification. A code takes the items under it too. A location is the building, a storey or a room. The task then takes the elements labelled with one of those products that stand in one of those places. A room holds what stands in it, and the doors and walls on its edge (up to 30 cm off its outline). Such rules come from a file (IFC, MS Project) or a script, and Lapin keeps them and finds their elements like any other rule. You label types or single elements in **Properties → Classification**. An element's own code wins over its type's, and the codes go to IFC and come back.
 
 ### A part of the elements
 

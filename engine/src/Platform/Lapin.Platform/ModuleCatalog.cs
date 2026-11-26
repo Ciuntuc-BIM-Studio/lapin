@@ -26,6 +26,7 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
     readonly List<ILapinModule> _modules = [];
     readonly List<(OverrideInfo Info, Delegate Handler)> _pending = [];
     readonly List<OverrideInfo> _overrides = [];
+    readonly Dictionary<string, (string Id, string Version)> _extensions = new(StringComparer.Ordinal);
 
     public IReadOnlyList<ILapinModule> Modules => _modules;
     /// <summary>What the modules override of each other's (<see cref="IModuleRegistry.Override"/>), in load order: none in the editions of this repository.</summary>
@@ -35,6 +36,17 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
     /// <summary>Every query's full name ("schedule.csv").</summary>
     public IEnumerable<string> QueryNames => _queries.Keys;
     public IReadOnlyDictionary<string, JsonNode> Catalogs => _catalogs;
+
+    /// <summary>The modules loaded from extensions (docs/plan-extension-modules.md §2.1), by module id: the extension's id and version, recorded in the projects they save.</summary>
+    public IReadOnlyDictionary<string, (string Id, string Version)> Extensions => _extensions;
+
+    /// <summary>A loaded module marked as the one an extension brought (the extension loader calls it once the module registered).</summary>
+    public void MarkExtension(string moduleId, string extensionId, string version)
+    {
+        if (!_modules.Any(m => m.Id == moduleId)) throw new InvalidOperationException($"Module „{moduleId}” is not loaded.");
+        if (string.IsNullOrWhiteSpace(extensionId) || string.IsNullOrWhiteSpace(version)) throw new ArgumentException("An extension has an id and a version.");
+        _extensions[moduleId] = (extensionId, version);
+    }
 
     public static ModuleCatalog Create(IEnumerable<ILapinModule> modules)
     {

@@ -17,14 +17,8 @@ export interface GenStep {
   conditions?: Condition[]; splitBy?: string[]; durationField?: string; quantityField?: string;
 }
 
-export interface GenSpec { template: string; steps: GenStep[]; byStorey: boolean; demolition: boolean; formwork: boolean; scaffolding: boolean; procurement?: Procurement }
-
-/** A step of a procurement chain: its days by default, IFC's kind of task (LOGISTIC for the transport). */
-export interface ProcStep { key: string; name: string; days: number; kind?: string }
-/** A package bought for the works: the step whose first task it precedes, its own days for some chain steps, the lag before the installation. */
-export interface ProcPackage { key: string; name: string; before: string; on: boolean; days?: Record<string, number>; lag?: number }
-/** The generator's procurement: the user's chain (Lapin's by default, indicative) and the packages, after the drawings' milestone. */
-export interface Procurement { on: boolean; chain: ProcStep[]; packages: ProcPackage[]; milestone?: string; title?: string }
+/** The generator's spec; any other key is a contributor's part (an extension's), kept as it came (generatorSections.ts). */
+export interface GenSpec { template: string; steps: GenStep[]; byStorey: boolean; demolition: boolean; formwork: boolean; scaffolding: boolean; [part: string]: unknown }
 
 export interface Template { id: string; label: string; description: string; spec: GenSpec }
 export interface OwnStyle { id: string; label: string; spec: GenSpec }
@@ -34,20 +28,21 @@ export interface NormsDto { count: number; source: string | null; indicative: bo
 
 export interface GeneratorOptions {
   suggested: string; spec: GenSpec; generated: boolean; start: string; tasks: number; styles: OwnStyle[]; norms: NormsDto;
-  /** Lapin's chain, what Procurement switches on. */
-  procurementDefault?: Procurement;
+  /** The engine's generator contributors in this edition, by key, with what their sections start from. */
+  contributors?: Record<string, unknown>;
 }
 
 export interface PreviewTask {
   id: string; name: string; level: number; summary: boolean; start: string; finish: string; duration: number; critical: boolean; count: number;
-  source?: 'norm' | 'default' | 'procurement'; quantity?: number; unit?: string; norm?: string; crew?: number; kept?: boolean; phase?: string;
+  source?: string; quantity?: number; unit?: string; norm?: string; crew?: number; kept?: boolean; phase?: string;
 }
 
 export interface PreviewSummary {
   tasks: number; start: string; finish: string; workingDays: number; total: number; linked: number; none: string[]; partial: string[];
   unlinkedClasses: string[]; fromNorms: number; byDefault: number; noNorm: string[]; indicative: boolean;
   formwork: number; scaffolds: number; demolished: number; kept: number; removed: number;
-  procurement?: number; procurementIndicative?: boolean;
+  /** The tasks each contributor made (not its summaries), by its key. */
+  contributed?: Record<string, number>;
 }
 
 export interface PreviewDto { spec: GenSpec; tasks: PreviewTask[]; problem: string | null; summary: PreviewSummary; notes?: string[] }
@@ -144,91 +139,5 @@ export function cleanSpec(spec: GenSpec): GenSpec {
     if (durationField?.trim()) out.durationField = durationField.trim();
     if (quantityField?.trim()) out.quantityField = quantityField.trim();
     return out;
-  }), ...(spec.procurement ? { procurement: cleanProcurement(spec.procurement) } : {}) };
+  }) };
 }
-
-/** Procurement as the engine takes it: chain steps with a name, packages before a step. */
-function cleanProcurement(p: Procurement): Procurement {
-  return {
-    ...p,
-    chain: p.chain.filter((s) => s.name.trim()).map((s) => ({ ...s, name: s.name.trim() })),
-    packages: p.packages.filter((x) => x.before).map((x) => ({ ...x, name: x.name.trim() })),
-  };
-}
-
-// ------------------------------------------------------------------ procurement (docs/plan-4d5d.md)
-
-/** Lapin's chain as the engine gives it, when it gives none: four steps of 5 working days, the transport LOGISTIC. */
-export const DEFAULT_CHAIN: ProcStep[] = [
-  { key: 'design', name: 'Design and shop drawings', days: 5 },
-  { key: 'approval', name: 'Client approval', days: 5 },
-  { key: 'manufacturing', name: 'Manufacturing', days: 5 },
-  { key: 'transport', name: 'Transport to site', days: 5, kind: 'LOGISTIC' },
-];
-
-/** The spec's procurement, or Lapin's (off) when it has none. */
-export function procurementOf(spec: GenSpec, fallback?: Procurement): Procurement {
-  return spec.procurement ?? { ...(fallback ?? { chain: DEFAULT_CHAIN, packages: [] }), on: false };
-}
-
-/** The spec with its procurement changed. */
-export function withProcurement(spec: GenSpec, patch: Partial<Procurement>, fallback?: Procurement): GenSpec {
-  return { ...spec, procurement: { ...procurementOf(spec, fallback), ...patch } };
-}
-
-/** Whether a step has its own package (a package keyed as the step, before it). */
-export const procures = (p: Procurement, step: string): boolean => p.packages.some((x) => x.key === step && x.before === step && x.on);
-
-/** A step's package switched on or off (made the first time, named after the step by the engine). */
-export function procureStep(p: Procurement, step: string, on: boolean): Procurement {
-  const has = p.packages.find((x) => x.key === step && x.before === step);
-  if (has) return { ...p, packages: p.packages.map((x) => (x === has ? { ...x, on } : x)) };
-  return on ? { ...p, packages: [...p.packages, { key: step, name: '', before: step, on: true }] } : p;
-}
-
-/** A key no package (or chain step, with `taken`) has yet. */
-export function freshPackageKey(taken: readonly string[], base: string): string {
-  const keys = new Set(taken);
-  const b = base.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'package';
-  if (!keys.has(b)) return b;
-  for (let n = 2; ; n++) if (!keys.has(`${b}-${n}`)) return `${b}-${n}`;
-}
-
-/** A package the user names, before a step. */
-export function addPackage(p: Procurement, name: string, before: string): Procurement {
-  return { ...p, packages: [...p.packages, { key: freshPackageKey(p.packages.map((x) => x.key), name), name: name.trim(), before, on: true }] };
-}
-
-/** A package changed by its key. */
-export function withPackage(p: Procurement, key: string, patch: Partial<ProcPackage>): Procurement {
-  return { ...p, packages: p.packages.map((x) => (x.key === key ? { ...x, ...patch } : x)) };
-}
-
-/** A package's days for a chain step: its own, else the chain's. */
-export const packageDays = (pkg: ProcPackage, s: ProcStep): number => pkg.days?.[s.key] ?? s.days;
-
-/** A package's own days for a chain step set; the chain's value (or none) takes the override away. */
-export function setPackageDays(pkg: ProcPackage, s: ProcStep, days: number | null): ProcPackage {
-  const next = { ...(pkg.days ?? {}) };
-  if (days == null || days === s.days) delete next[s.key]; else next[s.key] = Math.max(0, Math.round(days));
-  const { days: _old, ...rest } = pkg;
-  return Object.keys(next).length ? { ...rest, days: next } : rest;
-}
-
-/** The working days of a package's whole chain. */
-export const chainDays = (p: Procurement, pkg: ProcPackage): number => p.chain.reduce((sum, s) => sum + packageDays(pkg, s), 0);
-
-/** A chain step changed, added or taken away. */
-export function withChainStep(p: Procurement, key: string, patch: Partial<ProcStep>): Procurement {
-  return { ...p, chain: p.chain.map((s) => (s.key === key ? { ...s, ...patch } : s)) };
-}
-export function addChainStep(p: Procurement, name: string): Procurement {
-  return { ...p, chain: [...p.chain, { key: freshPackageKey(p.chain.map((s) => s.key), name), name, days: 5 }] };
-}
-export function removeChainStep(p: Procurement, key: string): Procurement {
-  return { ...p, chain: p.chain.filter((s) => s.key !== key) };
-}
-
-/** Whether the chain is Lapin's own (its days indicative). */
-export const indicativeChain = (p: Procurement): boolean =>
-  p.chain.length === DEFAULT_CHAIN.length && p.chain.every((s, i) => s.key === DEFAULT_CHAIN[i].key && s.days === DEFAULT_CHAIN[i].days && s.name === DEFAULT_CHAIN[i].name && (s.kind ?? '') === (DEFAULT_CHAIN[i].kind ?? ''));

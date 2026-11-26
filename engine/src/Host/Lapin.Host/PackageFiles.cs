@@ -27,7 +27,7 @@ public static class PackageFiles
             return imported.Diff;
         }
         var content = LapinPackage.Read(path);
-        return session.Load(content.Entities, content.Relations, path, content.Classes);
+        return session.Load(content.Entities, content.Relations, path, content.Classes, content.Extensions);
     }
 
     /// <summary>The project written to <paramref name="path"/>, with its versions and other tools' entries (those of the file it came from, unless given).</summary>

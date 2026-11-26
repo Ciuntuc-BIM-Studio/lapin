@@ -93,3 +93,10 @@ export function frameDistance(min: { x: number; y: number; z: number }, max: { x
   const d = Math.hypot(max.x - min.x, max.y - min.y, max.z - min.z);
   return Math.max(3, (d * 0.6) / Math.tan(fov / 2));
 }
+
+/** The elements without a task counted by product (the PBS's code; „no code” for none), most first: „40.20 Doors 3, no code 2”. */
+export function byProductText(groups: readonly { code: string; title: string; count: number }[] | undefined): string {
+  if (!groups?.length) return '';
+  return [...groups].sort((a, b) => b.count - a.count || a.code.localeCompare(b.code))
+    .map((g) => (g.code ? `${g.code}${g.title ? ` ${g.title}` : ''} ${g.count}` : `no code ${g.count}`)).join(', ');
+}

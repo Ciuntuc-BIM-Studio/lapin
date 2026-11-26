@@ -10,12 +10,12 @@ using Lapin.Platform;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// Product × Location (docs/plan-4d5d.md, "Produs × Loc"; the consultant's ABS / PBS / GBS): the PBS is a classification of the
-/// project (the user's, or Lapin's indicative starter), its codes labelling types and elements (a type's is its elements', an
-/// element's own wins); a task's rule names products (a node and the items under it) and locations (the building, storeys,
-/// rooms), so "Install doors" × "Floor 1" takes the doors of floor 1; tasks made from the cross-product, one a location,
-/// linked in their order, timed by a norm on their quantity; the unlinked elements and the CDE check by product; the labels
-/// and rules through IFC; MS Project's Text2. Rules without products or locations take what they took.
+/// Product × Location in the open planning module (docs/plan-4d5d.md, "Produs × Loc"; the consultant's ABS / PBS / GBS): the
+/// PBS is a classification of the project, its codes labelling types and elements (a type's is its elements', an element's
+/// own wins); a task's rule names products (a node and the items under it) and locations (the building, storeys, rooms), so
+/// "Install doors" × "Floor 1" takes the doors of floor 1; the unlinked elements and the CDE check by product; the labels and
+/// rules through IFC; MS Project's Text2. Rules without products or locations take what they took. (The PBS tools, the
+/// starter, the pickers and tasks from the cross-product, are the planning-plus extension's, with their tests.)
 /// </summary>
 public sealed class PlanningBreakdownTests
 {
@@ -40,7 +40,7 @@ public sealed class PlanningBreakdownTests
         var d2 = Door(b, 1.5);
         var own = Door(a, 4.5);
         var d3 = Door(c, 1.5);
-        f.Run("planning.pbsStarter", new JsonObject());
+        MakePbs(f);
         var doorType = Types.Of(f.Model, f.Model.Get(d1)!)!.Id;
         var wallType = Types.Of(f.Model, f.Model.Get(a)!)!.Id;
         f.Run("classification.assign", new JsonObject { ["ids"] = new JsonArray(doorType), ["system"] = "PBS", ["code"] = "40.20" });
@@ -48,6 +48,21 @@ public sealed class PlanningBreakdownTests
         // An element's own label wins over its type's.
         f.Run("classification.assign", new JsonObject { ["ids"] = new JsonArray(own), ["system"] = "PBS", ["code"] = "30.20" });
         return new(f, floor1, floor2, [d1, d2], d3, own, [a, b], c);
+    }
+
+    /// <summary>A classification „PBS” with a few products by trade, as a user would make or import one.</summary>
+    static void MakePbs(Fixture f)
+    {
+        (string Code, string Title, string? Parent)[] items =
+        [
+            ("30", "Envelope", null), ("30.10", "External walls", "30"), ("30.20", "Windows", "30"),
+            ("40", "Interior", null), ("40.10", "Partition walls", "40"), ("40.20", "Doors", "40"),
+        ];
+        f.Run("classification.create", new JsonObject
+        {
+            ["name"] = "PBS",
+            ["items"] = new JsonArray(items.Select(i => (JsonNode)new JsonObject { ["code"] = i.Code, ["title"] = i.Title, ["parent"] = i.Parent }).ToArray()),
+        });
     }
 
     static string Task(Fixture f, string name, JsonObject rule)
@@ -67,36 +82,16 @@ public sealed class PlanningBreakdownTests
     static JsonArray A(params string[] xs) => new(xs.Select(x => (JsonNode)x).ToArray());
 
     [Fact]
-    public void The_starter_PBS_is_a_classification_marked_indicative_and_its_items_count_what_they_label()
+    public void The_PBS_is_the_classification_named_PBS_else_the_only_one()
     {
-        var h = Build();
-        var f = h.F;
-        var pbs = (JsonObject)f.Session.Query("planning.pbs", new JsonObject())!;
-        Assert.Equal("PBS", (string)pbs["system"]!["name"]!);
-        Assert.Equal("Lapin (indicative)", (string)pbs["system"]!["source"]!);
-        var items = pbs["items"]!.AsArray().OfType<JsonObject>().ToDictionary(i => (string)i["code"]!);
-        // A parent counts its own and those under it; each parent comes before its children, a child one deeper.
-        Assert.Equal(3, (int)items["40.20"]["count"]!);
-        Assert.Equal(2 + 1, (int)items["40.10"]["count"]!);
-        Assert.Equal(6, (int)items["40"]["count"]!);
-        Assert.Equal(1, (int)items["30.20"]["count"]!);
-        Assert.Equal(0, (int)items["40"]["depth"]!);
-        Assert.Equal(1, (int)items["40.20"]["depth"]!);
-        var order = pbs["items"]!.AsArray().Select(i => (string)i!["code"]!).ToList();
-        Assert.True(order.IndexOf("40") < order.IndexOf("40.20"));
-        // Twice is refused; the choice can name another classification, and none forgets it.
-        Assert.Throws<CommandException>(() => f.Run("planning.pbsStarter", new JsonObject()));
+        var f = F();
+        Assert.Null(Breakdowns.Pbs(f.Model));
         f.Run("classification.create", new JsonObject { ["name"] = "Office codes" });
-        f.Run("planning.setPbs", new JsonObject { ["system"] = "Office codes" });
+        // The only classification of the project.
         Assert.Equal("Office codes", Breakdowns.Pbs(f.Model)!.Name);
-        f.Run("planning.setPbs", new JsonObject { ["system"] = null });
-        // With no choice, the one named PBS.
+        MakePbs(f);
+        // Two: the one named PBS.
         Assert.Equal("PBS", Breakdowns.Pbs(f.Model)!.Name);
-        // The rule's options list the PBS's items and the locations (building, storeys, rooms) with their counts.
-        var options = (JsonObject)f.Session.Query("planning.ruleOptions", new JsonObject())!;
-        Assert.Contains(options["products"]!.AsArray(), x => (string)x!["code"]! == "40.20" && (int)x["count"]! == 3);
-        Assert.Contains(options["locations"]!.AsArray(), x => (string)x!["id"]! == h.Floor2 && (string)x["level"]! == "storey");
-        Assert.Contains(options["locations"]!.AsArray(), x => (string)x!["level"]! == "building");
     }
 
     [Fact]
@@ -120,12 +115,6 @@ public sealed class PlanningBreakdownTests
         // Combined with the rule's other dimensions, as they were.
         var walls = Task(f, "Walls by class", new JsonObject { ["classes"] = A("IfcDoor"), ["products"] = A("40") });
         Assert.Equal(Sorted([.. h.Doors1, h.Door2]), Elements(f, walls));
-        // The preview gives the count while the rule is picked, and with a norm its quantity in the norm's unit.
-        f.Run("planning.useIndicativeNorms", new JsonObject());
-        var preview = (JsonObject)f.Session.Query("planning.rulePreview", new JsonObject { ["rule"] = new JsonObject { ["products"] = A("40.20"), ["locations"] = A(h.Floor1) }, ["norm"] = "LAP-OPEN" })!;
-        Assert.Equal(2, (int)preview["count"]!);
-        Assert.Equal(2.0, (double)preview["quantity"]!);
-        Assert.Equal("pcs", (string)preview["unit"]!);
         // Its words name the product.
         var rule = TaskRule.Read(f.Model.Get(install)!.Attrs["rule"])!;
         Assert.Contains("40.20 Doors", TaskElements.Describe(f.Model, _ => null, rule, null, 0, 0));
@@ -167,52 +156,11 @@ public sealed class PlanningBreakdownTests
         var tasks = rules.Select((r, i) => Task(f, $"T{i}", (JsonObject)r.DeepClone())).ToList();
         var before = tasks.Select(t => Elements(f, t)).ToList();
         var forms = tasks.Select(t => f.Model.Get(t)!.Attrs["rule"]!.ToJsonString()).ToList();
-        f.Run("planning.pbsStarter", new JsonObject());
+        MakePbs(f);
         f.Run("classification.assign", new JsonObject { ["ids"] = new JsonArray(a), ["system"] = "PBS", ["code"] = "30.10" });
         Assert.Equal(before, tasks.Select(t => Elements(f, t)).ToList());
         Assert.Equal(forms, tasks.Select(t => f.Model.Get(t)!.Attrs["rule"]!.ToJsonString()).ToList());
         Assert.Equal(rules.Select(r => r.ToJsonString()), rules.Select(r => TaskRule.Read(r)!.ToJson().ToJsonString()));
-    }
-
-    [Fact]
-    public void Tasks_from_the_cross_product_are_one_a_location_linked_in_order_and_timed_by_their_quantity()
-    {
-        var h = Build();
-        var f = h.F;
-        f.Run("planning.useIndicativeNorms", new JsonObject());
-        var r = (JsonObject)f.Run("planning.tasksFromBreakdown", new JsonObject
-        {
-            ["name"] = "Install doors", ["products"] = A("40.20"), ["norm"] = "LAP-OPEN", ["kind"] = "INSTALLATION",
-        })!;
-        var made = r["tasks"]!.AsArray().Select(x => (string)x!).ToList();
-        // Every storey by default, in order: floor 1 then floor 2.
-        Assert.Equal(2, made.Count);
-        var s = Schedule(f);
-        var rows = s["tasks"]!.AsArray().OfType<JsonObject>().ToDictionary(t => (string)t["id"]!);
-        Assert.Equal("Install doors", (string)rows[(string)r["summary"]!]["name"]!);
-        Assert.Equal("Install doors · Ground floor", (string)rows[made[0]]["name"]!);
-        Assert.Equal("Install doors · Floor 2", (string)rows[made[1]]["name"]!);
-        Assert.Equal(Sorted(h.Doors1), Elements(f, made[0]));
-        Assert.Equal([h.Door2], Elements(f, made[1]));
-        Assert.Equal(3, (int)rows[(string)r["summary"]!]["count"]!);
-        Assert.Equal("INSTALLATION", f.Model.Get(made[0])!.PredefinedType);
-        // Timed by the norm on their count: 2 pcs × 2.5 h ÷ (2 people × 8 h) → 1 day.
-        Assert.Equal(2.0, (double)rows[made[0]]["quantity"]!);
-        Assert.Equal("pcs", (string)rows[made[0]]["unit"]!);
-        Assert.Equal("norm", (string)rows[made[0]]["durationFrom"]!);
-        Assert.Equal(1, (int)rows[made[0]]["duration"]!);
-        var link = Assert.Single(s["links"]!.AsArray().OfType<JsonObject>());
-        Assert.Equal((made[0], made[1], "FS"), ((string)link["from"]!, (string)link["to"]!, (string)link["type"]!));
-        // One undo step.
-        f.Session.Undo();
-        Assert.Empty(Schedule(f)["tasks"]!.AsArray());
-        // Locations given, not linked: in the order given.
-        var r2 = (JsonObject)f.Run("planning.tasksFromBreakdown", new JsonObject { ["name"] = "Doors", ["products"] = A("40.20"), ["locations"] = A(h.Floor2, h.Floor1), ["link"] = false })!;
-        var made2 = r2["tasks"]!.AsArray().Select(x => (string)x!).ToList();
-        Assert.Equal([h.Door2], Elements(f, made2[0]));
-        Assert.Empty(Schedule(f)["links"]!.AsArray());
-        // A code the PBS lacks is refused.
-        Assert.Throws<CommandException>(() => f.Run("planning.tasksFromBreakdown", new JsonObject { ["name"] = "X", ["products"] = A("99") }));
     }
 
     [Fact]

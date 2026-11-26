@@ -65,17 +65,6 @@ Normele sunt ale tale. Lapin nu livrează niciun indicator de norme. **Importă 
 
 Sub norme, fiecare pas își alege **Norma**, **Echipa** (0: a normei) și **Zilele**, folosite când nicio normă nu-i dă durata. Fila Calendar arată calendarul în care se numără duratele; orele lui pe zi împart orele-om.
 
-### Fila Aprovizionare
-
-Ce se cumpără pentru lucrare (structura metalică, ferestrele, bucătăriile, un lift) se proiectează, se aprobă, se fabrică și se aduce pe șantier înainte să fie montat. Bifează **Lanțuri de aprovizionare** și fiecare pachet primește lanțul lui de sarcini înaintea montajului:
-
-- **lanțul** e o listă de pași cu zilele lor: implicit **Proiectare și detalii de execuție**, **Aprobarea beneficiarului**, **Fabricație** și **Transport pe șantier**, câte 5 zile lucrătoare fiecare. Sunt valorile orientative ale lui Lapin, iar fila o spune: redenumește pașii, schimbă-le zilele, adaugă sau scoate pași ca lanțul să fie al tău. **Transport** marchează un pas ca sarcină de logistică în IFC. Lanțul se salvează cu specificația, deci **Salvează ca stil…** îl păstrează în stilurile de program ale proiectului;
-- **Jalonul de la început** dă numele jalonului din care pornesc lanțurile (**Planșe primite**). Dacă programul tău are deja un jalon cu numele acesta, lanțurile pornesc din al tău;
-- la **Pachetele pașilor**, apasă un pas ca să-i dai un pachet al lui, cu numele pasului. **Pachet…** adaugă un pachet numit de tine (bucătăriile, obiectele sanitare, echipamentele unei zone speciale), iar **Înainte de** alege pasul înaintea căruia vine;
-- în tabelul pachetelor, fiecare pachet poate schimba doar pentru el zilele oricărui pas din lanț (o fabricație de fațadă de 30 de zile), se poate opri și poate avea un **Decalaj** între livrare și montaj. **Total** e lanțul întreg.
-
-Sarcinile stau sub un rezumat **Aprovizionare**, un rezumat pe pachet. Fiecare pas vine după cel dinainte (FS), primul după jalon, iar ultimul înaintea primei sarcini a pasului pachetului (cea de la etajul cel mai de jos, pentru un pas împărțit pe etaje). Un lanț lung pe drumul critic mută finalul cu lungimea lui: previzualizarea o arată înainte să aplici. Sarcinile acestea sunt lăsate afară din diagramele pe locații (vezi *O sarcină în Proprietăți*). Generată din nou, o sarcină din lanț pe care ai editat-o își păstrează zilele, ca orice sarcină editată. Oprit, generatorul face exact ce făcea înainte. Niciun șablon nu pornește aprovizionarea, nici hala metalică: tu alegi pachetele.
-
 ### Generat din nou
 
 Deschide din nou generatorul și apasă **Aplică**: programul e refăcut peste aceleași sarcini, deci id-urile lor rămân. Ce ai schimbat de mână rămâne:
@@ -142,7 +131,6 @@ Selectezi o sarcină și Proprietățile o arată: numele, felul ei în IFC, dur
 - **Lucrări umede**: betoane, șape, tencuieli. O sarcină umedă nu lucrează în pauza de iarnă a calendarului, când pauza e pornită.
 - **Rezervă totală** și **Rezervă liberă**: câte zile lucrătoare poate întârzia sarcina fără să mute finalul, respectiv fără să mute ce urmează după ea. **Început târziu** și **Sfârșit târziu** sunt cele mai târzii date care păstrează finalul.
 - **Predecesori**: fiecare legătură care intră, cu tipul și decalajul de schimbat, sau de scos. **Succesori** arată ce urmează după sarcină.
-- **Arată în diagramele pe locații**: debifează ca sarcina să fie lăsată afară din diagramele care desenează lucrările pe locații (aprovizionare, management). Gantt-ul arată în continuare toate sarcinile. Sarcinile de aprovizionare ale generatorului vin debifate. Setarea merge în IFC (în `Lapin_Task`) și în MS Project (câmpul de tip flag Flag1, numit *Lapin not in charts*) și se întoarce la citire.
 
 ## Sarcini de nivel de efort
 
@@ -182,17 +170,6 @@ La **Elements** în Proprietăți, sub **Găsește-le după o regulă**, **Condi
 
 **Resetează** scoate afișarea; **Nume de câmpuri…** deschide numele biroului. Gantt-ul pe planșă desenează ce arată fereastra.
 
-## Programul pe locații
-
-**Execuție → Program pe locații** deschide sub vedere, ca Gantt-ul, o diagramă timp–locație (linii de flux, „line of balance”). Timpul curge pe orizontală, pe zile, săptămâni sau luni; locațiile modelului urcă pe verticală, la cotele lor. Fiecare sarcină are câte un segment pentru fiecare locație în care sunt elementele ei. O sarcină pe un nivel e o linie care urcă peste banda nivelului, de la început la sfârșit. O sarcină pe mai multe niveluri vecine e un bloc peste ele. Sarcinile ale căror nume diferă doar prin numele locației („Zidărie · Parter”, „Zidărie · Etaj 1”) sunt aceeași lucrare, cu o singură culoare în legendă. Când Gantt-ul își colorează barele după un câmp, diagrama folosește aceleași culori. Segmentele critice sunt roșii; ziua de azi și data de stare sunt desenate ca linii. Sarcinile fără elemente într-o locație sunt numărate în bară, nu desenate.
-
-- **Locații** alege nivelul: **Clădiri**, **Niveluri** (implicit) sau **Zone**. La Zone, **Zone după** alege un câmp sau o formulă a elementelor (o proprietate „Zonă”, un parametru, un alias), iar valorile lui împart fiecare nivel. Săgeata de lângă o clădire sau un nivel strânge locațiile de sub el într-un singur rând.
-- **Un clic** pe un segment îi selectează sarcina. Trage mânerul de jos ca să-i muți începutul: sarcina începe atunci nu mai devreme de ziua aceea, ca la tragerea unei bare în Gantt. Trage mânerul de sus ca să-i schimbi sfârșitul, adică durata. **Încă un clic** pe același segment selectează lucrarea în toate locațiile ei. O bară sub legendă schimbă atunci, într-un singur pas, durata sau constrângerea tuturor acestor sarcini. Selecția e aceeași cu cea din Gantt și din 3D.
-- **Etichetele** se trag cu mouse-ul; Alt+tragere le rotește, iar un dublu clic le aduce înapoi. **Notă** fixează o notă la o dată și o locație: dai clic unde trebuie pusă. Un dublu clic pe o notă o schimbă; o notă goală e ștearsă. Etichetele și notele se păstrează în vedere.
-- **Ctrl+rotiță** mărește timpul, **Shift+rotiță** mărește locațiile, iar un dublu clic pe fundal arată toată diagrama. **Pe planșă** (sau **Program pe locații pe planșă**, în grupul Simulare 4D) pune diagrama pe o planșă A3 nouă. O desenează motorul, așa că PDF-ul tipărește ce arată fereastra.
-
-Datele vin din drumul critic, așa că o sarcină premergătoare care întârzie mută toate segmentele de după ea.
-
 ## Drumul critic
 
 Lapin calculează programul după fiecare schimbare. O trecere înainte găsește datele cele mai devreme, una înapoi pe cele mai târzii. Sarcinile fără rezervă fac drumul critic: întârzierea oricăreia mută finalul. O legătură spre un rezumat ține toate sarcinile de sub el. O legătură dintr-un rezumat pornește de la începutul primei lui sarcini și se termină la sfârșitul ultimei. Lapin refuză o legătură care ar face o buclă. Apoi sarcinile cât mai târziu se mută la datele lor cele mai târzii, ultima întâi, iar sarcinile de nivel de efort se pun pe sarcinile pe care le acoperă. Niciuna nu schimbă datele celorlalte sarcini, finalul sau drumul critic.
@@ -209,15 +186,9 @@ O sarcină ia elemente ale modelului, deci programul știe ce se construiește �
 
 La **Elemente** în Proprietăți, bifează **Găsește-le după o regulă** și alege ce ia sarcina, ca la filtrul unui extras: **Feluri**, **Etaje**, **Tipuri**, **Materiale**, **Grupuri** și **Faze**, fiecare valoare cu câte elemente o au. Fiecare condiție pusă trebuie îndeplinită; una lăsată goală lasă totul să treacă. Se păstrează regula, nu elementele: un perete desenat mâine la parter intră singur în sarcina „Zidărie parter”. **Regulă din selecție** face o regulă din felurile și etajele elementelor selectate.
 
-### Produs × loc
+### Produse și locuri
 
-Un planificator citește o sarcină ca trei lucruri: **activitatea** (ce se face: „Montaj uși”), **produsul** (ce construiește: uși, pereți despărțitori de tip A) și **locul** (unde: etajul 1, o încăpere). În Lapin activitatea e sarcina însăși; produsul e un cod al **defalcării pe produse (PBS)** a proiectului; locul e un loc al clădirii. Deasupra celorlalte condiții, regula are perechea **Product (PBS) × Location (GBS)**: alege un produs (un nod ia tot ce e sub el, deci *40 Interior* ia ușile și pereții despărțitori) și unul sau mai multe locuri (clădirea, un etaj, o încăpere; oricare dintre ele), iar sarcina ia elementele etichetate cu acel produs care stau acolo. Rândul de sub pereche le numără și le dă cantitatea în unitatea normei sarcinii, dacă are una. „Montaj uși” × „Parter” ia ușile parterului, iar o ușă desenată mâine acolo intră singură în ea.
-
-PBS-ul e una dintre clasificările proiectului (**Gestionare → Clasificări…**): codurile și denumirile tale, importate dintr-un tabel CSV sau Excel (cod, denumire, părinte) sau adăugate pe măsură ce etichetezi elemente, ori **PBS-ul de pornire** al lui Lapin (câteva produse pe meserii, cu codurile lui, marcat orientativ), de schimbat sau înlocuit. **Tasks from product × location…** alege care clasificare e PBS-ul; fără o alegere, cea numită *PBS*, altfel singura a proiectului. Etichetează **tipurile** (fiecare ușă a unui tip e atunci o ușă) sau elemente anume în **Proprietăți → Clasificare**, pentru toată selecția deodată; codul propriu al unui element are întâietate față de al tipului. Codurile merg în IFC ca IfcClassificationReference și revin când fișierul e citit.
-
-O încăpere ține ce stă în ea, și ușile și pereții de pe marginea ei (până la 30 cm de contur): o ușă între două încăperi e în amândouă.
-
-**Execuție → Tasks from product × location…** face deodată sarcinile unei activități: alege produsul, numește activitatea („Install doors” e propusă din produs), bifează locurile (la început toate etajele) și, dacă vrei, o normă. Face un rezumat cu câte o sarcină pe loc („Montaj uși · Parter”, „Montaj uși · Etaj 1”), fiecare cu regula ei, legate terminare-început în ordinea locurilor, cum leagă generatorul etajele unui pas; cu o normă, durata fiecărei sarcini e cantitatea elementelor ei × orele normei ÷ (echipă × ore pe zi). Un singur pas de undo.
+O regulă poate numi și **produse** și **locuri**. Un produs e un cod al structurii pe produse a proiectului (PBS): clasificarea numită *PBS* sau, dacă nu există, singura clasificare a proiectului. Un cod ia și elementele de sub el. Un loc e clădirea, un nivel sau o încăpere. Sarcina ia atunci elementele etichetate cu unul dintre produse care stau într-unul dintre locuri. O încăpere ține ce stă în ea, și ușile și pereții de pe marginea ei (până la 30 cm de contur). Astfel de reguli vin dintr-un fișier (IFC, MS Project) sau dintr-un script, iar Lapin le păstrează și le găsește elementele ca pe orice altă regulă. Etichetezi tipurile sau elemente singure în **Proprietăți → Clasificare**. Codul propriu al unui element are întâietate față de cel al tipului, iar codurile merg în IFC și se întorc.
 
 ### O parte a elementelor
 

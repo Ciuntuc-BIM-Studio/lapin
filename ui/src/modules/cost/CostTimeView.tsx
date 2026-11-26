@@ -6,10 +6,9 @@
  */
 
 import { Fragment, useMemo } from 'react';
-import { CalendarRange, FileSpreadsheet, FileText, Sheet, Table2, Wallet } from 'lucide-react';
+import { CalendarRange, FileSpreadsheet, FileText, Sheet, Table2 } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { formOnSheet, money, useEstimateData } from './estimate';
-import { openCashFlow } from './cashFlow';
 import { chartOf, curveOnSheet, exportCostTimePdf, exportCostTimeXlsx, isCurve, shortMoney, useOverTime, type OverTimeDto } from './costTime';
 
 const W = 900, H = 300;
@@ -63,7 +62,6 @@ export function CostTimeView() {
     <div className="estimate-pane" data-testid="cost-time">
       <div className="view-toolbar estimate-toolbar">
         <span className="panel-title"><CalendarRange size={14} /> Cost over time</span>
-        <button type="button" className="icon" title="The payments: certificates, retention, advance, payment terms, the peak funding need" onClick={() => openCashFlow()} data-testid="cost-time-cash"><Wallet size={14} /><span className="small">Cash flow</span></button>
         <span className="group-rule" aria-hidden />
         <button type="button" className="icon" title="The S-curve on a new sheet" onClick={() => void curveOnSheet()} data-testid="cost-time-sheet"><Sheet size={14} /><span className="small">Place on sheet</span></button>
         <button type="button" className="icon" title="The month table on a new sheet" onClick={() => void formOnSheet('monthly')} data-testid="cost-time-table-sheet"><Table2 size={14} /><span className="small">Month table on sheet</span></button>

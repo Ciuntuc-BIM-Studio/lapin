@@ -54,8 +54,6 @@ public sealed class CostIfc : IIfcControls
             [
                 ("Currency", s.Currency), ("EurRate", N(s.EurRate)), ("LabourTax", N(s.LabourTax)), ("Overheads", N(s.Overheads)),
                 ("Profit", N(s.Profit)), ("Vat", N(s.Vat)), ("Grouping", s.Grouping), ("Equivalent", s.Equivalent ? "true" : "false"),
-                // The cash flow's terms, as set (none when the defaults are used): Lapin's own properties, no IFC entity.
-                .. CashFlowSettings.ToProperties(e.Attrs[CashFlowSettings.Attr] as JsonObject),
             ]);
         }
     }
@@ -105,7 +103,6 @@ public sealed class CostIfc : IIfcControls
                 if (Num(key) is { } v) attrs[attr] = v;
             if (props.TryGetValue("Grouping", out var g) && g == "storey") attrs["grouping"] = g;
             if (props.TryGetValue("Equivalent", out var eq) && eq == "true") attrs["equivalent"] = true;
-            if (CashFlowSettings.FromProperties(props) is { } cash) attrs[CashFlowSettings.Attr] = cash;
             var id = edit.Model.GetRelation(cs.Id) == null ? cs.Id : edit.NewId();
             edit.Add(new Entity(id, Costing.Class, cs.Name, attrs, cs.Predefined is "PRICEDBILLOFQUANTITIES" ? cs.Predefined : "COSTPLAN"));
             made++;

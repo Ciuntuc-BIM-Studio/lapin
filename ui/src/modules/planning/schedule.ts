@@ -4,7 +4,6 @@
  * And what the Planning tab does: open the Gantt under the view, add, indent and link tasks, exchange files.
  */
 
-import { byProductText } from './breakdown';
 import { confirmAction } from '../../shell/prompts';
 import { useEffect } from 'react';
 import { create } from 'zustand';
@@ -17,7 +16,7 @@ import { expansionChanged } from '../../platform/groups';
 import { useCamera } from '../../viewport/camera';
 import { zoomHost } from '../../viewport/zoom';
 import { loeSpanOf, showDate, type ScheduleDto, type TaskDto } from './gantt';
-import { elementIds, frameDistance, TASK } from './links';
+import { byProductText, elementIds, frameDistance, TASK } from './links';
 
 export const usePlanning = create<{ data: ScheduleDto | null; version: number }>(() => ({ data: null, version: -2 }));
 
@@ -241,18 +240,4 @@ export async function importProgress(): Promise<void> {
 export async function retimeFromFields(): Promise<void> {
   const r = await execute('planning.retimeFromFields', {}) as { timed: number; changed: number } | null;
   if (r) notify(r.timed ? `${t('Retimed from fields')}: ${r.changed}/${r.timed}` : 'No task takes its duration or quantity from a field.');
-}
-
-// ── The location-based schedule ──────────────────────────────────────────────
-
-/** The location-based schedule (time across, the model's locations up) in a pane of its own under the view, or brought in front. */
-export function openLbs(): void { openUnder('lbs'); }
-
-/** The location-based schedule on a new sheet (A3 landscape), opened. */
-export async function lbsOnSheet(): Promise<void> {
-  const r = await execute('planning.lbsSheet', {}) as { sheetId: string } | null;
-  if (r?.sheetId) {
-    useUi.setState({ view: 'sheet', sheetId: r.sheetId });
-    notify('The location-based schedule is on a new sheet.');
-  }
 }

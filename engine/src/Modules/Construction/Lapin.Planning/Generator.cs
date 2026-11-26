@@ -91,10 +91,20 @@ public sealed record GenStep(string Key, string Name, IReadOnlyList<string> Clas
     }
 }
 
-/// <summary>What the generator makes: the template it started from, its steps, whether storeys split them, demolitions first, and the temporaries tied to their hosts' tasks.</summary>
+/// <summary>
+/// What the generator makes: the template it started from, its steps, whether storeys split them, demolitions first, and the
+/// temporaries tied to their hosts' tasks; <see cref="Extra"/> the keys it does not know (a contributor's part, an
+/// extension's procurement), kept as they came whether or not the contributor is there.
+/// </summary>
 public sealed record GenSpec(string Template, IReadOnlyList<GenStep> Steps, bool ByStorey = true, bool Demolition = true, bool Formwork = true, bool Scaffolding = true, DateOnly? Start = null,
-    Procurement? Procurement = null)
+    JsonObject? Extra = null)
 {
+    /// <summary>The keys the generator itself reads; any other is a contributor's (<see cref="Extra"/>).</summary>
+    public static readonly IReadOnlySet<string> Known = new HashSet<string> { "template", "steps", "byStorey", "demolition", "formwork", "scaffolding", "start" };
+
+    /// <summary>A contributor's part of the spec (null when it has none).</summary>
+    public JsonNode? Part(string key) => Extra?[key];
+
     public JsonObject ToJson(bool withStart = true)
     {
         var o = new JsonObject
@@ -103,18 +113,19 @@ public sealed record GenSpec(string Template, IReadOnlyList<GenStep> Steps, bool
             ["byStorey"] = ByStorey, ["demolition"] = Demolition, ["formwork"] = Formwork, ["scaffolding"] = Scaffolding,
         };
         if (withStart && Start is { } d) o["start"] = WorkCalendar.Date(d);
-        // Only when the user set it: a spec without it is written as before.
-        if (Procurement != null) o["procurement"] = Procurement.ToJson();
+        // Only what was given: a spec without contributors' parts is written as before.
+        if (Extra != null) foreach (var (k, v) in Extra) if (!Known.Contains(k)) o[k] = v?.DeepClone();
         return o;
     }
 
     static bool Flag(JsonNode? n, bool fallback) => n is JsonValue v && v.TryGetValue<bool>(out var b) ? b : fallback;
 
     /// <summary>A spec as a command gives it, its steps' conditions and fields checked.</summary>
-    public static void Check(JsonObject o)
+    public static void Check(JsonObject o, IServices? services = null)
     {
         if (o["steps"] is JsonArray a) foreach (var step in a) GenStep.Check(step);
-        Planning.Procurement.Check(o["procurement"]);
+        // Each contributor checks its own part; a part whose contributor is absent is kept unread.
+        foreach (var c in services?.All<IGeneratorContributor>() ?? []) if (o.ContainsKey(c.Key)) c.Check(o[c.Key]);
     }
 
     /// <summary>A spec as stored or given; what it does not say is taken from <paramref name="fallback"/>.</summary>
@@ -132,7 +143,16 @@ public sealed record GenSpec(string Template, IReadOnlyList<GenStep> Steps, bool
         return new(((string?)o["template"])?.Trim() is { Length: > 0 } t ? t : fallback.Template, steps,
             Flag(o["byStorey"], fallback.ByStorey), Flag(o["demolition"], fallback.Demolition), Flag(o["formwork"], fallback.Formwork), Flag(o["scaffolding"], fallback.Scaffolding),
             o.ContainsKey("start") ? WorkCalendar.ParseDate((string?)o["start"]) : fallback.Start,
-            o.ContainsKey("procurement") ? Planning.Procurement.Read(o["procurement"]) : fallback.Procurement);
+            ExtraOf(o, fallback.Extra));
+    }
+
+    /// <summary>The contributors' parts: the fallback's, each replaced by the one given.</summary>
+    static JsonObject? ExtraOf(JsonObject o, JsonObject? fallback)
+    {
+        JsonObject? x = null;
+        foreach (var (k, v) in fallback ?? []) if (!Known.Contains(k)) (x ??= [])[k] = v?.DeepClone();
+        foreach (var (k, v) in o) if (!Known.Contains(k)) (x ??= [])[k] = v?.DeepClone();
+        return x;
     }
 }
 
@@ -548,53 +568,15 @@ public static class Generator
             }
         }
 
-        // ---- procurement (docs/plan-4d5d.md): a chain a package, after the drawings' milestone, before its step's first task
-        var procLinks = new List<(string From, string To, string Type, int Lag)>();
-        if (spec.Procurement is { On: true } proc && proc.Chain.Count > 0 && proc.Packages.Any(x => x.On))
+        // ---- the contributors' parts (IGeneratorContributor: an extension's procurement chains), after the steps
+        var contributed = new List<(string From, string To, string Type, int Lag)>();
+        var present = new HashSet<string>(StringComparer.Ordinal);
+        var steps = stepTasks.Select(x => new GenStepTasks(x.Step, x.PerStorey, x.ByStorey)).ToList();
+        foreach (var c in q.Services.All<IGeneratorContributor>())
         {
-            JsonObject Tagged(JsonObject o) { o["phase"] = Procurement.Phase; o[Plan.ChartKey] = false; return o; }
-            // The milestone: the user's own of that name when one stays, else made at the project's start.
-            var given = keep ? oldTasks.FirstOrDefault(t => t.Str("gen") == null && (t.Bool("milestone") || t.Num("duration", 1) == 0)
-                && string.Equals(t.Name.Trim(), proc.Milestone, StringComparison.OrdinalIgnoreCase)) : null;
-            string milestone;
-            if (given != null) milestone = given.Id;
-            else
-            {
-                var ms = Task("proc:drawings", proc.Milestone, null, 0, Tagged(new JsonObject { ["duration"] = 0, ["milestone"] = true }), null);
-                tasks.Add(ms);
-                made.Add(new(ms.Id, "proc:drawings", new GenStep("proc:drawings", proc.Milestone, [], null, "once", 0, null, 0), null, false, "procurement", null, null, 0));
-                milestone = ms.Id;
-            }
-            var top = Task("proc/", proc.Title, null, 0.5, Tagged(new JsonObject { ["duration"] = 1 }), null);
-            tasks.Add(top);
-            made.Add(new(top.Id, "proc/", new GenStep("proc", proc.Title, [], null, "once", 1, null, 0), null, true, "summary", null, null, 0));
-            var k = 0;
-            foreach (var pkg in proc.Packages.Where(x => x.On))
-            {
-                var target = stepTasks.FirstOrDefault(x => x.Step.Key == pkg.Before);
-                var name = pkg.Name.Length > 0 ? pkg.Name : spec.Steps.FirstOrDefault(x => x.Key == pkg.Before)?.Name ?? pkg.Key;
-                var gen = $"proc/{pkg.Key}/";
-                var summary = Task(gen, name, top.Id, ++k, Tagged(new JsonObject { ["duration"] = 1 }), null);
-                tasks.Add(summary);
-                var pseudo = new GenStep("proc:" + pkg.Key, name, [], null, "once", 1, null, 0);
-                made.Add(new(summary.Id, gen, pseudo, null, true, "summary", null, null, 0));
-                string prev = milestone;
-                var j = 0;
-                foreach (var cs in proc.Chain)
-                {
-                    var days = pkg.DaysFor(cs);
-                    var extra = Tagged(new JsonObject { ["duration"] = days, ["durationFrom"] = "procurement" });
-                    if (days == 0) extra["milestone"] = true;
-                    var leaf = Task($"{gen}{cs.Key}", $"{cs.Name} · {name}", summary.Id, ++j, extra, cs.Kind);
-                    tasks.Add(leaf);
-                    made.Add(new(leaf.Id, $"{gen}{cs.Key}", pseudo with { Days = days }, null, false, "procurement", null, null, 0));
-                    procLinks.Add((prev, leaf.Id, "FS", 0));
-                    prev = leaf.Id;
-                }
-                // Before the first task of its step: the one done once, or the lowest storey's.
-                if (target.ByStorey != null && FirstOf(target, storeys) is { } install) procLinks.Add((prev, install, "FS", pkg.Lag));
-                else notes.Add($"Procurement „{name}” precedes no task: its step made none.");
-            }
+            if (!present.Add(c.Key)) continue;
+            var ctx = new GenContext(c.Key, q, spec, keep, storeys, steps, oldTasks, Task, (e, info) => { tasks.Add(e); made.Add(info); }, contributed, notes);
+            c.Contribute(ctx, spec.Part(c.Key));
         }
 
         // ---- what is kept: tasks edited by hand (own) in place of their generated selves, and the tasks made by hand
@@ -608,7 +590,9 @@ public static class Generator
         {
             if (madeIds.Contains(t.Id)) continue;
             var generated = t.Str("gen") != null;
-            if (t.Bool("own") || (!generated && keep)) keptOld.Add(t);
+            // A task of a contributor this edition does not have (an extension not installed) stays as it is.
+            var absent = t.Str(GenByKey) is { } by && !present.Contains(by);
+            if (t.Bool("own") || (!generated && keep) || absent) keptOld.Add(t);
             else removed.Add(t.Id);
         }
         // A kept task under a summary that goes moves to the top; the kept ones follow the generated ones, in their order.
@@ -635,6 +619,10 @@ public static class Generator
         foreach (var r in oldLinks)
             if (r.Attrs?["gen"] == null && finalIds.Contains(r.Relating) && r.Related.Count > 0 && finalIds.Contains(r.Related[0])) finalLinks.Add(r);
         var oldGen = oldLinks.Where(r => r.Attrs?["gen"] != null).ToList();
+        // The links of an absent contributor's tasks stay with them (both ends staying).
+        bool Absent(string id) => m.Get(id)?.Str(GenByKey) is { } by && !present.Contains(by);
+        foreach (var r in oldGen)
+            if (r.Related.Count > 0 && (Absent(r.Relating) || Absent(r.Related[0])) && finalIds.Contains(r.Relating) && finalIds.Contains(r.Related[0])) finalLinks.Add(r);
         var graph = new Dictionary<string, HashSet<string>>();
         void Edge(string a, string b) => (graph.TryGetValue(a, out var s) ? s : graph[a] = []).Add(b);
         bool Reaches(string from, string to)
@@ -699,7 +687,7 @@ public static class Generator
             }
         }
 
-        foreach (var (from, to, type, lag) in procLinks) if (finalIds.Contains(from) && finalIds.Contains(to)) Link(from, to, type, lag);
+        foreach (var (from, to, type, lag) in contributed) if (finalIds.Contains(from) && finalIds.Contains(to)) Link(from, to, type, lag);
 
         // ---- the schedule: its start, and the spec it was made with (the configurator opens on it again)
         var sAttrs = schedule?.CloneAttrs() ?? new JsonObject();
@@ -721,13 +709,11 @@ public static class Generator
             if (st.ByStorey.TryGetValue(storeys[i].Id, out var t)) { yield return t; yield break; }
     }
 
-    /// <summary>The task a step starts with: its task, or its lowest storey's.</summary>
-    static string? FirstOf((GenStep Step, bool PerStorey, Dictionary<string, string> ByStorey) st, List<Entity> storeys)
-    {
-        if (!st.PerStorey) return st.ByStorey.GetValueOrDefault("");
-        foreach (var s in storeys) if (st.ByStorey.TryGetValue(s.Id, out var t)) return t;
-        return null;
-    }
+    /// <summary>A generated task's attribute naming the contributor that made it (<see cref="IGeneratorContributor.Key"/>).</summary>
+    public const string GenByKey = "genBy";
+
+    /// <summary>A contributor's task's <c>gen</c>: under its key.</summary>
+    public static string ContributedGen(string key, string gen) => gen.StartsWith(key + "/", StringComparison.Ordinal) ? gen : $"{key}/{gen}";
 
     static PlanTask Probe(JsonObject rule, string? part) =>
         new("probe", "", null, 0, 1, false, null, null, false, null, null, TaskRule.Read(rule), part);

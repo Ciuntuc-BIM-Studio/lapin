@@ -9,11 +9,10 @@
  * views and sheets, the stages sheet, the Gantt on sheets, the video; progress (stage 5): the status date, the elements
  * marked done or started in 3D or in a plan (from a phone too, as a guest of the shared session), the percentages and
  * actual dates, the baseline and its variances, the progress read back from a workbook; resources (decision 772): crews,
- * machines and formwork sets on the tasks, the daily histogram and the serial levelling; the location-based schedule (a
- * time–location chart over the model's buildings, storeys and zones, LbsView), on sheets too.
+ * machines and formwork sets on the tasks, the daily histogram and the serial levelling.
  */
 
-import { BarChart3, RefreshCw, CalendarDays, ChartGantt, ChartSpline, CheckCheck, CircleOff, CirclePlay, Clapperboard, Diamond, FileVideo, Flag, FlagOff, LayoutPanelTop, Sheet, FileDown, FileSpreadsheet, FileUp, Grid3x3, IndentDecrease, IndentIncrease, Link2, ListPlus, Plus, Scale, SearchX, Unlink2, Users, Wand2 } from 'lucide-react';
+import { BarChart3, RefreshCw, CalendarDays, ChartGantt, CheckCheck, CircleOff, CirclePlay, Clapperboard, Diamond, FileVideo, Flag, FlagOff, LayoutPanelTop, Sheet, FileDown, FileSpreadsheet, FileUp, IndentDecrease, IndentIncrease, Link2, ListPlus, Plus, Scale, SearchX, Unlink2, Users, Wand2 } from 'lucide-react';
 import type { LapinModule } from '../../platform/module';
 import { useUi } from '../../app/store';
 import { exportIfc } from '../../engine/files';
@@ -21,8 +20,10 @@ import { TaskSection } from './TaskSection';
 import { SelectionToTask } from './SelectionToTask';
 import { ElementTasksSection, inSomeTask, TaskLinksSection } from './TaskLinksSection';
 import { ganttOnSheet, SimulationCard, SimulationLooks, toggleSimulation, ViewDateSection } from './SimulationView';
-import { addTask, assignSelection, clearBaseline, exportMsp, exportXlsx, importMsp, importProgress, retimeFromFields, indent, lbsOnSheet, linkSelected, markSelection, openGantt, openLbs, outdent, saveBaseline, selectUnlinked, taskElementsOf, unlinkSelected } from './schedule';
+import { addTask, assignSelection, clearBaseline, exportMsp, exportXlsx, importMsp, importProgress, retimeFromFields, indent, linkSelected, markSelection, openGantt, outdent, saveBaseline, selectUnlinked, taskElementsOf, unlinkSelected } from './schedule';
 import { lazyPart } from '../../platform/lazyPart';
+import { dateOf, dayOf, dragDays, namesOf, showDate, ticks } from './gantt';
+import { addGeneratorSection } from './generatorSections';
 import { TaskResourcesSection } from './TaskResourcesSection';
 import { level, openHistogram, openResources } from './resources';
 
@@ -34,9 +35,7 @@ const GenerateDialog = lazyPart(() => import('./GenerateDialog').then((m) => m.G
 const GanttView = lazyPart(() => import('./GanttView').then((m) => m.GanttView), { inline: true });
 const AssignDialog = lazyPart(() => import('./AssignDialog').then((m) => m.AssignDialog), { title: 'Add to task' });
 const ResourcesDialog = lazyPart(() => import('./ResourcesDialog').then((m) => m.ResourcesDialog), { title: 'Resources' });
-const BreakdownDialog = lazyPart(() => import('./BreakdownDialog').then((m) => m.BreakdownDialog), { title: 'Tasks from product × location' });
 const HistogramView = lazyPart(() => import('./HistogramView').then((m) => m.HistogramView), { inline: true });
-const LbsView = lazyPart(() => import('./LbsView').then((m) => m.LbsView), { inline: true });
 
 const planning: LapinModule = {
   id: 'planning',
@@ -50,7 +49,6 @@ const planning: LapinModule = {
         label: 'Work schedule', tools: [
           { id: 'planning.generate', label: 'Generate schedule…', icon: Wand2, run: () => useUi.setState({ dialog: 'planning.generate' }) },
           { id: 'planning.gantt', label: 'Gantt', icon: ChartGantt, run: openGantt },
-          { id: 'planning.lbs', label: 'Location-based schedule', icon: ChartSpline, run: openLbs },
           { id: 'planning.calendar', label: 'Calendar…', icon: CalendarDays, run: () => useUi.setState({ dialog: 'planning.calendar' }) },
         ],
         small: [
@@ -67,7 +65,6 @@ const planning: LapinModule = {
           { id: 'planning.outdent', label: 'Outdent', icon: IndentDecrease, run: outdent },
           { id: 'planning.link', label: 'Link tasks', icon: Link2, run: linkSelected },
           { id: 'planning.unlink', label: 'Unlink tasks', icon: Unlink2, run: unlinkSelected },
-          { id: 'planning.fromBreakdown', label: 'Tasks from product × location…', icon: Grid3x3, run: () => useUi.setState({ dialog: 'planning.breakdown' }) },
         ],
       },
       {
@@ -105,7 +102,6 @@ const planning: LapinModule = {
         ],
         small: [
           { id: 'planning.ganttSheet', label: 'Gantt on sheet', icon: Sheet, run: () => void ganttOnSheet() },
-          { id: 'planning.lbsSheet', label: 'Location-based schedule on sheet', icon: Sheet, run: () => void lbsOnSheet() },
           { id: 'planning.video', label: 'Export video…', icon: FileVideo, run: () => useUi.setState({ dialog: 'planning.video' }) },
         ],
       },
@@ -121,8 +117,8 @@ const planning: LapinModule = {
       },
     ],
   }],
-  views: { gantt: { label: 'Gantt', component: GanttView }, resourceHistogram: { label: 'Histogram', component: HistogramView }, lbs: { label: 'Location-based schedule', component: LbsView } },
-  dialogs: { 'planning.calendar': CalendarDialog, 'planning.assign': AssignDialog, 'planning.generate': GenerateDialog, 'planning.stages': StagesDialog, 'planning.video': VideoDialog, 'planning.resources': ResourcesDialog, 'planning.breakdown': BreakdownDialog },
+  views: { gantt: { label: 'Gantt', component: GanttView }, resourceHistogram: { label: 'Histogram', component: HistogramView } },
+  dialogs: { 'planning.calendar': CalendarDialog, 'planning.assign': AssignDialog, 'planning.generate': GenerateDialog, 'planning.stages': StagesDialog, 'planning.video': VideoDialog, 'planning.resources': ResourcesDialog },
   background: SimulationLooks,
   propertySections: [
     { id: 'task', label: 'Task', classes: ['IfcTask'], component: TaskSection, replacesFields: () => true },
@@ -133,6 +129,9 @@ const planning: LapinModule = {
   ],
   expandSelection: taskElementsOf,
   overlays: [SelectionToTask, SimulationCard],
+  // For extension modules (docs/plan-extension-modules.md §6.3): the Gantt's date helpers, the Gantt, the generator's sections.
+  api: 1,
+  exports: { gantt: { dateOf, dayOf, ticks, showDate, namesOf, dragDays }, openGantt, addGeneratorSection },
 };
 
 export default planning;

@@ -13,13 +13,13 @@ namespace Lapin.Planning;
 public sealed partial class PlanningModule
 {
     /// <summary>The spec a command or query names: a style's (a template or the project's own), else the last one generated, with the fields given over it.</summary>
-    static GenSpec SpecOf(IModelView m, JsonObject a)
+    static GenSpec SpecOf(IModelView m, IServices services, JsonObject a)
     {
         var baseSpec = (string?)a["style"] is { Length: > 0 } style
             ? Generator.StyleSpec(m, style) ?? throw new CommandException($"There is no schedule style „{style}”.")
             : Generator.Current(m);
         if (a["spec"] is not JsonObject o) return baseSpec;
-        GenSpec.Check(o);
+        GenSpec.Check(o, services);
         return GenSpec.Read(o, baseSpec);
     }
 
@@ -51,30 +51,30 @@ public sealed partial class PlanningModule
                 ["tasks"] = m.OfClass(Plan.TaskClass).Count(),
                 ["styles"] = new JsonArray(Generator.OwnStyles(m).Select(s => (JsonNode)s.DeepClone()).ToArray()),
                 ["norms"] = NormsJson(norms),
-                // What the configurator's Procurement switches on: Lapin's chain, indicative.
-                ["procurementDefault"] = Procurement.Default.ToJson(),
+                // What each contributor's section of the configurator starts from (IGeneratorContributor.Default), by its key.
+                ["contributors"] = Contributors(q.Services),
             };
         });
 
         // The schedule a spec would make, worked out on a draft of the model: its tasks with their dates, and the summary.
-        r.Query("preview", (q, a) => Preview(q, SpecOf(q.Model, a), Keep(a)));
+        r.Query("preview", (q, a) => Preview(q, SpecOf(q.Model, q.Services, a), Keep(a)));
 
         // The schedule made from a spec: one undo step; generated again, what was edited by hand stays.
         r.Command("generate", "Generate schedule", (ctx, a) =>
         {
-            var spec = SpecOf(ctx.Model, a);
+            var spec = SpecOf(ctx.Model, ctx.Services, a);
             if (a.ContainsKey("start")) spec = spec with { Start = DateArg(a["start"], "start") };
             var o = Generator.Build(new CommandQuery(ctx), spec, Keep(a), ctx.NewId);
             Generator.Apply(ctx, o);
             return new JsonObject
             {
                 ["tasks"] = o.Tasks.Count, ["made"] = o.Made.Count, ["removed"] = o.Removed.Count,
-                ["kept"] = o.Tasks.Count(t => t.Bool("own") || t.Str("gen") == null),
+                ["kept"] = Kept(o),
             };
         });
 
         r.Command("saveScheduleStyle", "Save schedule style", (ctx, a) =>
-            new JsonObject { ["styleId"] = Generator.SaveStyle(ctx, SpecOf(ctx.Model, a), (string?)a["name"] ?? "", (string?)a["styleId"]) });
+            new JsonObject { ["styleId"] = Generator.SaveStyle(ctx, SpecOf(ctx.Model, ctx.Services, a), (string?)a["name"] ?? "", (string?)a["styleId"]) });
         r.Command("renameScheduleStyle", "Rename schedule style", (ctx, a) => { Generator.RenameStyle(ctx, (string?)a["styleId"] ?? "", (string?)a["name"] ?? ""); return null; });
         r.Command("deleteScheduleStyle", "Delete schedule style", (ctx, a) => { Generator.DeleteStyle(ctx, (string?)a["styleId"] ?? ""); return null; });
 
@@ -104,6 +104,21 @@ public sealed partial class PlanningModule
 
         // The template of a norms table: its columns and Lapin's indicative rows, as CSV in base64.
         r.Query("normTemplate", (_, _) => Convert.ToBase64String(Encoding.UTF8.GetBytes("﻿" + Norms.TemplateCsv())));
+    }
+
+    /// <summary>The contributors this edition has, by key, with what their sections start from (null: nothing).</summary>
+    static JsonObject Contributors(IServices services)
+    {
+        var o = new JsonObject();
+        foreach (var c in services.All<IGeneratorContributor>()) o.TryAdd(c.Key, c.Default?.DeepClone());
+        return o;
+    }
+
+    /// <summary>The tasks that stay as they were: edited by hand (own), made by hand, or an absent contributor's.</summary>
+    static int Kept(Generator.Outcome o)
+    {
+        var made = o.Made.Select(x => x.Id).ToHashSet();
+        return o.Tasks.Count(t => t.Bool("own") || !made.Contains(t.Id));
     }
 
     static JsonObject NormsJson(Norms.Table t) => new()
@@ -169,10 +184,11 @@ public sealed partial class PlanningModule
                 ["formwork"] = lives.Count(x => x.Kind == "formwork"),
                 ["scaffolds"] = lives.Count(x => x.Kind == "scaffold"),
                 ["demolished"] = links.Candidates.Count(f => f.Demolished != null),
-                ["kept"] = o.Tasks.Count(t => t.Bool("own") || t.Str("gen") == null),
+                ["kept"] = Kept(o),
                 ["removed"] = o.Removed.Count,
-                ["procurement"] = leaves.Count(x => x.Source == "procurement" && !x.Gen.StartsWith("proc:", StringComparison.Ordinal)),
-                ["procurementIndicative"] = o.Spec.Procurement is { On: true, Indicative: true } && leaves.Any(x => x.Source == "procurement"),
+                // The tasks each contributor made (not its summaries), by its key.
+                ["contributed"] = new JsonObject(leaves.Where(x => x.Gen.Contains('/') && x.Source == x.Gen[..x.Gen.IndexOf('/')])
+                    .GroupBy(x => x.Source).Select(g => KeyValuePair.Create(g.Key, (JsonNode?)g.Count()))),
             },
             ["notes"] = new JsonArray(o.Notes.Select(x => (JsonNode)x).ToArray()),
         };
