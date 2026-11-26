@@ -17839,6 +17839,22 @@ export const scenes = [
       await dialog2.locator('[data-testid=hp-save]').click().catch(async () => { await dialog2.getByRole('button', { name: 'Make pattern' }).click(); });
       await t.wait(1000);
       await t.shot('hatch-patterns-family', { of: '.dialog', pad: 0 });
+      // Forum 275: a project pattern opens to edit, a built-in one is fixed and is the start of a new one (Duplicate), and a project
+      // pattern is deleted from the list (the confirm is accepted by the runner).
+      await dialog2.locator('[data-pattern=DIAGONAL-5]').click();
+      await t.until(async () => await dialog2.locator('[data-testid=hp-edit-note]').count() === 1, 'a project pattern opens to edit');
+      t.expect(await dialog2.locator('[data-testid=hp-delete]').count() === 1, 'a project pattern has Delete');
+      await dialog2.locator('[data-pattern=BRICK]').click();
+      await t.until(async () => await dialog2.locator('[data-testid=hp-builtin-note]').count() === 1, 'a built-in pattern says it is fixed');
+      await dialog2.locator('[data-testid=hp-duplicate]').click();
+      await t.until(async () => await dialog2.locator('[data-testid=hp-from-note]').count() === 1, 'Duplicate starts a new pattern from it');
+      t.expect(await dialog2.locator('[data-field=hp-name]').inputValue() === 'BRICK-COPY', 'the copy takes a free name');
+      await t.wait(800);
+      await t.shot('hatch-patterns-start-from', { of: '.dialog', pad: 0 });
+      await dialog2.locator('[data-testid=hp-save]').click();
+      await t.until(async () => await dialog2.locator('[data-pattern=BRICK-COPY]').count() === 1, 'the copy is made');
+      await dialog2.locator('li:has([data-pattern=DIAGONAL-5]) [data-testid=hp-row-delete]').click();
+      await t.until(async () => await dialog2.locator('[data-pattern=DIAGONAL-5]').count() === 0, 'the pattern is deleted from the list');
       await t.page.locator('.dialog button[title="Close"]').first().click();
       await t.wait(400);
       await t.ui({ dialog: 'preferences' });

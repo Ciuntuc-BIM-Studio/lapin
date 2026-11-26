@@ -31,6 +31,21 @@ export function draftOf(def: PatternDef): Draft {
   return { name: def.name, description: def.description ?? '', units: def.units === 'model' ? 'model' : 'paper', families: (def.families ?? []).map((f) => ({ ...f, origin: [...f.origin] as [number, number], dashes: [...f.dashes] })), ...(def.tile ? { tile: def.tile } : {}) };
 }
 
+/** Whether a pattern can be the start of a new one: it has line families or a tile (not the solid fill or the batt). */
+export const canCopy = (def: PatternDef | null): boolean =>
+  !!def && def.kind !== 'solid' && def.kind !== 'batt' && (!!def.tile || (def.families?.length ?? 0) > 0);
+
+/** Whether a pattern is edited in place: the project's own are; the built-in ones are fixed (duplicate one to change it). */
+export const canEdit = (def: PatternDef | null): boolean => !!def?.project;
+
+/** Whether a click on `name` in the list leaves the editor as it is: the pattern shown (read, not a new one) clicked again. */
+export const keepsOpen = (selected: string | null, fresh: boolean, shown: boolean, name: string): boolean => !fresh && shown && selected === name;
+
+/** A new draft that starts as a copy of `def` (built in or the project's), under a free name (NAME-COPY, NAME-COPY-2…); not saved yet. */
+export function startFrom(def: PatternDef, taken: readonly string[]): Draft {
+  return { ...draftOf(def), name: freeName(`${def.name}-COPY`, taken) };
+}
+
 // ------------------------------------------------------------ families
 
 export function addFamily(list: readonly Family[]): Family[] {
