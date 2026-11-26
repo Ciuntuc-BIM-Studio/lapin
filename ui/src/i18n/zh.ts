@@ -7232,6 +7232,10 @@ export const ZH: Record<string, string> = {
   "Change roof panel profile": "更改屋面板型材",
   "Delete roof panel profile": "删除屋面板型材",
   "Import roof panel profiles": "导入屋面板型材",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "计量为",
+  "No measure": "不计量",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "放置的零件将此参数作为该类数量，用于成本条目、明细表和 IFC",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

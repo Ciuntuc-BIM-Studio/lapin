@@ -7189,6 +7189,10 @@ export const RO: Record<string, string> = {
   "Change roof panel profile": "Schimbă profilul de panouri de acoperiș",
   "Delete roof panel profile": "Șterge profilul de panouri de acoperiș",
   "Import roof panel profiles": "Importă profiluri de panouri de acoperiș",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "Măsurat ca",
+  "No measure": "Fără măsură",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "O piesă plasată dă acest parametru ca o cantitate de acest fel, pentru articolele de deviz, extrase și IFC",
 };
 
 /** Phrases with a number or a name in them. */

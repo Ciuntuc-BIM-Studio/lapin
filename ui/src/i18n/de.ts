@@ -7193,6 +7193,10 @@ export const DE: Record<string, string> = {
   "Change roof panel profile": "Dachpaneel-Profil ändern",
   "Delete roof panel profile": "Dachpaneel-Profil löschen",
   "Import roof panel profiles": "Dachpaneel-Profile importieren",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "Gemessen als",
+  "No measure": "Kein Maß",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "Ein platziertes Bauteil gibt diesen Parameter als Menge dieser Art aus, für Kostenpositionen, Listen und IFC",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

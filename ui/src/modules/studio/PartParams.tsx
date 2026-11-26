@@ -1,6 +1,6 @@
 /**
  * The part's parameters (docs/plan-studio-parametric.md §3.2 and §3.3, stage P1): the table beside the tree in edit mode (name, default
- * or formula, this object's own value, type or instance, published, and a row menu), Flex (values changed for a preview drawn as a ghost
+ * or formula, this object's own value, type or instance, published, the measure it is a quantity as, and a row menu), Flex (values changed for a preview drawn as a ghost
  * in 3D, then Keep or Put back), and the published parameters in Properties in model mode. The logic is in partParamModel.ts.
  */
 
@@ -23,7 +23,7 @@ import { t as tr } from '../../i18n';
 import { editedPartId, editPart } from './editMode';
 import { usePartTree } from './partTreeStore';
 import {
-  FLEX_OFF, PARAM_KINDS, cellsOf, defaultChanges, flexChanged, flexKeepPlan, flexPreviewValues, flexSet, flexShown, groupParams, isDerived, moveTarget,
+  FLEX_OFF, MEASURE_LABELS, PARAM_KINDS, canMeasure, cellsOf, measureChanges, measureOptions, defaultChanges, flexChanged, flexKeepPlan, flexPreviewValues, flexSet, flexShown, groupParams, isDerived, moveTarget,
   newParam, parseCell, plainValue, previewVolume, publishedRows, unitOf, type CellInput, type FlexState, type ParamDto, type ParamKind, type PreviewDto, type PublishedRow, type ValueDto,
 } from './partParamModel';
 
@@ -152,10 +152,17 @@ function ParamRowView({ id, p, params, flex }: { id: string; p: ParamDto; params
         </td>
         <td><input type="checkbox" aria-label="Instance: each object has its own value" title="Instance: each object has its own value; off: the part's value for all (type)" disabled={flex || derived} checked={p.instance} data-field="param-instance" onChange={(e) => void send({ instance: e.target.checked })} /></td>
         <td><input type="checkbox" aria-label="Published: shown in the object's Properties" title="Published: shown in the object's Properties" disabled={flex} checked={p.published} data-field="param-published" onChange={(e) => void send({ published: e.target.checked })} /></td>
+        <td>
+          <select value={p.measure ?? 'none'} aria-label="Measure as" title="A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC"
+            disabled={flex || !canMeasure(p.kind)} data-field="param-measure"
+            onChange={(e) => { const changes = measureChanges(p, e.target.value); if (changes) void send(changes); }}>
+            {measureOptions(p.kind).map((m) => <option key={m} value={m}>{MEASURE_LABELS[m]}</option>)}
+          </select>
+        </td>
         <td><button type="button" className="icon mini" aria-label="Row menu" title="Rename, description, limits, group, order, delete" data-field="param-menu" onClick={() => useParamsUi.setState((s) => ({ menu: s.menu === p.key ? null : p.key }))}><MoreHorizontal size={12} /></button></td>
       </tr>
       {menuOpen && !flex && <RowDetails id={id} p={p} params={params} />}
-      {error && <tr><td colSpan={6}><p className="part-param-error" role="alert" data-testid="param-error" data-no-i18n>{error}</p></td></tr>}
+      {error && <tr><td colSpan={7}><p className="part-param-error" role="alert" data-testid="param-error" data-no-i18n>{error}</p></td></tr>}
     </>
   );
 }
@@ -219,7 +226,7 @@ export function PartParamsPanel() {
       {!tree && <p className="muted small">Reading the part…</p>}
       {tree && (
         <table className="part-params wide">
-          <thead><tr><th>Name</th><th>Default or formula</th><th>This object</th><th title="Instance: each object has its own value">Inst.</th><th title="Published: shown in the object's Properties">Pub.</th><th /></tr></thead>
+          <thead><tr><th>Name</th><th>Default or formula</th><th>This object</th><th title="Instance: each object has its own value">Inst.</th><th title="Published: shown in the object's Properties">Pub.</th><th title="A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC">Measure as</th><th /></tr></thead>
           <tbody>
             {groups.map((g) => (
               <ParamGroupRows key={g.group} name={g.group} folded={!!collapsed[g.group]} onFold={() => setCollapsed((c) => ({ ...c, [g.group]: !c[g.group] }))}
@@ -256,7 +263,7 @@ const formatVolume = (m3: number): string => `${Math.round(m3 * 1e4) / 1e4} m³`
 function ParamGroupRows({ name, folded, onFold, rows }: { name: string; folded: boolean; onFold: () => void; rows: React.ReactNode[] }) {
   return (
     <>
-      {name !== '' && <tr className="part-param-group"><td colSpan={6}><button type="button" className="link" onClick={onFold}>{folded ? <ChevronRight size={12} /> : <ChevronDown size={12} />}<span data-no-i18n>{name}</span></button></td></tr>}
+      {name !== '' && <tr className="part-param-group"><td colSpan={7}><button type="button" className="link" onClick={onFold}>{folded ? <ChevronRight size={12} /> : <ChevronDown size={12} />}<span data-no-i18n>{name}</span></button></td></tr>}
       {!folded && rows}
     </>
   );

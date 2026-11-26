@@ -151,6 +151,9 @@ public static partial class TagText
         // A formula's value worked out from the element's other parameters and numbers (docs/plan-user-extensibility.md §5.3), only the one asked.
         if (Param(Stored(e), key) is { } own) return ParamText(ParamFormulas.IsFormula(own) ? ParamFormulas.ResolvedOne(m, e, type, own, more) : own, units);
         if (Param(Stored(type), key) is { } typed) return ParamText(ParamFormulas.IsFormula(typed) ? ParamFormulas.ResolvedOne(m, type!, null, typed) : typed, units);
+        // A field its own definition names (a placed part's parameters), written as a parameter of its kind is.
+        if (DerivedFields.FindNamed(m, e, key) is { } named)
+            return named.Text is { } nt && named.Kind is "text" ? nt : ParamText(new JsonObject { ["kind"] = named.Kind, ["value"] = named.Kind == "bool" ? named.Number is { } nb ? nb != 0 : null : named.Number }, units);
         if ((Imported(e, key) ?? Imported(type, key)) is { } imported) return imported;
         string? Of(Entity? x) => x?.Attrs.FirstOrDefault(kv => string.Equals(kv.Key, key, StringComparison.OrdinalIgnoreCase)).Value switch
         {

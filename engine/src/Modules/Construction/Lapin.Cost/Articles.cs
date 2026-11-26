@@ -145,9 +145,10 @@ public static class Parts
     /// </summary>
     public static List<QuantitySet> Select(IModelView m, string elementId, IReadOnlyList<QuantitySet> sets, string? part)
     {
-        var main = sets.Where(s => s.Part == null).Take(1).ToList();
+        var main = sets.Where(s => s.Part == null && !AuthoredQuantities.Is(s)).Take(1).ToList();
         var parts = sets.Where(s => s.Part != null).ToList();
-        if (part == null) return main.Count > 0 ? main : parts;
+        // The whole element: its own set, with the measures its author marked (read first by Measures.Quantity).
+        if (part == null) return [.. main.Count > 0 ? main : parts, .. sets.Where(AuthoredQuantities.Is).Take(1)];
         var bands = LayerSets.BandsOf(m, elementId);
         int? core = bands?.FirstOrDefault(b => b.Core) is { Core: true } c ? c.Index : null;
         var layered = parts.Any(s => LayerIndex(s.Part) != null);
@@ -186,6 +187,7 @@ public static class Measures
     /// <summary>A set's value of a measure (null when it has none of the names): the first name it has.</summary>
     public static double? Of(QuantitySet s, string basis)
     {
+        if (AuthoredQuantities.Is(s)) return AuthoredQuantities.Pick(s, basis);
         if (basis == "count") return 1;
         return MeasureQuantities.Pick(s.Quantities, basis);
     }
@@ -196,10 +198,19 @@ public static class Measures
     /// </summary>
     public static double? Quantity(IReadOnlyList<QuantitySet> sets, string basis, ArticleRef a, PriceRow? price)
     {
-        if (sets.Count == 0) return null;
         double? sum = null;
-        if (basis == "count") sum = 1;
-        else foreach (var s in sets) if (Of(s, basis) is { } v) sum = (sum ?? 0) + v;
+        // The measures the element's author marked (a part's L marked Length): read first, the element's own sets left aside.
+        if (sets.FirstOrDefault(AuthoredQuantities.Is) is { } authored)
+        {
+            sum = AuthoredQuantities.Pick(authored, basis);
+            sets = [.. sets.Where(s => !AuthoredQuantities.Is(s))];
+        }
+        if (sum == null)
+        {
+            if (sets.Count == 0) return null;
+            if (basis == "count") sum = 1;
+            else foreach (var s in sets) if (Of(s, basis) is { } v) sum = (sum ?? 0) + v;
+        }
         if (sum is not { } q) return null;
         var unitFactor = Units.BasisOf(price?.Unit) is { } u && SameMeasure(u.Basis, basis) ? u.Factor : 1;
         return q * unitFactor * a.Factor * (1 + a.Waste / 100);

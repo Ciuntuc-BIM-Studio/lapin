@@ -351,11 +351,13 @@ public static class Costing
             }
             line.Quantity += qty;
             line.Elements.Add(e.Id);
-            // Each part's share of what the element gives (by its own measure; alike when none has one).
-            if (sets.Count <= 1) line.Shares.Add(new LineShare(e.Id, sets.Count == 1 ? sets[0].Part : null, qty));
+            // Each part's share of what the element gives (by its own measure; alike when none has one). The measures its author
+            // marked are the whole element's, no part of it.
+            IReadOnlyList<QuantitySet> shared = sets.Count > 1 ? sets.Where(x => !AuthoredQuantities.Is(x)).ToList() : sets;
+            if (shared.Count <= 1) line.Shares.Add(new LineShare(e.Id, shared.Count == 1 ? shared[0].Part : null, qty));
             else
             {
-                var each = sets.Select(x => (x.Part, Q: Measures.Quantity([x], basis, a, hit?.Row) ?? 0)).ToList();
+                var each = shared.Select(x => (x.Part, Q: Measures.Quantity([x], basis, a, hit?.Row) ?? 0)).ToList();
                 var sum = each.Sum(x => x.Q);
                 foreach (var (part, pq) in each) line.Shares.Add(new LineShare(e.Id, part, sum > 0 ? qty * pq / sum : qty / each.Count));
             }

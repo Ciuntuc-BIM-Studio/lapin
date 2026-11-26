@@ -120,6 +120,8 @@ A **Field schedule** lists any field of the elements: the model's own (name, typ
 
 To total an imported IFC by one of its properties, make a field schedule, add the condition **Pset_Firma.Etapa** *exists*, group by that field, and add the **Length** (or **NetSideArea**) column as a sum. Numbers are in metres, square metres, cubic metres and kilograms; a **Unit** column converts them for display.
 
+A placed Studio part's published parameters are fields too, named by its part's keys (**L**, a derived **N**), worked out on every ask; those its author marked as a measure are also quantities (`Lapin_PartQuantities.L`). See [Parts](studio-parts.md#a-parts-values-in-schedules-filters-and-the-estimate).
+
 The **quantity takeoff** can group by any field as well: in its toolbar, the grouping list ends with **Other field…**.
 
 **Templates.** **Template…** in a field schedule's toolbar saves its setup (filter, grouping, columns) as a `.lapinschedule` file, or keeps it in this computer's library. **From template…** in the **+** list (or in **Construction → Schedules…**) makes a schedule from one kept on this computer, from a file or from the firm's folders (see [The interface](interface.md)). A template names types, storeys, materials, groups and phases, not ids, so it works in another project. When the project already has a field schedule of the template's name set up otherwise, the **Import preview** asks, as for every library file: keep both (the new one „Name (2)”), replace it (its filter, columns and charts updated in place) or skip; one set up the same is simply opened.

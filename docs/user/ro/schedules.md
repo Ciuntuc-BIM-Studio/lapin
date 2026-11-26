@@ -120,6 +120,8 @@ Un **Extras de câmpuri** listează orice câmp al elementelor: pe cele ale mode
 
 Ca să aduni un IFC importat după una din proprietățile lui, fă un extras de câmpuri, adaugă condiția **Pset_Firma.Etapa** *există*, grupează după acel câmp și adaugă coloana **Length** (sau **NetSideArea**) ca sumă. Numerele sunt în metri, metri pătrați, metri cubi și kilograme; coloana **Unitate** le convertește pentru afișare.
 
+Parametrii publicați ai unei piese Studio puse sunt și ei câmpuri, numite după cheile piesei (**L**, un **N** derivat), calculate la fiecare cerere; cei marcați de autor ca măsură sunt și cantități (`Lapin_PartQuantities.L`). Vezi [Piese](studio-parts.md#valorile-piesei-în-extrase-filtre-și-deviz).
+
 **Antemăsurătoarea** poate grupa și ea după orice câmp: în bara ei, lista de grupări se încheie cu **Alt câmp…**.
 
 **Șabloane.** **Șablon…** din bara unui extras de câmpuri îi păstrează configurarea (filtrul, gruparea, coloanele) într-un fișier `.lapinschedule` sau în biblioteca acestui calculator. **Din șablon…** din lista **+** (sau din **Execuție → Extrase…**) face un extras dintr-unul păstrat pe acest calculator, dintr-un fișier sau din folderele firmei (vezi [Interfața](interface.md)). Un șablon numește tipurile, nivelurile, materialele, grupurile și fazele, nu id-urile, așa că merge în alt proiect. Când proiectul are deja un extras pe câmpuri cu numele șablonului, configurat altfel, **Previzualizarea importului** întreabă, ca la orice fișier de bibliotecă: le păstrezi pe amândouă (cel nou „Nume (2)”), îl înlocuiești (filtrul, coloanele și graficele lui actualizate pe loc) sau sari peste; unul configurat la fel doar se deschide.
