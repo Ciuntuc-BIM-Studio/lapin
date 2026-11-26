@@ -7208,6 +7208,16 @@ export const FR: Record<string, string> = {
   "Measure as": "Mesuré comme",
   "No measure": "Aucune mesure",
   "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "Une pièce placée donne ce paramètre comme une quantité de ce type, pour les articles de coût, les nomenclatures et l'IFC",
+  // Cost articles priced by the time on site, "× duration" (R7).
+  "× Duration": "× Durée",
+  "No duration": "Sans durée",
+  "Months on site": "Mois sur le chantier",
+  "Working days on site": "Jours ouvrés sur le chantier",
+  "Calendar days on site": "Jours calendaires sur le chantier",
+  "Working hours on site": "Heures ouvrées sur le chantier",
+  "The quantity times how long the element is on site, from the tasks that take it in the schedule": "La quantité multipliée par le temps que l'élément passe sur le chantier, d'après les tâches qui le prennent dans le planning",
+  "The Planning module is not in this edition: the quantity is not multiplied by the duration.": "Le module Planification n'est pas dans cette édition : la quantité n'est pas multipliée par la durée.",
+  "The project has no work schedule: the quantity is not multiplied by the duration.": "Le projet n'a pas de planning des travaux : la quantité n'est pas multipliée par la durée.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;
@@ -8035,4 +8045,7 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^(.+) covers (.+): choose another profile for (it|them) first\.$/, (m) => `${m[1]} couvre ${m[2]} : choisissez d'abord un autre profil.`],
   // The issue with reference documents (stage R5).
   [/^(.+): (.+) is not held here \(larger than the project keeps, and not in the project folder\): it was left out of the issue\.$/, (m) => `${m[1]} : ${m[2]} n’est pas gardé ici (plus grand que ce que garde le projet, et absent du dossier du projet) : il a été laissé hors de l’émission.`],
+  // Cost articles priced by the time on site (R7): an estimate line's duration and its note.
+  [/^(\d+) element\(s\) in no task of the schedule: their quantity is not multiplied by the duration\.$/, (m) => `${m[1]} élément(s) dans aucune tâche du planning : leur quantité n'est pas multipliée par la durée.`],
+  [/^× ([\d.]+(?:–[\d.]+)?) (months?|working days?|calendar days?|hours?)$/, (m) => `× ${m[1]} ${({ "month": "mois", "months": "mois", "working day": "jour ouvré", "working days": "jours ouvrés", "calendar day": "jour calendaire", "calendar days": "jours calendaires", "hour": "heure", "hours": "heures" } as Record<string, string>)[m[2]]}`],
 ];

@@ -13363,6 +13363,16 @@ export const SV: Record<string, string> = {
   "Measure as": "Mäts som",
   "No measure": "Inget mått",
   "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "En placerad del ger denna parameter som en mängd av det slaget, för kostnadsposter, förteckningar och IFC",
+  // Cost articles priced by the time on site, "× duration" (R7).
+  "× Duration": "× Varaktighet",
+  "No duration": "Ingen varaktighet",
+  "Months on site": "Månader på bygget",
+  "Working days on site": "Arbetsdagar på bygget",
+  "Calendar days on site": "Kalenderdagar på bygget",
+  "Working hours on site": "Arbetstimmar på bygget",
+  "The quantity times how long the element is on site, from the tasks that take it in the schedule": "Mängden gånger tiden elementet är på bygget, enligt de aktiviteter som tar det i tidplanen",
+  "The Planning module is not in this edition: the quantity is not multiplied by the duration.": "Planeringsmodulen ingår inte i denna utgåva: mängden multipliceras inte med varaktigheten.",
+  "The project has no work schedule: the quantity is not multiplied by the duration.": "Projektet har ingen tidplan: mängden multipliceras inte med varaktigheten.",
 };
 
 /** Phrases with a number or a name in them. */
@@ -14187,4 +14197,7 @@ export const SV_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(.+) covers (.+): choose another profile for (it|them) first\.$/, (m) => `${m[1]} täcker ${m[2]}: välj först en annan profil.`],
   // The issue with reference documents (stage R5).
   [/^(.+): (.+) is not held here \(larger than the project keeps, and not in the project folder\): it was left out of the issue\.$/, (m) => `${m[1]}: ${m[2]} finns inte här (större än projektet behåller, och inte i projektmappen): den utelämnades ur utgåvan.`],
+  // Cost articles priced by the time on site (R7): an estimate line's duration and its note.
+  [/^(\d+) element\(s\) in no task of the schedule: their quantity is not multiplied by the duration\.$/, (m) => `${m[1]} element i ingen aktivitet i tidplanen: deras mängd multipliceras inte med varaktigheten.`],
+  [/^× ([\d.]+(?:–[\d.]+)?) (months?|working days?|calendar days?|hours?)$/, (m) => `× ${m[1]} ${({ "month": "månad", "months": "månader", "working day": "arbetsdag", "working days": "arbetsdagar", "calendar day": "kalenderdag", "calendar days": "kalenderdagar", "hour": "timme", "hours": "timmar" } as Record<string, string>)[m[2]]}`],
 ];

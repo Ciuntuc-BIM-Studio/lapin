@@ -13363,6 +13363,16 @@ export const TH: Record<string, string> = {
   "Measure as": "วัดเป็น",
   "No measure": "ไม่มีการวัด",
   "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "ชิ้นส่วนที่วางแล้วให้พารามิเตอร์นี้เป็นปริมาณชนิดนั้น สำหรับรายการต้นทุน ตารางรายการ และ IFC",
+  // Cost articles priced by the time on site, "× duration" (R7).
+  "× Duration": "× ระยะเวลา",
+  "No duration": "ไม่มีระยะเวลา",
+  "Months on site": "จำนวนเดือนในไซต์งาน",
+  "Working days on site": "วันทำงานในไซต์งาน",
+  "Calendar days on site": "วันตามปฏิทินในไซต์งาน",
+  "Working hours on site": "ชั่วโมงทำงานในไซต์งาน",
+  "The quantity times how long the element is on site, from the tasks that take it in the schedule": "ปริมาณคูณด้วยเวลาที่องค์ประกอบอยู่ในไซต์งาน ตามงานที่รวมองค์ประกอบนั้นในแผนงาน",
+  "The Planning module is not in this edition: the quantity is not multiplied by the duration.": "โมดูลการวางแผนไม่อยู่ในรุ่นนี้: ปริมาณไม่ได้คูณด้วยระยะเวลา.",
+  "The project has no work schedule: the quantity is not multiplied by the duration.": "โครงการไม่มีแผนงานก่อสร้าง: ปริมาณไม่ได้คูณด้วยระยะเวลา.",
 };
 
 /** Phrases with a number or a name in them. */
@@ -14187,4 +14197,7 @@ export const TH_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(.+) covers (.+): choose another profile for (it|them) first\.$/, (m) => `${m[1]} ครอบคลุม ${m[2]}: เลือกโปรไฟล์อื่นก่อน`],
   // The issue with reference documents (stage R5).
   [/^(.+): (.+) is not held here \(larger than the project keeps, and not in the project folder\): it was left out of the issue\.$/, (m) => `${m[1]}: ${m[2]} ไม่ได้เก็บไว้ที่นี่ (ใหญ่กว่าที่โครงการเก็บ และไม่อยู่ในโฟลเดอร์โครงการ): ถูกเว้นไว้นอกการออก.`],
+  // Cost articles priced by the time on site (R7): an estimate line's duration and its note.
+  [/^(\d+) element\(s\) in no task of the schedule: their quantity is not multiplied by the duration\.$/, (m) => `${m[1]} องค์ประกอบไม่อยู่ในงานใดของแผนงาน: ปริมาณไม่ได้คูณด้วยระยะเวลา.`],
+  [/^× ([\d.]+(?:–[\d.]+)?) (months?|working days?|calendar days?|hours?)$/, (m) => `× ${m[1]} ${({ "month": "เดือน", "months": "เดือน", "working day": "วันทำงาน", "working days": "วันทำงาน", "calendar day": "วันตามปฏิทิน", "calendar days": "วันตามปฏิทิน", "hour": "ชั่วโมง", "hours": "ชั่วโมง" } as Record<string, string>)[m[2]]}`],
 ];

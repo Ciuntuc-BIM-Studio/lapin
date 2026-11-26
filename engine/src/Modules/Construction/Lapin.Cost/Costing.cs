@@ -76,6 +76,30 @@ public sealed class EstimateLine(string key, string chapter, string code)
     public List<LineShare> Shares { get; } = [];
     /// <summary>The tasks a line of the user's is done in (stage 7; ids: a summary stands for its tasks).</summary>
     public List<string> Tasks { get; } = [];
+    /// <summary>The time its quantity is multiplied by ("× duration": months, workingDays, days, hours); null when none.</summary>
+    public string? Time { get; set; }
+    /// <summary>How long each element is on site, in <see cref="Time"/>, as the schedule has it (the span of its tasks).</summary>
+    public Dictionary<string, double> Durations { get; } = [];
+    /// <summary>The elements whose quantity was not multiplied by a duration: no task takes them (or there is no schedule).</summary>
+    public HashSet<string> Untimed { get; } = [];
+    /// <summary>Why no element of the line has a duration, when the project cannot give one (no Planning module, no schedule).</summary>
+    public string? TimeProblem { get; set; }
+
+    /// <summary>The duration used, as shown: one value when all its elements have the same, else the least and the most; null when none.</summary>
+    public string? Duration => DurationIn(false);
+
+    /// <summary>The duration used, in English or (a Romanian form) in Romanian.</summary>
+    public string? DurationIn(bool ro)
+    {
+        if (Time is not { } t || Durations.Count == 0) return null;
+        double lo = Durations.Values.Min(), hi = Durations.Values.Max();
+        return Math.Round(hi - lo, 2) == 0 ? Measures.DurationText(lo, t, ro)
+            : $"{Math.Round(lo, 2).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}–{Measures.DurationText(hi, t, ro)}";
+    }
+
+    /// <summary>What is wrong with the line's duration, for people: why nothing was multiplied, or how many elements no task takes.</summary>
+    public IReadOnlyList<string> Notes => Time == null ? [] : TimeProblem is { } p ? [p]
+        : Untimed.Count > 0 ? [$"{Untimed.Count} element(s) in no task of the schedule: their quantity is not multiplied by the duration."] : [];
 
     public double Qty => Math.Round(Quantity, Decimals);
     public double VM => Money.Round(Qty * M);
@@ -264,9 +288,21 @@ public static class Costing
         }
     }
 
-    public static EstimateResult Compute(IQueryContext q, Entity estimate)
+    /// <summary>
+    /// The estimate worked out. <paramref name="times"/>: the work schedule when the caller has it (cost over time, the
+    /// Gantt), else asked of the Planning module only when an article is priced by a duration.
+    /// </summary>
+    public static EstimateResult Compute(IQueryContext q, Entity estimate, ScheduleTimes? times = null)
     {
         var m = q.Model;
+        // The schedule, read once and only when an article needs it: whether the Planning module is there, and its times.
+        var planning = times != null || q.Services.Get<IWorkSchedules>() != null;
+        var timesRead = times != null;
+        ScheduleTimes? Times()
+        {
+            if (!timesRead) { times = q.Services.Get<IWorkSchedules>()?.Times(q); timesRead = true; }
+            return times;
+        }
         var s = EstimateSettings.Of(estimate);
         var lists = ListsFor(m, s);
         var rules = ArticleRule.All(m);
@@ -333,6 +369,19 @@ public static class Costing
                 thickness = byRule.Thickness;
             }
             if (Measures.Quantity(sets, basis, a, hit?.Row) is not { } qty || qty == 0) return;
+            // "× duration": the quantity times how long the element is on site, from its tasks' span (derived, never stored).
+            // Without a Planning module an article priced so only by its unit is as before; asked for, it says why it is not.
+            var time = Measures.TimeFor(a, hit?.Row);
+            if (time != null && !planning && a.Time == ArticleRef.AutoTime) time = null;
+            double? duration = null;
+            string? timeProblem = null;
+            if (time != null)
+            {
+                if (!planning) timeProblem = "The Planning module is not in this edition: the quantity is not multiplied by the duration.";
+                else if (Times() is not { } st) timeProblem = "The project has no work schedule: the quantity is not multiplied by the duration.";
+                else if (st.Presence(e.Id) is { } span) duration = st.Length(span.Start, span.Finish, time);
+                if (duration is { } d) qty *= d;
+            }
             var chapter = a.Chapter ?? (core ? ChapterOf(e.Class) : "Finishes and insulation");
             string? storey = null;
             if (s.Grouping == "storey")
@@ -343,7 +392,7 @@ public static class Costing
             var key = $"{chapter}\u001f{a.Code.ToUpperInvariant()}" + (thickness != null ? $"\u001f{thickness}" : "");
             if (!lines.TryGetValue(key, out var line))
             {
-                line = new EstimateLine(key, chapter, a.Code) { Basis = basis };
+                line = new EstimateLine(key, chapter, a.Code) { Basis = basis, Time = time };
                 Price(line, a.Code);
                 if (thickness != null) line.Name = $"{line.Name} · {thickness} mm";
                 lines[key] = line;
@@ -351,6 +400,12 @@ public static class Costing
             }
             line.Quantity += qty;
             line.Elements.Add(e.Id);
+            if (time != null)
+            {
+                line.Time ??= time;
+                if (duration is { } dd) line.Durations[e.Id] = dd;
+                else { line.Untimed.Add(e.Id); line.TimeProblem ??= timeProblem; }
+            }
             // Each part's share of what the element gives (by its own measure; alike when none has one). The measures its author
             // marked are the whole element's, no part of it.
             IReadOnlyList<QuantitySet> shared = sets.Count > 1 ? sets.Where(x => !AuthoredQuantities.Is(x)).ToList() : sets;

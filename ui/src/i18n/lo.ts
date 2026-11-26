@@ -7300,6 +7300,16 @@ export const LO: Record<string, string> = {
   "Measure as": "ວັດແທກເປັນ",
   "No measure": "ບໍ່ມີການວັດແທກ",
   "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "ຊິ້ນສ່ວນທີ່ວາງໄວ້ໃຫ້ພາລາມິເຕີນີ້ເປັນປະລິມານຂອງປະເພດນັ້ນ, ສຳລັບລາຍການຕົ້ນທຶນ, ຕາຕະລາງ ແລະ IFC",
+  // Cost articles priced by the time on site, "× duration" (R7).
+  "× Duration": "× ໄລຍະເວລາ",
+  "No duration": "ບໍ່ມີໄລຍະເວລາ",
+  "Months on site": "ຈຳນວນເດືອນຢູ່ສະຖານທີ່ກໍ່ສ້າງ",
+  "Working days on site": "ມື້ເຮັດວຽກຢູ່ສະຖານທີ່ກໍ່ສ້າງ",
+  "Calendar days on site": "ມື້ຕາມປະຕິທິນຢູ່ສະຖານທີ່ກໍ່ສ້າງ",
+  "Working hours on site": "ຊົ່ວໂມງເຮັດວຽກຢູ່ສະຖານທີ່ກໍ່ສ້າງ",
+  "The quantity times how long the element is on site, from the tasks that take it in the schedule": "ປະລິມານຄູນກັບເວລາທີ່ອົງປະກອບຢູ່ສະຖານທີ່ກໍ່ສ້າງ ຕາມວຽກທີ່ລວມມັນໃນແຜນງານ",
+  "The Planning module is not in this edition: the quantity is not multiplied by the duration.": "ໂມດູນການວາງແຜນບໍ່ມີໃນລຸ້ນນີ້: ປະລິມານບໍ່ໄດ້ຄູນກັບໄລຍະເວລາ.",
+  "The project has no work schedule: the quantity is not multiplied by the duration.": "ໂຄງການບໍ່ມີແຜນງານກໍ່ສ້າງ: ປະລິມານບໍ່ໄດ້ຄູນກັບໄລຍະເວລາ.",
 };
 
 /** Phrases with a number or a name in them. */
@@ -8125,4 +8135,7 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^(.+) covers (.+): choose another profile for (it|them) first\.$/, (m) => `${m[1]} ປົກຄຸມ ${m[2]}: ເລືອກໂປຣໄຟລ໌ອື່ນກ່ອນ.`],
   // The issue with reference documents (stage R5).
   [/^(.+): (.+) is not held here \(larger than the project keeps, and not in the project folder\): it was left out of the issue\.$/, (m) => `${m[1]}: ${m[2]} ບໍ່ໄດ້ເກັບໄວ້ທີ່ນີ້ (ໃຫຍ່ກວ່າທີ່ໂຄງການເກັບ ແລະ ບໍ່ຢູ່ໃນໂຟນເດີໂຄງການ): ຖືກປະໄວ້ນອກການອອກ.`],
+  // Cost articles priced by the time on site (R7): an estimate line's duration and its note.
+  [/^(\d+) element\(s\) in no task of the schedule: their quantity is not multiplied by the duration\.$/, (m) => `${m[1]} ອົງປະກອບບໍ່ຢູ່ໃນວຽກໃດຂອງແຜນງານ: ປະລິມານບໍ່ໄດ້ຄູນກັບໄລຍະເວລາ.`],
+  [/^× ([\d.]+(?:–[\d.]+)?) (months?|working days?|calendar days?|hours?)$/, (m) => `× ${m[1]} ${({ "month": "ເດືອນ", "months": "ເດືອນ", "working day": "ມື້ເຮັດວຽກ", "working days": "ມື້ເຮັດວຽກ", "calendar day": "ມື້ຕາມປະຕິທິນ", "calendar days": "ມື້ຕາມປະຕິທິນ", "hour": "ຊົ່ວໂມງ", "hours": "ຊົ່ວໂມງ" } as Record<string, string>)[m[2]]}`],
 ];

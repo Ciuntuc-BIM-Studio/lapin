@@ -2027,6 +2027,7 @@ dl.fields label.check input { width: auto; margin: 0; }
 .estimate-facts .link { display: inline-flex; align-items: center; gap: 4px; }
 .cost-time-scroll { padding: 8px 12px 24px; }
 .estimate-task { margin-left: 6px; max-width: 160px; font-size: 11px; }
+.estimate-line-note { display: flex; align-items: center; gap: 4px; margin-top: 2px; white-space: normal; }
 .cost-chart { display: block; width: 100%; max-width: 1100px; height: auto; font-size: 11px; }
 .cost-chart .grid { stroke: var(--rule); stroke-width: 1; }
 .cost-chart .axis { stroke: var(--ink-muted); stroke-width: 1; }

@@ -109,7 +109,7 @@ public static class CostForms
             for (var li = 0; li < ch.Lines.Count; li++)
             {
                 var l = ch.Lines[li];
-                List<string> c = [$"{ci + 1}.{li + 1}", l.Code, l.Priced ? l.Name : $"{l.Name} (no price)", l.Unit, f.Qty(l.Qty), f.Money(l.M), f.Money(l.L), f.Money(l.E), f.Money(l.T), f.Money(l.UnitPrice), f.Money(l.Value)];
+                List<string> c = [$"{ci + 1}.{li + 1}", l.Code, Described(l, l.Priced ? l.Name : $"{l.Name} (no price)", false), l.Unit, f.Qty(l.Qty), f.Money(l.M), f.Money(l.L), f.Money(l.E), f.Money(l.T), f.Money(l.UnitPrice), f.Money(l.Value)];
                 if (other) c.Add(f.Money(Money.Round(s.InOther(l.Value))));
                 rows.Add(new FormRow(c, l.Key));
             }
@@ -132,6 +132,18 @@ public static class CostForms
         return new("estimate", $"Estimate: {r.Entity.Name}", Subtitle(r, q, false), cols, rows, Numbers(cols.Count, 4));
     }
 
+    /// <summary>
+    /// A line's description with the duration its quantity was multiplied by ("× duration": „× 3 months”) and, when some
+    /// element had none, the note that says so.
+    /// </summary>
+    public static string Described(EstimateLine l, string name, bool ro)
+    {
+        if (l.Time == null) return name;
+        if (l.DurationIn(ro) is { } d) name += $" (× {d})";
+        if (l.Notes.Count > 0) name += ro ? $" [durată lipsă: {(l.TimeProblem != null ? "fără planificare" : $"{l.Untimed.Count} element(e) fără sarcină")}]" : $" [{l.Notes[0]}]";
+        return name;
+    }
+
     static HashSet<int> Numbers(int count, int from) => Enumerable.Range(from, Math.Max(0, count - from)).ToHashSet();
 
     static CostForm F3(IQueryContext q, EstimateResult r, Fmt f)
@@ -152,7 +164,7 @@ public static class CostForms
             for (var li = 0; li < ch.Lines.Count; li++)
             {
                 var l = ch.Lines[li];
-                rows.Add(new FormRow([$"{ci + 1}.{li + 1}", l.Code, l.Priced ? l.Name : $"{l.Name} (fără preț)", l.Unit, f.Qty(l.Qty),
+                rows.Add(new FormRow([$"{ci + 1}.{li + 1}", l.Code, Described(l, l.Priced ? l.Name : $"{l.Name} (fără preț)", true), l.Unit, f.Qty(l.Qty),
                     f.Money(l.M), f.Money(l.L), f.Money(l.E), f.Money(l.T), f.Money(l.VM), f.Money(l.VL), f.Money(l.VE), f.Money(l.VT), f.Money(l.Value)], l.Key));
             }
             Split($"Total capitolul {ci + 1}", ch.Sums, "subtotal");

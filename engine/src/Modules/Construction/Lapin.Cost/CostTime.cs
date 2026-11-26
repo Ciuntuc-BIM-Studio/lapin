@@ -148,7 +148,7 @@ public sealed class CostOverTime
         if (Costing.EstimateOf(q.Model, estimateId) is not { } e) return (null, "No estimate yet: Cost → Estimate makes one.");
         if (q.Services.Get<IWorkSchedules>() is not { } ws) return (null, "Cost over time needs the work schedule: the Planning module is not in this edition.");
         if (ws.Times(q) is not { } times) return (null, "No work schedule yet: Planning → Generate schedule… makes one from the model.");
-        return (Of(Costing.Compute(q, e), times), null);
+        return (Of(Costing.Compute(q, e, times), times), null);
     }
 
     // ------------------------------------------------------------------ curves and months
@@ -296,7 +296,7 @@ public sealed class ScheduleCostsOf : IScheduleCosts
     public ScheduleCosts? Costs(IQueryContext query, ScheduleTimes times)
     {
         if (Costing.EstimateOf(query.Model) is not { } e) return null;
-        var o = CostOverTime.Of(Costing.Compute(query, e), times);
+        var o = CostOverTime.Of(Costing.Compute(query, e, times), times);
         return new ScheduleCosts(o.Currency, o.Cost.ToDictionary(kv => kv.Key, kv => new TaskCost(Money.Round(kv.Value), Money.Round(o.Done.GetValueOrDefault(kv.Key)))),
             o.Budget, Money.Round(o.Scheduled), Money.Round(o.ToDate));
     }

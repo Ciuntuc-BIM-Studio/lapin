@@ -17,6 +17,8 @@ export interface LineDto {
   manual?: string | null; priced: boolean; elements: string[];
   /** The tasks a line of the user's is done in (stage 7). */
   tasks?: string[] | null;
+  /** "× duration": the time its quantity is multiplied by (months, workingDays, days, hours), the duration used, and what went wrong. */
+  time?: string | null; duration?: string | null; notes?: string[] | null;
 }
 export interface ChapterDto { name: string; m: number; l: number; e: number; t: number; direct: number; lines: LineDto[] }
 export interface TotalsDto { m: number; l: number; e: number; t: number; direct: number; labourTax: number; directTotal: number; overheads: number; profit: number; net: number; vat: number; total: number; other: number }
@@ -194,7 +196,28 @@ export function forgetFromLibrary(name: string): void {
 export const choiceKey = (kind: 'type' | 'material', name: string, cls = ''): string =>
   `${kind}|${cls}|${name.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')}`;
 
-export interface Choice { code: string; part?: string | null; basis?: string }
+export interface Choice { code: string; part?: string | null; basis?: string; time?: string }
+
+/**
+ * What an article's quantity may be multiplied by ("× duration", R7): the time its element is on site, from the tasks
+ * that take it in the schedule. Auto takes the price's unit's (m × month, pcs/day, h), else none.
+ */
+export const TIMES: { id: string; label: string }[] = [
+  { id: 'auto', label: "By the price's unit" }, { id: 'none', label: 'No duration' }, { id: 'months', label: 'Months on site' },
+  { id: 'workingDays', label: 'Working days on site' }, { id: 'days', label: 'Calendar days on site' }, { id: 'hours', label: 'Working hours on site' },
+];
+
+/** An article as cost.setArticles takes it: the time only when one is chosen (auto is not stored, so an old article stays as it was). */
+export function articleArg(r: { code: string; part?: string | null; basis?: string; time?: string }): { code: string; part?: string | null; basis?: string; time?: string } {
+  const o: { code: string; part?: string | null; basis?: string; time?: string } = { code: r.code.trim(), part: r.part ?? null, basis: r.basis ?? 'auto' };
+  if (r.time && r.time !== 'auto') o.time = r.time;
+  return o;
+}
+
+/** A line's duration as the estimate shows it after the quantity ("× 3 months"); empty when its quantity is not multiplied. */
+export function durationText(l: Pick<LineDto, 'time' | 'duration'>): string {
+  return l.time && l.duration ? `× ${l.duration}` : '';
+}
 
 export function remembered(): Record<string, Choice> {
   try { return JSON.parse(localStorage.getItem(REMEMBERED) ?? '{}') as Record<string, Choice>; } catch { return {}; }

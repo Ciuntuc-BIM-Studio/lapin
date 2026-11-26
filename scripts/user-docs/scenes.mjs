@@ -3762,6 +3762,8 @@ export const scenes = [
       const plaster = (await t.nodes()).find((n) => n.type === 'IfcMaterial' && n.name === 'Tencuială de var').id;
       t.expect(await t.page.locator(`[data-testid=map-materials] tr[data-material="${plaster}"] [data-testid=map-code]`).inputValue() === 'TEN01', 'the plaster suggested by its material');
       await t.page.locator(`[data-testid=map-materials] tr[data-material="${plaster}"] input[type=checkbox]`).check();
+      // "× Duration" (R7): beside the measure, by the price's unit unless chosen.
+      t.expect(await t.page.locator(`[data-testid=map-types] tr[data-type="${type}"] [data-testid=map-time]`).inputValue() === 'auto', 'the × Duration column, by the price\'s unit');
       await t.shot('map-articles', { of: '[data-testid=map-articles]', pad: 0 });
       await t.page.locator('[data-testid=map-apply]').click();
       await t.wait(800);

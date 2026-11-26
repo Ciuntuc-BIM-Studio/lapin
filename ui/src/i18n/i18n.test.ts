@@ -206,6 +206,10 @@ describe('the languages', () => {
     'Camera bookmark 1 saved.',
     'Camera bookmark 4 is empty: Alt+Shift+4 in 3D keeps the current view there.',
     'Camera bookmark 4 is empty.',
+    // Cost articles priced by the time on site (R7).
+    '2 element(s) in no task of the schedule: their quantity is not multiplied by the duration.',
+    '× 3 months',
+    '× 1.5–3 working days',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 

@@ -327,6 +327,8 @@ O sarcină mutată își păstrează începutul ca început de nivelare. Legătu
 
 Cu un deviz (**Execuție → Deviz…**), Gantt-ul primește coloana **Cost**: partea din deviz a fiecărei sarcini, din rândurile care îi prețuiesc elementele (a unui rezumat e a sarcinilor lui). Bara de unelte arată **bugetul** (cheltuielile directe ale devizului) și costul **la zi** (costul fiecărei sarcini înmulțit cu procentul ei realizat); Proprietăți arată costul unei sarcini și partea realizată. **Execuție → Costul în timp** desenează curba S și tabelul lunar (vezi [Devizul](cost.md)).
 
+Programul îi dă devizului și timpul cât stă fiecare element pe șantier: de la începutul primei sarcini care îl preia până la finalul ultimeia. Un articol pus pe **× Durată** (sau prețuit într-o unitate de timp, *m × lună*, *buc/zi*, *oră*) își înmulțește cantitatea cu el, în luni, zile lucrătoare, zile calendaristice sau ore lucrătoare ale calendarului de mai jos, calculat din nou ori de câte ori se schimbă o sarcină sau calendarul. Un element din nicio sarcină își păstrează cantitatea, iar rândul lui din deviz spune asta (vezi [Articole prețuite după timpul pe șantier](cost.md#articole-prețuite-după-timpul-pe-șantier)).
+
 ## Calendarul
 
 ![Calendarul de lucru](shots/planning-calendar.webp)
@@ -338,7 +340,7 @@ Cu un deviz (**Execuție → Deviz…**), Gantt-ul primește coloana **Cost**: p
 - **pauza de iarnă** pentru lucrările umede, oprită implicit: de la 15 decembrie la 1 martie, dacă nu alegi alte zile;
 - **excepțiile**: zile libere ale proiectului (un șantier închis) sau zile lucrate care altfel n-ar fi (o sâmbătă).
 
-Duratele și decalajele numără zilele lucrătoare ale acestui calendar.
+Duratele și decalajele numără zilele lucrătoare ale acestui calendar; la fel și articolele devizului prețuite după zile sau ore lucrătoare pe șantier.
 
 ## Schimbul programului
 

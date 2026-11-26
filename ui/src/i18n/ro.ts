@@ -7200,6 +7200,16 @@ export const RO: Record<string, string> = {
   "Measure as": "Măsurat ca",
   "No measure": "Fără măsură",
   "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "O piesă plasată dă acest parametru ca o cantitate de acest fel, pentru articolele de deviz, extrase și IFC",
+  // Cost articles priced by the time on site, "× duration" (R7).
+  "× Duration": "× Durată",
+  "No duration": "Fără durată",
+  "Months on site": "Luni pe șantier",
+  "Working days on site": "Zile lucrătoare pe șantier",
+  "Calendar days on site": "Zile calendaristice pe șantier",
+  "Working hours on site": "Ore lucrătoare pe șantier",
+  "The quantity times how long the element is on site, from the tasks that take it in the schedule": "Cantitatea înmulțită cu cât timp stă elementul pe șantier, după sarcinile care îl preiau în program",
+  "The Planning module is not in this edition: the quantity is not multiplied by the duration.": "Modulul Planificare nu este în această ediție: cantitatea nu este înmulțită cu durata.",
+  "The project has no work schedule: the quantity is not multiplied by the duration.": "Proiectul nu are un program al lucrărilor: cantitatea nu este înmulțită cu durata.",
 };
 
 /** Phrases with a number or a name in them. */
@@ -8025,4 +8035,7 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(.+) covers (.+): choose another profile for (it|them) first\.$/, (m) => `${m[1]} acoperă ${m[2]}: alege întâi alt profil.`],
   // The issue with reference documents (stage R5).
   [/^(.+): (.+) is not held here \(larger than the project keeps, and not in the project folder\): it was left out of the issue\.$/, (m) => `${m[1]}: ${m[2]} nu este păstrat aici (e mai mare decât păstrează proiectul și nu e în folderul proiectului): a fost lăsat în afara emiterii.`],
+  // Cost articles priced by the time on site (R7): an estimate line's duration and its note.
+  [/^(\d+) element\(s\) in no task of the schedule: their quantity is not multiplied by the duration\.$/, (m) => `${m[1]} element(e) în nicio sarcină a programului: cantitatea lor nu este înmulțită cu durata.`],
+  [/^× ([\d.]+(?:–[\d.]+)?) (months?|working days?|calendar days?|hours?)$/, (m) => `× ${m[1]} ${({ "month": "lună", "months": "luni", "working day": "zi lucrătoare", "working days": "zile lucrătoare", "calendar day": "zi calendaristică", "calendar days": "zile calendaristice", "hour": "oră", "hours": "ore" } as Record<string, string>)[m[2]]}`],
 ];

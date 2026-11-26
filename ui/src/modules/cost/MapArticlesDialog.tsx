@@ -11,12 +11,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
-import { choiceKey, remember, remembered, startingChoice, type Choice } from './estimate';
+import { articleArg, choiceKey, remember, remembered, startingChoice, TIMES, type Choice } from './estimate';
 
-interface ArticleDto { code: string; basis?: string; part?: string | null; factor?: number; waste?: number; chapter?: string }
+interface ArticleDto { code: string; basis?: string; part?: string | null; factor?: number; waste?: number; chapter?: string; time?: string }
 interface Suggested { code: string; name: string; unit: string; part: string | null; basis: string }
 interface TypeRow { id: string; name: string; class: string; label: string; count: number; layered: boolean; articles: ArticleDto[]; suggested?: Suggested }
-interface MaterialRow { id: string; name: string; category?: string | null; count: number; rule?: { id: string; code: string; basis: string; own: boolean; category?: string | null } | null; suggested?: Suggested }
+interface MaterialRow { id: string; name: string; category?: string | null; count: number; rule?: { id: string; code: string; basis: string; time?: string; own: boolean; category?: string | null } | null; suggested?: Suggested }
 interface MappingDto { types: TypeRow[]; materials: MaterialRow[]; untyped: { class: string; label: string; count: number }[]; lists: number }
 interface PriceRow { code: string; name: string; unit: string }
 
@@ -25,7 +25,7 @@ export const BASES: { id: string; label: string }[] = [
   { id: 'area', label: 'Net area' }, { id: 'grossArea', label: 'Gross area' }, { id: 'length', label: 'Length' }, { id: 'count', label: 'Count' }, { id: 'weight', label: 'Weight' },
 ];
 
-interface Row { key: string; code: string; part: string | null; basis: string; from: string; on: boolean }
+interface Row { key: string; code: string; part: string | null; basis: string; time: string; from: string; on: boolean }
 
 export function MapArticlesDialog() {
   const version = useSession((s) => s.version);
@@ -40,14 +40,14 @@ export function MapArticlesDialog() {
     const past = remembered();
     const o: Record<string, Row> = {};
     for (const t of data.types) {
-      const now = t.articles[0] ? { code: t.articles[0].code, part: t.articles[0].part ?? null, basis: t.articles[0].basis ?? 'auto' } : null;
+      const now = t.articles[0] ? { code: t.articles[0].code, part: t.articles[0].part ?? null, basis: t.articles[0].basis ?? 'auto', time: t.articles[0].time ?? 'auto' } : null;
       const start = startingChoice(now, past[choiceKey('type', t.name, t.class)] ?? null, t.suggested ? { code: t.suggested.code, part: t.suggested.part, basis: 'auto' } : null, (c) => codes.has(c.toLowerCase()));
-      o[`type:${t.id}`] = { key: t.id, code: start.choice?.code ?? '', part: start.choice?.part ?? (t.layered ? 'core' : null), basis: start.choice?.basis ?? 'auto', from: start.from, on: start.from === 'remembered' || start.from === 'suggested' };
+      o[`type:${t.id}`] = { key: t.id, code: start.choice?.code ?? '', part: start.choice?.part ?? (t.layered ? 'core' : null), basis: start.choice?.basis ?? 'auto', time: start.choice?.time ?? 'auto', from: start.from, on: start.from === 'remembered' || start.from === 'suggested' };
     }
     for (const m of data.materials) {
-      const now = m.rule?.own ? { code: m.rule.code, basis: m.rule.basis } : null;
+      const now = m.rule?.own ? { code: m.rule.code, basis: m.rule.basis, time: m.rule.time ?? 'auto' } : null;
       const start = startingChoice(now, past[choiceKey('material', m.name)] ?? null, m.suggested ? { code: m.suggested.code, basis: 'auto' } : null, (c) => codes.has(c.toLowerCase()));
-      o[`material:${m.id}`] = { key: m.id, code: start.choice?.code ?? '', part: null, basis: start.choice?.basis ?? 'auto', from: start.from, on: start.from === 'remembered' };
+      o[`material:${m.id}`] = { key: m.id, code: start.choice?.code ?? '', part: null, basis: start.choice?.basis ?? 'auto', time: start.choice?.time ?? 'auto', from: start.from, on: start.from === 'remembered' };
     }
     setRows(o);
   }, [data, codes]);
@@ -59,15 +59,15 @@ export function MapArticlesDialog() {
     const types = data.types.filter((t) => rows[`type:${t.id}`]?.on).map((t) => {
       const r = rows[`type:${t.id}`];
       const rest = t.articles.slice(1);
-      return { id: t.id, articles: r.code.trim() ? [{ code: r.code.trim(), part: r.part, basis: r.basis }, ...rest] : rest };
+      return { id: t.id, articles: r.code.trim() ? [articleArg(r), ...rest] : rest };
     });
-    const rules = data.materials.filter((m) => rows[`material:${m.id}`]?.on).map((m) => ({ material: m.id, code: rows[`material:${m.id}`].code.trim(), basis: rows[`material:${m.id}`].basis }));
+    const rules = data.materials.filter((m) => rows[`material:${m.id}`]?.on).map((m) => ({ material: m.id, ...articleArg({ ...rows[`material:${m.id}`], part: null }) }));
     if (!types.length && !rules.length) { close(); return; }
     const r = await execute('cost.applyMapping', { types, rules });
     if (!r) return;
     const keep: Record<string, Choice> = {};
-    for (const t of data.types) { const x = rows[`type:${t.id}`]; if (x?.on && x.code.trim()) keep[choiceKey('type', t.name, t.class)] = { code: x.code.trim(), part: x.part, basis: x.basis }; }
-    for (const m of data.materials) { const x = rows[`material:${m.id}`]; if (x?.on && x.code.trim()) keep[choiceKey('material', m.name)] = { code: x.code.trim(), basis: x.basis }; }
+    for (const t of data.types) { const x = rows[`type:${t.id}`]; if (x?.on && x.code.trim()) keep[choiceKey('type', t.name, t.class)] = { code: x.code.trim(), part: x.part, basis: x.basis, time: x.time }; }
+    for (const m of data.materials) { const x = rows[`material:${m.id}`]; if (x?.on && x.code.trim()) keep[choiceKey('material', m.name)] = { code: x.code.trim(), basis: x.basis, time: x.time }; }
     remember(keep);
     notify('Articles mapped: one step to undo. The choices are remembered for your next projects.');
     close();
@@ -80,6 +80,11 @@ export function MapArticlesDialog() {
       {r.code && !nameOf(r.code) && <span className="error-text small">not in the lists</span>}
     </span>
   );
+  const timeSelect = (k: string, r: Row) => (
+    <select value={r.time} onChange={(e) => set(k, { time: e.target.value })} title="The quantity times how long the element is on site, from the tasks that take it in the schedule" data-testid="map-time">
+      {TIMES.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
+    </select>
+  );
   return (
     <div className="dialog-backdrop" onMouseDown={backdropClose(close)}>
       <div className="dialog wide map-articles" role="dialog" aria-label="Map articles" data-testid="map-articles" onClick={(e) => e.stopPropagation()}>
@@ -90,7 +95,7 @@ export function MapArticlesDialog() {
           <datalist id="cost-codes">{prices.map((p) => <option key={p.code} value={p.code}>{`${p.name} (${p.unit})`}</option>)}</datalist>
           <h4 className="eyebrow">Types</h4>
           <table className="map-table" data-testid="map-types">
-            <thead><tr><th /><th>Type</th><th>Elements</th><th>Article</th><th data-i18n-ctx="task">Part</th><th data-i18n-ctx="cost">Measure</th><th /></tr></thead>
+            <thead><tr><th /><th>Type</th><th>Elements</th><th>Article</th><th data-i18n-ctx="task">Part</th><th data-i18n-ctx="cost">Measure</th><th>× Duration</th><th /></tr></thead>
             <tbody>
               {data.types.map((t) => {
                 const k = `type:${t.id}`;
@@ -111,6 +116,7 @@ export function MapArticlesDialog() {
                       </select>
                     </td>
                     <td><select value={r.basis} onChange={(e) => set(k, { basis: e.target.value })}>{BASES.map((b) => <option key={b.id} value={b.id}>{b.label}</option>)}</select></td>
+                    <td>{timeSelect(k, r)}</td>
                     <td className="muted small">{fromLabel(r.from)}</td>
                   </tr>
                 );
@@ -120,7 +126,7 @@ export function MapArticlesDialog() {
           {data.untyped.length > 0 && <p className="muted small">Without a type, not mapped here (a line of your own prices them): <span data-no-i18n>{data.untyped.map((u) => `${u.label} × ${u.count}`).join(', ')}</span></p>}
           <h4 className="eyebrow">Materials (rules)</h4>
           <table className="map-table" data-testid="map-materials">
-            <thead><tr><th /><th>Material</th><th>Elements</th><th>Article</th><th /><th data-i18n-ctx="cost">Measure</th><th /></tr></thead>
+            <thead><tr><th /><th>Material</th><th>Elements</th><th>Article</th><th /><th data-i18n-ctx="cost">Measure</th><th>× Duration</th><th /></tr></thead>
             <tbody>
               {data.materials.map((m) => {
                 const k = `material:${m.id}`;
@@ -134,6 +140,7 @@ export function MapArticlesDialog() {
                     <td>{codeInput(k, r)}</td>
                     <td className="muted small">{m.rule && !m.rule.own ? <>by its category: <span data-no-i18n>{m.rule.code}</span></> : ''}</td>
                     <td><select value={r.basis} onChange={(e) => set(k, { basis: e.target.value })}>{BASES.map((b) => <option key={b.id} value={b.id}>{b.label}</option>)}</select></td>
+                    <td>{timeSelect(k, r)}</td>
                     <td className="muted small">{fromLabel(r.from)}</td>
                   </tr>
                 );

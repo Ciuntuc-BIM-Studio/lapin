@@ -22,7 +22,7 @@ public sealed class CostPageTable : IPageTables
         {
             rows.Add(new PageRow([c.Name, null, null, null, null, c.Sums.Direct], [.. c.Lines.SelectMany(l => l.Elements).Distinct()], Heading: true));
             foreach (var l in c.Lines)
-                rows.Add(new PageRow([l.Code, l.Name, l.Unit, l.Qty, l.UnitPrice, l.Value], [.. l.Elements]));
+                rows.Add(new PageRow([l.Code, CostForms.Described(l, l.Name, false), l.Unit, l.Qty, l.UnitPrice, l.Value], [.. l.Elements]));
         }
         var t = r.Totals;
         var s = r.Settings;

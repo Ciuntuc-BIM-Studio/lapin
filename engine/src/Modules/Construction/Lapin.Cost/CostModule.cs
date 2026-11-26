@@ -113,6 +113,9 @@ public sealed class CostModule : ILapinModule
         ["other"] = Money.Round(s.InOther(l.Value)), ["hours"] = l.Hours, ["manual"] = l.Manual, ["priced"] = l.Priced,
         ["elements"] = new JsonArray(l.Elements.Select(x => (JsonNode)x).ToArray()),
         ["tasks"] = l.Tasks.Count > 0 ? new JsonArray(l.Tasks.Select(x => (JsonNode)x).ToArray()) : null,
+        // "× duration": the time its quantity is multiplied by, the duration used (one, or the least and the most) and what went wrong.
+        ["time"] = l.Time, ["duration"] = l.Duration,
+        ["notes"] = l.Notes.Count > 0 ? new JsonArray(l.Notes.Select(x => (JsonNode)x).ToArray()) : null,
     };
 
     public static JsonObject EstimateJson(IQueryContext q, EstimateResult r)

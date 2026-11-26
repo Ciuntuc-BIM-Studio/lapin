@@ -55,6 +55,21 @@ Tipurile de cofraj și de schelă din organizarea de șantier (tabul **Teren**) 
 
 Fazele contează: un element care era acolo înainte de lucrări (făcut într-o fază *existentă*) nu se prețuiește. Unul demolat se prețuiește doar prin articolul tipului său a cărui parte e **Demolarea lui (doar când e demolat)**, la capitolul **Demolare**.
 
+### Articole prețuite după timpul pe șantier
+
+Organizarea de șantier și elementele de siguranță se închiriază adesea după cât timp stau pe șantier: un gard pe metru și lună (*m × lună*), un indicator pe bucată și zi, o macara pe oră. Coloana **× Durată** din Atribuie articole înmulțește cantitatea unui articol (bucăți, lungime, arie…) cu cât timp stă elementul lui pe șantier, luat din programul lucrărilor (vezi [Planificarea](planning.md#costul-sarcinilor)):
+
+- **După unitatea prețului** (implicit): timpul din unitatea prețului, dacă are unul. *m × lună*, *m x month*, *cad × mese* sunt o lungime sau bucăți înmulțite cu luni; *buc/zi* zile calendaristice; *buc/zi lucrătoare* zile lucrătoare; *oră* sau *h* ore. O unitate fără timp nu se înmulțește, ca înainte.
+- **Fără durată**: timpul din unitate lăsat deoparte, cantitatea simplă.
+- **Luni pe șantier**: lunile calendaristice întregi de la început, restul ca parte din luna lui (1 martie – 31 mai înseamnă 3 luni).
+- **Zile lucrătoare pe șantier**: zilele lucrătoare ale calendarului proiectului (zilele săptămânii, sărbătorile și excepțiile lui).
+- **Zile calendaristice pe șantier**: toate zilele, cu ambele capete.
+- **Ore lucrătoare pe șantier**: zilele lucrătoare înmulțite cu orele unei zile din calendar.
+
+Un element stă pe șantier de la începutul primei sarcini care îl preia până la finalul ultimeia (sarcinile preiau elemente prin regula lor sau de mână, vezi [Planificarea](planning.md#elementele-modelului-în-sarcini)). Se calculează din nou de fiecare dată când e arătat devizul: muți o sarcină sau schimbi calendarul, și cantitatea urmează. Un gard de 20 m într-o sarcină de trei luni, prețuit *m × lună*, dă 60.
+
+Rândul arată durata folosită după descriere (**× 3 luni**; cea mai mică și cea mai mare când elementele lui diferă), în deviz, în formularele lui (XLSX, PDF), în exportul HTML și în IFC. Un element pe care nu-l preia nicio sarcină își păstrează cantitatea, neînmulțită, iar rândul spune asta (**1 element(e) în nicio sarcină a programului**), ca nimic să nu fie prețuit la zero fără o vorbă. Fără program al lucrărilor, rândul spune că proiectul nu are unul; într-o ediție fără modulul Planificare, un articol prețuit după unitatea lui e prețuit ca înainte, iar unul pus pe o durată spune de ce nu are una.
+
 ## Devizul
 
 ![Devizul: capitole, rânduri, cotele și totalurile](shots/estimate.webp)
@@ -119,4 +134,4 @@ Situațiile de lucrări lunare, valoarea câștigată și mai multe linii de baz
 
 **Fișier → Exportă → Exportă IFC, Fragments sau BOS…** scrie devizul ca **IfcCostSchedule**: capitolele și rândurile ca **IfcCostItem**, cantitatea fiecărui rând și prețurile lui unitare ca patru **IfcCostValue** (Material, Labour, Equipment, Transport), elementele pe care le măsoară fiecare rând atribuite lui (**IfcRelAssignsToControl**), moneda ca **IfcMonetaryUnit** al proiectului. La import, un deviz își păstrează rândurile cum le are fișierul, cu aceleași totaluri. Bifează **Rânduri din model** ca să adaugi rândurile pe care le dă modelul tău.
 
-Cu un program al lucrărilor, fiecare rând e atribuit și sarcinilor în care se execută (**IfcRelAssignsToControl** spre **IfcTask**-urile lor). La import, rândurile își păstrează sarcinile, deci curba S revine la fel.
+Cu un program al lucrărilor, fiecare rând e atribuit și sarcinilor în care se execută (**IfcRelAssignsToControl** spre **IfcTask**-urile lor). La import, rândurile își păstrează sarcinile, deci curba S revine la fel. Un rând prețuit după timpul pe șantier își scrie **Time** și **Duration** în **Lapin_CostItem**.
