@@ -37,7 +37,11 @@ public static class Openings
     /// Sill is over the wall's base whatever the opening's sill is measured from (forum topic 192, <see cref="OpeningSills"/>):
     /// <see cref="SillBase"/> is the finished floor's height over the base for one measured from it, else 0.
     /// </remarks>
-    public readonly record struct Placed(Entity Opening, Entity? Fill, JoinerySpec? Spec, double Along, double Sill, double Width, double Height, JoineryShape? Shape = null, double FillOffset = 0, double SillBase = 0)
+    /// <remarks>
+    /// <see cref="Drop"/> (GitHub #149, <see cref="OpeningSills.ReachKey"/>): how far a door's or window's hole was taken down below
+    /// its sill to the structure, the finished floor's height; it is in Sill, Height and FillOffset already, so the fill stands where it did.
+    /// </remarks>
+    public readonly record struct Placed(Entity Opening, Entity? Fill, JoinerySpec? Spec, double Along, double Sill, double Width, double Height, JoineryShape? Shape = null, double FillOffset = 0, double SillBase = 0, double Drop = 0)
     {
         /// <summary>Where the door or window stands, over the wall's base: the hole's sill, raised by its offset.</summary>
         public double FillSill => Sill + FillOffset;
@@ -146,8 +150,11 @@ public static class Openings
         // Over the finished floor (forum topic 192): raised by the floor's height over the wall's base, worked out now.
         var sillBase = OpeningSills.BaseOf(m, opening);
         var sill = OpeningSills.FromFinished(opening) ? opening.Num("sill") + sillBase : opening.Num("sill");
-        return new Placed(opening, fill, spec, opening.Num("along"), sill, width, height, fill == null ? BareShape(opening) : spec?.Shape,
-            spec == null ? 0 : opening.Num(FillOffsetKey), sillBase);
+        var offset = spec == null ? 0 : opening.Num(FillOffsetKey);
+        // Its hole down to the structure (GitHub #149): the finished floor's height below the door, which stays on the floor.
+        var drop = spec != null && OpeningSills.ReachesStructure(opening) ? Math.Clamp(sillBase, 0, Math.Max(0, sill)) : 0;
+        return new Placed(opening, fill, spec, opening.Num("along"), sill - drop, width, height + drop, fill == null ? BareShape(opening) : spec?.Shape,
+            offset + drop, sillBase, drop);
     }
 
     /// <summary>The head kinds a bare opening takes (decision 253): "round" is the semicircle.</summary>
@@ -446,9 +453,10 @@ public static class Openings
         // The wall's finished floor (its own, else its type's).
         var floor = finished && wall.Class == IfcClass.Wall ? OpeningSills.FinishedFloor(edit.Model, wall) : 0;
         // A door's or window's sill is its own: its opening's lies its offset under it (Openings.FillOffsetKey).
-        var s = sill is { } given ? given - (fillOrOpening.Class == IfcClass.OpeningElement ? 0 : placed.FillOffset) + (finished ? floor : 0)
-            : finished && wasFinished ? opening.Num("sill") + floor : placed.Sill;
-        CheckFits(edit.Model, wall, a, s, placed.Width, placed.Height, opening.Id);
+        // Its hole taken down to the structure (GitHub #149) is not in the stored sill: the offset and the sill without it.
+        var s = sill is { } given ? given - (fillOrOpening.Class == IfcClass.OpeningElement ? 0 : placed.FillOffset - placed.Drop) + (finished ? floor : 0)
+            : finished && wasFinished ? opening.Num("sill") + floor : placed.Sill + placed.Drop;
+        CheckFits(edit.Model, wall, a, s, placed.Width, placed.Height - placed.Drop, opening.Id);
         var attrs = opening.CloneAttrs();
         attrs["along"] = a;
         attrs["sill"] = finished ? s - floor : s;

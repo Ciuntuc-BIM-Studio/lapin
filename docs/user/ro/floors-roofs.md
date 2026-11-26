@@ -227,6 +227,8 @@ Tipul ei, din **Interior → Tipuri de plintă**, alege **Profilul** — **Dreap
 
 În proprietăți, o plintă are tipul, un **Decalaj la bază** peste pardoseală și **Întreruptă la uși** (debifat, trece peste ele). **Extras de plinte** (sau **Plinte** în lista de extrase noi din browserul proiectului) le listează pe tipuri, cu bucățile și lungimea, fără golurile ușilor. Plinta e îmbinată la 45° la colțuri; planul îi desenează muchia din față, iar în IFC o plintă iese ca IfcCovering de tip SKIRTINGBOARD, al unui IfcCoveringType de același tip.
 
+Încă două alegeri așază plinta: **Începe de la** este **Nivelul etajului** (ca înainte) sau **Pardoseala finită a încăperii**, nivelul încăperii în care stă (**Decalajul la bază** al ei, sub care se află finisajul pardoselii), plus decalajul plintei; **Stă pe** este **Fața peretelui** (ca înainte) sau **Finisajul peretelui**, fața finisajului pereților încăperii (tencuiala, faianța), ca plinta să nu fie îngropată în șapă și nici în spatele tencuielii. O plintă desenată de-a lungul unui perete le ia de la încăperea de pe partea pe care stă, așa că fiecare parte a unui perete despărțitor între două încăperi cu pardoseli diferite o are pe a ei.
+
 ![Tipurile de plintă: profilul desenat la scară, biblioteca](shots/skirting-types.webp)
 
 ![Proprietățile unei plinte: tipul, decalajul la bază și golurile de la uși](shots/skirting-properties.webp)

@@ -28,6 +28,8 @@ O bucătărie deschisă spre living, cele două capete ale unui hol, palierul un
 
 Încăperile din jur își găsesc imediat conturul din nou, fără **Actualizează încăperile**: o încăpere de 6 × 4 m tăiată de o linie pe mijloc devine două încăperi de 3 × 4 m, fiecare cu aria, eticheta și finisajul ei; pune o încăpere de cealaltă parte cu **Încăpere**. Muți linia (o desenezi din nou) sau o ștergi și încăperile urmează: ștearsă, încăperea e din nou întreagă. Încăperile de o parte și de alta se întâlnesc exact pe linie, așa că ariile lor se adună la încăperea întreagă. O linie care se oprește în mijlocul unei încăperi nu mărginește nimic și nu schimbă nimic.
 
+O linie de separare mărginește pardoseala, dar nu este un perete: **finisajul pereților** unei încăperi și **plinta** ei se opresc acolo unde o întâlnesc și merg doar de-a lungul pereților, iar cantitățile finisajului (tencuială, faianță, vopsea) nu includ lungimea liniei. Finisajul pardoselii acoperă în continuare toată încăperea, până la linie.
+
 În planurile nivelului ei se desenează ca o linie subțire întreruptă; nu are corp, așa că vederea 3D, secțiunile și cantitățile clădirii o lasă deoparte (lungimea ei e în cantitățile ei). Și desenul 2D devine linii de separare: **Desen → Convertește → Convertește în…**, **Room separation lines**. În IFC este un **IfcVirtualElement** (BOUNDARY în IFC 4.3) cu linia ca o curbă FootPrint, pe care Lapin o citește înapoi ca linie de separare.
 
 ## Proprietățile unei încăperi

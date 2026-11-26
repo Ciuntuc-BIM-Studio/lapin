@@ -55,7 +55,9 @@ public sealed record SkirtingSpec(string Name, string Profile = "bevelled", doub
 /// corners, standing on its storey's floor (plus <c>baseOffset</c>). The path is a room's outline (<c>roomId</c>: it follows
 /// the walls' faces as the room does, its islands too) or a line drawn along a wall's face (<c>points</c>, <c>closed</c>,
 /// <c>side</c>: which side of the line the board lies on). Either way it is interrupted where a door (any opening down
-/// to the floor) is in the wall the path runs along, unless <c>gaps</c> is false. Exported as IfcCovering SKIRTINGBOARD of an
+/// to the floor) is in the wall the path runs along, unless <c>gaps</c> is false; round a room, never along its room separation
+/// lines (GitHub #142). It may start at its room's finished floor (<see cref="StartKey"/>) and stand in front of the room's walls
+/// finish (<see cref="FaceKey"/>), GitHub #144; neither set, it is placed as before. Exported as IfcCovering SKIRTINGBOARD of an
 /// IfcCoveringType SKIRTINGBOARD.
 /// </summary>
 public static class Skirtings
@@ -118,6 +120,7 @@ public static class Skirtings
             if ((string?)a["side"] is { } side) attrs["side"] = side == "flip" ? (Side(s) > 0 ? "right" : "left") : side == "right" ? "right" : "left";
             if (Json.Number(a["baseOffset"]) is { } bo) attrs["baseOffset"] = Math.Clamp(bo, -1, 5);
             if (a["gaps"] is JsonValue g && g.TryGetValue<bool>(out var gaps)) attrs["gaps"] = gaps;
+            SetOptions(attrs, a);
             if ((string?)a["typeId"] is { } tid) ctx.Relate(IfcClass.RelDefinesByType, Spatial.Require(ctx.Model, tid, TypeClass).Id, s.Id);
             ctx.Replace(s.With(attrs: attrs));
             return null;
@@ -161,6 +164,7 @@ public static class Skirtings
             }
         }
         if (Json.Number(a["baseOffset"]) is { } bo) attrs["baseOffset"] = Math.Clamp(bo, -1, 5);
+        SetOptions(attrs, a);
         var type = (string?)a["typeId"] is { } tid ? Spatial.Require(ctx.Model, tid, TypeClass) : DefaultType(ctx);
         var e = new Entity(ctx.NewId(), Class, $"Skirting {Numbering.Next(ctx.Model.OfClass(Class))}", attrs, Predefined);
         ctx.Add(e);
@@ -177,6 +181,38 @@ public static class Skirtings
         attrs["closed"] = true;
         attrs["side"] = "left";
     }
+
+    /// <summary>
+    /// Where the board starts (GitHub #144): <c>startAt</c> "finishedFloor" — on its room's finished floor (the room's level, its
+    /// base offset over the storey; a drawn skirting takes the room on the side its board lies on), its own base offset over
+    /// that; absent ("storey"): on the storey's level, as before.
+    /// </summary>
+    public const string StartKey = "startAt", FinishedFloor = "finishedFloor";
+    /// <summary>
+    /// What the board stands against (GitHub #144): <c>face</c> "finish" — in front of its room's walls finish (the plaster, the
+    /// tiles); absent ("wall"): the walls' faces, as before.
+    /// </summary>
+    public const string FaceKey = "face", OnFinish = "finish";
+
+    /// <summary>The two options from a command (<c>startAt</c>: "storey" | "finishedFloor", <c>face</c>: "wall" | "finish"), the defaults written as nothing.</summary>
+    static void SetOptions(JsonObject attrs, JsonObject a)
+    {
+        if ((string?)a[StartKey] is { } start)
+        {
+            if (start == FinishedFloor) attrs[StartKey] = FinishedFloor;
+            else if (start == "storey") attrs.Remove(StartKey);
+            else throw new CommandException("A skirting starts at the storey's level (storey) or its room's finished floor (finishedFloor).");
+        }
+        if ((string?)a[FaceKey] is { } face)
+        {
+            if (face == OnFinish) attrs[FaceKey] = OnFinish;
+            else if (face == "wall") attrs.Remove(FaceKey);
+            else throw new CommandException("A skirting stands on the walls' faces (wall) or in front of their finish (finish).");
+        }
+    }
+
+    static bool StartsOnFinishedFloor(Entity s) => s.Str(StartKey) == FinishedFloor;
+    static bool OnTheFinish(Entity s) => s.Str(FaceKey) == OnFinish;
 
     static List<Vec2> CheckPoints(JsonNode? n, bool closed)
     {
@@ -340,14 +376,37 @@ public static class Skirtings
         var o = new List<(IReadOnlyList<Vec2>, bool, int)>();
         if (s.Str("roomId") is { } rid && m.Get(rid) is { Class: Rooms.Class } room && Rooms.Live(room, m, services) is { } outline)
         {
+            // In front of the finish (GitHub #144): the room's outline as its walls finish leaves it.
+            if (OnTheFinish(s) && RoomFinishes.FinishedOf(m, room, outline) is { } finished) outline = finished.Outline;
             o.Add((Polygon2.EnsureCcw(outline.Outer), true, 1));
             foreach (var island in outline.Islands) o.Add((Polygon2.EnsureCcw(island).Reverse().ToList(), true, 1));
             return o;
         }
         var pts = StoredPoints(s);
         var closed = s.Bool("closed");
-        if (pts.Count >= (closed ? 3 : 2)) o.Add((pts, closed, Side(s)));
+        if (pts.Count < (closed ? 3 : 2)) return o;
+        // A drawn line in front of the finish of the room its board lies in: moved off the wall by the finish's thickness.
+        if (OnTheFinish(s) && RoomOn(s, m, services, pts, closed) is { } r && RoomFinishes.WallFaceOf(m, r) is var t && t > 0)
+            pts = closed && pts.Count >= 3 ? Polyline2.Offset(pts, t * Side(s), closed: true, maxMitre: MaxMitre) : Polyline2.Offset(pts, t * Side(s), maxMitre: MaxMitre);
+        o.Add((pts, closed, Side(s)));
         return o;
+    }
+
+    /// <summary>
+    /// The room the skirting's board lies in: its own room, else the storey's room holding a point a little off the line's
+    /// first piece on the board's side (the room on the side the skirting faces, GitHub #144); null when none does.
+    /// </summary>
+    static Entity? RoomOn(Entity s, IModelView m, IServices? services, IReadOnlyList<Vec2>? pts = null, bool? closed = null)
+    {
+        if (s.Str("roomId") is { } rid && m.Get(rid) is { Class: Rooms.Class } own) return own;
+        pts ??= StoredPoints(s);
+        if (pts.Count < 2) return null;
+        var (a, b) = (pts[0], pts[1]);
+        if ((b - a).Length < 1e-9) return null;
+        var at = (a + b) * 0.5 + (b - a).Normalized().Perp * (Side(s) * 0.05);
+        var storey = Spatial.StoreyOf(m, s.Id)?.Id;
+        return m.OfClass(Rooms.Class).Where(x => Spatial.StoreyOf(m, x.Id)?.Id == storey)
+            .FirstOrDefault(x => Rooms.Live(x, m, services)?.Holds(at) == true);
     }
 
     /// <summary>
@@ -355,7 +414,7 @@ public static class Skirtings
     /// board's top (<paramref name="height"/>) in a wall of the storey running the same way, the side lying on or in that wall.
     /// Distances along the line from its start.
     /// </summary>
-    public static List<(double S0, double S1)> Gaps(IModelView m, string? storeyId, IReadOnlyList<Vec2> pts, bool closed, double height)
+    public static List<(double S0, double S1)> Gaps(IModelView m, string? storeyId, IReadOnlyList<Vec2> pts, bool closed, double height, double off = 0)
     {
         var o = new List<(double, double)>();
         var openings = new List<(Openings.WallFrame F, Openings.Placed P)>();
@@ -378,7 +437,7 @@ public static class Skirtings
             {
                 if (Math.Abs(Vec2.Cross(u, f.Dir)) > 0.05) continue;
                 var y = Vec2.Dot((a + b) * 0.5 - f.Start, f.Left);
-                if (y < f.YMin - 0.02 || y > f.YMax + 0.02) continue;
+                if (y < f.YMin - 0.02 - off || y > f.YMax + 0.02 + off) continue;
                 var c = f.Start + f.Dir * p.Along;
                 var t0 = Vec2.Dot(c - f.Dir * (p.Width / 2) - a, u);
                 var t1 = Vec2.Dot(c + f.Dir * (p.Width / 2) - a, u);
@@ -453,11 +512,30 @@ public static class Skirtings
         var spec = SpecOf(m, s);
         var storey = Spatial.StoreyOf(m, s.Id)?.Id;
         var gaps = s.Attrs["gaps"] is not JsonValue g || !g.TryGetValue<bool>(out var on) || on;
+        // In front of the finish, the doors are found that much further off the walls' faces.
+        var off = OnTheFinish(s) && RoomOn(s, m, services) is { } room ? RoomFinishes.WallFaceOf(m, room) : 0;
         var o = new List<(Run, int)>();
         foreach (var (pts, closed, side) in Paths(s, m, services))
-            foreach (var run in Split(pts, closed, gaps ? Gaps(m, storey, pts, closed, spec.Height) : []))
+        {
+            List<(double S0, double S1)> cuts = gaps ? Gaps(m, storey, pts, closed, spec.Height, off) : [];
+            // Round a room, none along its room separation lines (GitHub #142): they bound the floor but have no wall.
+            if (closed) cuts.AddRange(Along(RoomDividers.Edges(m, storey, pts), pts));
+            foreach (var run in Split(pts, closed, cuts))
                 o.Add((run, side));
+        }
         return o;
+    }
+
+    /// <summary>The stretches of a closed line along its flagged edges, as distances along it from its start.</summary>
+    static IEnumerable<(double S0, double S1)> Along(bool[] edges, IReadOnlyList<Vec2> pts)
+    {
+        var s = 0.0;
+        for (var k = 0; k < pts.Count; k++)
+        {
+            var len = (pts[(k + 1) % pts.Count] - pts[k]).Length;
+            if (edges[k]) yield return (s, s + len);
+            s += len;
+        }
     }
 
     /// <summary>
@@ -507,7 +585,13 @@ public static class Skirtings
         return Measure.SignedVolume(solid) < 0 ? SolidBuilder.Flip(solid) : solid;
     }
 
-    static double BaseZ(Entity s, IModelView m) => Spatial.Base(m, s);
+    /// <summary>
+    /// Where the board stands: the storey's level plus its base offset, or (<see cref="StartKey"/> "finishedFloor", GitHub #144)
+    /// its room's finished floor — the room's level, which the floor's finish lies under — plus its base offset; the storey's
+    /// when no room is there.
+    /// </summary>
+    static double BaseZ(Entity s, IModelView m, IServices? services) =>
+        StartsOnFinishedFloor(s) && RoomOn(s, m, services) is { } room ? Spatial.Base(m, room) + s.Num("baseOffset") : Spatial.Base(m, s);
 
     public static ElementGeometry? Geometry(Entity s, IModelView m, IServices services)
     {
@@ -515,7 +599,7 @@ public static class Skirtings
         if (runs.Count == 0) return new ElementGeometry([], Diagnostics: ["The skirting has no line: its room has no outline, or it was drawn without one."]);
         var spec = SpecOf(m, s);
         var profile = Profile(spec);
-        var z = BaseZ(s, m);
+        var z = BaseZ(s, m, services);
         var solids = runs.Select(x => Sweep(x.Run, profile, x.Side, z)).OfType<Solid>().ToList();
         var parts = new List<GeometryPart>();
         if (solids.Count > 0) parts.Add(new GeometryPart("Skirting", spec.Color, Openings.Combine(solids, "skirting"), Materials.Find(m, spec.Material)?.Id, "skirting"));

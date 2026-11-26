@@ -26,6 +26,17 @@ public static class OpeningSills
     public const string Structural = "structural", Finished = "finished";
     public static readonly string[] References = [Structural, Finished];
 
+    /// <summary>
+    /// On a door's or window's opening (GitHub #149): true takes its hole down to the structure, the wall's base, by the finished
+    /// floor's height, while the door or window stays on the finished floor — the screed and the flooring run under the door
+    /// instead of a strip of wall. Only an opening measured from the finished floor has that floor under it; absent (false): the
+    /// hole starts where the door does, as decision 749 has it.
+    /// </summary>
+    public const string ReachKey = "reachStructure";
+
+    /// <summary>Whether the opening's hole goes down to the structure (<see cref="ReachKey"/>), for one measured from the finished floor.</summary>
+    public static bool ReachesStructure(Entity opening) => FromFinished(opening) && opening.Bool(ReachKey);
+
     /// <summary>Whether the opening's sill is over the finished floor.</summary>
     public static bool FromFinished(Entity opening) => opening.Str(Key) == Finished;
 

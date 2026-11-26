@@ -180,8 +180,8 @@ public static class BareOpenings
         if (Openings.WallOf(ctx.Model, opening.Id) is not { Class: IfcClass.Wall }) throw new CommandException("Only a door or a window in a wall becomes a wall opening.");
         var p = Openings.Place(ctx.Model, opening);
         var attrs = opening.CloneAttrs();
-        foreach (var k in new[] { Openings.HoleWidthKey, Openings.HoleHeightKey, Openings.FillOffsetKey }) attrs.Remove(k);
-        // Over what its sill is measured from (forum topic 192), as it was.
+        foreach (var k in new[] { Openings.HoleWidthKey, Openings.HoleHeightKey, Openings.FillOffsetKey, OpeningSills.ReachKey }) attrs.Remove(k);
+        // Over what its sill is measured from (forum topic 192), as it was; its hole as it stood, down to the structure too (GitHub #149).
         attrs["sill"] = p.Sill - p.SillBase;
         attrs["width"] = p.Width;
         attrs["height"] = p.Height;
