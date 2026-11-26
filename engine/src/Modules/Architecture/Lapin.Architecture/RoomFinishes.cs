@@ -369,11 +369,23 @@ public static class RoomFinishes
         return (level + Rooms.HeightOf(room, m), []);
     }
 
-    /// <summary>The openings of the walls along the room's outline: each with its wall's frame and where the outline's face is across the wall.</summary>
-    static List<(Openings.WallFrame F, Openings.Placed P, double Face)> OpeningsAlong(IModelView m, string? storeyId, Rooms.Outline o)
+    /// <summary>
+    /// An opening of a wall along the room's outline: its wall's frame (a curved wall's is its tangent at the opening), the
+    /// opening, where the outline's face is across the wall (to the left of its axis), and a curved wall's axis (null: straight).
+    /// </summary>
+    readonly record struct Along(Openings.WallFrame F, Openings.Placed P, double Face, PathCurve? Arc = null);
+
+    /// <summary>
+    /// The openings of the walls along the room's outline: each with its wall's frame and where the outline's face is across the
+    /// wall. A curved wall's (forum topic 288) are found on the outline's chords along it: a chord running with the arc (its
+    /// tangent at the chord's middle), within the opening's stretch along the axis, its ends across the wall's body; the face
+    /// is the chord's ends' offset from the axis, which they lie on.
+    /// </summary>
+    static List<Along> OpeningsAlong(IModelView m, string? storeyId, Rooms.Outline o)
     {
-        var found = new List<(Openings.WallFrame, Openings.Placed, double)>();
-        var walls = m.OfClass(IfcClass.Wall).Where(w => Spatial.StoreyOf(m, w.Id)?.Id == storeyId && w.Attrs["start"] != null && PathCurve.Of(w) is not { IsArc: true }).ToList();
+        var found = new List<Along>();
+        var onStorey = m.OfClass(IfcClass.Wall).Where(w => Spatial.StoreyOf(m, w.Id)?.Id == storeyId && w.Attrs["start"] != null).ToList();
+        var walls = onStorey.Where(w => PathCurve.Of(w) is not { IsArc: true }).ToList();
         foreach (var loop in o.Loops)
             for (var k = 0; k < loop.Count; k++)
             {
@@ -392,12 +404,45 @@ public static class RoomFinishes
                         var c = f.Start + f.Dir * p.Along;
                         var t = Vec2.Dot(c - a, u);
                         if (t < -p.Width / 2 || t > len + p.Width / 2) continue;
-                        if (found.Any(x => x.Item2.Opening.Id == p.Opening.Id && Math.Abs(x.Item3 - y) < 1e-3)) continue;
-                        found.Add((f, p, y));
+                        if (found.Any(x => x.P.Opening.Id == p.Opening.Id && Math.Abs(x.Face - y) < 1e-3)) continue;
+                        found.Add(new Along(f, p, y));
                     }
             }
+        foreach (var w in onStorey)
+        {
+            if (PathCurve.Of(w) is not { IsArc: true } arc) continue;
+            var placed = Openings.PlacedOn(m, w.Id).ToList();
+            if (placed.Count == 0) continue;
+            // Across the axis at s, to its left.
+            double Across(Vec2 q, double s) => Vec2.Dot(q - arc.PointAt(s), arc.TangentAt(s).Perp);
+            foreach (var p in placed)
+            {
+                var f = Openings.FrameOf(m, w, p.Along);
+                var (s0, s1) = (p.Along - p.Width / 2, p.Along + p.Width / 2);
+                foreach (var loop in o.Loops)
+                    for (var k = 0; k < loop.Count; k++)
+                    {
+                        var (a, b) = (loop[k], loop[(k + 1) % loop.Count]);
+                        var len = (b - a).Length;
+                        if (len < 1e-6) continue;
+                        var (sa, sb) = (arc.Project(a), arc.Project(b));
+                        if (Math.Max(sa, sb) <= s0 + 1e-6 || Math.Min(sa, sb) >= s1 - 1e-6) continue;
+                        if (Math.Abs(Vec2.Cross((b - a) * (1 / len), arc.TangentAt(arc.Project((a + b) * 0.5)))) > 0.05) continue;
+                        var (ya, yb) = (Across(a, sa), Across(b, sb));
+                        if (Math.Abs(ya - yb) > 0.02) continue;
+                        var y = (ya + yb) / 2;
+                        if (y < f.YMin - 0.02 || y > f.YMax + 0.02) continue;
+                        if (found.Any(x => x.P.Opening.Id == p.Opening.Id && Math.Abs(x.Face - y) < 0.005)) continue;
+                        found.Add(new Along(f, p, y, arc));
+                    }
+            }
+        }
         return found;
     }
+
+    /// <summary>An opening's footprint along the outline: along between x0 and x1, across between y0 and y1; on a curved wall the band between them, its sides radial.</summary>
+    static List<Vec2> Footprint(Along x, double x0, double x1, double y0, double y1) =>
+        x.Arc is { } c ? c.Band(_ => x0, _ => x1, Math.Min(y0, y1), Math.Max(y0, y1)) : Rect(x.F, x0, x1, y0, y1);
 
     /// <summary>A rectangle in a wall's frame: along between x0 and x1, across between y0 and y1.</summary>
     static List<Vec2> Rect(Openings.WallFrame f, double x0, double x1, double y0, double y1) =>
@@ -406,13 +451,37 @@ public static class RoomFinishes
     /// <summary>
     /// A door's or window's reveal as the room's finish lines it, in the wall's frame: the opening's sides along it, the room's face
     /// and the frame's face across it (a bare opening's: the wall's axis), its bottom and top; whether its bottom is lined (a
-    /// window's, when no sill board covers it on the room's side). A shaped head is left to the wall's own cut.
+    /// window's, when no sill board covers it on the room's side). A shaped head is left to the wall's own cut. In a curved
+    /// wall (forum topic 288; <paramref name="Arc"/> its axis) the opening's sides are radial: each jamb's lining is laid flat
+    /// against its side, the head's and the bottom's follow the arc between the jambs' linings.
     /// </summary>
-    sealed record RevealLining(Openings.WallFrame F, double X0, double X1, double Face, double Frame, double Z0, double Z1, bool Bottom)
+    sealed record RevealLining(Openings.WallFrame F, double X0, double X1, double Face, double Frame, double Z0, double Z1, bool Bottom, PathCurve? Arc = null)
     {
         Solid? Box(double x0, double x1, double y0, double y1, double z0, double z1) =>
             x1 - x0 > 1e-6 && Math.Abs(y1 - y0) > 1e-6 && z1 - z0 > 1e-6
                 ? Prism.ExtrudeFootprint(Polygon2.EnsureCcw(Rect(F, x0, x1, Math.Min(y0, y1), Math.Max(y0, y1))), z0, z1 - z0, "reveal") : null;
+
+        /// <summary>A jamb's lining in a curved wall: from <paramref name="e0"/> to <paramref name="e1"/> off the radial side at <paramref name="s"/> (positive into the opening).</summary>
+        Solid? Jamb(PathCurve c, double s, double e0, double e1, double y0, double y1, double z0, double z1)
+        {
+            if (e1 - e0 < 1e-6 || Math.Abs(y1 - y0) < 1e-6 || z1 - z0 < 1e-6) return null;
+            var (t, n) = (c.TangentAt(s), c.TangentAt(s).Perp);
+            var into = s <= (X0 + X1) / 2 ? 1 : -1;
+            var at = c.PointAt(s);
+            var (ya, yb) = (Math.Min(y0, y1), Math.Max(y0, y1));
+            List<Vec2> q = [at + t * (into * e0) + n * ya, at + t * (into * e1) + n * ya, at + t * (into * e1) + n * yb, at + t * (into * e0) + n * yb];
+            return Prism.ExtrudeFootprint(Polygon2.EnsureCcw(q), z0, z1 - z0, "reveal");
+        }
+
+        /// <summary>The head's or the bottom's lining in a curved wall: along the arc between the jambs' linings (<paramref name="e"/> in from each side, at every line across).</summary>
+        Solid? Span(PathCurve c, double e, double y0, double y1, double z0, double z1)
+        {
+            if (Math.Abs(y1 - y0) < 1e-6 || z1 - z0 < 1e-6) return null;
+            // In from the radial side by e, square to it: the angle that is at the radius the line across lies at, as a distance along the axis.
+            double In(double y) { var r = (c.At(X0, y) - c.Centre).Length; return r > e ? c.Radius * Math.Asin(e / r) : e; }
+            if (X1 - X0 - 2 * In(y0) < 1e-6 || X1 - X0 - 2 * In(y1) < 1e-6) return null;
+            return Prism.ExtrudeFootprint(c.Band(y => X0 + In(y), y => X1 - In(y), Math.Min(y0, y1), Math.Max(y0, y1)), z0, z1 - z0, "reveal");
+        }
 
         /// <summary>
         /// One layer's lining (from <paramref name="d0"/> to <paramref name="d1"/> in from the reveal's faces) where the piece it is
@@ -426,6 +495,17 @@ public static class RoomFinishes
             var (y0, y1) = (Frame, Face + side * d1);
             var (lo, hi) = (Bottom ? Z0 + d0 : Z0, Z1 - d0);
             var (a, b) = (Math.Max(lo, za), Math.Min(hi, zb));
+            if (Arc is { } c)
+            {
+                if (b - a > 1e-6)
+                {
+                    if (Jamb(c, X0, d0, d1, y0, y1, a, b) is { } left) yield return left;
+                    if (Jamb(c, X1, d0, d1, y0, y1, a, b) is { } right) yield return right;
+                }
+                if (Z1 - d1 >= za - 1e-9 && (Z1 - d1 < zb || last) && Span(c, d1, y0, y1, Z1 - d1, Z1 - d0) is { } arcHead) yield return arcHead;
+                if (Bottom && Z0 + d0 >= za - 1e-9 && Z0 + d0 < zb && Span(c, d1, y0, y1, Z0 + d0, Z0 + d1) is { } arcBottom) yield return arcBottom;
+                yield break;
+            }
             if (b - a > 1e-6)
             {
                 if (Box(X0 + d0, X0 + d1, y0, y1, a, b) is { } left) yield return left;
@@ -436,9 +516,9 @@ public static class RoomFinishes
         }
     }
 
-    static RevealLining? Lining((Openings.WallFrame F, Openings.Placed P, double Face) x)
+    static RevealLining? Lining(Along x)
     {
-        var (f, p, face) = x;
+        var (f, p, face, arc) = x;
         if (p.Width < 1e-3 || p.Height < 1e-3) return null;
         if (p.Spec is { } shaped ? JoineryShapes.Shaped(shaped) : p.Shape is { Kind: not "rect" }) return null;
         // The frame's face on the room's side: the type's frame across the wall (Y to the exterior, mapped as the joinery maps it), else the axis.
@@ -457,7 +537,7 @@ public static class RoomFinishes
         else bottom = p.Sill > 1e-3;
         if (Math.Abs(face - frame) < 1e-3) return null;
         var z0 = f.Base + p.Sill;
-        return new RevealLining(f, p.Along - p.Width / 2, p.Along + p.Width / 2, face, frame, z0, z0 + p.Height, bottom);
+        return new RevealLining(f, p.Along - p.Width / 2, p.Along + p.Width / 2, face, frame, z0, z0 + p.Height, bottom, arc);
     }
 
     // ------------------------------------------------------------ the room measured to its finishes (forum topic 82)
@@ -618,7 +698,7 @@ public static class RoomFinishes
         var regions = new List<IReadOnlyList<IReadOnlyList<Vec2>>> { loops };
         if (spec.Thresholds)
             foreach (var x in OpeningsAlong(m, Spatial.StoreyOf(m, room.Id)?.Id, o).Where(x => x.P.Sill < 0.05))
-                regions.Add([Rect(x.F, x.P.Along - x.P.Width / 2, x.P.Along + x.P.Width / 2, x.Face, 0)]);
+                regions.Add([Footprint(x, x.P.Along - x.P.Width / 2, x.P.Along + x.P.Width / 2, x.Face, 0)]);
         return regions;
     }
 
@@ -654,7 +734,7 @@ public static class RoomFinishes
             var holes = islands.Concat(FloorHoles(m, o, level)).ToList();
             // Through the doors, to the wall's axis (the next room's floor comes to it from the other side): the floor goes on under the door's leaf (unless the finish says not).
             var thresholds = spec.Thresholds
-                ? OpeningsAlong(m, storeyId, o).Where(x => x.P.Sill < 0.05).Select(x => Rect(x.F, x.P.Along - x.P.Width / 2, x.P.Along + x.P.Width / 2, x.Face, 0)).ToList()
+                ? OpeningsAlong(m, storeyId, o).Where(x => x.P.Sill < 0.05).Select(x => Footprint(x, x.P.Along - x.P.Width / 2, x.P.Along + x.P.Width / 2, x.Face, 0)).ToList()
                 : [];
             var top = level;
             for (var i = 0; i < floor.Count; i++)
@@ -691,7 +771,7 @@ public static class RoomFinishes
             var cutters = along.Select(x =>
             {
                 var side = x.Face >= 0 ? 1 : -1;
-                var footprint = Polygon2.EnsureCcw(Rect(x.F, x.P.Along - x.P.Width / 2, x.P.Along + x.P.Width / 2, x.Face - side * 0.01, x.Face + side * (total + 0.01)));
+                var footprint = Polygon2.EnsureCcw(Footprint(x, x.P.Along - x.P.Width / 2, x.P.Along + x.P.Width / 2, x.Face - side * 0.01, x.Face + side * (total + 0.01)));
                 return Prism.ExtrudeFootprint(footprint, x.F.Base + x.P.Sill, x.P.Height, "opening");
             }).OfType<Solid>().ToList();
             if (cutters.Count > 0 && booleans == null) problems.Add("Openings need the boolean library (manifold), missing here: the walls' finish is drawn uncut.");

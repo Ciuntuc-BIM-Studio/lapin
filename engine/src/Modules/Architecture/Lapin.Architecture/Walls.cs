@@ -1277,7 +1277,8 @@ public static partial class Walls
         var openings = Openings.PlacedOn(m, wall.Id);
         var booleans = services?.Get<ISolidBooleans>();
         var cutters = (services?.Get<GeometryOptions>()?.CutOpenings ?? true)
-            ? openings.Select(o => (o, Box: Openings.ArcCutter(c, z, yMin, yMax, o))).Where(x => x.Box != null).ToList() : [];
+            // With the room each door's or window's details need (forum topic 288), as a straight wall gives it.
+            ? openings.SelectMany(o => Openings.ArcCutters(m, wall, c, z, yMin, yMax, o)).Select(x => (o: x.Reach, Box: (Solid?)x.Box)).ToList() : [];
         if (cutters.Count > 0 && booleans == null) problems.Add("Openings need the boolean library (manifold), missing here: the wall is drawn uncut.");
 
         // Lintels over the openings, through the core, along the arc.

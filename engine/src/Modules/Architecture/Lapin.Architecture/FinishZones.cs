@@ -61,7 +61,9 @@ public sealed record SurfaceFinishSpec(string Name, List<SurfaceLayer> Layers, s
 /// the lines drawn on a face divide it into. Everything on a face is kept in the face's own frame (u to the right seen from
 /// outside, v up it, w out of it), so it follows the host. A zone (<see cref="Class"/>) with a seed paints the region holding
 /// it; one without, the rest of the face; its layers are bodies from the face outward, the face's openings and the regions
-/// inside taken out, mitred at a wall's outer corner. Exported as IfcCovering (CLADDING, FLOORING, CEILING) covering its host.
+/// inside taken out, mitred at a wall's outer corner. A curved wall's sides are developed (<see cref="ArcSide"/>) and their
+/// bodies bent round the curve on the wall's own chords (forum topic 288). Exported as IfcCovering (CLADDING, FLOORING,
+/// CEILING) covering its host.
 /// </summary>
 public static class FinishZones
 {
@@ -76,26 +78,132 @@ public static class FinishZones
     /// A face as the painter sees it: its frame (origin, u, v, out), its outline and openings in (u, v), whether its layers are
     /// mitred at its low or high end in u (a wall's outer corner), and its extent in u.
     /// </summary>
-    public sealed record Frame(ElementFace Face, Vec3 O, Vec3 U, Vec3 V, Vec3 N, List<Vec2> Outline, List<List<Vec2>> Holes, bool MitreLow, bool MitreHigh)
+    public sealed record Frame(ElementFace Face, Vec3 O, Vec3 U, Vec3 V, Vec3 N, List<Vec2> Outline, List<List<Vec2>> Holes, bool MitreLow, bool MitreHigh, ArcSide? Arc = null)
     {
-        public Vec2 Map(Vec3 p) { var d = p - O; return new(Vec3.Dot(d, U), Vec3.Dot(d, V)); }
-        public double Depth(Vec3 p) => Vec3.Dot(p - O, N);
-        public Vec3 At(Vec2 q, double w = 0) => O + U * q.X + V * q.Y + N * w;
+        public Vec2 Map(Vec3 p) { if (Arc != null) return Arc.Map(p).Xy; var d = p - O; return new(Vec3.Dot(d, U), Vec3.Dot(d, V)); }
+        public double Depth(Vec3 p) => Arc?.Map(p).Z ?? Vec3.Dot(p - O, N);
+        public Vec3 At(Vec2 q, double w = 0) => Arc?.At(q, w) ?? O + U * q.X + V * q.Y + N * w;
         public bool Upright => Math.Abs(N.Z) < 0.3;
         public double U0 => Outline.Min(p => p.X);
         public double U1 => Outline.Max(p => p.X);
         public double V0 => Outline.Min(p => p.Y);
         public double V1 => Outline.Max(p => p.Y);
+
+        /// <summary>A curved face's frame laid flat (u, v, w as x, y, z), where its bodies are cut before they are bent round the curve.</summary>
+        public Frame Flat => Arc == null ? this : this with { O = Vec3.Zero, U = new Vec3(1, 0, 0), V = new Vec3(0, 1, 0), N = Vec3.UnitZ, Arc = null };
+
+        /// <summary>A line or a loop drawn on the face, in 3D <paramref name="w"/> off it: on a curved face, with a point at each of the curve's stations it passes.</summary>
+        public List<Vec3> Trace(IReadOnlyList<Vec2> pts, double w, bool closed)
+        {
+            if (Arc == null || pts.Count < 2) return pts.Select(q => At(q, w)).ToList();
+            var stations = Arc.Stations(pts.Min(p => p.X), pts.Max(p => p.X));
+            var o = new List<Vec3>();
+            for (var i = 0; i < pts.Count; i++)
+            {
+                o.Add(At(pts[i], w));
+                if (i + 1 == pts.Count && !closed) break;
+                var (a, b) = (pts[i], pts[(i + 1) % pts.Count]);
+                if (Math.Abs(b.X - a.X) < 1e-9) continue;
+                foreach (var u in b.X > a.X ? stations : Enumerable.Reverse(stations))
+                    if ((u - a.X) * (u - b.X) < -1e-12) o.Add(At(a + (b - a) * ((u - a.X) / (b.X - a.X)), w));
+            }
+            return o;
+        }
     }
 
-    /// <summary>The faces a finish may be painted on: every area face but a wall's top and its cast zones' (they lie in its sides).</summary>
-    public static List<ElementFace> Paintable(IServices s, Entity host, IModelView m) =>
-        ElementFaces.Of(s, host, m).Where(f => !f.IsEdge && !(host.Class == IfcClass.Wall && (f.Role == "Top" || f.Role.StartsWith("Zone[", StringComparison.Ordinal)))).ToList();
+    /// <summary>
+    /// A curved wall's side as the painter lays it out: developed, u its length along the face (the arc at the face's own
+    /// radius; straight on along the tangents past the axis's ends, where a join carries it), v up from the wall's base, w out
+    /// of it. Its origin is the axis's start, and u runs as on a straight wall's side (against the axis on the left face,
+    /// with it on the right), so what is painted stays put when the wall is moved, made longer or bent.
+    /// </summary>
+    public sealed record ArcSide(PathCurve Curve, double Offset, int Side, double Base)
+    {
+        double Length => Curve.Length;
+        /// <summary>How much longer the face is than the axis (its radius over the axis's).</summary>
+        double Scale => 1 - (Curve.Rise > 0 ? -1 : 1) * Offset / Curve.Radius;
+        int Sign => -Side;
+
+        public double U(double s) => Sign * (s < 0 ? s : s > Length ? Length * Scale + (s - Length) : s * Scale);
+        public double S(double u)
+        {
+            var a = Sign * u;
+            return a < 0 ? a : a > Length * Scale ? Length + (a - Length * Scale) : a / Scale;
+        }
+        double Y(double w) => Offset + Side * w;
+
+        /// <summary>A point of the model in the face's frame: (u, v, w).</summary>
+        public Vec3 Map(Vec3 p)
+        {
+            var s = Curve.Project(p.Xy);
+            var y = Vec2.Dot(p.Xy - Curve.PointAt(s), Curve.TangentAt(s).Perp);
+            return new(U(s), p.Z - Base, Side * (y - Offset));
+        }
+
+        /// <summary>The point at (u, v) on the face, w out of it, on the curve itself.</summary>
+        public Vec3 At(Vec2 q, double w) => Curve.At(S(q.X), Y(w)).At(Base + q.Y);
+
+        /// <summary>
+        /// The point at (u, v, w) on the face as its bodies are built, between the stations <paramref name="ua"/> and
+        /// <paramref name="ub"/>: on the chord between them, at w along the lines across the wall there, as the wall's own body.
+        /// </summary>
+        public Vec3 Chorded(double ua, double ub, double u, double v, double w)
+        {
+            var (a, b) = (Curve.At(S(ua), Y(w)), Curve.At(S(ub), Y(w)));
+            return (a + (b - a) * ((u - ua) / (ub - ua))).At(Base + v);
+        }
+
+        /// <summary>The u of the wall's stations (<see cref="PathCurve.Stations"/>, the chord rule) strictly between u0 and u1, with u0 and u1, ascending.</summary>
+        public List<double> Stations(double u0, double u1)
+        {
+            var o = new List<double> { u0 };
+            o.AddRange(Curve.Stations(0, Length).Select(U).Where(u => u > u0 + 1e-9 && u < u1 - 1e-9).Order());
+            if (u1 > u0 + 1e-9) o.Add(u1);
+            return o;
+        }
+
+        /// <summary>How far a point in plan lies out of the face (w), and how far along it (u).</summary>
+        public (double U, double W) InPlan(Vec2 p) { var q = Map(p.At(Base)); return (q.X, q.Z); }
+    }
+
+    static bool IsSide(string? role) => role is "Face.Left" or "Face.Right";
+
+    static bool Curved(Entity host) => host.Class == IfcClass.Wall && PathCurve.Of(host) is { IsArc: true };
+
+    /// <summary>The faces a finish may be painted on: every area face but a wall's top and its cast zones' (they lie in its sides); a curved wall's two sides.</summary>
+    public static List<ElementFace> Paintable(IServices s, Entity host, IModelView m)
+    {
+        var curved = Curved(host);
+        return ElementFaces.Of(s, host, m).Where(f => (!f.IsEdge || curved && IsSide(f.Role)) && !(host.Class == IfcClass.Wall && (f.Role == "Top" || f.Role.StartsWith("Zone[", StringComparison.Ordinal)))).ToList();
+    }
+
+    /// <summary>
+    /// The face a pick lands on (<see cref="ElementFaces.At"/>); on a curved wall, the side it is on: in 3D, the side facing the
+    /// way the triangle does there; in a plan, the side nearer the point, within <paramref name="reach"/>.
+    /// </summary>
+    static ElementFace? FaceAt(IModelView m, Entity host, List<ElementFace> faces, Vec3 p, Vec3? normal, double reach)
+    {
+        if (!Curved(host)) return ElementFaces.At(faces, p, normal, reach);
+        var c = PathCurve.Of(host);
+        var s = c.Project(p.Xy);
+        var left = c.TangentAt(s).Perp;
+        if (normal is { } n)
+        {
+            var d = Vec2.Dot(n.Normalized().Xy, left);
+            return Math.Abs(d) < 0.3 ? null : faces.FirstOrDefault(f => f.Role == (d > 0 ? "Face.Left" : "Face.Right"));
+        }
+        if (Walls.Frame(host, m) is not { } wf) return null;
+        var y = Vec2.Dot(p.Xy - c.PointAt(s), left);
+        var (role, off) = Math.Abs(y - wf.YMax) <= Math.Abs(y - wf.YMin) ? ("Face.Left", y - wf.YMax) : ("Face.Right", y - wf.YMin);
+        return Math.Abs(off) <= reach ? faces.FirstOrDefault(f => f.Role == role) : null;
+    }
 
     /// <summary>The frame of <paramref name="role"/> on <paramref name="host"/>; null when it has no such face now.</summary>
     public static Frame? FrameOf(IModelView m, IServices s, Entity host, string? role)
     {
-        if (role == null || Paintable(s, host, m).FirstOrDefault(f => f.Role == role) is not { } face || face.Outline.Count < 3) return null;
+        if (role == null || Paintable(s, host, m).FirstOrDefault(f => f.Role == role) is not { } face) return null;
+        if (Curved(host)) return ArcFrameOf(m, s, host, face);
+        if (face.Outline.Count < 3) return null;
         var n = face.Normal.Normalized();
         var u = Math.Abs(n.Z) < 0.7 ? Vec3.Cross(Vec3.UnitZ, n).Normalized() : new Vec3(1, 0, 0);
         var v = Vec3.Cross(n, u);
@@ -131,6 +239,54 @@ public static class FinishZones
         }
         if (Polygon2.SignedArea(outline) < 0) outline.Reverse();
         return new Frame(face, o, u, v, n, outline, holes, low, high);
+    }
+
+    /// <summary>
+    /// A curved wall's side, developed (<see cref="ArcSide"/>): as long as its outermost layer runs along the face as the joins
+    /// leave it (past the axis's ends at an outer corner, short of them at an inner one), up to the wall's top (its roof line
+    /// when attached), its openings (cut radially through the wall) as holes as wide as they are on that face.
+    /// </summary>
+    static Frame? ArcFrameOf(IModelView m, IServices s, Entity host, ElementFace face)
+    {
+        if (Walls.ExtentFrameOf(host, m, s) is not { } ef || Walls.Frame(host, m) is not { } wf) return null;
+        var c = ef.Axis;
+        var left = face.Role == "Face.Left";
+        var arc = new ArcSide(c, left ? wf.YMax : wf.YMin, left ? 1 : -1, ef.Z);
+        var n = face.Normal.Normalized();
+        // Where the outermost layer on this side runs along the face.
+        var band = left ? ef.Bands.MaxBy(b => b.To)! : ef.Bands.MinBy(b => b.From)!;
+        var on = ef.Footprints(band).SelectMany(fp => fp).Select(arc.InPlan).Where(x => Math.Abs(x.W) < 2e-3).Select(x => x.U).ToList();
+        var axis = new[] { arc.U(0), arc.U(c.Length) };
+        var (a0, a1) = (axis.Min(), axis.Max());
+        var (u0, u1) = on.Count >= 2 ? (on.Min(), on.Max()) : (a0, a1);
+        var (s0, s1) = (Math.Min(arc.S(u0), arc.S(u1)), Math.Max(arc.S(u0), arc.S(u1)));
+        // Its top: the wall's height, or the line a roof it is attached to leaves (flat past its ends).
+        var top = new List<Vec2>();
+        if (ef.RoofLine is { Count: >= 2 } line)
+        {
+            double TopAt(double x)
+            {
+                if (x <= line[0].S) return line[0].V;
+                for (var i = 0; i + 1 < line.Count; i++)
+                    if (x <= line[i + 1].S) return line[i].V + (line[i + 1].V - line[i].V) * (x - line[i].S) / Math.Max(line[i + 1].S - line[i].S, 1e-12);
+                return line[^1].V;
+            }
+            top.Add(new(arc.U(s1), TopAt(s1)));
+            for (var i = line.Count - 1; i >= 0; i--)
+                if (line[i].S > s0 + 1e-9 && line[i].S < s1 - 1e-9) top.Add(new(arc.U(line[i].S), line[i].V));
+            top.Add(new(arc.U(s0), TopAt(s0)));
+        }
+        else top.AddRange([new(arc.U(s1), ef.Height), new(arc.U(s0), ef.Height)]);
+        var outline = new List<Vec2> { new(arc.U(s0), 0), new(arc.U(s1), 0) };
+        outline.AddRange(top);
+        if (Polygon2.SignedArea(outline) < 0) outline.Reverse();
+        var holes = Openings.PlacedOn(m, host.Id).Select(p =>
+        {
+            var (ha, hb) = (arc.U(p.Along - p.Width / 2), arc.U(p.Along + p.Width / 2));
+            return new List<Vec2> { new(ha, p.Sill), new(hb, p.Sill), new(hb, p.Sill + p.Height), new(ha, p.Sill + p.Height) };
+        }).ToList();
+        var mitred = on.Count >= 2;
+        return new Frame(face, arc.At(new Vec2(0, 0), 0),new Vec3(n.Y, -n.X, 0), Vec3.UnitZ, n, outline, holes, mitred && u0 < a0 - 1e-3, mitred && u1 > a1 + 1e-3, arc);
     }
 
     /// <summary>
@@ -196,7 +352,7 @@ public static class FinishZones
             else
             {
                 var among = normal == null && host.Class == IfcClass.Wall ? faces.Where(f => f.Role.StartsWith("Face.", StringComparison.Ordinal)).ToList() : faces;
-                role = (ElementFaces.At(among, p, normal, normal == null ? 1.0 : 0.3) ?? throw new CommandException("No face of the element there.")).Role;
+                role = (FaceAt(m, host, among, p, normal, normal == null ? 1.0 : 0.3) ?? throw new CommandException("No face of the element there.")).Role;
             }
         }
         var frame = FrameOf(m, ctx.Services, host, role) ?? throw new CommandException($"{host.Name} has no face „{role}” to paint.");
@@ -228,9 +384,49 @@ public static class FinishZones
             if (s.Bool("closed") && pts.Count >= 3) segs.Add((pts[^1], pts[0]));
         }
         // Implicit splits on a wall's side faces where another wall abuts or crosses it (forum #123).
-        if (role is "Face.Left" or "Face.Right" && m.Get(hostId)?.Class == IfcClass.Wall && f.Face.Outline.Count >= 2 && f.Upright)
+        if (f.Arc is { } arc) AddWallsMeetingCurve(m, f, arc, hostId, segs);
+        else if (role is "Face.Left" or "Face.Right" && m.Get(hostId)?.Class == IfcClass.Wall && f.Face.Outline.Count >= 2 && f.Upright)
             AddIntersectingWallSplits(m, f, hostId, segs);
         return segs;
+    }
+
+    /// <summary>The same on a curved wall's side: where the sides of a straight wall reaching out of it cross the face's arc.</summary>
+    static void AddWallsMeetingCurve(IModelView m, Frame f, ArcSide arc, string hostId, List<(Vec2 A, Vec2 B)> segs)
+    {
+        var c = arc.Curve;
+        var centre = c.Centre;
+        var radius = (f.At(new Vec2(arc.U(c.Length / 2), 0)).Xy - centre).Length;
+        var z0 = arc.Base;
+        var z1 = z0 + (f.V1 - f.V0);
+        foreach (var other in m.OfClass(IfcClass.Wall))
+        {
+            if (other.Id == hostId || PathCurve.Of(other).IsArc || Walls.Frame(other, m) is not { } of) continue;
+            var oz0 = Spatial.Base(m, other);
+            var oz1 = oz0 + Walls.HeightOf(m, other);
+            if (oz1 <= z0 + 1e-3 || oz0 >= z1 - 1e-3) continue;
+            // It reaches out of the face, on its outer side.
+            if (Math.Max(arc.InPlan(of.Start).W, arc.InPlan(of.End).W) <= 0.01) continue;
+            var odir = (of.End - of.Start).Normalized();
+            var oleft = odir.Perp;
+            foreach (var y in new[] { of.YMin, of.YMax })
+            {
+                var s0 = of.Start + oleft * y - odir * 0.02;
+                var d = of.End + oleft * y + odir * 0.02 - s0;
+                // |s0 + t d − centre| = radius.
+                var e = s0 - centre;
+                var (qa, qb, qc) = (Vec2.Dot(d, d), 2 * Vec2.Dot(d, e), Vec2.Dot(e, e) - radius * radius);
+                var disc = qb * qb - 4 * qa * qc;
+                if (qa < 1e-12 || disc < 0) continue;
+                foreach (var t in new[] { (-qb - Math.Sqrt(disc)) / (2 * qa), (-qb + Math.Sqrt(disc)) / (2 * qa) })
+                {
+                    if (t < 0 || t > 1) continue;
+                    var (u, w) = arc.InPlan(s0 + d * t);
+                    // On the arc itself (not on the circle beyond it), within the face.
+                    if (Math.Abs(w) > 1e-3 || u < f.U0 + 0.01 || u > f.U1 - 0.01) continue;
+                    segs.Add((new Vec2(u, f.V0 - 1), new Vec2(u, f.V1 + 1)));
+                }
+            }
+        }
     }
 
     static void AddIntersectingWallSplits(IModelView m, Frame f, string hostId, List<(Vec2 A, Vec2 B)> segs)
@@ -395,6 +591,11 @@ public static class FinishZones
             var inner = Inner(regions, k);
             gross += r.Area - inner.Sum(q => q.Area);
             if (layers.Count == 0) continue;
+            if (f.Arc is { } arc)
+            {
+                net += CurvedRegion(m, f, arc, r, inner, layers, booleans, problems, parts, volumes);
+                continue;
+            }
             // The region one unit deep, the face's openings and the islands drawn in it taken out: its volume is its net area.
             var unit = Sweep(f, r.Loop, 0, 1);
             if (unit == null) continue;
@@ -440,6 +641,123 @@ public static class FinishZones
         return g;
     }
 
+    /// <summary>
+    /// A region of a curved face built (<see cref="ArcSide"/>): laid flat and cut in strips between the wall's stations (the
+    /// chord rule, as its own body), each strip's openings and islands taken out there, its net area the flat strips' one unit
+    /// deep; each layer the strips bent round the curve from the face outward (on the chords between the stations, along the
+    /// lines across the wall at them), mitred at an outer corner as a straight side is, the strips made one body. Its net area.
+    /// </summary>
+    static double CurvedRegion(IModelView m, Frame f, ArcSide arc, Region r, List<Region> inner, List<SurfaceLayer> layers, ISolidBooleans? booleans,
+        List<string> problems, List<GeometryPart> parts, double[] volumes)
+    {
+        var flat = f.Flat;
+        var (lo, hi) = (new Vec2(r.Loop.Min(p => p.X), r.Loop.Min(p => p.Y)), new Vec2(r.Loop.Max(p => p.X), r.Loop.Max(p => p.Y)));
+        var stations = arc.Stations(lo.X, hi.X);
+        var cutLoops = f.Holes.Concat(inner.Select(q => q.Loop)).ToList();
+        // A region a line up the face crosses once (every one but a few drawn by hand) is cut in strips by clipping it.
+        var once = Monotone(r.Loop);
+        var strips = new List<(Solid Unit, double Ua, double Ub)>();
+        var net = 0.0;
+        for (var i = 0; i + 1 < stations.Count; i++)
+        {
+            var (ua, ub) = (stations[i], stations[i + 1]);
+            if (ub - ua < 1e-9) continue;
+            Solid? unit;
+            if (once || booleans == null)
+            {
+                var piece = Polygon2.ClipBox(r.Loop, ua, double.NegativeInfinity, ub, double.PositiveInfinity);
+                unit = piece.Count >= 3 && Math.Abs(Polygon2.SignedArea(piece)) > 1e-12 ? Sweep(flat, piece, 0, 1) : null;
+            }
+            else
+            {
+                var box = Sweep(flat, [new(ua, lo.Y - 1), new(ub, lo.Y - 1), new(ub, hi.Y + 1), new(ua, hi.Y + 1)], -0.5, 2);
+                var whole = Sweep(flat, r.Loop, 0, 1);
+                unit = null;
+                if (box != null && whole != null)
+                {
+                    try { unit = booleans.Intersection(whole, box, "finish"); }
+                    catch (InvalidOperationException ex) { problems.Add($"A part of the finish could not be built ({ex.Message})."); }
+                }
+            }
+            if (unit == null) continue;
+            var cutters = cutLoops.Where(h => h.Max(p => p.X) > ua + Tol && h.Min(p => p.X) < ub - Tol && h.Max(p => p.Y) > lo.Y + Tol && h.Min(p => p.Y) < hi.Y - Tol)
+                .Select(l => Sweep(flat, l, -0.5, 2)).OfType<Solid>().ToList();
+            if (cutters.Count > 0)
+            {
+                const string uncut = "Openings need the boolean library (manifold), missing here: the finish is drawn uncut.";
+                if (booleans == null) { if (!problems.Contains(uncut)) problems.Add(uncut); }
+                else
+                {
+                    try { unit = booleans.Difference(unit, cutters, "finish"); }
+                    catch (InvalidOperationException ex) { problems.Add($"An opening could not be cut ({ex.Message})."); }
+                }
+            }
+            if (unit == null) continue;
+            net += Measure.Volume(unit);
+            strips.Add((unit, ua, ub));
+        }
+        if (strips.Count == 0) return net;
+        var d = 0.0;
+        for (var i = 0; i < layers.Count; i++)
+        {
+            var l = layers[i];
+            if (l.Thickness > 0)
+            {
+                var (d0, t) = (d, l.Thickness);
+                var bodies = strips.Select(x => SolidBuilder.Transform(x.Unit, p =>
+                {
+                    var w = d0 + p.Z * t;
+                    var shift = f.MitreHigh && p.X > f.U1 - 1e-6 ? w : f.MitreLow && p.X < f.U0 + 1e-6 ? -w : 0;
+                    return arc.Chorded(x.Ua, x.Ub, p.X + shift, p.Y, w);
+                })).ToList();
+                volumes[i] += bodies.Sum(Measure.Volume);
+                var mat = Materials.Find(m, l.Material)?.Id;
+                parts.Add(new GeometryPart(l.Material, Materials.ColorOf(m, mat), OneBody(bodies, booleans), mat, $"finish:{i}"));
+            }
+            d += l.Thickness;
+        }
+        return net;
+    }
+
+    /// <summary>Whether every line up the face (constant u) crosses the loop once at most: its u goes up once and down once round it.</summary>
+    static bool Monotone(List<Vec2> loop)
+    {
+        var turns = 0;
+        var last = 0;
+        for (var i = 0; i < loop.Count; i++)
+        {
+            var dx = loop[(i + 1) % loop.Count].X - loop[i].X;
+            var sign = dx > 1e-9 ? 1 : dx < -1e-9 ? -1 : 0;
+            if (sign == 0) continue;
+            if (last != 0 && sign != last) turns++;
+            last = sign;
+        }
+        // Closing the loop back to the first direction.
+        var first = loop.Select((p, i) => loop[(i + 1) % loop.Count].X - p.X).FirstOrDefault(dx => Math.Abs(dx) > 1e-9);
+        if (last != 0 && first != 0 && Math.Sign(first) != last) turns++;
+        return turns <= 2;
+    }
+
+    /// <summary>The strips of a curved layer as one body: their union, or (with no boolean library, or when it fails) side by side in one solid.</summary>
+    static Solid OneBody(List<Solid> bodies, ISolidBooleans? booleans)
+    {
+        if (bodies.Count == 1) return bodies[0];
+        if (booleans != null)
+        {
+            try { if (booleans.Union(bodies, "finish") is { } u) return u; }
+            catch (InvalidOperationException) { }
+        }
+        var vertices = new List<Vec3>();
+        var faces = new List<Face>();
+        foreach (var b in bodies)
+        {
+            var k = vertices.Count;
+            vertices.AddRange(b.Vertices);
+            faces.AddRange(b.Faces.Select(x => x with { Outer = x.Outer.Select(i => i + k).ToArray(), Holes = x.Holes.Select(h => h.Select(i => i + k).ToArray()).ToArray() }));
+        }
+        return new Solid(vertices.ToArray(), faces.ToArray(), "finish");
+    }
+
     public static IEnumerable<QuantitySet> Quantities(Entity e, ElementGeometry? g, IModelView m)
     {
         var measures = Measures(g);
@@ -464,7 +782,7 @@ public static class FinishZones
     static ElementGeometry? SplitGeometry(Entity e, IModelView m, IServices services)
     {
         if (m.Get(e.Str("hostId") ?? "") is not { } host || FrameOf(m, services, host, e.Str("face")) is not { } f) return new ElementGeometry([]);
-        List<Vec3> Line(IEnumerable<Vec2> pts) => pts.Select(q => f.At(q, 0.003)).ToList();
+        List<Vec3> Line(IEnumerable<Vec2> pts) => f.Trace(pts.ToList(), 0.003, false);
         var lines = new List<IReadOnlyList<Vec3>>();
         if (e.NumOrNull("height") is { } h) lines.Add(Line([new(f.U0, f.V0 + h), new(f.U1, f.V0 + h)]));
         else
@@ -586,7 +904,7 @@ public static class FinishZones
             var normal = Args.TryPoint3(a["normal"]);
             var face = onZone != null ? faces.FirstOrDefault(x => x.Role == onZone.Str("face"))
                 : normal == null && host.Class == IfcClass.Slab ? faces.FirstOrDefault(x => x.Role == "Top")
-                : ElementFaces.At(normal == null && host.Class == IfcClass.Wall ? faces.Where(x => x.Role.StartsWith("Face.", StringComparison.Ordinal)).ToList() : faces, p, normal, normal == null ? 1.0 : 0.3);
+                : FaceAt(m, host, normal == null && host.Class == IfcClass.Wall ? faces.Where(x => x.Role.StartsWith("Face.", StringComparison.Ordinal)).ToList() : faces, p, normal, normal == null ? 1.0 : 0.3);
             if (face == null || FrameOf(m, q.Services, host, face.Role) is not { } f) return null;
             var regions = Regions(m, f, host.Id);
             var at = OnFace(f, p, a["point"] is JsonArray { Count: 2 });
@@ -596,9 +914,10 @@ public static class FinishZones
             var o = new JsonObject
             {
                 ["role"] = face.Role, ["label"] = face.Label, ["normal"] = new JsonArray(f.N.X, f.N.Y, f.N.Z),
-                // Lit on the outside of what is painted there, so it shows over the zone's body.
-                ["outline"] = new JsonArray(region.Select(x => f.At(x, owner == null ? 0 : FinishOf(m, owner).Layers.Sum(l => l.Thickness))).Select(v => (JsonNode)new JsonArray(v.X, v.Y, v.Z)).ToArray()),
-                ["face"] = new JsonArray(f.Outline.Select(x => f.At(x)).Select(v => (JsonNode)new JsonArray(v.X, v.Y, v.Z)).ToArray()),
+                // Lit on the outside of what is painted there, so it shows over the zone's body (on a curved face a hair further
+                // out, off its chords: the viewer lifts it along the face's middle normal only).
+                ["outline"] = new JsonArray(f.Trace(region, (owner == null ? 0 : FinishOf(m, owner).Layers.Sum(l => l.Thickness)) + (f.Arc != null ? 0.003 : 0), true).Select(v => (JsonNode)new JsonArray(v.X, v.Y, v.Z)).ToArray()),
+                ["face"] = new JsonArray(f.Trace(f.Outline, 0, true).Select(v => (JsonNode)new JsonArray(v.X, v.Y, v.Z)).ToArray()),
                 ["regions"] = regions.Count,
             };
             if (owner != null)
