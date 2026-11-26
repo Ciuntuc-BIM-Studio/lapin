@@ -103,7 +103,7 @@ const version = process.env.LAPIN_VERSION ?? `0.1.${commits}`;
 const engineOut = join(out, 'web-engine');
 if (!uiOnly) {
   rmSync(engineOut, { recursive: true, force: true });
-  sh(dotnet, ['publish', host, '-c', 'Release', '-o', engineOut, '-nologo', '-v', 'q', `-p:LapinProDir=${root}/`, `-p:InformationalVersion=${version}`], { env: { DOTNET_ROOT: dotnetRoot } });
+  sh(dotnet, ['publish', host, '-c', 'Release', '-o', engineOut, '-nologo', '-v', 'q', '-p:LapinNativeRid=browser-wasm', `-p:LapinProDir=${root}/`, `-p:InformationalVersion=${version}`], { env: { DOTNET_ROOT: dotnetRoot } });
 } else if (!existsSync(join(engineOut, 'wwwroot'))) { console.error(`build-web: no engine built for ${id} yet (run without --ui-only once).`); process.exit(1); }
 
 /** A file's bytes as a browser downloads them (brotli). */

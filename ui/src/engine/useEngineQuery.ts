@@ -12,7 +12,7 @@ import { query } from './session';
  * and for code that asks outside a component.
  */
 export async function askWhileLive<T>(ask: () => Promise<T | null>, isLive: () => boolean, set: (value: T | null) => void): Promise<void> {
-  let value: T | null = null;
+  let value: T | null;
   try { value = await ask(); } catch { value = null; }
   if (isLive()) set(value);
 }

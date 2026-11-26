@@ -65,7 +65,7 @@ public static partial class StructuralMaterials
     [GeneratedRegex(@"\bC\s?(\d{2})\s?/\s?(\d{2,3})\b", RegexOptions.IgnoreCase)] private static partial Regex ConcreteClass();
     [GeneratedRegex(@"\bS\s?(235|275|355|420|450|460)", RegexOptions.IgnoreCase)] private static partial Regex SteelGrade();
     /// <summary>A Spanish designation (EHE-08 art. 39.2, Código Estructural): HA reinforced, HM plain, HP prestressed, then fck in MPa (HA-25/B/20/IIa).</summary>
-    [GeneratedRegex(@"\bH([AMP])-(\d{2,3})(?![\d.,])")] private static partial Regex SpanishConcrete();
+    [GeneratedRegex(@"\bH([AMP])-(\d{2,3})(?![\d.,])", RegexOptions.IgnoreCase)] private static partial Regex SpanishConcrete();
 
     /// <summary>The material an element names (its id, or a name): the model's own, the library's by name, else a bare one of that name (its values read from the name).</summary>
     public static Entity EntityOf(IModelView m, string id) =>
@@ -107,6 +107,11 @@ public static partial class StructuralMaterials
 
         // The project's category and the one an IFC file gave (IfcMaterial.Category, a material class: concrete, steel, brick).
         var lower = $"{name} {fields.Category} {material.Str("ifcCategory")}".ToLowerInvariant();
+        // What says of a concrete in so many words: IFC's set for a concrete's properties, or a category (the project's own or its
+        // IFC file's). It comes before a bare timber class in the name (C30 is also EN 338's), never before a concrete or steel class.
+        var category = $"{fields.Category} {material.Str("ifcCategory")}".ToLowerInvariant();
+        var saysConcrete = fields.Params.Any(p => p.Pset == "Pset_MaterialConcrete")
+            || category.Contains("concrete") || category.Contains("beton") || category.Contains("hormig");
         string kind = "other";
         string? grade = null, standard = null;
         if (ConcreteClass().Match(name) is { Success: true } cm && Concrete.TryGetValue($"C{cm.Groups[1].Value}/{cm.Groups[2].Value}", out var cc))
@@ -122,9 +127,9 @@ public static partial class StructuralMaterials
         {
             // Its fck as the name says; Ecm of Table 3.1's row for that fck when it has one, else (below) by its formula.
             kind = "concrete";
-            grade = hm.Value;
+            grade = hm.Value.ToUpperInvariant();
             standard = "EN 1992-1-1:2004";
-            var what = hm.Groups[1].Value switch { "A" => "reinforced", "M" => "plain", _ => "prestressed" };
+            var what = hm.Groups[1].Value.ToUpperInvariant() switch { "A" => "reinforced", "M" => "plain", _ => "prestressed" };
             fc ??= new(named * 1e6, $"its name, {grade} (Spanish designation, {what} concrete): fck = {named} MPa");
             if (Concrete.FirstOrDefault(c => c.Value.Fck == named) is { Key: not null } row)
                 e ??= new(row.Value.Ecm * 1e9, $"EN 1992-1-1:2004 Table 3.1, fck = {named} MPa ({grade}, as {row.Key}): Ecm = {row.Value.Ecm} GPa");
@@ -140,6 +145,9 @@ public static partial class StructuralMaterials
             e ??= new(210e9, "EN 1993-1-1:2005 §3.2.6: E = 210 000 MPa");
             nu ??= new(0.3, "EN 1993-1-1:2005 §3.2.6: ν = 0.3");
         }
+        // A bare timber class with a concrete's data or category is that concrete (C30 is also a concrete's name), whatever word a
+        // category adds (wood): its Ecm then comes from its fck, below, never a timber left without E.
+        else if (saysConcrete && TimberClass().IsMatch(name)) kind = "concrete";
         else if (TimberClass().Match(name) is { Success: true } tm && Timber.FirstOrDefault(t => t.Key.Equals(tm.Groups[1].Value, StringComparison.OrdinalIgnoreCase)) is { Key: not null } tc)
         {
             kind = "timber";
@@ -174,7 +182,7 @@ public static partial class StructuralMaterials
         }
         else if (lower.Contains("timber") || lower.Contains("wood") || lower.Contains("lemn") || lower.Contains("glulam") || lower.Contains("clt")) kind = "timber";
         // A name that says nothing, but IFC's set for a concrete's properties (another program's file, issue #121): a concrete.
-        else if (fields.Params.Any(p => p.Pset == "Pset_MaterialConcrete")) kind = "concrete";
+        else if (saysConcrete) kind = "concrete";
 
         // A concrete that names no class but gives its fck (Manage → Materials → Data): Ecm by EN 1992-1-1 Table 3.1's formula.
         if (kind == "concrete" && fc is { } fck && e == null)

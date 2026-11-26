@@ -115,7 +115,7 @@ public static class MaterialGraphicsSets
         Regex? re = null;
         if (materialName != null)
         {
-            try { re = new Regex(MaterialStandard.FoldText(materialName, MaterialStandard.FoldAll), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(50)); }
+            try { re = MaterialStandard.NameExpression(MaterialStandard.FoldText(materialName, MaterialStandard.FoldAll)); }
             catch (ArgumentException e) { throw new FormatException($"{where}: „{materialName}” is not a valid name expression ({e.Message})."); }
         }
         var mo = new JsonObject();

@@ -15,7 +15,7 @@ namespace Lapin.Engine.Tests;
 /// An opening cuts every wall along its host its box passes through, worked out on every build; one moved out of a wall no longer
 /// cuts it; IFC has an opening element for each wall voided; walls recognised from a file are left as the file has them.
 /// </summary>
-public sealed class ThroughOpeningTests(ITestOutputHelper output)
+public sealed class ThroughOpeningTests
 {
     static Fixture F() => new(new ArchitectureModule());
 
@@ -334,23 +334,31 @@ public sealed class ThroughOpeningTests(ITestOutputHelper output)
         Assert.Equal(3 * 3.0 * 0.1 - spec.Width * spec.Height * 0.1, Volume(f, skin), 6);
     }
 
-    [Fact]
-    public void Two_thousand_walls_are_built_in_time_linear_in_their_number()
+    /// <summary>
+    /// The walls' build timed apart from the parallel tests (<see cref="Scaling.Serial"/>), as the other timing tests are (#81): among
+    /// them, the full run's load once made the snapshot of 2000 walls take 1898 ms against 65 ms for 500, past the ratio (issue #122).
+    /// </summary>
+    [Collection(Scaling.Serial)]
+    public sealed class Timing(ITestOutputHelper output)
     {
-        long Build(int n)
+        [Fact]
+        public void Two_thousand_walls_are_built_in_time_linear_in_their_number()
         {
-            var f = F();
-            var core = f.Type("Block 250", ("Concrete block", 0.25, true));
-            var side = (int)Math.Ceiling(Math.Sqrt(n));
-            for (var i = 0; i < n; i++) { double x = i % side * 5, y = i / side * 5; Wall(f, core, x, y, x + 3, y, 2.8); }
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            f.Session.Snapshot();
-            return sw.ElapsedMilliseconds;
+            long Build(int n)
+            {
+                var f = F();
+                var core = f.Type("Block 250", ("Concrete block", 0.25, true));
+                var side = (int)Math.Ceiling(Math.Sqrt(n));
+                for (var i = 0; i < n; i++) { double x = i % side * 5, y = i / side * 5; Wall(f, core, x, y, x + 3, y, 2.8); }
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                f.Session.Snapshot();
+                return sw.ElapsedMilliseconds;
+            }
+            Build(200);
+            var (small, large) = (Build(500), Build(2000));
+            output.WriteLine($"snapshot of 500 walls {small} ms, of 2000 walls {large} ms");
+            // Four times the walls: about four times the time, nowhere near the sixteen times of each wall looking at every other.
+            Assert.True(large < Math.Max(small, 50) * 8, $"500 walls {small} ms, 2000 walls {large} ms");
         }
-        Build(200);
-        var (small, large) = (Build(500), Build(2000));
-        output.WriteLine($"snapshot of 500 walls {small} ms, of 2000 walls {large} ms");
-        // Four times the walls: about four times the time, nowhere near the sixteen times of each wall looking at every other.
-        Assert.True(large < Math.Max(small, 50) * 8, $"500 walls {small} ms, 2000 walls {large} ms");
     }
 }

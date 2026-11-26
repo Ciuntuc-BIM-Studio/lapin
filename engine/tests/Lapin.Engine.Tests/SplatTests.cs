@@ -19,12 +19,7 @@ namespace Lapin.Engine.Tests;
 /// </summary>
 public class SplatTests
 {
-    static SplatTests()
-    {
-        var dir = Path.Combine(Path.GetTempPath(), "lapin-pointcloud-tests");
-        Directory.CreateDirectory(dir);
-        Environment.SetEnvironmentVariable("LAPIN_POINTCLOUD_CACHE", dir);
-    }
+    static SplatTests() => PointCloudSamples.UseOwnCache();
 
     /// <summary>A Gaussian as a trainer writes it: centre, f_dc, opacity logit, log scales, quaternion w x y z, f_rest channel by channel.</summary>
     public sealed record G(double X, double Y, double Z, double[] Dc, double Opacity, double[] LogScale, double[] Rot, double[]? Rest = null);
@@ -254,13 +249,7 @@ public class SplatTests
         var f = F();
         var r = (JsonObject)f.Run("pointcloud.link", new JsonObject { ["name"] = name, ["data"] = Convert.ToBase64String(bytes), ["placement"] = placement })!;
         var id = (string)r["id"]!;
-        for (var k = 0; k < 400; k++)
-        {
-            var st = (JsonObject)f.Session.Query("pointcloud.status", new JsonObject { ["id"] = id })!;
-            if ((string?)st["state"] == "ready") break;
-            Assert.NotEqual("failed", (string?)st["state"]);
-            Thread.Sleep(25);
-        }
+        PointCloudSamples.WaitIndexed(f, id);
         f.Session.TakeDeliveries();
         return (f, id);
     }

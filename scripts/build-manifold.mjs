@@ -4,7 +4,7 @@
 // Everything is linked statically (manifold, Clipper2, no TBB), so the library
 // depends on the system only and travels next to the engine.
 //
-//   node scripts/build-manifold.mjs        (needs git, cmake and a C++ compiler)
+//   node scripts/build-manifold.mjs        (needs git, cmake and a C++ compiler; on Linux also libstdc++.a: engine/native/README.md)
 //   node scripts/build-manifold.mjs --browser-wasm
 // The engine in the browser (docs/plan-browser-engine.md): static libraries in
 // engine/native/browser-wasm/, linked into the engine's WebAssembly, built by
@@ -18,7 +18,7 @@
 // after ilammy/msvc-dev-cmd in CI), the C runtime linked in statically (/MT),
 // exporting the functions Lapin.Booleans imports (read from ManifoldBooleans.cs).
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir, platform, arch } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -66,23 +66,32 @@ if (process.argv.includes('--browser-wasm')) {
   process.exit(0);
 }
 
-if (!existsSync(join(work, 'src'))) {
+// The source is cloned once per machine and kept; each run builds in a folder of its own, removed after, and puts the
+// library in place in one step, so several checkouts may build at once (on Linux the engine's build runs this script when
+// its library is missing: Lapin.Booleans.csproj) and a run stopped half way leaves no library to be taken for a built one.
+const src = join(work, 'src');
+if (!existsSync(src)) {
   mkdirSync(work, { recursive: true });
-  sh('git', ['clone', '--depth', '1', '--branch', TAG, 'https://github.com/elalish/manifold.git', 'src'], work);
+  const clone = mkdtempSync(join(work, 'src-'));
+  sh('git', ['clone', '--depth', '1', '--branch', TAG, 'https://github.com/elalish/manifold.git', clone], work);
+  // Another checkout's clone may have landed first: that one is kept.
+  try { renameSync(clone, src); } catch (e) { if (!existsSync(src)) throw e; rmSync(clone, { recursive: true, force: true }); }
 }
-rmSync(join(work, 'build'), { recursive: true, force: true });
-sh('cmake', ['-S', 'src', '-B', 'build', '-DCMAKE_BUILD_TYPE=Release', '-DBUILD_SHARED_LIBS=OFF', '-DMANIFOLD_TEST=OFF',
+const build = mkdtempSync(join(work, 'build-'));
+process.on('exit', () => rmSync(build, { recursive: true, force: true }));
+sh('cmake', ['-S', src, '-B', build, '-DCMAKE_BUILD_TYPE=Release', '-DBUILD_SHARED_LIBS=OFF', '-DMANIFOLD_TEST=OFF',
   '-DMANIFOLD_PAR=OFF', '-DMANIFOLD_CBIND=ON', '-DMANIFOLD_CROSS_SECTION=ON', '-DMANIFOLD_USE_BUILTIN_CLIPPER2=ON',
   '-DMANIFOLD_PYBIND=OFF', '-DCMAKE_POSITION_INDEPENDENT_CODE=ON', ...(mac ? ['-DCMAKE_OSX_DEPLOYMENT_TARGET=12.0'] : []),
   ...(win ? ['-A', 'x64', '-DCMAKE_POLICY_DEFAULT_CMP0091=NEW', '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded'] : [])], work);
-sh('cmake', ['--build', 'build', '--target', 'manifoldc', '-j', '8', '--config', 'Release'], work);
+sh('cmake', ['--build', build, '--target', 'manifoldc', '-j', '8', '--config', 'Release'], work);
 
 const out = join(root, 'engine', 'native', rid);
 mkdirSync(out, { recursive: true });
-const a = (p) => join(work, 'build', p);
+const a = (p) => join(build, p);
+const made = join(build, lib);
 if (win) {
-  // The static libraries wherever the Visual Studio generator put them (build/<dir>/Release/<name>.lib).
-  const find = (name, dir = join(work, 'build')) => {
+  // The static libraries wherever the Visual Studio generator put them (<build>/<dir>/Release/<name>.lib).
+  const find = (name, dir = build) => {
     for (const f of readdirSync(dir)) {
       const p = join(dir, f);
       if (statSync(p).isDirectory()) { const r = find(name, p); if (r) return r; } else if (f.toLowerCase() === name.toLowerCase() && /[\\/]Release[\\/]/.test(p)) return p;
@@ -94,18 +103,21 @@ if (win) {
   const cs = readFileSync(join(root, 'engine/src/Geometry/Lapin.Booleans/ManifoldBooleans.cs'), 'utf8');
   const names = [...cs.matchAll(/static extern[^(]*?\b(manifold_\w+)\s*\(/g)].map((m) => m[1]);
   if (names.length === 0) throw new Error('build-manifold: no manifold_* imports found in ManifoldBooleans.cs');
-  const def = join(work, 'build', 'manifoldc.def');
+  const def = join(build, 'manifoldc.def');
   writeFileSync(def, `LIBRARY manifoldc\nEXPORTS\n${names.map((n) => `  ${n}`).join('\n')}\n`);
   // MSVC's link.exe by its full path: Git for Windows puts a different `link` on the PATH.
   const vc = process.env.VCToolsInstallDir;
   const linker = vc ? join(vc, 'bin', 'Hostx64', 'x64', 'link.exe') : 'link.exe';
   if (vc && !existsSync(linker)) throw new Error(`build-manifold: no ${linker}`);
   if (!vc) console.warn('build-manifold: VCToolsInstallDir is not set; run this from a Visual Studio x64 developer prompt.');
-  sh(linker, ['/nologo', '/DLL', '/MACHINE:X64', `/DEF:${def}`, `/OUT:${join(out, lib)}`, ...libs]);
+  sh(linker, ['/nologo', '/DLL', '/MACHINE:X64', `/DEF:${def}`, `/OUT:${made}`, ...libs]);
 } else if (mac)
-  sh('clang++', ['-shared', '-o', join(out, lib), '-mmacosx-version-min=12.0', `-Wl,-force_load,${a('bindings/c/libmanifoldc.a')}`,
+  sh('clang++', ['-shared', '-o', made, '-mmacosx-version-min=12.0', `-Wl,-force_load,${a('bindings/c/libmanifoldc.a')}`,
     a('src/libmanifold.a'), a('_deps/clipper2-build/libClipper2.a'), '-install_name', `@rpath/${lib}`]);
 else
-  sh('g++', ['-shared', '-o', join(out, lib), '-Wl,--whole-archive', a('bindings/c/libmanifoldc.a'), '-Wl,--no-whole-archive',
+  sh('g++', ['-shared', '-o', made, '-Wl,--whole-archive', a('bindings/c/libmanifoldc.a'), '-Wl,--no-whole-archive',
     a('src/libmanifold.a'), a('_deps/clipper2-build/libClipper2.a'), '-static-libstdc++', '-static-libgcc', `-Wl,-soname,${lib}`]);
+const part = join(out, `${lib}.${process.pid}.part`);
+copyFileSync(made, part);
+renameSync(part, join(out, lib));
 console.log(`manifold ${TAG} → engine/native/${rid}/${lib}`);

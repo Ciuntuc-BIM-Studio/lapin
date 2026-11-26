@@ -76,7 +76,7 @@ async function downloadIfc(server: string, project: string, name: string, commit
 export async function exportHandover(server: string, project: string, name: string, diff?: { from: string; to: string; body: HandoverDiff }): Promise<void> {
   const file = safeFileName(`${name} handover ${new Date().toISOString().slice(0, 10)}.xlsx`);
   const args: Record<string, unknown> = { serverProject: project, project: name, ...(diff ? { from: tagShort(diff.from), to: tagShort(diff.to), diff: diff.body } : {}) };
-  let notes: string[] = [];
+  let notes: string[];
   if (isDesktop()) {
     const to = await pickPath('save', file);
     if (!to) return;

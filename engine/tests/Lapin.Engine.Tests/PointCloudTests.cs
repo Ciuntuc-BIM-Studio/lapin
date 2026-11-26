@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
+using Lapin.Model;
 using Lapin.Platform;
 using Lapin.PointClouds;
 using static Lapin.Engine.Tests.PointCloudSamples;
@@ -13,12 +15,7 @@ namespace Lapin.Engine.Tests;
 /// </summary>
 public class PointCloudTests
 {
-    static PointCloudTests()
-    {
-        var dir = Path.Combine(Path.GetTempPath(), "lapin-pointcloud-tests");
-        Directory.CreateDirectory(dir);
-        Environment.SetEnvironmentVariable("LAPIN_POINTCLOUD_CACHE", dir);
-    }
+    static PointCloudTests() => PointCloudSamples.UseOwnCache();
 
     static List<PointBatch> All(IPointReader r) => r.Read(500).Select(b => Copy(b)).ToList();
     static PointBatch Copy(PointBatch b)
@@ -205,15 +202,63 @@ public class PointCloudTests
         f ??= F();
         var r = (JsonObject)f.Run("pointcloud.link", new JsonObject { ["name"] = name, ["data"] = Convert.ToBase64String(bytes), ["placement"] = placement })!;
         var id = (string)r["id"]!;
-        for (var k = 0; k < 400; k++)
-        {
-            var st = (JsonObject)f.Session.Query("pointcloud.status", new JsonObject { ["id"] = id })!;
-            if ((string?)st["state"] == "ready") break;
-            Assert.NotEqual("failed", (string?)st["state"]);
-            Thread.Sleep(25);
-        }
+        WaitIndexed(f, id);
         f.Session.TakeDeliveries();
         return (f, id, r);
+    }
+
+    /// <summary>
+    /// Issue #122: a cloud reads ready only once its index's summary is queued among the session's deliveries. The index was written
+    /// and opened before the summary was queued, and a caller that read the cloud ready in between took the deliveries without it.
+    /// Held at the delivery, the cloud reads indexing; let in, ready, its summary queued.
+    /// </summary>
+    [Fact]
+    public void A_cloud_reads_ready_only_once_its_index_summary_is_queued()
+    {
+        var dir = TempDir();
+        var held = new HeldDeliveries();
+        try
+        {
+            var path = Path.Combine(dir, "held.las");
+            File.WriteAllBytes(path, Las(Room(5)));
+            var link = new Entity("held-cloud", Links.Class, "held", new JsonObject
+            {
+                ["kind"] = PointCloudLinks.Kind, ["file"] = "held.las", ["path"] = path, ["key"] = PointCloudLinks.KeyOfPath(path),
+            });
+            PointCloudLinks.Status(link, held);
+            Assert.True(held.Entered.Wait(TimeSpan.FromSeconds(10)), $"the summary never came to be delivered: {PointCloudLinks.Status(link).ToJsonString()}");
+            // The index made and opened, its summary not yet queued.
+            Assert.Equal("indexing", (string?)PointCloudLinks.Status(link)["state"]);
+            held.Release.Set();
+            var clock = Stopwatch.StartNew();
+            while ((string?)PointCloudLinks.Status(link)["state"] != "ready")
+            {
+                Assert.True(clock.Elapsed < TimeSpan.FromSeconds(10), $"the cloud is {PointCloudLinks.Status(link).ToJsonString()}");
+                Thread.Sleep(5);
+            }
+            Assert.True(held.Queued);
+        }
+        finally
+        {
+            held.Release.Set();
+            try { Directory.Delete(dir, recursive: true); }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        }
+    }
+
+    /// <summary>Deliveries that hold one at the door until the test lets it in, then count it queued.</summary>
+    sealed class HeldDeliveries : IDeliveries
+    {
+        public readonly ManualResetEventSlim Entered = new(), Release = new();
+        public volatile bool Queued;
+        public DeliveryStamp Stamp() => new(0, "test");
+        public void Deliver(string label, DeliveryStamp since, Action<ICommandContext> apply, IReadOnlyCollection<string>? reads = null)
+        {
+            Entered.Set();
+            // Bounded: a test that fails before letting it in leaves no thread waiting for good.
+            Release.Wait(TimeSpan.FromSeconds(30));
+            Queued = true;
+        }
     }
 
     [Fact]

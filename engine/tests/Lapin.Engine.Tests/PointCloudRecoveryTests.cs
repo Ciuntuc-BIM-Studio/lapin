@@ -15,13 +15,8 @@ namespace Lapin.Engine.Tests;
 /// </summary>
 public class PointCloudRecoveryTests
 {
-    static PointCloudRecoveryTests()
-    {
-        // The same cache as PointCloudTests (the variable is the process's): keys are by content, so the classes never meet.
-        var dir = Path.Combine(Path.GetTempPath(), "lapin-pointcloud-tests");
-        Directory.CreateDirectory(dir);
-        Environment.SetEnvironmentVariable("LAPIN_POINTCLOUD_CACHE", dir);
-    }
+    // The run's cache, every point cloud test's (the variable is the process's): keys are by content, so the classes never meet.
+    static PointCloudRecoveryTests() => PointCloudSamples.UseOwnCache();
 
     static readonly TimeSpan Limit = TimeSpan.FromSeconds(60);
 
