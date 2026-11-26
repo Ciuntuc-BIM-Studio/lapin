@@ -14,6 +14,8 @@ all, the **outside** of the building, which room finishes cannot reach.
 - **The face's own frame**: origin at the face outline's first corner, `u` to the right seen from outside (horizontal on an
   upright face, plan x on a level one), `v` up the face (plan y on a top), `w` out of it. Everything stored on a face is in
   `(u, v)`, so it travels with the host.
+  A curved wall's side is **developed**: `u` its length along the face (the arc at the face's own radius, straight on along
+  the tangents past the axis's ends), `v` up from the wall's base, `w` out of it, from the axis's start (see below).
 - **Splits** (`LapinFinishSplit`): lines, polylines and closed shapes drawn on a face, in its frame. The face outline and
   every split make a planar graph; its bounded faces are the **regions** (`SketchRegions`, Studio's own face regions, moved
   into the geometry kernel so both use one rule). A shape floating inside a region is a region of its own, taken out of the
@@ -68,6 +70,38 @@ Every stroke is one command, one undo step.
    painter in 3D and the brush in plans.
 2. **Next**: painting in sections and elevations; splits drawn in plans (a line across a wall); the reveals of doors and
    windows lined by an exterior finish; corners other than right-angled mitred exactly, and a lone corner wrapped when the
-   other face is not painted; sloped wall tops (gables) clipping the zones; curved walls; zones copied with their host
+   other face is not painted; sloped wall tops (gables) clipping the zones; ~~curved walls~~ (done, below); zones copied with their host
    (copy, storey copies, groups); IFC import of Lapin's own coverings back into zones; build-up tags of zones; the
    planning generator's exterior finishes phase; textures that follow the zones' frames.
+
+## Curved walls (forum topic 288, decision 886)
+
+Done (26.11.2026). A curved (arc) wall's `Face.Left` and `Face.Right` are named by `ArchitectureFaces` as curves along the
+arc at its base (they stay so for formwork and the other users of the faces); the painter takes them as paintable faces and
+lays them out itself (`FinishZones.ArcSide`):
+
+- **The frame**: developed, as above. `u` runs as on a straight wall's side (against the axis on the left face, with it on
+  the right) and is measured at the face's radius, so areas are the face's own. Its extent is the outermost layer's along
+  the face as the joins leave it (`Walls.ExtentFrameOf`: past the axis's ends at an outer corner, short of them at an inner
+  one), its top the wall's height or the roof line it is attached to. Its openings (cut radially through a curved wall,
+  `Openings.ArcCutter`) are holes as wide as they are on that face (the opening's width scaled by the face's radius over the
+  axis's).
+- **The bodies**: each region laid flat and cut in strips between the wall's own stations (`PathCurve.Stations`, the chord
+  rule of `Lapin.Geometry/Chords`), the openings and islands taken out of the strips they cross; each layer the strips bent
+  round the curve from the face outward, on the chords between the stations and along the lines across the wall at them
+  (the wall's own facets, so the finish lies on the wall's body), made one body (a union). Net area: the flat strips' one
+  unit deep (exact on the developed face); a layer's volume: its bent body's (the chords' few hundredths of a percent short
+  of the true ring sector).
+- **Mitres**: at an outer corner the layers lean out at 45° past the end, as on a straight side (exact at a right angle to
+  the arc's tangent there).
+- **Picking**: `finishFaceAt` and the commands find a curved wall's side by the side of the axis the triangle faces (3D) or
+  the point lies on (a plan); the lit region and the split lines follow the curve (a point at each station).
+- **Splits**: at a height, drawn on the face (points mapped onto the developed face), and implicit where a straight wall's
+  sides cross the face's arc. A curved wall meeting another curved wall does not split it yet, nor does a curved wall split a straight one it abuts (as before).
+- Straight walls and floors are untouched (their output compared byte for byte before and after). No stored data changed,
+  so no project upgrade.
+
+Left: the reveals of openings in curved walls and the room finish's opening cuts (other branches); the sketch tools
+(Split by rectangle / line) draw on the plane of the triangle picked, so on a strongly curved face a long rectangle lands
+radially projected onto the face rather than wrapped on it; the lit face in the viewer is offset along the face's middle
+normal (an arc past 180° would fold its triangulation).
