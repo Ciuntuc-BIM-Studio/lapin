@@ -70,6 +70,12 @@ public sealed class ScheduleIfc : IIfcProcesses
             if (t.ActualFinish is { } oaf) props.Add(("ActualFinish", WorkCalendar.Date(oaf)));
             if (t.Marks.Count > 0) props.Add(("Marks", new System.Text.Json.Nodes.JsonObject(t.Marks.Select(kv => KeyValuePair.Create(kv.Key, (System.Text.Json.Nodes.JsonNode?)kv.Value.ToJson()))).ToJsonString()));
             if (t.Baseline is { } bl) props.Add(("Baseline", bl.ToJson().ToJsonString()));
+            // Left out of location-based charts, and the phase of the works it belongs to (procurement): Lapin's own fields.
+            if (query.Model.Get(t.Id) is { } te)
+            {
+                if (!Plan.InCharts(te)) props.Add(("Chart", "false"));
+                if (te.Str("phase") is { } phase) props.Add(("Phase", phase));
+            }
             List<string>? elements = links?.ByTask.TryGetValue(t.Id, out var own) == true ? [.. own.Keys] : null;
             var acts = t.Kind is "DEMOLITION" or "REMOVAL" or "DISMANTLE" or "DISPOSAL";
             tasks.Add(new IfcTaskData(t.Id, t.Name, t.Notes, p.Wbs[t.Id], t.Parent is { } par && p.ById.ContainsKey(par) ? par : null, milestone, t.Kind, time, TaskSet, props,
@@ -166,7 +172,7 @@ public sealed class ScheduleIfc : IIfcProcesses
             var baseline = TaskBaseline.Read(Parsed(Prop("Baseline"))) ?? baselineOf.GetValueOrDefault(t.Id);
             tasks.Add(new ImportedTask(t.Id, t.Id, t.Name, t.Parent, t.IsMilestone ? 0 : Math.Max(0, duration), t.IsMilestone, cdate != null ? constraint : null, cdate,
                 t.Time?.ScheduleStart is { } st ? DateOnly.FromDateTime(st) : null, Prop("Wet") == "true", t.Predefined, t.Description, LinksOf(idOf, t, Prop, ref missing),
-                ast, afi, pc, baseline));
+                ast, afi, pc, baseline, Prop("Chart") == "false" ? false : null, Prop("Phase") is { Length: > 0 } ph ? ph : null));
         }
         // Parents before their children, siblings in the file's order.
         var byKey = tasks.ToDictionary(t => t.Key);

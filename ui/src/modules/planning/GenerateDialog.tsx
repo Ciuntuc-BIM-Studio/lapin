@@ -5,7 +5,9 @@
  * and the engine's preview on the right: the schedule it would make as bars, how many elements it links (those left
  * without a task shown, or given a step of their own), how many durations came from norms, the temporaries tied to their
  * hosts' tasks, the demolitions. Apply is one engine command, one step to undo; generated again, what was edited by hand
- * stays. The norms are the user's (CSV or XLSX), or Lapin's few indicative values, marked as such.
+ * stays. The norms are the user's (CSV or XLSX), or Lapin's few indicative values, marked as such. Procurement: a chain of
+ * tasks a package bought (design and shop drawings, the client's approval, manufacturing, the transport; the user's own
+ * chain, Lapin's indicative by default) after the drawings' milestone, before its step's first task; the preview shows it.
  */
 
 import { NumberField } from '../../shell/cells';
@@ -17,12 +19,16 @@ import { execute, query, useSession } from '../../engine/session';
 import { pickFile, saveFile, toBase64 } from '../../engine/files';
 import { t, useLang } from '../../i18n';
 import { showDate } from './gantt';
-import { bars, cleanSpec, DEMOLITION, moveStep, normLabel, quantityText, stepForLeftovers, toggleClass, translateNames, withStep, type GeneratorOptions, type GenSpec, type GenStep, type PreviewDto, type Template } from './generator';
+import {
+  addChainStep, addPackage, bars, chainDays, cleanSpec, DEMOLITION, indicativeChain, moveStep, normLabel, packageDays, procurementOf, procures, procureStep, quantityText,
+  removeChainStep, setPackageDays, stepForLeftovers, toggleClass, translateNames, withChainStep, withPackage, withStep,
+  type GeneratorOptions, type GenSpec, type GenStep, type PreviewDto, type Procurement, type Template,
+} from './generator';
 import { openGantt, useSchedule } from './schedule';
 import { DraftConditions } from '../../shell/ConditionsEditor';
 import { FieldPicker } from '../../shell/FieldPicker';
 
-const TABS = [['start', 'Start'], ['sequence', 'Sequence'], ['durations', 'Durations'], ['calendar', 'Calendar']] as const;
+const TABS = [['start', 'Start'], ['sequence', 'Sequence'], ['durations', 'Durations'], ['procurement', 'Procurement'], ['calendar', 'Calendar']] as const;
 type Tab = (typeof TABS)[number][0];
 
 interface ClassOption { id: string; name: string; count: number }
@@ -197,6 +203,29 @@ export function GenerateDialog() {
     );
   };
 
+  // Procurement: switched on the first time, Lapin's chain with its names in the interface's language.
+  const proc = spec ? procurementOf(spec, options?.procurementDefault) : null;
+  const setProc = (next: Procurement) => change({ ...spec!, procurement: next });
+  const turnProcurement = (on: boolean) => {
+    if (!proc) return;
+    if (!spec!.procurement && on) {
+      setProc({ ...proc, on, chain: proc.chain.map((x) => ({ ...x, name: t(x.name) })), milestone: t('Drawings received'), title: t('Procurement') });
+    } else setProc({ ...proc, on });
+  };
+  const steppable = (spec?.steps ?? []).filter((s) => s.on && s.key !== DEMOLITION);
+  const stepName = (key: string) => spec?.steps.find((s) => s.key === key)?.name ?? key;
+  const newPackage = () => {
+    if (!proc) return;
+    const name = promptText(t('Name of the package'), '');
+    if (!name?.trim()) return;
+    setProc(addPackage(proc, name, steppable[0]?.key ?? ''));
+  };
+  const newChainStep = () => {
+    if (!proc) return;
+    const name = promptText(t('Name of the step'), '');
+    if (name?.trim()) setProc(addChainStep(proc, name.trim()));
+  };
+
   if (!spec) return null;
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="Generate schedule">
@@ -293,6 +322,73 @@ export function GenerateDialog() {
                     </tbody>
                   </table>
                 </>}
+                {tab === 'procurement' && proc && <>
+                  <label className="field-line roof-field" title="For each package bought for the works: a chain of tasks after the drawings are received, its last before the package's first task"><span className="eyebrow">Procurement chains</span>
+                    <input type="checkbox" checked={proc.on} data-field="gen-procurement" onChange={(e) => turnProcurement(e.target.checked)} />
+                  </label>
+                  <p className="muted small">Each package is a summary with the chain's tasks, each after the one before (FS); the first after the milestone at the start, the last before the first task of the package's step. They are left out of location-based charts.</p>
+                  {proc.on && <>
+                    <p className="eyebrow">The chain</p>
+                    {indicativeChain(proc) && <p className="warn-text small" data-field="gen-procurement-indicative"><TriangleAlert size={12} /> Lapin's chain and days are indicative: replace them with your own.</p>}
+                    <table className="gen-durations" data-field="gen-chain">
+                      <thead><tr><th>Step</th><th title="Working days, unless a package says otherwise">Days</th><th title="IFC's kind of task LOGISTIC">Transport</th><th /></tr></thead>
+                      <tbody>
+                        {proc.chain.map((c) => (
+                          <tr key={c.key} data-chain={c.key}>
+                            <td><input value={c.name} data-no-i18n onChange={(e) => setProc(withChainStep(proc, c.key, { name: e.target.value }))} /></td>
+                            <td><NumberField min={0} integer value={c.days} onCommit={(v) => { if (v != null) setProc(withChainStep(proc, c.key, { days: v })); }} /></td>
+                            <td><input type="checkbox" checked={c.kind === 'LOGISTIC'} onChange={(e) => setProc(withChainStep(proc, c.key, { kind: e.target.checked ? 'LOGISTIC' : undefined }))} /></td>
+                            <td><button type="button" className="icon mini" title="Remove" disabled={proc.chain.length <= 1} onClick={() => setProc(removeChainStep(proc, c.key))}><Trash2 size={12} /></button></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="row">
+                      <button type="button" className="btn small" onClick={newChainStep} data-field="gen-chain-add"><Plus size={12} />Step</button>
+                    </div>
+                    <label className="field-line roof-field" title="A milestone of yours of this name is used when there is one"><span className="eyebrow">Milestone at the start</span>
+                      <input value={proc.milestone ?? ''} data-no-i18n onChange={(e) => setProc({ ...proc, milestone: e.target.value })} data-field="gen-procurement-milestone" />
+                    </label>
+                    <p className="eyebrow">Packages of the steps</p>
+                    <span className="chips" data-field="gen-procure-steps">
+                      {steppable.map((s) => (
+                        <button type="button" key={s.key} className={`chip${procures(proc, s.key) ? ' on' : ''}`} data-procure={s.key} onClick={() => setProc(procureStep(proc, s.key, !procures(proc, s.key)))}>
+                          <span data-no-i18n>{s.name}</span>
+                        </button>
+                      ))}
+                    </span>
+                    <table className="gen-durations gen-packages" data-field="gen-packages">
+                      <thead><tr><th /><th>Package</th><th title="The step whose first task waits for the delivery">Before</th>{proc.chain.map((c) => <th key={c.key} data-no-i18n>{c.name}</th>)}<th title="Working days between the transport and the installation">Lag</th><th title="The whole chain">Total</th></tr></thead>
+                      <tbody>
+                        {proc.packages.map((x) => {
+                          const own = x.key === x.before;
+                          return (
+                            <tr key={x.key} data-package={x.key} className={x.on ? '' : 'off'}>
+                              <td><input type="checkbox" checked={x.on} onChange={(e) => setProc(withPackage(proc, x.key, { on: e.target.checked }))} /></td>
+                              <td><input value={x.name} data-no-i18n placeholder={own ? stepName(x.before) : ''} onChange={(e) => setProc(withPackage(proc, x.key, { name: e.target.value }))} /></td>
+                              <td>{own ? <span data-no-i18n>{stepName(x.before)}</span> : (
+                                <select value={x.before} onChange={(e) => setProc(withPackage(proc, x.key, { before: e.target.value }))}>
+                                  {steppable.map((s) => <option key={s.key} value={s.key} data-no-i18n>{s.name}</option>)}
+                                </select>
+                              )}</td>
+                              {proc.chain.map((c) => (
+                                <td key={c.key}><NumberField min={0} integer value={packageDays(x, c)} onCommit={(v) => setProc(withPackage(proc, x.key, setPackageDays(x, c, v)))} /></td>
+                              ))}
+                              <td><NumberField className="gen-lag" integer value={x.lag ?? 0} onCommit={(v) => setProc(withPackage(proc, x.key, { lag: v ?? 0 }))} /></td>
+                              <td className="num" data-no-i18n>{`${chainDays(proc, x)} d`}</td>
+                              {!own && <td><button type="button" className="icon mini" title="Remove" onClick={() => setProc({ ...proc, packages: proc.packages.filter((y) => y.key !== x.key) })}><Trash2 size={12} /></button></td>}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                    <div className="row">
+                      <button type="button" className="btn small" onClick={newPackage} data-field="gen-package-add"><Plus size={12} />Package…</button>
+                    </div>
+                    <p className="muted small">A package's days override the chain's for it alone.</p>
+                    {(preview?.notes ?? []).map((n, i) => <p key={i} className="warn-text small" data-no-i18n>{n}</p>)}
+                  </>}
+                </>}
                 {tab === 'calendar' && schedule && <>
                   <dl className="fields roof-summary">
                     <dt>Calendar</dt><dd data-no-i18n>{schedule.calendar.name}</dd>
@@ -308,7 +404,7 @@ export function GenerateDialog() {
               <div className="joinery-preview gen-preview">
                 <div className="gen-bars" data-field="gen-preview">
                   {(preview?.tasks ?? []).map((x, i) => (
-                    <div key={x.id} className={`gen-bar-row${x.summary ? ' summary' : ''}${x.kept ? ' kept' : ''}`} title={`${showDate(x.start)} – ${showDate(x.finish)} · ${x.duration} d`}>
+                    <div key={x.id} className={`gen-bar-row${x.summary ? ' summary' : ''}${x.kept ? ' kept' : ''}${x.phase === 'procurement' ? ' procurement' : ''}`} title={`${showDate(x.start)} – ${showDate(x.finish)} · ${x.duration} d`}>
                       <span className="gen-bar-name" style={{ paddingLeft: x.level * 10 }} data-no-i18n>{x.name}</span>
                       <span className="gen-bar-track">
                         <span className={`gen-bar${x.critical ? ' critical' : ''}${x.source === 'default' ? ' default' : ''}`} style={{ left: `${plot.rows[i].left * 100}%`, width: `${plot.rows[i].width * 100}%` }} />
@@ -331,9 +427,11 @@ export function GenerateDialog() {
                     {(summary.formwork > 0 || summary.scaffolds > 0) && <><dt>Formwork and scaffolds on their hosts' tasks</dt><dd className="num" data-no-i18n>{`${summary.formwork} + ${summary.scaffolds}`}</dd></>}
                     {summary.kept > 0 && <><dt>Kept as edited by hand</dt><dd className="num" data-no-i18n>{summary.kept}</dd></>}
                     {summary.removed > 0 && <><dt>Tasks removed</dt><dd className="num" data-no-i18n>{summary.removed}</dd></>}
+                    {!!summary.procurement && <><dt>Procurement tasks</dt><dd className="num" data-field="gen-procurement-count" data-no-i18n>{summary.procurement}</dd></>}
                   </dl>
                 )}
                 {summary?.indicative && <p className="warn-text small"><TriangleAlert size={12} /> Durations from Lapin's indicative values.</p>}
+                {summary?.procurementIndicative && <p className="warn-text small"><TriangleAlert size={12} /> Procurement from Lapin's indicative chain.</p>}
                 {summary && summary.linked < summary.total && (
                   <div className="row">
                     <button type="button" className="link" onClick={showUnlinked} title="Select them in the view" data-field="gen-show-unlinked"><MousePointer2 size={12} />Show the elements without a task</button>

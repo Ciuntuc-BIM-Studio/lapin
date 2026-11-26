@@ -7,7 +7,7 @@ namespace Lapin.Planning;
 /// <summary>A task read from a file (MS Project, IFC): its key in the file, its id when it carries one (a GlobalId), its parent's key, and what Lapin keeps of it (its elements: <see cref="TaskLinkData"/>; its progress and baseline, stage 5).</summary>
 public sealed record ImportedTask(string Key, string? Id, string Name, string? ParentKey, int Duration, bool Milestone, string? Constraint = null, DateOnly? ConstraintDate = null,
     DateOnly? Start = null, bool Wet = false, string? Kind = null, string? Notes = null, JsonObject? Links = null,
-    DateOnly? ActualStart = null, DateOnly? ActualFinish = null, double? Complete = null, TaskBaseline? Baseline = null);
+    DateOnly? ActualStart = null, DateOnly? ActualFinish = null, double? Complete = null, TaskBaseline? Baseline = null, bool? Chart = null, string? Phase = null);
 
 /// <summary>A link read from a file, between two tasks' keys.</summary>
 public sealed record ImportedLink(string FromKey, string ToKey, string Type, int Lag, string? Id = null);
@@ -72,6 +72,8 @@ public static class ScheduleImport
             if (t.ActualFinish is { } afi && (t.ActualStart is not { } a0 || afi >= a0)) attrs["actualFinish"] = WorkCalendar.Date(afi);
             if (t.Complete is { } pc && double.IsFinite(pc)) attrs["complete"] = Math.Round(Math.Clamp(pc, 0, 100), 2);
             if (t.Baseline is { } bl) attrs["baseline"] = bl.ToJson();
+            if (t.Chart == false) attrs[Plan.ChartKey] = false;
+            if (t.Phase != null) attrs["phase"] = t.Phase;
             var kind = t.Kind is { } k && Plan.Kinds.Contains(k) ? k : null;
             edit.Add(new Entity(idOf[t.Key], Plan.TaskClass, t.Name.Length > 0 ? t.Name : "Task", attrs, kind));
         }

@@ -91,6 +91,9 @@ export function TaskSection({ node }: { node: NodeDto }) {
         <dt title="Concrete, screeds, plaster: the task does not work in the calendar's winter break, when it is switched on">Wet works</dt>
         <dd><input type="checkbox" checked={!!t.wet} onChange={(e) => update(t.id, { wet: e.target.checked })} /></dd>
       </>}
+      <dt title="Off: the task is left out of charts that draw the works by location (procurement, management); the Gantt shows every task">Show in location charts</dt>
+      <dd><input type="checkbox" checked={t.chart !== false} data-testid="task-chart" onChange={(e) => update(t.id, { chart: e.target.checked })} />
+        {t.phase === 'procurement' && <span className="muted small"> procurement</span>}</dd>
       <dt title="How many working days it may slip without moving the finish">Total float</dt>
       <dd className={t.critical ? 'error-text' : undefined} style={{ margin: 0 }}>{`${t.totalFloat} d`}{t.critical ? ' · critical' : ''}</dd>
       <dt title="How many working days it may slip without moving what follows it">Free float</dt><dd>{`${t.freeFloat} d`}</dd>

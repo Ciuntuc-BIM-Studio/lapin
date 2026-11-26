@@ -287,6 +287,14 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
             }
             if (a.ContainsKey("wet")) { if (a["wet"] is JsonValue wv && wv.TryGetValue<bool>(out var w) && w) attrs["wet"] = true; else attrs.Remove("wet"); }
             if (a.ContainsKey("notes")) { if (((string?)a["notes"])?.Trim() is { Length: > 0 } notes) attrs["notes"] = notes; else attrs.Remove("notes"); }
+            // Whether it shows in location-based charts: false kept; true is the default, kept as true only on a generated task (the generator's false is not put back).
+            if (a.ContainsKey(Plan.ChartKey))
+            {
+                var on = a[Plan.ChartKey] is not JsonValue cv || !cv.TryGetValue<bool>(out var cb) || cb;
+                if (!on) attrs[Plan.ChartKey] = false;
+                else if (e.Str("gen") != null) attrs[Plan.ChartKey] = true;
+                else attrs.Remove(Plan.ChartKey);
+            }
             SetLinks(attrs, a);
             // Its days or its quantity read from its elements' fields (docs/plan-user-extensibility.md §12), worked out now and on Retime from fields.
             if (SetTiming(ctx, e, attrs, a) is { } timed) attrs = timed;
@@ -590,7 +598,7 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
         r.Query("exportMsp", (q, _) =>
         {
             var p = ReadResolved(q);
-            return Convert.ToBase64String(Encoding.UTF8.GetBytes(MsProject.Write(p, Solve(p).Result)));
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(MsProject.Write(p, Solve(p).Result, q.Model)));
         });
 
         r.Query("exportXlsx", (q, _) =>
@@ -803,6 +811,8 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
             {
                 if (te.Str("gen") is { } gen) o["gen"] = gen;
                 if (te.Bool("own")) o["own"] = true;
+                if (!Plan.InCharts(te)) o[Plan.ChartKey] = false;
+                if (te.Str("phase") is { } phase) o["phase"] = phase;
                 foreach (var k in new[] { "durationFrom", "norm", "unit", TaskTiming.DurationKey, TaskTiming.QuantityKey }) if (te.Str(k) is { } v) o[k] = v;
                 if (te.NumOrNull("quantity") is { } qv) o["quantity"] = qv;
                 if (te.NumOrNull("crew") is { } cv) o["crew"] = (int)Math.Round(cv);

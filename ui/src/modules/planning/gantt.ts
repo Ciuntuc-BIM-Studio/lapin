@@ -14,6 +14,8 @@ export interface TaskDto {
   summary: boolean; milestone: boolean; duration: number; start: string; finish: string; lateStart: string; lateFinish: string;
   totalFloat: number; freeFloat: number; critical: boolean; predecessors: string;
   constraint?: 'snet' | 'mso'; constraintDate?: string; wet?: boolean; kind?: string; notes?: string;
+  /** False: left out of location-based charts (procurement, management); the phase of the works it belongs to (procurement). */
+  chart?: boolean; phase?: string;
   /** Its elements (stage 2): how many, which (a summary's: its tasks' too), the rule they are found by, the part taken, the exceptions. */
   count: number; elements?: string[]; rule?: TaskRule; part?: string; added?: number; removed?: number;
   /** Made by the generator (stage 3): its step (and storey), edited by hand since (kept as it is), and where its duration came from. */
