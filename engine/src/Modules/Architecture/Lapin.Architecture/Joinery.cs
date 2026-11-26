@@ -168,8 +168,23 @@ public sealed record JoinerySill(bool On = true, double Projection = 0.03, doubl
 /// <summary>A surround on the facade: a band of <see cref="Width"/> around the opening, standing <see cref="Projection"/> proud, with or without its sill side.</summary>
 public sealed record JoinerySurround(bool On = false, double Width = 0.08, double Projection = 0.02, bool Sill = true, string? Material = null);
 
-/// <summary>A door's threshold across the wall, its height and material.</summary>
-public sealed record JoineryThreshold(bool On = false, double Height = 0.02, string? Material = null);
+/// <summary>
+/// A door's threshold across the wall, its height and material; <see cref="Width"/> (forum topic 204, LVK): its extent across the
+/// wall (along the wall's thickness), centred on the frame and moved <see cref="Offset"/> towards the exterior (− the interior), kept
+/// within the wall's faces; null or 0: across the whole wall, as before. Along the wall it fills the opening; seen in plan, between
+/// the frame's jambs where it runs under them.
+/// </summary>
+public sealed record JoineryThreshold(bool On = false, double Height = 0.02, string? Material = null, double? Width = null, double? Offset = null)
+{
+    /// <summary>Where it runs across a wall <paramref name="thickness"/> thick, in the type's frame (Y to the exterior, the faces at ±thickness/2).</summary>
+    public (double Y0, double Y1) Across(JoinerySpec s, double thickness)
+    {
+        var (lo, hi) = (-thickness / 2, thickness / 2);
+        if (Width is not { } w || w <= 1e-9) return (lo, hi);
+        var c = s.Frame.Offset + (Offset ?? 0);
+        return (Math.Clamp(c - w / 2, lo, hi), Math.Clamp(c + w / 2, lo, hi));
+    }
+}
 
 /// <summary>The details of a door or window type; a null field keeps the default (the reveal from the wall, the boards as before, no surround, the frame's threshold, no dressings: shutters, grille, window box, canopy).</summary>
 public sealed record JoineryDetails(JoineryReveal? Reveal = null, JoinerySill? SillInside = null, JoinerySill? SillOutside = null, JoinerySurround? Surround = null, JoineryThreshold? Threshold = null,
