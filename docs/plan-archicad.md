@@ -88,7 +88,7 @@ Still not measured: zones, doors, curtain walls, railings, morphs, objects, curv
 | **A0** | Measurement (§2). | done |
 | **A1** | **Receive.** See below. | done (26.11.2026) |
 | **A2** | **Updates.** See below. | 3–4 |
-| **A3** | **To Atrium without Lapin open.** See below. | 2 |
+| **A3** | **To Atrium without Lapin open.** See below. | done (26.11.2026) |
 | **A4** | **More native types.** See below. | 5–8 |
 | **A5** | **Send back.** See below. | 6–8 |
 
@@ -109,6 +109,7 @@ Still not measured: zones, doors, curtain walls, railings, morphs, objects, curv
 - The file is uploaded to an Atrium project as a reference document of type `model` (R3 API), or submitted with Submit files… semantics (R7).
 - The token is a personal access token from the environment, never in the script. The script also documents running it from Archicad's own Python palette.
 - With Lapin open, the route is Receive, then Save to server, which already works.
+- **Done (26.11.2026).** `scripts/archicad-to-atrium.mjs` (Node 22, no dependency; tests in `scripts/archicad-to-atrium.test.mjs`; guide `docs/user/archicad-to-atrium.md`). It signs in with a personal access token from `ATRIUM_TOKEN` and calls the server's MCP tool `cde_reference_add` (a file over 12 MiB goes through the upload session the tool opens). `--ifczip` uses Archicad's own `ifczip` save, so no zip writer. Measured: in demo mode Tapir's default IFC save works (a 3-wall model, 270 KB, 55 KB as ifczip); a named translator is refused with "Failed to save the project as IFC". Run end to end against a local Atrium Server; the Python palette route is documented but untried.
 
 **A4, more native types**
 - Roofs (`GetRoofPlanes`, Lapin's roofs) and slanted or curved walls.
