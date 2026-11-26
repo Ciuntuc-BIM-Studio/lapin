@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
+using Lapin.Model;
 using Lapin.Platform;
 using Lapin.PointClouds;
 using static Lapin.Engine.Tests.PointCloudSamples;
@@ -203,6 +205,60 @@ public class PointCloudTests
         WaitIndexed(f, id);
         f.Session.TakeDeliveries();
         return (f, id, r);
+    }
+
+    /// <summary>
+    /// Issue #122: a cloud reads ready only once its index's summary is queued among the session's deliveries. The index was written
+    /// and opened before the summary was queued, and a caller that read the cloud ready in between took the deliveries without it.
+    /// Held at the delivery, the cloud reads indexing; let in, ready, its summary queued.
+    /// </summary>
+    [Fact]
+    public void A_cloud_reads_ready_only_once_its_index_summary_is_queued()
+    {
+        var dir = TempDir();
+        var held = new HeldDeliveries();
+        try
+        {
+            var path = Path.Combine(dir, "held.las");
+            File.WriteAllBytes(path, Las(Room(5)));
+            var link = new Entity("held-cloud", Links.Class, "held", new JsonObject
+            {
+                ["kind"] = PointCloudLinks.Kind, ["file"] = "held.las", ["path"] = path, ["key"] = PointCloudLinks.KeyOfPath(path),
+            });
+            PointCloudLinks.Status(link, held);
+            Assert.True(held.Entered.Wait(TimeSpan.FromSeconds(10)), $"the summary never came to be delivered: {PointCloudLinks.Status(link).ToJsonString()}");
+            // The index made and opened, its summary not yet queued.
+            Assert.Equal("indexing", (string?)PointCloudLinks.Status(link)["state"]);
+            held.Release.Set();
+            var clock = Stopwatch.StartNew();
+            while ((string?)PointCloudLinks.Status(link)["state"] != "ready")
+            {
+                Assert.True(clock.Elapsed < TimeSpan.FromSeconds(10), $"the cloud is {PointCloudLinks.Status(link).ToJsonString()}");
+                Thread.Sleep(5);
+            }
+            Assert.True(held.Queued);
+        }
+        finally
+        {
+            held.Release.Set();
+            try { Directory.Delete(dir, recursive: true); }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        }
+    }
+
+    /// <summary>Deliveries that hold one at the door until the test lets it in, then count it queued.</summary>
+    sealed class HeldDeliveries : IDeliveries
+    {
+        public readonly ManualResetEventSlim Entered = new(), Release = new();
+        public volatile bool Queued;
+        public DeliveryStamp Stamp() => new(0, "test");
+        public void Deliver(string label, DeliveryStamp since, Action<ICommandContext> apply, IReadOnlyCollection<string>? reads = null)
+        {
+            Entered.Set();
+            // Bounded: a test that fails before letting it in leaves no thread waiting for good.
+            Release.Wait(TimeSpan.FromSeconds(30));
+            Queued = true;
+        }
     }
 
     [Fact]
