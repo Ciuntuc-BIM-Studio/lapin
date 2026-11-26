@@ -57,10 +57,15 @@ export const ROOF_TEMPLATE_FIELDS = [
   'ridgeSection',
   'purlinSection',
   'collarSection',
+  // Whether each of those is laid flat (forum round 26.11.2026, R1); a version 1 template leaves them as the roof has them.
+  'plateFlat',
+  'ridgeFlat',
+  'purlinFlat',
+  'collarFlat',
 ] as const;
 
 /** The fields a template saved before version 2 did not keep: applying such a template leaves them as the roof has them. */
-const SINCE_V2 = new Set<string>(['layers', 'layerExtents', 'plateSection', 'ridgeSection', 'purlinSection', 'collarSection']);
+const SINCE_V2 = new Set<string>(['layers', 'layerExtents', 'plateSection', 'ridgeSection', 'purlinSection', 'collarSection', 'plateFlat', 'ridgeFlat', 'purlinFlat', 'collarFlat']);
 
 /** The template format: 2 keeps layers, extents, sections and edges. */
 export const ROOF_TEMPLATE_VERSION = 2;

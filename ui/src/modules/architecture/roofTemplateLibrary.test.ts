@@ -190,7 +190,7 @@ describe('roofTemplateLibrary', () => {
     const layerExtents = [{ layer: 0, edge: 'outline', offset: 0.1 }, { layer: 1, edge: 'edge', index: 2, offset: -0.2 }];
     const saved = saveRoofTemplate('Curved hip roof', {
       shape: 'hip', pitch: 35, overhang: 0.8, layers, layerExtents,
-      plateSection: '120x120', ridgeSection: '140x200', purlinSection: '120x160', collarSection: '60x160',
+      plateSection: '120x120', ridgeSection: '140x200', purlinSection: '120x160', collarSection: '60x160', plateFlat: true, ridgeFlat: false,
       contour, arcs: [-1.5, 0, 0.62, 0, 0], edges: [null, { pitch: 40 }, null, { kind: 'gable', overhang: 0.3 }, { gutter: false, bogus: 1 }],
     }, { contour });
     expect(saved.status).toBe('kept');
@@ -203,6 +203,8 @@ describe('roofTemplateLibrary', () => {
     expect(tpl.attrs.ridgeSection).toBe('140x200');
     expect(tpl.attrs.purlinSection).toBe('120x160');
     expect(tpl.attrs.collarSection).toBe('60x160');
+    expect(tpl.attrs.plateFlat).toBe(true);
+    expect(tpl.attrs.ridgeFlat).toBe(false);
     expect(tpl.outline).toEqual({
       corners: 5,
       edges: [null, { pitch: 40 }, null, { kind: 'gable', overhang: 0.3 }, { gutter: false }],
@@ -216,6 +218,9 @@ describe('roofTemplateLibrary', () => {
     expect(onFive.edges).toEqual(tpl.outline!.edges);
     expect(onFive.attrs.layers).toEqual(layers);
     expect(onFive.attrs.layerExtents).toEqual(layerExtents);
+    // Laid flat as it was saved; a member it did not say is laid flat is put on edge.
+    expect(onFive.attrs.plateFlat).toBe(true);
+    expect(onFive.attrs.purlinFlat).toBeNull();
 
     // A rectangle: the roof-wide fields, its own edges cleared, its arcs as they are, no extent named by an edge.
     const onFour = applyRoofTemplateArgs('r4', tpl, [[0, 0], [8, 0], [8, 6], [0, 6]]);
@@ -240,7 +245,7 @@ describe('roofTemplateLibrary', () => {
     const args = applyRoofTemplateArgs('r', old, [[0, 0], [8, 0], [8, 6], [0, 6]]);
     expect(args.attrs.covering).toBe('clay-tiles');
     expect(args.attrs.rafterSection).toBeNull();
-    for (const k of ['layers', 'layerExtents', 'plateSection', 'ridgeSection', 'purlinSection', 'collarSection']) expect(k in args.attrs).toBe(false);
+    for (const k of ['layers', 'layerExtents', 'plateSection', 'ridgeSection', 'purlinSection', 'collarSection', 'plateFlat', 'ridgeFlat', 'purlinFlat', 'collarFlat']) expect(k in args.attrs).toBe(false);
     expect(args.edges).toEqual([]);
     expect(args.arcs).toBeUndefined();
     // An old exported file (no version) imports, and applies the same way.

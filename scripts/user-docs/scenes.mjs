@@ -2684,6 +2684,8 @@ export const scenes = [
       t.expect(isFramed, `the house's roof is framed (${roof.props?.shape}, ${roof.props?.structure})`);
       t.expect(await t.page.locator('aside.props dt[title=deckThickness]').count() === 0, 'a framed roof hides the deck fields');
       t.expect(await t.page.locator('aside.props dt[title=rafterSpacing]').count() > 0, 'a framed roof shows its rafters');
+      // Each beam's section with its tick to lay it flat (forum round 26.11.2026, R1).
+      t.expect(await t.page.locator('aside.props dt[title=plateFlat]').count() > 0, 'a framed roof shows the wall plate\'s lay-flat tick');
       await t.shot('roof-properties', { of: 'aside.props', pad: 0, maxHeight: 700 });
       t.expect((await t.nodes()).some((n) => n.type === 'IfcSlab'), 'a floor in the house');
       // The roof configurator (decision 231): the Swedish truss style picked, its framing seen in the section, applied.
