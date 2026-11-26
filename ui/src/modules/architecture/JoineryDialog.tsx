@@ -31,6 +31,7 @@ import { editJoineryOutline, outlineBoardAvailable } from './joineryBoard';
 import { barWidths, fitBars, kindOf, leafPairs, merge, neighbour, normalised, operationGroups, resized, shifted, split, withBar, type Bars, type GridSpec } from './joineryGrid';
 import { t } from '../../i18n';
 import { JoineryDataButton } from './JoineryData';
+import { withThresholdOffset, withThresholdWidth, type Threshold } from './joineryThreshold';
 import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
 import { GARAGE_LABELS, GARAGE_OPERATIONS, garageName, garageOf, sizeLabel, withGarageKind, type Garage, type GarageOperation } from './garageDoors';
 import { TypeListActions, endsOf } from '../../shell/TypeListActions';
@@ -122,7 +123,6 @@ interface Apron { on: boolean; height: number; projection: number; consoles: boo
 interface Reveal { mode: 'wall' | 'material' | 'none'; material?: string | null; thickness: number }
 interface Sill { on: boolean; projection: number; thickness: number; overhang: number; slope: number; material?: string | null }
 interface Surround { on: boolean; width: number; projection: number; sill: boolean; material?: string | null }
-interface Threshold { on: boolean; height: number; material?: string | null }
 interface Shutters { on: boolean; style: 'louvred' | 'panel' | 'planks'; leaves: number; open: boolean; thickness: number; gap: number; overlap: number; along: number; rise: number; height?: number | null; pitch: number; material?: string | null; color: string }
 interface Grille { on: boolean; side: 'revealInside' | 'reveal' | 'outside' | 'inside'; pattern: 'horizontal' | 'vertical' | 'grid'; bar: number; spacing: number; frameWidth: number; gap: number; overlap: number; along: number; rise: number; material?: string | null; color: string }
 interface WindowBox { on: boolean; width?: number | null; depth: number; height: number; gap: number; drop: number; along: number; material?: string | null; color: string }
@@ -1161,6 +1161,11 @@ export function JoineryDialog() {
               {spec.kind === 'door' && <label className="field-line check"><input type="checkbox" checked={details.threshold?.on ?? false} onChange={(e) => setDetails({ threshold: { ...(details.threshold ?? THRESHOLD), on: e.target.checked } })} /><span>Threshold</span></label>}
               {spec.kind === 'door' && details.threshold?.on && <>
                 <Mm label="Threshold height" value={details.threshold.height} onChange={(v) => setDetails({ threshold: { ...details.threshold!, height: v } })} />
+                {/* Forum topic 204 (LVK): its width across the wall, as a window's sill has its projection; empty, the whole wall as before. */}
+                <label className="field-line" title="The threshold's extent across the wall, centred on the frame. Empty: across the whole wall"><span className="eyebrow">Threshold width</span>
+                  <LengthField metres={details.threshold.width ?? null} placeholder="whole wall" min={0} blank testId="threshold-width" onCommit={(m) => setDetails({ threshold: withThresholdWidth(details.threshold!, m) })} /></label>
+                {(details.threshold.width ?? 0) > 0 && <label className="field-line" title="Moves the threshold across the wall from the frame's centre: + towards the exterior, − the interior; it stays within the wall's faces"><span className="eyebrow">Threshold offset</span>
+                  <LengthField metres={details.threshold.offset ?? 0} blank testId="threshold-offset" onCommit={(m) => setDetails({ threshold: withThresholdOffset(details.threshold!, m) })} /></label>}
                 <Material label="Threshold material" value={details.threshold.material} onChange={(material) => setDetails({ threshold: { ...details.threshold!, material } })} />
               </>}
               {spec.kind === 'door' && <label className="field-line check" title="Draws the door's threshold seen under the plan's cut (LOD 200 and up): the detailed threshold across the wall, else the frame's bottom member. Sections cut it as the door has it">

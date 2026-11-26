@@ -214,7 +214,7 @@ public static class OpeningMarkers
     }
 
     /// <summary>The sizes a door's or window's marker writes, its symbol's texts and its tag rules read (<see cref="Sizes"/>).</summary>
-    public static readonly string[] SizeKeys = ["width", "height", "sill", "openingWidth", "openingHeight", "clearWidth", "clearHeight", "sillFinished"];
+    public static readonly string[] SizeKeys = ["width", "height", "sill", "openingWidth", "openingHeight", "clearWidth", "clearHeight", "sillFinished", "frameWidth", "frameDepth"];
 
     /// <summary>
     /// A door's or window's sizes, in metres, by their tokens (forum topic 204):
@@ -226,7 +226,10 @@ public static class OpeningMarkers
     /// threshold taken off unless the drafting standards say not, <see cref="Joinery.ClearHeightLessThreshold"/>); none for
     /// one without a configuration (nothing says where its frame is);</item>
     /// <item><c>sill</c>: its sill over what it is measured from (forum topic 192), as before; <c>sillFinished</c>: over the wall's
-    /// finished floor, whatever it is measured from (the structural level when the wall has none).</item>
+    /// finished floor, whatever it is measured from (the structural level when the wall has none);</item>
+    /// <item><c>frameWidth</c>, <c>frameDepth</c> (forum topic 204, LVK): its frame's face width (what a jamb or the head takes off
+    /// the opening) and its depth across the wall; frameless glass has no face (0) and is as deep as its glass. None for one
+    /// without a configuration.</item>
     /// </list>
     /// </summary>
     public static IReadOnlyDictionary<string, double> Sizes(IModelView m, Openings.Placed p, Entity? wall)
@@ -240,7 +243,11 @@ public static class OpeningMarkers
             ["openingHeight"] = p.Height,
             ["sillFinished"] = p.FillSill - (wall is { Class: IfcClass.Wall } ? OpeningSills.FinishedFloor(m, wall) : 0),
         };
-        if (p.Spec is { } spec) (o["clearWidth"], o["clearHeight"]) = Joinery.ClearOpening(spec, Joinery.ClearHeightLessThreshold(m));
+        if (p.Spec is { } spec)
+        {
+            (o["clearWidth"], o["clearHeight"]) = Joinery.ClearOpening(spec, Joinery.ClearHeightLessThreshold(m));
+            (o["frameWidth"], o["frameDepth"]) = spec.Frameless is { } fl ? (0, fl.Glass) : (spec.Frame.Width, spec.Frame.Depth);
+        }
         return o;
     }
 
@@ -272,6 +279,7 @@ public static class OpeningMarkers
             ("clearWidth", "Clear opening width, inside the frame (mm)"), ("clearHeight", "Clear opening height, inside the frame (mm)"),
             ("openingWidth", "Wall opening width (mm)"), ("openingHeight", "Wall opening height (mm)"),
             ("sillFinished", "Sill over the finished floor (mm)"),
+            ("frameWidth", "Frame face width (mm)"), ("frameDepth", "Frame depth, across the wall (mm)"),
         ];
         foreach (var cls in new[] { IfcClass.Door, IfcClass.Window })
             foreach (var (key, label) in fields)
