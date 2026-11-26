@@ -13,16 +13,16 @@
 
 import { useEffect, useMemo, useRef, useState, type DragEvent as ReactDragEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import {
-  CalendarDays, ChevronDown, ChevronRight, Clapperboard, Crosshair, Diamond, Flag, IndentDecrease, IndentIncrease, Link2, Maximize, Palette, Plus, RefreshCw, Route, Trash2, Unlink2, Wand2, X,
+  CalendarDays, ChevronDown, ChevronRight, Clapperboard, Crosshair, Diamond, Flag, IndentDecrease, IndentIncrease, Link2, Maximize, MoveHorizontal, Palette, Plus, RefreshCw, Route, Trash2, Unlink2, Wand2, X,
 } from 'lucide-react';
 import { select, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { useLang } from '../../i18n';
 import {
-  arrowPoints, barOf, costText, baselineBarOf, dateOf, dayOf, doneBar, dragDays, endAt, fitScale, isLate, linkLabel, linkType, MAX_PX, MIN_PX, movedFinish, movedStart, namesOf, parseDate, parsePercent, percentText, varianceText,
+  arrowPoints, barOf, costText, durationTyped, isLoe, loePath, baselineBarOf, dateOf, dayOf, doneBar, dragDays, endAt, fitScale, isLate, linkLabel, linkType, MAX_PX, MIN_PX, movedFinish, movedStart, namesOf, parseDate, parsePercent, percentText, varianceText,
   groupRows, rowWindow, showDate, span, ticks, tierOf, today, visibleRows, workingDaysBetween, workingTest, ZOOMS, type Bar, type LinkDto, type LinkType, type TaskDto, type Zoom,
 } from './gantt';
-import { addTask, assignTo, deleteSelected, indent, linkSelected, outdent, retimeFromFields, selectUnlinked, showTaskElements, unlinkSelected, useSchedule } from './schedule';
+import { addLevelOfEffort, addTask, assignTo, deleteSelected, indent, linkSelected, outdent, retimeFromFields, selectUnlinked, showTaskElements, unlinkSelected, useSchedule } from './schedule';
 import { DRAG_TYPE, dropOf, elementIds, ruleSummary, tasksHolding } from './links';
 import { GanttDisplayPanel, GanttLegend } from './GanttDisplay';
 import { shortToken } from '../../shell/fieldSchedule';
@@ -195,7 +195,8 @@ export function GanttView() {
     const onBar = t.milestone ? Math.abs(p.x - b.x) <= b.h / 2 + 2 : p.x >= b.x - 2 && p.x <= b.x + b.w + 2;
     if (!onBar) { select(t.id, e.shiftKey || e.ctrlKey || e.metaKey); setDrag({ kind: 'pan', x0: e.clientX, y0: e.clientY, left: scroll.left, top: scroll.top }); return; }
     select(t.id, e.shiftKey || e.ctrlKey || e.metaKey);
-    if (t.summary) return;
+    // A summary's and a level of effort task's dates are derived: selected, not dragged.
+    if (t.summary || isLoe(t)) return;
     const finish = !t.milestone && p.x >= b.x + b.w - 6;
     setDrag({ kind: finish ? 'finish' : 'move', id: t.id, x0: p.x, days: 0 });
   };
@@ -324,7 +325,8 @@ export function GanttView() {
       default: return t.summary ? '' : `${t.totalFloat} d`;
     }
   };
-  const editable = (t: TaskDto, col: Column) => !t.header && (col === 'name' || (!t.summary && (col === 'duration' || col === 'start' || col === 'finish' || col === 'predecessors' || col === 'complete')));
+  // A level of effort task's duration and dates are derived from the tasks it spans: not typed.
+  const editable = (t: TaskDto, col: Column) => !t.header && (col === 'name' || (!t.summary && (col === 'predecessors' || col === 'complete' || (durationTyped(t) && (col === 'duration' || col === 'start' || col === 'finish')))));
 
   // The bar being dragged as it would land, and what it says.
   const ghost = (() => {
@@ -361,6 +363,7 @@ export function GanttView() {
       <div className="view-toolbar gantt-toolbar">
         <button type="button" className="icon" title="A new task before the one selected (Insert)" onClick={() => void addTask(false)} data-testid="gantt-add"><Plus size={14} /><span className="small">Task</span></button>
         <button type="button" className="icon" title="A milestone before the task selected (Shift+Insert)" onClick={() => void addTask(true)}><Diamond size={14} /><span className="small">Milestone</span></button>
+        <button type="button" className="icon" title="A level of effort task (site management, supervision) spanning the tasks selected: it starts with the first and finishes with the last, and follows them" onClick={() => void addLevelOfEffort()} data-testid="gantt-add-loe"><MoveHorizontal size={14} /><span className="small">Level of effort</span></button>
         <button type="button" className="icon" title="Indent: under the task above (Tab)" onClick={indent}><IndentIncrease size={14} /></button>
         <button type="button" className="icon" title="Outdent: up a level (Shift+Tab)" onClick={outdent}><IndentDecrease size={14} /></button>
         <button type="button" className="icon" title="Link the tasks selected one after the other (finish to start)" onClick={linkSelected}><Link2 size={14} /></button>
@@ -463,6 +466,8 @@ export function GanttView() {
                         : <path d={`M${base.x},${base.y - 1} l3,3 l-3,3 l-3,-3 z`} className="gantt-baseline" />)}
                       {t.summary
                         ? <path d={`M${b.x},${b.y + 2} h${b.w} v${b.h - 2} l-5,-4 h${-(b.w - 10)} l-5,4 z`} className={`gantt-summary${red ? ' critical' : ''}`} />
+                        : isLoe(t)
+                          ? <><rect x={b.x} y={b.y} width={Math.max(2, b.w)} height={b.h} className="gantt-loe-hit" /><path d={loePath(b)} className={`gantt-loe${t.colour ? ' coloured' : ''}`} style={t.colour ? { stroke: t.colour } : undefined} data-testid="gantt-loe-bar" /></>
                         : t.milestone
                           ? <path d={`M${b.x},${cy - 7} l7,7 l-7,7 l-7,-7 z`} className={`gantt-milestone${red ? ' critical' : ''}${t.colour ? ' coloured' : ''}`} style={t.colour ? { fill: t.colour } : undefined} />
                           : <rect x={b.x} y={b.y} width={Math.max(2, b.w)} height={b.h} rx={2} className={`gantt-bar${red ? ' critical' : ''}${t.wet ? ' wet' : ''}${t.status === 'done' ? ' done' : ''}${t.colour ? ' coloured' : ''}`} style={t.colour ? { fill: t.colour } : undefined} />}

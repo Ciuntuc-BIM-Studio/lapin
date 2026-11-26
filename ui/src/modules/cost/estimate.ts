@@ -19,7 +19,15 @@ export interface LineDto {
   tasks?: string[] | null;
   /** "× duration": the time its quantity is multiplied by (months, workingDays, days, hours), the duration used, and what went wrong. */
   time?: string | null; duration?: string | null; notes?: string[] | null;
+  /** A time-related item: the unit of its rate (days, workingDays, weeks, months) and the days it runs over (its quantity is how long that is, from the schedule). */
+  per?: TimeUnit | null; spanFrom?: string | null; spanTo?: string | null;
 }
+export type TimeUnit = 'days' | 'workingDays' | 'weeks' | 'months';
+/** The units a time-related item's rate may be by, and the unit word a new one is given. */
+export const TIME_UNITS: { id: TimeUnit; label: string; unit: string }[] = [
+  { id: 'weeks', label: 'a week', unit: 'week' }, { id: 'months', label: 'a month', unit: 'month' },
+  { id: 'workingDays', label: 'a working day', unit: 'day' }, { id: 'days', label: 'a calendar day', unit: 'day' },
+];
 export interface ChapterDto { name: string; m: number; l: number; e: number; t: number; direct: number; lines: LineDto[] }
 export interface TotalsDto { m: number; l: number; e: number; t: number; direct: number; labourTax: number; directTotal: number; overheads: number; profit: number; net: number; vat: number; total: number; other: number }
 export interface SettingsDto { currency: 'RON' | 'EUR'; other: 'RON' | 'EUR'; eurRate: number; labourTax: number; overheads: number; profit: number; vat: number; grouping: 'chapter' | 'storey'; equivalent: boolean; derive: boolean; priceLists: string[] }
@@ -215,9 +223,18 @@ export function articleArg(r: { code: string; part?: string | null; basis?: stri
 }
 
 /** A line's duration as the estimate shows it after the quantity ("× 3 months"); empty when its quantity is not multiplied. */
-export function durationText(l: Pick<LineDto, 'time' | 'duration'>): string {
-  return l.time && l.duration ? `× ${l.duration}` : '';
+export function durationText(l: Pick<LineDto, 'time' | 'duration' | 'per'>): string {
+  return l.time && l.duration && !l.per ? `× ${l.duration}` : '';
 }
+
+/** The days a time-related item runs over, as the estimate shows them (16.11.2026 – 09.04.2027); empty when it has none (no schedule). */
+export function spanText(l: Pick<LineDto, 'spanFrom' | 'spanTo'>): string {
+  const d = (iso: string) => iso.split('-').reverse().join('.');
+  return l.spanFrom && l.spanTo ? `${d(l.spanFrom)} – ${d(l.spanTo)}` : '';
+}
+
+/** Whether a line's quantity is worked out (a time-related item with the schedule's span), not typed. */
+export const quantityDerived = (l: Pick<LineDto, 'per' | 'spanFrom'>) => !!l.per && !!l.spanFrom;
 
 export function remembered(): Record<string, Choice> {
   try { return JSON.parse(localStorage.getItem(REMEMBERED) ?? '{}') as Record<string, Choice>; } catch { return {}; }
