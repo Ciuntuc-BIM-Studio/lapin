@@ -31,13 +31,26 @@ The setup was Archicad 29 on the user's Mac, in demo mode (reading works, saving
 | IFC ids (`GetIFCIdsOfElements`) | 0.03 s. For all 5 building elements, `ifcId` is the compressed GUID. Markers and elevations have none. |
 | Changes (`CaptureElementState`, then `GetElementChangesSince`) | The user moved a wall and deleted the door. 0.47 s: **modified** were the moved wall, the wall joined to it and the window in the moved wall; **deleted** was the door; nothing new. |
 
-Not measured yet:
-- slabs, roofs, columns, beams, zones, stairs, railings, curtain walls, morphs, library objects in 3D, curved or slanted walls;
-- hotlinked modules;
-- a large project, for timing;
-- whether IFC export (`IFCFileOperation`) works in demo mode.
+**Measured again (26.11.2026, A1).** The same Archicad, the model grown by the user: 64 elements (3 walls, a window, 3 columns, a beam on the story above, a slab, a multi-plane roof, a stair, 4 elevations, and 49 subelements: the stair's 20 risers, 20 treads and 5 structures, 3 column segments, a beam segment); 3 stories with their `ifcId`s. The answers of one read are the tests' fixtures (`engine/tests/Lapin.Engine.Tests/Archicad/fixtures/demo/`, 21 commands, 0.8 MB, recorded by `ArchicadLiveTests` through `RecordingTransport`).
 
-Stage A1 starts by measuring these on a larger model (question Q7).
+| What | Result |
+|---|---|
+| A full read, every command once (Python, 22 commands) | 0.95 s in all: details 0.07 s (79 KB), 3D geometry 0.24–0.27 s (310 KB), IFC properties 0.07 s, the rest 0.02–0.05 s each. Lapin's own read (`archicad.survey`, every element's custom properties included) 3.3 s the first time, 1 s after. |
+| **Column** | `origin`, `coreAnchor` (3×3 grid), `axisRotationAngle`, `width`/`depth` or `circleBased`, `height`, `bottomOffset`, `buildingMaterialId`, `veneer`, `segments` (each `structureType`, `taper`). 6 polygons a box. Its 3D body is given twice: by the column and by its segment. |
+| **Beam** | `begCoordinate`/`endCoordinate`, `zCoordinate` (absolute: the story's level plus its own), `anchorPoint` (3×3), `offset`, `width`/`height`, `profileAngle`, `isSlanted`, `segments`. Its body runs to its ends through the columns (not stopped at their faces). |
+| **Slab** | `polygonOutline` (first point again at the end), `holes`, `thickness`, `level`, `offsetFromTop` (the top is the story + `level` + `offsetFromTop` whatever `referencePlaneLocation`), composite skins top down. |
+| **Wall** | `offsetFromOutside`: the reference line's distance from the outside face, which Archicad works out; `floorPlanPolygons`: each skin's plan polygon, cut at the junctions. The outside face is on the left of the reference line unflipped, on the right flipped; a composite's skins are listed from the outside face. |
+| **Window** | `centerOffset` is along the reference line from the wall's start; `sillHeight` from the `verticalLink` anchor (`SillToStory`: the story); the hole in the wall's body is `width` × `height` exactly. |
+| **Roof** | `MultiPlane`, `pivotPolygonOutline`, `levels`; `GetRoofPlanes` gives each plane's details (a reference in A1). |
+| **Stair** | 45 bodies, 715 polygons with its parts; a reference in A1. |
+| **Subelements** | `Get3DGeometryOfElements` gives a hierarchical element's 3D with its parts (a stair, a column, a beam): the owner is received, the parts are not. |
+| Custom properties | 168 `Custom` properties in 26 groups (the template's); values `<Undefined>` until set. |
+| Classification items | `API.GetAllClassificationsInSystem` gives the tree (code as `id`); Tapir gives each element's item by guid. |
+| Surfaces | `GetSurfaces`: name, colour (0–1), transparency (%). |
+| **IFC export in demo mode** | **Works**: `IFCFileOperation` save with the preview translator wrote 273 KB in 0.4 s, and all 11 GlobalIds Lapin received are in it. 16 translators. |
+| Hotlinks, geolocation | No hotlinks. Survey point at the project origin; a default geolocation (Budapest) that is not the model's. |
+
+Still not measured: zones, doors, curtain walls, railings, morphs, objects, curved or slanted walls, hotlinked modules, a large project (the user's model had none of them). The tests cover zones, reference lines and changes with synthetic elements beside the recorded ones.
 
 ## 3. Decisions
 
@@ -73,7 +86,7 @@ Stage A1 starts by measuring these on a larger model (question Q7).
 | Stage | What | Days |
 |---|---|---|
 | **A0** | Measurement (§2). | done |
-| **A1** | **Receive.** See below. | 8–10 |
+| **A1** | **Receive.** See below. | done (26.11.2026) |
 | **A2** | **Updates.** See below. | 3–4 |
 | **A3** | **To Atrium without Lapin open.** See below. | 2 |
 | **A4** | **More native types.** See below. | 5–8 |
