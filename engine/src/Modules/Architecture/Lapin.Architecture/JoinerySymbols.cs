@@ -208,16 +208,62 @@ public static class JoinerySymbols
 
     /// <summary>
     /// A door's threshold seen in plan under the cut (forum topic 204), for a type that asks for it (<see cref="JoinerySpec.ThresholdInPlan"/>):
-    /// the detailed threshold across a wall <paramref name="thickness"/> thick, as wide as the opening, when the type has one; else
-    /// the frame's bottom member between the jambs. None for a window, a type that does not ask, or a door with no threshold.
+    /// the detailed threshold across a wall <paramref name="thickness"/> thick (or as wide as its <see cref="JoineryThreshold.Width"/>),
+    /// when the type has one: as wide as the opening, between the frame's jambs where it runs under them (LVK, post 8: the frame's
+    /// jambs stand on it, so its outline steps in to them and is not drawn through them); else the frame's bottom member between the
+    /// jambs. None for a window, a type that does not ask, or a door with no threshold.
     /// </summary>
     public static List<JStroke> ThresholdPlan(JoinerySpec s, double thickness)
     {
         if (!s.IsDoor || s.ThresholdInPlan != true) return [];
-        if (s.Details?.Threshold is { On: true }) return [Rect(-s.Width / 2, -thickness / 2, s.Width / 2, thickness / 2, "outline")];
+        if (s.Details?.Threshold is { On: true } th)
+        {
+            var (y0, y1) = th.Across(s, thickness);
+            return y1 - y0 < 1e-9 ? [] : [new JStroke(ThresholdOutline(s, y0, y1), "outline", true)];
+        }
         if (s.Threshold <= 1e-9) return [];
         var bottom = Joinery.Boxes(s).Where(b => b.Role == "frame" && b.Min.Z < 1e-9 && b.Max.Z <= s.Threshold + 1e-9 && b.Max.X - b.Min.X > s.Width - s.Frame.Width * 2 - 1e-9).ToList();
         return bottom.Count == 0 ? [] : [Rect(bottom.Min(b => b.Min.X), bottom.Min(b => b.Min.Y), bottom.Max(b => b.Max.X), bottom.Max(b => b.Max.Y), "outline")];
+    }
+
+    /// <summary>
+    /// A detailed threshold's outline in plan from <paramref name="y0"/> to <paramref name="y1"/> across the wall: the opening's width
+    /// beside the frame, the width between the jambs (less the frame's face each side) where it runs under them.
+    /// </summary>
+    static List<Vec2> ThresholdOutline(JoinerySpec s, double y0, double y1)
+    {
+        var (a, f) = (s.Width / 2, s.Frameless == null ? Math.Max(0, s.Frame.Width) : 0);
+        var (fi, fe) = (s.Frame.Offset - s.Frame.Depth / 2, s.Frame.Offset + s.Frame.Depth / 2);
+        var ys = new[] { y0, y1, fi, fe }.Where(y => y >= y0 - 1e-12 && y <= y1 + 1e-12).Distinct().Order().ToList();
+        var right = new List<Vec2>();
+        for (var i = 0; i + 1 < ys.Count; i++)
+        {
+            if (ys[i + 1] - ys[i] < 1e-9) continue;
+            var mid = (ys[i] + ys[i + 1]) / 2;
+            var h = f > 1e-9 && mid > fi && mid < fe ? Math.Max(0, a - f) : a;
+            foreach (var p in new Vec2[] { new(h, ys[i]), new(h, ys[i + 1]) })
+                if (right.Count == 0 || (right[^1] - p).Length > 1e-9) right.Add(p);
+        }
+        // Collinear points (the same width either side of a band's edge) are dropped.
+        var pts = new List<Vec2>();
+        foreach (var p in right.Concat(right.AsEnumerable().Reverse().Select(q => new Vec2(-q.X, q.Y))))
+        {
+            if (pts.Count > 0 && (pts[^1] - p).Length < 1e-9) continue;
+            pts.Add(p);
+        }
+        return Simplify(pts);
+
+        static List<Vec2> Simplify(List<Vec2> p)
+        {
+            var o = new List<Vec2>();
+            for (var i = 0; i < p.Count; i++)
+            {
+                var (prev, next) = (p[(i - 1 + p.Count) % p.Count], p[(i + 1) % p.Count]);
+                var cross = (p[i].X - prev.X) * (next.Y - p[i].Y) - (p[i].Y - prev.Y) * (next.X - p[i].X);
+                if (Math.Abs(cross) > 1e-12) o.Add(p[i]);
+            }
+            return o;
+        }
     }
 
     // ─── Elevation ─────────────────────────────────────────────────────────

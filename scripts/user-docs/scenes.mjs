@@ -14125,7 +14125,7 @@ export const scenes = [
       await own.click();
       await t.page.waitForSelector('[data-dialog=document-templates] [data-field=tpl-style-sample] img', { timeout: 10_000 });
       t.expect(await t.page.locator('[data-dialog=document-templates] [data-field=tpl-rename]').count() === 1, 'a project template can be renamed');
-      t.expect(await t.page.locator('[data-dialog=document-templates] [data-origin=builtin]').count() === 3, 'the three built-in templates are listed');
+      t.expect(await t.page.locator('[data-dialog=document-templates] [data-origin=builtin]').count() === 9, 'the nine built-in templates are listed (six of them since R5: the cover pages and the permit lists, ro and en)');
       await t.shot('document-templates', { of: '[data-dialog=document-templates]', pad: 0 });
       await t.page.locator('[data-dialog=document-templates] .dialog-head button[title=Close]').click(); await t.wait(300);
     },

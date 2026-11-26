@@ -918,7 +918,8 @@ public static class Openings
             {
                 var th = _d.Threshold!;
                 var id = MaterialNamed(_m, th.Material);
-                if (Box(-W / 2, W / 2, YInt, YExt, 0, Math.Max(0.005, th.Height), "threshold") is { } b)
+                var (ty0, ty1) = th.Across(_spec, _t);
+                if (Box(-W / 2, W / 2, ty0, ty1, 0, Math.Max(0.005, th.Height), "threshold") is { } b)
                     yield return new GeometryPart("Threshold", ColorOf(id, th.Material, "#8a8a8a"), b, id, "threshold");
             }
             // The dressings on the facade (shutters, a grille, a window box, a canopy), by the wall's faces here.
