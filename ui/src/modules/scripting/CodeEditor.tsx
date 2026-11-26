@@ -55,6 +55,7 @@ export function CodeEditor({ value, onChange, onRun, line, spaces, label }: {
       autocompletion({ override: [lapinCompletions(spaces)], activateOnTyping: true }),
       keymap.of([
         { key: 'Mod-Enter', preventDefault: true, run: () => { calls.current.onRun(); return true; } },
+        { key: 'Shift-Enter', preventDefault: true, run: () => { calls.current.onRun(); return true; } },
         ...closeBracketsKeymap, ...completionKeymap, ...defaultKeymap, ...historyKeymap, indentWithTab,
       ]),
       EditorView.updateListener.of((u) => { if (u.docChanged) calls.current.onChange(u.state.doc.toString()); }),

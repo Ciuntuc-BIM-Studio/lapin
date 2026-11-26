@@ -1,29 +1,19 @@
 /**
- * The Script panel's place in the workspace (the module's background): drawn while it is open and Developer extras are
- * on, fetched the first time. With Developer extras on it also tells the engine's host what the window has selected,
- * as it changes, so a script's lapin.selection() reads it (stage 3).
- * Stage 4, with or without Developer extras: the scripts' tools kept in My tools (scriptTools.ts), the questions scripts ask
- * (lapin.ui.ask) and a tool's trust question (AskDialog.tsx).
+ * The scripting module's background: keeps script tools in My tools, relays the
+ * window's selection to the engine's host for `lapin.selection()`, and renders
+ * script dialogs (`lapin.ui.ask`) and palettes (`lapin.ui.palette`).
  */
 
 import { useEffect } from 'react';
-import { lazyPart } from '../../platform/lazyPart';
-import { usePrefs } from '../../app/prefs';
 import { useUi } from '../../app/store';
 import { engine, engineInBrowser } from '../../engine/session';
-import { forgetSentSelection, tellSelection, useScripting } from './store';
+import { forgetSentSelection, tellSelection } from './store';
 import { startScriptTools } from './scriptTools';
 import { ScriptDialogs } from './AskDialog';
 import { ScriptPalettes } from './PaletteWindow';
 
-const ScriptPanel = lazyPart(() => import('./ScriptPanel').then((m) => m.ScriptPanel), { title: 'Script', inline: true });
-
 export function ScriptDock() {
-  const open = useScripting((s) => s.open);
-  const on = usePrefs((s) => s.developerExtras);
   useEffect(() => { startScriptTools(); }, []);
-  // The selection told to the engine's host always on the desktop (not only with Developer extras): a program in a terminal or
-  // VS Code reads it and gets the selection event (docs/plan-external-geometry.md, L2).
   useEffect(() => {
     if (engineInBrowser) return;
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -33,6 +23,6 @@ export function ScriptDock() {
     const back = engine.onStatus((connected) => { if (connected) { forgetSentSelection(); soon(); } });
     return () => { off(); back(); if (timer) clearTimeout(timer); };
   }, []);
-  if (engineInBrowser) return on && open ? <ScriptPanel /> : null;
-  return <>{on && open && <ScriptPanel />}<ScriptDialogs /><ScriptPalettes /></>;
+  if (engineInBrowser) return null;
+  return <><ScriptDialogs /><ScriptPalettes /></>;
 }

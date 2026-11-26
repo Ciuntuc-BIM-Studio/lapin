@@ -66,6 +66,8 @@ public sealed class ScriptHost(bool enabled, string? userDir, Func<JsonObject, T
     int _nextRun;
     int? _running;
     bool _stopping;
+    /// <summary>Pending <c>script.inspect</c> calls waiting for the kernel's namespace snapshot.</summary>
+    readonly System.Collections.Concurrent.ConcurrentDictionary<int, TaskCompletionSource<JsonObject>> _inspects = new();
     /// <summary>Why the kernel is being killed (its run's end says so, whichever of the kill and its output's end comes first).</summary>
     volatile string? _killedWhy;
 
@@ -203,6 +205,7 @@ public sealed class ScriptHost(bool enabled, string? userDir, Func<JsonObject, T
         switch (method)
         {
             case "script.run": return await Run(p);
+            case "script.inspect": return await Inspect();
             case "script.stop": return await Stop();
             case "script.restart": await Kill(null); return await Status((string?)p["python"], refresh: true);
             case "script.files": return Files();
@@ -282,6 +285,7 @@ public sealed class ScriptHost(bool enabled, string? userDir, Func<JsonObject, T
         var code = (string?)p["code"] ?? throw new CommandException("The script's code is missing.");
         var name = ((string?)p["name"])?.Trim() is { Length: > 0 } n ? n : "Script";
         var console = p["console"] is JsonValue cv && cv.TryGetValue<bool>(out var c) && c;
+        var echo = p["echo"] is JsonValue ev && ev.TryGetValue<bool>(out var ec) && ec;
         // Stage 4: a script's tool (what its run calls) and where the script is (the window's key for it, said back with the tools it registers).
         var tool = console ? null : ToolOf(p["tool"] as JsonObject);
         var source = ((string?)p["source"])?.Trim() is { Length: > 0 and <= 300 } s ? s : null;
@@ -299,11 +303,40 @@ public sealed class ScriptHost(bool enabled, string? userDir, Func<JsonObject, T
             id = ++_nextRun;
             _running = id;
             _stopping = false;
-            await Send(new JsonObject { ["op"] = "run", ["id"] = id, ["code"] = code, ["name"] = name, ["console"] = console, ["tool"] = tool?.DeepClone(), ["source"] = source });
+            await Send(new JsonObject { ["op"] = "run", ["id"] = id, ["code"] = code, ["name"] = name, ["console"] = console, ["echo"] = echo, ["tool"] = tool?.DeepClone(), ["source"] = source });
         }
         finally { _lock.Release(); }
         await output(new JsonObject { ["type"] = "start", ["id"] = id, ["name"] = name, ["console"] = console, ["tool"] = tool, ["source"] = source });
         return new JsonObject { ["run"] = id, ["version"] = _python?.Version.ToString() };
+    }
+
+    async Task<JsonObject> Inspect()
+    {
+        int id;
+        TaskCompletionSource<JsonObject> tcs;
+        await _lock.WaitAsync();
+        try
+        {
+            if (_proc is not { HasExited: false })
+                return new JsonObject { ["alive"] = false, ["busy"] = false, ["vars"] = new JsonArray() };
+            if (_running != null)
+                return new JsonObject { ["alive"] = true, ["busy"] = true, ["vars"] = new JsonArray() };
+            id = ++_nextRun;
+            tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            _inspects[id] = tcs;
+            await Send(new JsonObject { ["op"] = "inspect", ["id"] = id });
+        }
+        finally { _lock.Release(); }
+        try
+        {
+            var r = await tcs.Task.WaitAsync(TimeSpan.FromMilliseconds(1500));
+            return new JsonObject { ["alive"] = true, ["busy"] = false, ["vars"] = r["vars"]?.DeepClone() ?? new JsonArray() };
+        }
+        catch (TimeoutException)
+        {
+            _inspects.TryRemove(id, out _);
+            return new JsonObject { ["alive"] = true, ["busy"] = true, ["vars"] = new JsonArray() };
+        }
     }
 
     async Task<JsonObject> Stop()
@@ -378,6 +411,11 @@ public sealed class ScriptHost(bool enabled, string? userDir, Func<JsonObject, T
                 if (!err && line.StartsWith('{'))
                     try { msg = JsonNode.Parse(line) as JsonObject; } catch (JsonException) { }
                 msg ??= new JsonObject { ["type"] = "err", ["text"] = line + "\n" };
+                if ((string?)msg["type"] == "inspect" && msg["id"] is JsonValue iv && iv.TryGetValue<int>(out var iid))
+                {
+                    if (_inspects.TryRemove(iid, out var tcs)) tcs.TrySetResult(msg);
+                    continue;
+                }
                 if ((string?)msg["type"] == "done" && msg["id"] is JsonValue v && v.TryGetValue<int>(out var id))
                 {
                     if (_running != id) continue;   // a run already ended (killed) speaks no more

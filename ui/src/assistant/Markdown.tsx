@@ -55,9 +55,25 @@ export function Markdown({ text }: { text: string }) {
       blocks.push(<List key={`l${i}`}>{items.map((x, k) => <li key={k}>{inline(x)}</li>)}</List>);
       continue;
     }
+    if (/^\s*```/.test(line)) {
+      i++;
+      const codeLines: string[] = [];
+      while (i < lines.length && !/^\s*```/.test(lines[i])) { codeLines.push(lines[i]); i++; }
+      if (i < lines.length) i++;
+      blocks.push(<pre className="md-code" key={`c${i}`}><code>{codeLines.join('\n')}</code></pre>);
+      continue;
+    }
+    const heading = /^\s*(#{1,3})\s+(.+)$/.exec(line);
+    if (heading) {
+      const level = heading[1].length;
+      const content = inline(heading[2]);
+      blocks.push(level === 1 ? <h3 className="md-h1" key={`h${i}`}>{content}</h3> : level === 2 ? <h4 className="md-h2" key={`h${i}`}>{content}</h4> : <h5 className="md-h3" key={`h${i}`}>{content}</h5>);
+      i++;
+      continue;
+    }
     if (!line.trim()) { i++; continue; }
     const para: string[] = [];
-    while (i < lines.length && lines[i].trim() && !/^\s*\|/.test(lines[i]) && !/^\s*([-*•]|\d+[.)])\s+/.test(lines[i])) { para.push(lines[i].replace(/^#+\s*/, '')); i++; }
+    while (i < lines.length && lines[i].trim() && !/^\s*\|/.test(lines[i]) && !/^\s*([-*•]|\d+[.)])\s+/.test(lines[i]) && !/^\s*```/.test(lines[i]) && !/^\s*#{1,3}\s+/.test(lines[i])) { para.push(lines[i].replace(/^#+\s*/, '')); i++; }
     blocks.push(<p key={`p${i}`}>{para.map((p, k) => <Fragment key={k}>{k > 0 && <br />}{inline(p)}</Fragment>)}</p>);
   }
   return <>{blocks}</>;

@@ -15,6 +15,8 @@ import { create } from 'zustand';
 const DEFAULT_URL = 'http://127.0.0.1:11434';
 /** The models measured on the assistant's two-step tool test, best first (qwen3-coder:30b 66 tok/s, gemma4:12b 26 tok/s; qwen3.8:27b failed it). */
 const PREFERRED_MODELS = ['qwen3-coder:30b', 'gemma4:12b'];
+/** Preferred models for Python notebook code generation, best first. */
+const PREFERRED_CODE_MODELS = ['qwen3-coder:30b', 'qwen2.5-coder:32b', 'qwen2.5-coder:14b', 'qwen2.5-coder:7b', 'qwen2.5-coder:latest', 'deepseek-coder-v2:latest', 'gemma4:12b'];
 
 /** One message of an Ollama chat. */
 export interface OllamaToolCall { id?: string; function: { name: string; arguments: Record<string, unknown> | string } }
@@ -49,6 +51,13 @@ export function loopbackUrl(input: string): string | null {
 export function defaultModel(installed: string[]): string | null {
   for (const m of PREFERRED_MODELS) if (installed.includes(m)) return m;
   return installed[0] ?? null;
+}
+
+/** The model to start with for Python code generation: the first coding model installed, else defaultModel. */
+export function defaultCodeModel(installed: string[]): string | null {
+  for (const m of PREFERRED_CODE_MODELS) if (installed.includes(m)) return m;
+  const anyCoder = installed.find((m) => /coder|code/i.test(m));
+  return anyCoder ?? defaultModel(installed);
 }
 
 /** How the HTTP reaches Ollama. */
@@ -181,14 +190,18 @@ export async function checkStatus(t: OllamaTransport, base: string, model: strin
 
 // ─── Settings (this computer's: kept in the browser storage) ────────────────
 
-export interface AssistantSettings { url: string; model: string | null }
+export interface AssistantSettings { url: string; model: string | null; codeModel?: string | null }
 const KEY = 'lapin.assistant';
 
 function load(): AssistantSettings {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<AssistantSettings>;
-    return { url: loopbackUrl(raw.url ?? DEFAULT_URL) ?? DEFAULT_URL, model: typeof raw.model === 'string' ? raw.model : null };
-  } catch { return { url: DEFAULT_URL, model: null }; }
+    return {
+      url: loopbackUrl(raw.url ?? DEFAULT_URL) ?? DEFAULT_URL,
+      model: typeof raw.model === 'string' ? raw.model : null,
+      codeModel: typeof raw.codeModel === 'string' ? raw.codeModel : null,
+    };
+  } catch { return { url: DEFAULT_URL, model: null, codeModel: null }; }
 }
 
 export const useAssistantSettings = create<AssistantSettings>(() => load());

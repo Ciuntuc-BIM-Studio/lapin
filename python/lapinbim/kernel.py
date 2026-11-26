@@ -118,7 +118,7 @@ def _reader(jobs: queue.Queue) -> None:
         except ValueError:
             continue
         op = msg.get("op")
-        if op == "run":
+        if op in ("run", "inspect"):
             jobs.put(msg)
         elif op == "interrupt":
             global _stop_asked
@@ -160,6 +160,7 @@ def _run(job: dict, namespace: dict, step: bool) -> dict:
     code = str(job.get("code") or "")
     name = str(job.get("name") or "Script")
     console = bool(job.get("console"))
+    echo_last = console or bool(job.get("echo"))
     tool = job.get("tool") if isinstance(job.get("tool"), dict) and not console else None
     source = job.get("source") if isinstance(job.get("source"), str) else None
     filename = name if not console else "<console>"
@@ -172,7 +173,7 @@ def _run(job: dict, namespace: dict, step: bool) -> dict:
             began = True
         tree = ast.parse(code, filename, "exec")
         echo = None
-        if console and tree.body and isinstance(tree.body[-1], ast.Expr):
+        if echo_last and tree.body and isinstance(tree.body[-1], ast.Expr):
             echo = ast.Expression(tree.body.pop().value)
         compiled = compile(tree, filename, "exec")
         shown = compile(echo, filename, "eval") if echo is not None else None
@@ -237,6 +238,32 @@ def _run(job: dict, namespace: dict, step: bool) -> dict:
     return result
 
 
+def _inspect(namespace: dict, max_vars: int = 40) -> list[dict]:
+    """Compact snapshot of live user variables in the kernel namespace for AI context."""
+    skip = {"lapin"}
+    out: list[dict] = []
+    for name, val in namespace.items():
+        if name.startswith("_") or name in skip:
+            continue
+        tname = type(val).__name__
+        if tname == "module":
+            continue
+        item: dict[str, Any] = {"name": name, "type": tname}
+        if isinstance(val, (list, tuple, dict, set)):
+            item["len"] = len(val)
+        try:
+            preview = repr(val)
+        except Exception:  # noqa: BLE001
+            preview = f"<{tname}>"
+        if len(preview) > 80:
+            preview = preview[:77] + "..."
+        item["preview"] = preview
+        out.append(item)
+        if len(out) >= max_vars:
+            break
+    return out
+
+
 def main() -> None:
     global _out, _current, _stop_asked
     # The real stdout carries the protocol; what code prints goes through it as lines.
@@ -268,6 +295,9 @@ def main() -> None:
             continue
         if job is None:
             break
+        if job.get("op") == "inspect":
+            _emit({"type": "inspect", "id": job.get("id"), "vars": _inspect(namespace)})
+            continue
         run_id = job.get("id")
         t0 = time.monotonic()
         try:
