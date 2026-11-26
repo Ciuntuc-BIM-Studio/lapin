@@ -1,5 +1,5 @@
 import { beforeEach, vi, describe, expect, it } from 'vitest';
-import { categoryOf, DEFAULT_PALETTE, diagramColour, diagramLooks, readDiagram, resetDiagramPalette, setDiagram, useDiagram, WHITE_MODEL, CATEGORIES } from './diagram';
+import { categoryOf, DEFAULT_PALETTE, diagramColour, diagramLooks, effectiveDiagram, palettePatch, projectPaletteOf, readDiagram, resetDiagramPalette, setDiagram, useDiagram, WHITE_MODEL, CATEGORIES } from './diagram';
 
 const items = [
   { id: 'w', type: 'IfcWall' }, { id: 's', type: 'IfcSlab' }, { id: 'd', type: 'IfcDoor' }, { id: 'sp', type: 'IfcSpace' },
@@ -82,5 +82,27 @@ describe('the diagram settings kept on this computer', () => {
     resetDiagramPalette();
     expect(useDiagram.getState()).toEqual({ variant: 'pastel', palette: {} });
     expect(CATEGORIES.every((c) => /^#[0-9a-f]{6}$/.test(DEFAULT_PALETTE[c]))).toBe(true);
+  });
+});
+
+describe('the palette kept in the project (decision 885)', () => {
+  const project = (diagramPalette?: unknown) => new Map([['p', { type: 'IfcProject', props: diagramPalette === undefined ? {} : { diagramPalette } }], ['w', { type: 'IfcWall', props: {} }]]);
+
+  it('reads the project’s own colours, none when it has none', () => {
+    expect(projectPaletteOf(project())).toBeNull();
+    expect(projectPaletteOf(project({ walls: DEFAULT_PALETTE.walls }))).toBeNull();
+    expect(projectPaletteOf(project({ walls: '#ABCDEF', roofs: 'red', nope: '#000000' }))).toEqual({ walls: '#abcdef' });
+  });
+
+  it('draws the 3D with the project’s palette, else this computer’s; the variant stays this computer’s', () => {
+    const local = { variant: 'pastel' as const, palette: { roofs: '#111111' } };
+    expect(effectiveDiagram(local, null)).toBe(local);
+    expect(effectiveDiagram(local, { walls: '#222222' })).toEqual({ variant: 'pastel', palette: { walls: '#222222' } });
+  });
+
+  it('sends the palette shown with the change, a colour back at its default as null', () => {
+    expect(palettePatch({ roofs: '#111111' }, { walls: '#ABCDEF' })).toEqual({ roofs: '#111111', walls: '#abcdef' });
+    expect(palettePatch({ roofs: '#111111' }, { roofs: DEFAULT_PALETTE.roofs })).toEqual({ roofs: null });
+    expect(palettePatch({}, { walls: null })).toEqual({ walls: null });
   });
 });

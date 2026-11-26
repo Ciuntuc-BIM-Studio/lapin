@@ -13558,6 +13558,10 @@ export const RU: Record<string, string> = {
   "Asking Ollama for a fix…": "Запрос исправления у Ollama…",
   "Asking Ollama…": "Запрос к Ollama…",
   "Clear the cell's output": "Очистить вывод ячейки",
+  // The diagram look in 2D views (decision 885, forum topic 283).
+  "off: technical drawing": "выкл.: технический чертёж",
+  "Draws the view as the 3D Diagram display: what it cuts and sees filled white or pastel by category (Preferences → Display → Diagram colours, kept in the project), thin light outlines, no hatches unless the view turns them on itself. Sheets and the PDF print it.": "Рисует вид как отображение «Диаграмма» в 3D: то, что он режет и видит, заливается белым или пастелью по категориям (Preferences → Display → Diagram colours, хранятся в проекте), тонкие светлые контуры, без штриховок, если вид сам их не включает. Листы и PDF печатают его так же.",
+  "The pastel of each category in the Diagram display (View → Display quality) and in the views drawn as diagrams (View settings → Diagram). Kept in the project, so its sheets print the same colours.": "Пастель каждой категории в отображении «Диаграмма» (View → Display quality) и в видах, нарисованных как диаграмма (View settings → Diagram). Хранится в проекте, поэтому его листы печатают те же цвета.",
   "Clear the terminal": "Очистить терминал",
   "Click to write Python…": "Нажмите, чтобы написать Python…",
   "Coding models": "Модели для кода",

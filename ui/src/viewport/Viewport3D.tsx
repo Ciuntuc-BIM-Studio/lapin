@@ -35,7 +35,8 @@ import { boxUv, boxUvSized, hasRelief, imageOf, imageTexture, orthophotos, ortho
 import { lookOf } from './look';
 import { xrayLooks } from './xray';
 import { glassThrough, reflections, standardMaterial } from './materialLook';
-import { DIAGRAM_BACKGROUND, DIAGRAM_EDGES, diagramLooks, flatTextures, useDiagram } from './diagram';
+import { DIAGRAM_BACKGROUND, DIAGRAM_EDGES, diagramLooks, flatTextures } from './diagram';
+import { useDiagramSettings } from './diagramProject';
 import { nightOf, Realism, sunColour, useCameraLook, useRenderProfile, whiteBalanceKelvin } from './render3d';
 import { buildTraceScene, exposureFactor, resolutionOf, TraceMaterials, type TraceInput } from './pathTrace';
 import type { PathTraceView, TraceLook, TraceSky } from './pathTraceView';
@@ -2131,7 +2132,7 @@ export function Viewport3D() {
   const lightBudget = useLightBudget();
   const renderMode = useRenderMode();
   const renderProfile = useRenderProfile((st) => st.profile);
-  const diagram = useDiagram();
+  const diagram = useDiagramSettings();
   const meshes = useSession((st) => st.meshes);
 
   // The reference planes (docs/plan-studio-thick.md): a translucent quad each, as large as the model on it, with its name;

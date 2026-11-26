@@ -12781,6 +12781,8 @@ export const TH: Record<string, string> = {
   "White model": "แบบจำลองสีขาว",
   "Every element a light white-grey.": "ทุกองค์ประกอบเป็นสีขาวเทาอ่อน.",
   "Pastel by category": "พาสเทลตามหมวดหมู่",
+  // The diagram look in 2D views (decision 885, forum topic 283).
+  "off: technical drawing": "ปิด: แบบเขียนทางเทคนิค", "Draws the view as the 3D Diagram display: what it cuts and sees filled white or pastel by category (Preferences → Display → Diagram colours, kept in the project), thin light outlines, no hatches unless the view turns them on itself. Sheets and the PDF print it.": "วาดมุมมองแบบการแสดงผล Diagram ของ 3D: สิ่งที่ตัดและมองเห็นถูกเติมด้วยสีขาวหรือสีพาสเทลตามหมวดหมู่ (Preferences → Display → Diagram colours เก็บไว้ในโครงการ) เส้นขอบบางและอ่อน ไม่มีลายแรเงาเว้นแต่มุมมองจะเปิดเอง แผ่นงานและ PDF พิมพ์ตามนี้.", "The pastel of each category in the Diagram display (View → Display quality) and in the views drawn as diagrams (View settings → Diagram). Kept in the project, so its sheets print the same colours.": "สีพาสเทลของแต่ละหมวดหมู่ในการแสดงผล Diagram (View → Display quality) และในมุมมองที่วาดเป็นแผนภาพ (View settings → Diagram) เก็บไว้ในโครงการ แผ่นงานจึงพิมพ์สีเดียวกัน.",
   "Walls, floors, roofs, structure, doors and windows, site, greenery each a muted pastel (Preferences → Display edits them).": "ผนัง พื้น หลังคา โครงสร้าง ประตูและหน้าต่าง ที่ดิน พืชพรรณ แต่ละอย่างเป็นสีพาสเทลอ่อน (ค่ากำหนด → การแสดงผล แก้ไขได้).",
   "Only on screen: drawings, sheets and exports keep their colours. A colour set in Visibility/Graphics still wins.": "เฉพาะบนหน้าจอ: แบบ แผ่นแบบ และการส่งออกคงสีของมัน สีที่กำหนดใน มองเห็น/กราฟิก ยังคงมีผลเหนือกว่า.",
   "Diagram colours": "สีแผนภาพ",

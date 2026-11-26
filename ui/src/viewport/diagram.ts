@@ -8,6 +8,11 @@
  * A colour already set for an element (a phase's, the 4D simulation's, Visibility/Graphics) wins over the palette, so a
  * site can be accented green, or one building highlighted. See-through things (glass) stay see-through: only the colour
  * changes. The pastel palette is the coded default; the user edits it in Preferences → Display (category → colour, reset).
+ *
+ * The palette is the project's (decision 885, forum topic 283: IfcProject's `diagramPalette`, `diagram.setPalette`), so the
+ * plans, sections and elevations a view style draws as a diagram (the engine's DiagramLook, the same categories and default)
+ * print what the 3D shows on any computer. A palette kept on this computer before then still colours the 3D of a project with
+ * none of its own, until it is edited once: then the project takes it. The 3D's variant stays this computer's.
  */
 
 import * as THREE from 'three';
@@ -97,13 +102,39 @@ export function diagramLooks(looks: Record<string, Look | undefined>, items: Ite
 
 const KEY = 'lapin.diagram';
 
+/** A palette as stored (the project's or this computer's): only valid colours of known categories that differ from the default. */
+export function readPalette(raw: unknown): Partial<Record<DiagramCategory, string>> {
+  const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const palette: Partial<Record<DiagramCategory, string>> = {};
+  for (const c of CATEGORIES) { const v = o[c]; if (typeof v === 'string' && HEX.test(v) && v.toLowerCase() !== DEFAULT_PALETTE[c]) palette[c] = v.toLowerCase(); }
+  return palette;
+}
+
+/** The project's own palette (IfcProject's `diagramPalette`), null when it has none. */
+export function projectPaletteOf(nodes: ReadonlyMap<string, { type: string; props: Record<string, unknown> }>): Partial<Record<DiagramCategory, string>> | null {
+  for (const n of nodes.values()) if (n.type === 'IfcProject') { const p = readPalette(n.props.diagramPalette); return Object.keys(p).length > 0 ? p : null; }
+  return null;
+}
+
+/** The settings the 3D draws with: this computer's variant, the project's palette, else (a project with none) this computer's. */
+export function effectiveDiagram(local: DiagramSettings, project: Partial<Record<DiagramCategory, string>> | null): DiagramSettings {
+  return project ? { variant: local.variant, palette: project } : local;
+}
+
+/**
+ * The palette patch a change in Preferences sends the project (diagram.setPalette): the palette shown (the project's, else this
+ * computer's carried over) with the change; null for a colour back at its default.
+ */
+export function palettePatch(shown: Partial<Record<DiagramCategory, string>>, change: Partial<Record<DiagramCategory, string | null>>): Record<string, string | null> {
+  const out: Record<string, string | null> = { ...shown };
+  for (const [k, v] of Object.entries(change)) out[k] = v == null || v.toLowerCase() === DEFAULT_PALETTE[k as DiagramCategory] ? null : v.toLowerCase();
+  return out;
+}
+
 /** What was kept, anything unreadable at its default. */
 export function readDiagram(stored: unknown): DiagramSettings {
   const o = (stored && typeof stored === 'object' ? stored : {}) as { variant?: unknown; palette?: unknown };
-  const raw = (o.palette && typeof o.palette === 'object' ? o.palette : {}) as Record<string, unknown>;
-  const palette: Partial<Record<DiagramCategory, string>> = {};
-  for (const c of CATEGORIES) { const v = raw[c]; if (typeof v === 'string' && HEX.test(v) && v.toLowerCase() !== DEFAULT_PALETTE[c]) palette[c] = v.toLowerCase(); }
-  return { variant: o.variant === 'pastel' ? 'pastel' : 'white', palette };
+  return { variant: o.variant === 'pastel' ? 'pastel' : 'white', palette: readPalette(o.palette) };
 }
 
 function read(): DiagramSettings {

@@ -55,6 +55,10 @@ namespace Lapin.Platform;
 /// <item><c>vegetation</c>: how plants' bodies look (decision 818): <c>coloured</c> (each species in its colour, as before; the
 /// default and a style saved before) or <c>maquette</c> (neutral faceted bodies, an architectural model's), in the 3D, its
 /// exports and the drawings that draw bodies alike.</item>
+/// <item><c>diagram</c>: the diagram look of its plans, sections and elevations (decision 885, forum topic 283, <see cref="DiagramLook"/>):
+/// <c>off</c> (the default and a style saved before), <c>white</c> (every cut and seen surface the white model's light grey) or
+/// <c>pastel</c> (the project's pastel by category), with thin light outlines and the surface, floor and finish hatches off
+/// unless the view turns them on itself.</item>
 /// </list>
 /// A view takes its style (<c>viewStyle</c>, else its discipline's), and may
 /// set any of these itself: what it sets wins over the style.
@@ -65,7 +69,7 @@ public static class ViewStyles
     public static readonly string[] LayerModes = ["all", "noFinishes", "core", "coreLoadBearing"];
     const string LayerModesText = "all, noFinishes, core or coreLoadBearing";
     public static readonly string[] Fields = ["layers", "joins", "overhead", "ifc2d", "voids", "voidSizes", "finishHatch", "floorHatch", "surfaceHatch", "entourage", "entourageFill", "detail",
-        "minHatchSpacing", "smallScaleCut", "materialGraphicsSet", "wallFinishesPlan", "wallFinishesSection", "floorFinishesPlan", "floorFinishesSection", "beyond", "nearDepth", "halftoneOthers", "vegetation"];
+        "minHatchSpacing", "smallScaleCut", "materialGraphicsSet", "wallFinishesPlan", "wallFinishesSection", "floorFinishesPlan", "floorFinishesSection", "beyond", "nearDepth", "halftoneOthers", "vegetation", "diagram"];
 
     /// <summary>What a section or an elevation draws beyond its cut (decision 721): everything, the near part with the rest in the background, or the cut alone.</summary>
     public static readonly string[] BeyondModes = ["full", "near", "cut"];
@@ -112,8 +116,11 @@ public static class ViewStyles
     public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true, bool FinishHatch = true, bool SurfaceHatch = true, string Entourage = "outline", string? EntourageFill = null, string? GraphicsSet = null, int Detail = PlanDetail.Lod350,
         bool WallFinishesPlan = true, bool WallFinishesSection = true, bool FloorFinishesPlan = true, bool FloorFinishesSection = true, string? LayersPlan = null, string? LayersSection = null,
         bool FinishElements = true, double MinHatchSpacing = Lapin.Drawing.Hatch.HatchScale.DefaultMinSpacing, SmallScaleCut? SmallScaleCut = null, string? MaterialGraphicsSet = null,
-        string Beyond = "full", double NearDepth = DefaultNearDepth, bool? HalftoneOthers = null, string Vegetation = "coloured", bool FloorHatch = false)
+        string Beyond = "full", double NearDepth = DefaultNearDepth, bool? HalftoneOthers = null, string Vegetation = "coloured", bool FloorHatch = false, string Diagram = DiagramLook.Off)
     {
+        /// <summary>Whether its views draw the diagram look (decision 885): white or pastel.</summary>
+        public bool IsDiagram => Diagram is DiagramLook.White or DiagramLook.Pastel;
+
         /// <summary>
         /// Whether its plans, sections and elevations draw what is not of its discipline halftone (an MEP plan's walls, doors and
         /// furniture grey under the services): its own choice, else on for the MEP discipline's styles, off for the others.
@@ -168,6 +175,8 @@ public static class ViewStyles
             if (HalftoneOthers is { } ho) o["halftoneOthers"] = ho;
             // The same (decision 818): a style whose plants are coloured saves as before.
             if (Vegetation != "coloured") o["vegetation"] = Vegetation;
+            // The same (decision 885): a style that is no diagram saves as before.
+            if (Diagram != DiagramLook.Off) o["diagram"] = Diagram;
             return o;
         }
 
@@ -209,7 +218,11 @@ public static class ViewStyles
             // A style saved before the vegetation's styles (decision 818): coloured, as before.
             (string?)o["vegetation"] is { } vm && VegetationModes.Contains(vm) ? vm : "coloured",
             // A style saved before the floors' plan hatches (forum topic 259) drew none: off (FloorHatchUpgrade writes it so).
-            o["floorHatch"] is JsonValue flv && flv.TryGetValue<bool>(out var flh) && flh);
+            o["floorHatch"] is JsonValue flv && flv.TryGetValue<bool>(out var flh) && flh,
+            // A style saved before the diagram look (decision 885): none.
+            DiagramMode(o["diagram"]) ?? DiagramLook.Off);
+
+        internal static string? DiagramMode(JsonNode? n) => (string?)n is { } d && DiagramLook.Modes.Contains(d) ? d : null;
 
         /// <summary>A hatch spacing threshold (paper mm, 0 or more); null when it is not one.</summary>
         internal static double? Spacing(JsonNode? n) => Json.Number(n) is { } v && v >= 0 && double.IsFinite(v) ? v : null;
@@ -274,9 +287,22 @@ public static class ViewStyles
         var st = StyleOf(m, view);
         var s = st with { Layers = st.LayersFor(view.Str("kind")), LayersPlan = null, LayersSection = null };
         var o = view.Attrs["styleOverrides"] as JsonObject;
-        if (o == null) return s;
+        var r = o == null ? s : Overridden(s, o);
+        // The diagram look (decision 885): its fills replace the surface, floor and finish hatches, unless the view turns them on itself.
+        if (!r.IsDiagram) return r;
+        return r with
+        {
+            SurfaceHatch = Own(o?["surfaceHatch"]) ?? false,
+            FloorHatch = Own(o?["floorHatch"]) ?? false,
+            FinishHatch = Own(o?["finishHatch"]) ?? false,
+        };
+    }
+
+    static Style Overridden(Style s, JsonObject o)
+    {
         return s with
         {
+            Diagram = Style.DiagramMode(o["diagram"]) ?? s.Diagram,
             Layers = (string?)o["layers"] is { } l && LayerModes.Contains(l) ? l : s.Layers,
             Joins = o["joins"] is JsonValue jv && jv.TryGetValue<bool>(out var j) ? j : s.Joins,
             Overhead = o["overhead"] is JsonValue ov && ov.TryGetValue<bool>(out var h) ? h : s.Overhead,
@@ -479,6 +505,7 @@ public static class ViewStyles
         // The other disciplines halftone (true, false; null: as the discipline says).
         if (a.ContainsKey("halftoneOthers")) s = s with { HalftoneOthers = a["halftoneOthers"] is null ? null : Own(a["halftoneOthers"]) ?? throw new CommandException("halftoneOthers is true, false or null.") };
         if (a.ContainsKey("vegetation")) s = s with { Vegetation = a["vegetation"] is null ? "coloured" : VegetationMode(a["vegetation"]) };
+        if (a.ContainsKey("diagram")) s = s with { Diagram = DiagramLook.ModeOf(a["diagram"]) };
         if (a.ContainsKey("finishElements")) s = s with { FinishElements = Own(a["finishElements"]) ?? throw new CommandException("finishElements is true or false.") };
         foreach (var f in FinishFields)
         {
@@ -576,6 +603,7 @@ public static class ViewStyles
 
     public static void Register(IModuleRegistry r)
     {
+        DiagramLook.Register(r);
         r.Query("viewStyle.list", (q, _) => new JsonArray(All(q.Model).Select(s => (JsonNode)WithHalftone(s)).ToArray()));
 
         // A view's settings as it draws, and where each comes from (its style, or itself).
@@ -675,6 +703,8 @@ public static class ViewStyles
                 else if (f == "nearDepth") own[f] = NearDepthOf(value);
                 // How its plants look (decision 818): coloured or maquette.
                 else if (f == "vegetation") own[f] = VegetationMode(value);
+                // The diagram look (decision 885): off, white or pastel (off over a style's diagram).
+                else if (f == "diagram") own[f] = DiagramLook.ModeOf(value);
                 else own[f] = value is JsonValue bv && bv.TryGetValue<bool>(out var b) ? b : throw new CommandException($"{f} is true or false.");
             }
             if (own.Count > 0) attrs["styleOverrides"] = own; else attrs.Remove("styleOverrides");

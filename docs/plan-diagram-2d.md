@@ -23,7 +23,7 @@ Forum topic 283 (a user request, 26.11.2026). The 3D view has a **Diagram** disp
 
 ## 3. Stages
 
-1. **This branch.** The `diagram` field (engine, `view.setStyle`, `viewStyle.update`, `view.style`), the project palette (`diagram.palette`, `diagram.setPalette`), the drawing (cuts, seen surfaces in elevations, sections and plans, hatches off, light lines), the pickers in View settings and Manage → View styles, the 3D reading the project's palette and Preferences editing it, every language; xUnit `DiagramViewTests`, vitest for the palette's source; the guide (views.md, en and ro).
+1. **This branch (done, 26.11.2026).** The `diagram` field (engine, `view.setStyle`, `viewStyle.update`, `view.style`), the project palette (`diagram.palette`, `diagram.setPalette`), the drawing (cuts, seen surfaces in elevations, sections and plans, hatches off, light lines), the pickers in View settings and Manage → View styles, the 3D reading the project's palette and Preferences editing it, every language; xUnit `DiagramViewTests`, vitest for the palette's source; the guide (views.md, en and ro).
 2. **Later, if asked.** The view's background on screen in the diagram's light grey (`#f4f4f2`, the 3D's); a sheet's viewports in a diagram style showing a matching key (a legend of the categories' colours, from `DrawingKeys`); soft sun shadows in elevations on by default in a diagram view (they exist, `ViewShadows`, and are the view's own switch today); a per-view palette (a style naming its own palette) if one project needs two.
 
 ## 4. Open questions for the user
