@@ -31,6 +31,10 @@ public static class MsProject
     const string EffortField = "188743734", EffortAlias = "Lapin effort";
     /// <summary>MS Project's custom field Flag1 (its field id), Yes on a task left out of location-based charts, named <see cref="ChartAlias"/>.</summary>
     const string ChartField = "188743752", ChartAlias = "Lapin not in charts";
+    /// <summary>MS Project's Text3, which shows a task's products (the PBS codes its rule names, „40.20”) under <see cref="PbsAlias"/>: for reading and grouping in MS Project only, Text1 carries the rule.</summary>
+    const string PbsField = "188743737", PbsAlias = "Lapin PBS";
+
+    static string? PbsText(PlanTask t) => t.Rule is { Products.Count: > 0 } r ? string.Join(", ", r.Products.Select(p => p.Code)) : null;
 
     static string Dt(DateOnly d, string time) => $"{WorkCalendar.Date(d)}T{time}:00";
 
@@ -76,7 +80,8 @@ public static class MsProject
         var withEffort = p.Rows.Any(t => Cpm.IsLoe(p, t.Id));
         // The tasks left out of location-based charts, in the flag Flag1 (only when there are some: a file as before otherwise).
         var hidden = model == null ? [] : p.Rows.Where(t => model.Get(t.Id) is { } e && !Plan.InCharts(e)).Select(t => t.Id).ToHashSet();
-        if (withLinks || withEffort || hidden.Count > 0)
+        var withPbs = p.Rows.Any(t => PbsText(t) != null);
+        if (withLinks || withEffort || withPbs || hidden.Count > 0)
         {
             w.WriteStartElement("ExtendedAttributes", Ns);
             if (withLinks)
@@ -101,6 +106,15 @@ public static class MsProject
                 E("FieldID", ChartField);
                 E("FieldName", "Flag1");
                 E("Alias", ChartAlias);
+                w.WriteEndElement();
+            }
+            // The tasks' products (Product × Location) in Text2, when any task's rule names one.
+            if (withPbs)
+            {
+                w.WriteStartElement("ExtendedAttribute", Ns);
+                E("FieldID", PbsField);
+                E("FieldName", "Text3");
+                E("Alias", PbsAlias);
                 w.WriteEndElement();
             }
             w.WriteEndElement();
@@ -271,6 +285,13 @@ public static class MsProject
                 w.WriteStartElement("ExtendedAttribute", Ns);
                 E("FieldID", ChartField);
                 E("Value", "1");
+                w.WriteEndElement();
+            }
+            if (PbsText(t) is { } pbsText)
+            {
+                w.WriteStartElement("ExtendedAttribute", Ns);
+                E("FieldID", PbsField);
+                E("Value", pbsText);
                 w.WriteEndElement();
             }
             if (t.Baseline is { } bl)

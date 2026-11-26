@@ -15,9 +15,21 @@ namespace Lapin.Planning;
 /// </summary>
 public sealed record TaskRule(IReadOnlyList<string> Classes, IReadOnlyList<string> Types, IReadOnlyList<string> Storeys,
     IReadOnlyList<string> Materials, IReadOnlyList<string> Groups, IReadOnlyList<string> Phases, IReadOnlyList<string>? DemolishedIn = null,
-    IReadOnlyList<FieldCondition>? FieldConditions = null)
+    IReadOnlyList<FieldCondition>? FieldConditions = null, IReadOnlyList<ProductRef>? ProductRefs = null, IReadOnlyList<string>? LocationRefs = null)
 {
     public static readonly string[] Keys = ["classes", "types", "storeys", "materials", "groups", "phases", "demolished"];
+
+    /// <summary>
+    /// Its products (<c>products</c>, <see cref="Breakdowns"/>): codes of the PBS, each the node and the items under it; an element
+    /// labelled with any of them (its own code, else its type's). Empty: labelled or not.
+    /// </summary>
+    public IReadOnlyList<ProductRef> Products => ProductRefs ?? [];
+
+    /// <summary>
+    /// Its locations (<c>locations</c>, the GBS): buildings, storeys and rooms by id or name, any of which holds the element
+    /// (<see cref="Breakdowns.Cache.InLocations"/>). Empty: anywhere. Beside <see cref="Storeys"/>, which stays as it was.
+    /// </summary>
+    public IReadOnlyList<string> Locations => LocationRefs ?? [];
 
     /// <summary>The phases its elements are demolished in (stage 3: a demolition task's rule); empty: demolished or not.</summary>
     public IReadOnlyList<string> Demolished => DemolishedIn ?? [];
@@ -30,7 +42,7 @@ public sealed record TaskRule(IReadOnlyList<string> Classes, IReadOnlyList<strin
     /// <summary>A rule as stored (or as a command gives it); null when there is none.</summary>
     public static TaskRule? Read(JsonNode? n) => n is JsonObject o
         ? new(Strings(o["classes"]), Strings(o["types"]), Strings(o["storeys"]), Strings(o["materials"]), Strings(o["groups"]), Strings(o["phases"]), Strings(o["demolished"]),
-            FieldCondition.ReadAll(o["conditions"]))
+            FieldCondition.ReadAll(o["conditions"]), ProductRef.ReadAll(o["products"]) is { Count: > 0 } products ? products : null, Strings(o["locations"]) is { Count: > 0 } locations ? locations : null)
         : null;
 
     /// <summary>A rule as a command gives it, its conditions checked (a field, an operator Lapin knows, a value when it needs one).</summary>
@@ -49,6 +61,8 @@ public sealed record TaskRule(IReadOnlyList<string> Classes, IReadOnlyList<strin
         var o = new JsonObject();
         foreach (var (k, v) in Lists()) if (v.Count > 0) o[k] = new JsonArray(v.Select(x => (JsonNode)x).ToArray());
         if (Conditions.Count > 0) o["conditions"] = new JsonArray(Conditions.Select(c => (JsonNode)c.ToJson()).ToArray());
+        if (Products.Count > 0) o["products"] = new JsonArray(Products.Select(p => p.ToJson()).ToArray());
+        if (Locations.Count > 0) o["locations"] = new JsonArray(Locations.Select(x => (JsonNode)x).ToArray());
         return o;
     }
 
@@ -66,7 +80,9 @@ public sealed record TaskRule(IReadOnlyList<string> Classes, IReadOnlyList<strin
     /// wall's storey, every material in it —; its conditions on fields read by <paramref name="field"/> (none given: they do not hold).
     /// </summary>
     public bool Matches(ElementFilter.Context ctx, Entity e, Func<string, FieldValue>? field = null) =>
-        (Conditions.Count == 0 || field != null) && ToFilter().Matches(ctx, e, field ?? (_ => FieldValue.Missing));
+        (Conditions.Count == 0 || field != null) && ToFilter().Matches(ctx, e, field ?? (_ => FieldValue.Missing))
+        && (Products.Count == 0 || Breakdowns.Of(ctx).TakesProduct(Products, e))
+        && (Locations.Count == 0 || Breakdowns.Of(ctx).InLocations(Locations, e));
 }
 
 /// <summary>
@@ -388,6 +404,8 @@ public sealed class TaskElements
                 bits.Add("demolished in " + string.Join(", ", rule.Demolished.Select(p => ph.Phases.FirstOrDefault(x => x.Id == p)?.Name ?? p)));
             }
             if (rule.Conditions.Count > 0) bits.Add(string.Join(", ", rule.Conditions));
+            if (rule.Products.Count > 0) bits.Add(string.Join(", ", rule.Products.Select(p => Breakdowns.Label(m, p))));
+            if (rule.Locations.Count > 0) bits.Add(Names(rule.Locations));
             if (bits.Count == 0) bits.Add("every element");
         }
         if (part != null)

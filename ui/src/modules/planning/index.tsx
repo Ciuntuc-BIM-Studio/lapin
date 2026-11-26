@@ -12,7 +12,7 @@
  * machines and formwork sets on the tasks, the daily histogram and the serial levelling.
  */
 
-import { BarChart3, RefreshCw, CalendarDays, ChartGantt, CheckCheck, CircleOff, CirclePlay, Clapperboard, Diamond, FileVideo, Flag, FlagOff, LayoutPanelTop, Sheet, FileDown, FileSpreadsheet, FileUp, IndentDecrease, IndentIncrease, Link2, ListPlus, Plus, Scale, SearchX, Unlink2, Users, Wand2 } from 'lucide-react';
+import { BarChart3, RefreshCw, CalendarDays, ChartGantt, CheckCheck, CircleOff, CirclePlay, Clapperboard, Diamond, FileVideo, Flag, FlagOff, LayoutPanelTop, Sheet, FileDown, FileSpreadsheet, FileUp, Grid3x3, IndentDecrease, IndentIncrease, Link2, ListPlus, Plus, Scale, SearchX, Unlink2, Users, Wand2 } from 'lucide-react';
 import type { LapinModule } from '../../platform/module';
 import { useUi } from '../../app/store';
 import { exportIfc } from '../../engine/files';
@@ -33,6 +33,7 @@ const GenerateDialog = lazyPart(() => import('./GenerateDialog').then((m) => m.G
 const GanttView = lazyPart(() => import('./GanttView').then((m) => m.GanttView), { inline: true });
 const AssignDialog = lazyPart(() => import('./AssignDialog').then((m) => m.AssignDialog), { title: 'Add to task' });
 const ResourcesDialog = lazyPart(() => import('./ResourcesDialog').then((m) => m.ResourcesDialog), { title: 'Resources' });
+const BreakdownDialog = lazyPart(() => import('./BreakdownDialog').then((m) => m.BreakdownDialog), { title: 'Tasks from product × location' });
 const HistogramView = lazyPart(() => import('./HistogramView').then((m) => m.HistogramView), { inline: true });
 
 const planning: LapinModule = {
@@ -63,6 +64,7 @@ const planning: LapinModule = {
           { id: 'planning.outdent', label: 'Outdent', icon: IndentDecrease, run: outdent },
           { id: 'planning.link', label: 'Link tasks', icon: Link2, run: linkSelected },
           { id: 'planning.unlink', label: 'Unlink tasks', icon: Unlink2, run: unlinkSelected },
+          { id: 'planning.fromBreakdown', label: 'Tasks from product × location…', icon: Grid3x3, run: () => useUi.setState({ dialog: 'planning.breakdown' }) },
         ],
       },
       {
@@ -116,7 +118,7 @@ const planning: LapinModule = {
     ],
   }],
   views: { gantt: { label: 'Gantt', component: GanttView }, resourceHistogram: { label: 'Histogram', component: HistogramView } },
-  dialogs: { 'planning.calendar': CalendarDialog, 'planning.assign': AssignDialog, 'planning.generate': GenerateDialog, 'planning.stages': StagesDialog, 'planning.video': VideoDialog, 'planning.resources': ResourcesDialog },
+  dialogs: { 'planning.calendar': CalendarDialog, 'planning.assign': AssignDialog, 'planning.generate': GenerateDialog, 'planning.stages': StagesDialog, 'planning.video': VideoDialog, 'planning.resources': ResourcesDialog, 'planning.breakdown': BreakdownDialog },
   background: SimulationLooks,
   propertySections: [
     { id: 'task', label: 'Task', classes: ['IfcTask'], component: TaskSection, replacesFields: () => true },

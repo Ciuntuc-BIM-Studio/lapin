@@ -1,3 +1,4 @@
+using Lapin.Platform;
 using Lapin.Platform.Cde;
 
 namespace Lapin.Planning;
@@ -20,9 +21,14 @@ public sealed class TaskCheck : ICdeRule
         var p = Plan.Read(c.Model);
         if (!p.Rows.Any(t => t.Links)) yield break;
         var (none, partial) = TaskElements.Resolve(c.Query, p).Unlinked();
+        // An element labelled with a product of the PBS says which (its own code, else its type's), so the findings read by trade.
+        var pbs = Breakdowns.Pbs(c.Model);
+        var titles = pbs == null ? null : Classifications.Items(pbs).GroupBy(i => i.Code).ToDictionary(g => g.Key, g => g.First().Title);
+        string Of(ElementFacts f) => pbs != null && Breakdowns.CodeOf(c.Model, f.Element, pbs.Id) is { } code
+            ? $"{NameOf(f)} ({pbs.Name} {code}{(titles!.GetValueOrDefault(code) is { Length: > 0 } t ? " " + t : "")})" : NameOf(f);
         foreach (var f in none)
-            yield return new CdeFinding(Id, CdeFinding.Warn, $"{NameOf(f)} has no task in the work schedule.", f.Element.Id);
+            yield return new CdeFinding(Id, CdeFinding.Warn, $"{Of(f)} has no task in the work schedule.", f.Element.Id);
         foreach (var (f, left) in partial)
-            yield return new CdeFinding(Id, CdeFinding.Warn, $"{NameOf(f)}: {string.Join(", ", left.Select(l => l.Name))} {(left.Count == 1 ? "has" : "have")} no task in the work schedule.", f.Element.Id);
+            yield return new CdeFinding(Id, CdeFinding.Warn, $"{Of(f)}: {string.Join(", ", left.Select(l => l.Name))} {(left.Count == 1 ? "has" : "have")} no task in the work schedule.", f.Element.Id);
     }
 }

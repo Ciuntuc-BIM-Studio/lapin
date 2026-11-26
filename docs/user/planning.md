@@ -198,6 +198,16 @@ A task takes elements of the model, so the schedule knows what is built when. Se
 
 Under **Elements** in Properties, tick **Find them by a rule** and pick what the task takes, as in a schedule's filter: **Kinds**, **Storeys**, **Types**, **Materials**, **Groups** and **Phases**, each value with how many elements have it. Every condition you set must hold; one left empty lets everything through. The rule is kept, not the elements: a wall drawn tomorrow on the ground floor joins the task "Masonry ground floor" by itself. **Rule from the selection** makes a rule of the kinds and storeys of the elements selected.
 
+### Product × location
+
+A planner reads a task as three things: the **activity** (what is done: "Install doors"), the **product** (what it builds: doors, partition walls of type A) and the **location** (where: floor 1, a room). In Lapin the activity is the task itself; the product is a code of the project's **product breakdown (PBS)**; the location is a place of the building. Above the other conditions, the rule has a **Product (PBS) × Location (GBS)** pair: pick a product (a node takes everything under it, so *40 Interior* takes the doors and the partitions) and one or more locations (the building, a storey, a room; any of them), and the task takes the elements labelled with that product that stand there. The line under the pair counts them, and gives their quantity in the unit of the task's norm when it has one. "Install doors" × "Ground floor" takes the doors of the ground floor, and a door drawn there tomorrow joins it.
+
+The PBS is one of the project's classifications (**Manage → Classifications…**): your own codes and names, imported from a CSV or Excel table (code, title, parent) or added as you label elements, or Lapin's small **starter PBS** (a few products by trade, its own codes, marked indicative) to change or replace. **Tasks from product × location…** chooses which classification is the PBS; with none chosen, the one named *PBS*, else the project's only one. Label the **types** (every door of a type is then a door) or single elements in **Properties → Classification**, for the whole selection at once; an element's own code wins over its type's. The codes go to IFC as IfcClassificationReference and come back when the file is read.
+
+A room holds what stands in it, and the doors and walls on its edge (up to 30 cm off its outline): a door between two rooms is in both.
+
+**Construction → Tasks from product × location…** makes the tasks of an activity at once: pick the product, name the activity ("Install doors" is suggested from the product), tick the locations (every storey to start with) and maybe a norm. It makes a summary with one task a location ("Install doors · Ground floor", "Install doors · Floor 2"), each with its rule, linked finish-to-start in the order of the locations, as the generator links a step's storeys; with a norm, each task's duration is its elements' quantity × the norm's hours ÷ (crew × hours a day). One step to undo.
+
 ### A part of the elements
 
 **Part** says what the task takes of each element: the **whole elements**, their **core** (the structural layer), their **finishes** (every layer but the core), the layers of one material, or those of a material category (Finish, Insulation…). So a layered wall is built in a Masonry task (its core) and plastered in a Plaster task (its finishes). An element without layers is its own core and has no finishes.
@@ -216,11 +226,11 @@ What you add or take out by hand are the task's **exceptions**: the rule stays a
 
 ### Elements without a task
 
-Once a task takes elements, the Gantt's toolbar says how many elements have no task, or have layers no task takes; a click selects them, ready to drag onto a task. **Construction → Elements without a task** does the same. **Manage → Check** lists them too, under *Elements with a task*: a warning for each, a click selecting it. Existing elements that stay need no task.
+Once a task takes elements, the Gantt's toolbar says how many elements have no task, or have layers no task takes; a click selects them, ready to drag onto a task. **Construction → Elements without a task** does the same, and with a PBS says how many of each product are left ("40.20 Doors 3, no code 2"). **Manage → Check** lists them too, under *Elements with a task*: a warning for each, naming its product when it has one, a click selecting it. Existing elements that stay need no task.
 
 ### In IFC and MS Project
 
-The IFC export writes what each task builds as an IfcRelAssignsToProduct (the element, with the tasks building it), and what a demolition, removal or dismantling task acts on as an IfcRelAssignsToProcess. The rule, the part and the exceptions travel in `Lapin_Task`, so Lapin reads the rule back; a file from another program gives tasks holding the elements it assigns to them. MS Project XML carries them in the field Text1, named *Lapin elements*. The workbook has an **Elements** and a **Rule** column.
+The IFC export writes what each task builds as an IfcRelAssignsToProduct (the element, with the tasks building it), and what a demolition, removal or dismantling task acts on as an IfcRelAssignsToProcess. The rule, the part and the exceptions travel in `Lapin_Task`, so Lapin reads the rule back; a file from another program gives tasks holding the elements it assigns to them. MS Project XML carries them in the field Text1, named *Lapin elements*, and a task's products in Text2, named *Lapin PBS*, to group or filter by in MS Project. The workbook has an **Elements** and a **Rule** column.
 
 ## The 4D simulation
 

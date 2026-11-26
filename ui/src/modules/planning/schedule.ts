@@ -4,6 +4,7 @@
  * And what the Planning tab does: open the Gantt under the view, add, indent and link tasks, exchange files.
  */
 
+import { byProductText } from './breakdown';
 import { confirmAction } from '../../shell/prompts';
 import { useEffect } from 'react';
 import { create } from 'zustand';
@@ -176,7 +177,7 @@ export function showTaskElements(task: TaskDto): void {
 
 /** The elements no task takes (wholly or in part), selected, so they can be dragged onto a task. */
 export async function selectUnlinked(): Promise<void> {
-  const r = await query<{ none: string[]; partial: string[] }>('planning.unlinked');
+  const r = await query<{ none: string[]; partial: string[]; byProduct?: { code: string; title: string; count: number }[] }>('planning.unlinked');
   if (!r) return;
   const ids = [...r.none, ...r.partial];
   if (!ids.length) { notify('Every element has a task.'); return; }
@@ -184,7 +185,8 @@ export async function selectUnlinked(): Promise<void> {
   const model = s.panes.findIndex((p) => p.view !== 'gantt');
   if (model >= 0) focusPane(model);
   useUi.setState({ selected: ids, selection: ids[ids.length - 1] });
-  notify(`${r.none.length} element(s) without a task, ${r.partial.length} with layers without one: selected.`);
+  const by = byProductText(r.byProduct);
+  notify(`${r.none.length} element(s) without a task, ${r.partial.length} with layers without one: selected.${by ? ` By product: ${by}.` : ''}`);
 }
 
 /** TA: the elements selected put in a task chosen from a list. */

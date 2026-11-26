@@ -65,6 +65,8 @@ export function ruleSummary(t: Pick<TaskDto, 'rule' | 'part' | 'added' | 'remove
       if (v?.length) bits.push(v.map((x) => (k === 'classes' ? classLabel(x) : nameOf(x) ?? x)).join(', '));
     }
     for (const c of t.rule.conditions ?? []) bits.push(`${c.field} ${c.op}${c.value == null ? '' : ` ${c.value}`}`);
+    if (t.rule.products?.length) bits.push(t.rule.products.map((p) => (typeof p === 'string' ? p : p.code)).join(', '));
+    if (t.rule.locations?.length) bits.push(t.rule.locations.map((x) => nameOf(x) ?? x).join(', '));
     if (!bits.length) bits.push('every element');
   }
   const part = partLabel(t.part, nameOf);
