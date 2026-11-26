@@ -162,6 +162,13 @@ public sealed class ProjectInfoSync(HttpRemote server, string project)
                 break;
             }
             if (a.Status == 401) throw Fail(a);
+            // Only owners rename the project (the record's name is its name): the rest goes without the name, which the server's replaces.
+            if (a.Status == 403 && a.Code == "owners_rename" && keys.Contains("name"))
+            {
+                refused.Add((JsonNode)new JsonObject { ["code"] = a.Code, ["message"] = a.Message, ["keys"] = new JsonArray("name") });
+                changed.Remove("name");
+                continue;
+            }
             // A rule refused it (a viewer, a value the server refuses): the server's values come back.
             refused.Add((JsonNode)new JsonObject { ["code"] = a.Code, ["message"] = a.Message, ["keys"] = new JsonArray([.. keys.Select(k => (JsonNode)k)]) });
             break;

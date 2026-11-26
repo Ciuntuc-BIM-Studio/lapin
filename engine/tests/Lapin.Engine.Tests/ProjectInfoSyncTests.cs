@@ -96,6 +96,8 @@ public sealed class ProjectInfoSyncTests
             var body = (JsonObject)JsonNode.Parse(request.Content!.ReadAsStringAsync(cancellationToken).GetAwaiter().GetResult())!;
             Bodies.Add((JsonObject)body.DeepClone());
             if (who.Role == "viewer") return Error(403, "forbidden", "Viewers read the project information; editors and owners change it.");
+            if (who.Role == "editor" && body["fields"] is JsonObject bf && bf.ContainsKey("name") && (string?)bf["name"] != (string?)Record["fields"]?["name"])
+                return Error(403, "owners_rename", "Only owners rename the project.");
             Patches++;
             BeforePatch?.Invoke();
             BeforePatch = null;
@@ -234,6 +236,22 @@ public sealed class ProjectInfoSyncTests
         server.ServerEdit(new JsonObject { ["custom"] = new JsonObject { ["zeta"] = null } });
         mihai.Sync();
         Assert.Equal(["beta"], ProjectInfo.Customs(mihai.F.Model).Select(c => c.Key));
+    }
+
+    [Fact]
+    public void An_editors_rename_is_refused_and_the_rest_is_sent()
+    {
+        var (server, http) = Server();
+        var mihai = new Client(http, "tok-mihai");
+        mihai.Set(new JsonObject { ["name"] = "Locuință P+1 Huși" });
+        mihai.Sync();
+        var ana = new Client(http, "tok-ana");
+        ana.Sync();
+        ana.Set(new JsonObject { ["name"] = "Alt nume", ["number"] = "104/2026" });
+        var r = ana.Sync();
+        Assert.Equal("owners_rename", Refused(r));
+        Assert.Equal(("Locuință P+1 Huși", "104/2026"), ((string?)server.Record["fields"]!["name"], (string?)server.Record["fields"]!["number"]));
+        Assert.Equal(("Locuință P+1 Huși", "104/2026"), (ana.Get("name"), ana.Get("number")));
     }
 
     [Fact]
