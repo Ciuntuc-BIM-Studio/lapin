@@ -993,6 +993,7 @@
     {"name":"analysis.supportOptions","module":"analysis","args":[{"name":"id","type":"str"}]},
     {"name":"analysis.walls","module":"analysis","args":[]},
     {"name":"archicad.instances","module":"archicad","args":[]},
+    {"name":"archicad.projectInfo","module":"archicad","args":[]},
     {"name":"archicad.saveIfc","module":"archicad","args":[{"name":"translator","type":"str"}]},
     {"name":"archicad.status","module":"archicad","args":[{"name":"origin","type":"str"},{"name":"storeys","type":"str"},{"name":"port","type":"float"}]},
     {"name":"archicad.survey","module":"archicad","args":[{"name":"origin","type":"str"},{"name":"storeys","type":"str"},{"name":"port","type":"float"}]},

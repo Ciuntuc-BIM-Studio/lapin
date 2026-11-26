@@ -18,5 +18,7 @@
   <ItemGroup>
     <!-- The documents' built-in templates (docs/plan-documents.md), read by DocumentTemplates. -->
     <EmbeddedResource Include="Documents/Templates/*.json" LogicalName="Lapin.Platform.Documents.Templates.%(Filename)%(Extension)" />
+    <!-- How Archicad's Project Info and an IFC model's project become the project's information: Atrium Server's docs/project-info-mapping.json, byte for byte (ProjectInfoMapping, A1b). -->
+    <EmbeddedResource Include="Documents/project-info-mapping.json" LogicalName="Lapin.Platform.Documents.project-info-mapping.json" />
   </ItemGroup>
 </Project>

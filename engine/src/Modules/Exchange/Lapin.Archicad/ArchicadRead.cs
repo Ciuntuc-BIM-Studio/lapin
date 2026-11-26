@@ -53,6 +53,9 @@ public sealed record ArchicadModel(ArchicadSource Source, IReadOnlyList<Archicad
     IReadOnlyList<string> Notes, double Milliseconds)
 {
     public ArchicadStory? Story(int floor) => Stories.FirstOrDefault(s => s.Index == floor);
+
+    /// <summary>Archicad's Project Info as Tapir's <c>GetProjectInfoFields</c> gives it (<c>[{projectInfoId, projectInfoName, projectInfoValue}]</c>); null when it was not read.</summary>
+    public JsonArray? ProjectInfoFields { get; init; }
 }
 
 /// <summary>
@@ -181,6 +184,10 @@ public static class ArchicadRead
         }
         catch (CommandException) { }
 
+        // Archicad's Project Info (A1b): the project's name, number, client, site, designer… mapped by ProjectInfoMapping at the receive.
+        var (infoFields, infoProblem) = ProjectInfoFields(c, ct);
+        if (infoProblem != null) notes.Add(infoProblem);
+
         var elements = new List<ArchicadElement>();
         for (var i = 0; i < keep.Count; i++)
         {
@@ -198,7 +205,21 @@ public static class ArchicadRead
             elements.Add(new ArchicadElement(guid, type, (int)(Json.Number(d["floorIndex"]) ?? 0), (int)(Json.Number(d["layerIndex"]) ?? 0), (string?)d["id"] ?? "", (JsonObject)det.DeepClone(),
                 bodies[i], (string?)ids?["ifcId"], (string?)ids?["externalIFCId"], (string?)ifcTypes[i]?["ifcType"], ifc, props, cls, hash));
         }
-        return new ArchicadModel(source, stories, elements, composites, materials, surfaces, profiles, layers, zoneBoundaries, systems, toSurvey, skipped, notes, sw.Elapsed.TotalMilliseconds);
+        return new ArchicadModel(source, stories, elements, composites, materials, surfaces, profiles, layers, zoneBoundaries, systems, toSurvey, skipped, notes, sw.Elapsed.TotalMilliseconds)
+        {
+            ProjectInfoFields = infoFields,
+        };
+    }
+
+    /// <summary>Archicad's Project Info (Tapir's <c>GetProjectInfoFields</c>, its list as it is), or why it was not read.</summary>
+    public static (JsonArray? Fields, string? Problem) ProjectInfoFields(ArchicadClient c, CancellationToken ct = default)
+    {
+        try
+        {
+            var r = c.Tapir("GetProjectInfoFields", null, ct);
+            return (r?["fields"] as JsonArray is { } list ? (JsonArray)list.DeepClone() : new JsonArray(), null);
+        }
+        catch (CommandException ex) { return (null, $"Archicad's Project Info was not read ({ex.Message})."); }
     }
 
     static string? Guid(JsonNode? n) => (string?)n?["guid"] ?? (string?)n?["attributeId"]?["guid"];

@@ -58,6 +58,13 @@ public sealed class PackageHistory
     /// </summary>
     public Dictionary<string, JsonObject> References { get; private init; } = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// The project information's sync state per remote (docs/plan-archicad.md A1b; Atrium docs/atrium-server.md, Project information), as
+    /// <see cref="References"/>: the server project, the record's ETag and the values last seen. Kept in <c>remotes.json</c> (member
+    /// <c>projectInfo</c>), never in a commit.
+    /// </summary>
+    public Dictionary<string, JsonObject> ProjectInfo { get; private init; } = new(StringComparer.Ordinal);
+
     /// <summary>Commits and tags, by id: their canonical bytes.</summary>
     readonly Dictionary<string, byte[]> _commits = new(StringComparer.Ordinal);
     /// <summary>Trees, by id.</summary>
@@ -89,7 +96,8 @@ public sealed class PackageHistory
         {
             Head = Head, Refs = new(Refs, StringComparer.Ordinal), Seen = Seen.ToDictionary(kv => kv.Key, kv => kv.Value.Clone(), StringComparer.Ordinal),
             Log = [.. Log], Remotes = [.. Remotes], Issues = Issues.ToDictionary(kv => kv.Key, kv => (JsonObject)kv.Value.DeepClone(), StringComparer.Ordinal),
-            References = References.ToDictionary(kv => kv.Key, kv => (JsonObject)kv.Value.DeepClone(), StringComparer.Ordinal), _refsExtra = (JsonObject)_refsExtra.DeepClone(), _remotesExtra = (JsonObject)_remotesExtra.DeepClone(),
+            References = References.ToDictionary(kv => kv.Key, kv => (JsonObject)kv.Value.DeepClone(), StringComparer.Ordinal),
+            ProjectInfo = ProjectInfo.ToDictionary(kv => kv.Key, kv => (JsonObject)kv.Value.DeepClone(), StringComparer.Ordinal), _refsExtra = (JsonObject)_refsExtra.DeepClone(), _remotesExtra = (JsonObject)_remotesExtra.DeepClone(),
             _source = _source, Unreadable = Unreadable,
         };
         foreach (var (k, v) in _commits) c._commits[k] = v;
@@ -179,6 +187,11 @@ public sealed class PackageHistory
                 {
                     foreach (var (rn, state) in references)
                         if (state is JsonObject so) References[rn] = (JsonObject)so.DeepClone();
+                }
+                else if (k == "projectInfo" && val is JsonObject projectInfo)
+                {
+                    foreach (var (rn, state) in projectInfo)
+                        if (state is JsonObject so) ProjectInfo[rn] = (JsonObject)so.DeepClone();
                 }
                 else if (k is not ("format" or "v")) _remotesExtra[k] = val?.DeepClone();
         }
@@ -601,6 +614,8 @@ public sealed class PackageHistory
             o["issues"] = new JsonObject(Issues.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value.DeepClone())));
         if (References.Count > 0)
             o["references"] = new JsonObject(References.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value.DeepClone())));
+        if (ProjectInfo.Count > 0)
+            o["projectInfo"] = new JsonObject(ProjectInfo.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value.DeepClone())));
         foreach (var (k, v) in _remotesExtra) o[k] = v?.DeepClone();
         return o;
     }

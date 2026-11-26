@@ -7,7 +7,7 @@ namespace Lapin.Archicad;
 /// <summary>
 /// The Archicad connector (docs/plan-archicad.md, decision 882), stage A1: a running Archicad's model received through its JSON API
 /// and the Tapir add-on. Queries: the Archicads running (<c>archicad.instances</c>), what a receive would do (<c>archicad.survey</c>),
-/// whether Archicad's model changed since (<c>archicad.status</c>), its IFC translators and an IFC saved by it to a temporary file
+/// whether Archicad's model changed since (<c>archicad.status</c>), its Project Info (<c>archicad.projectInfo</c>, A1b), its IFC translators and an IFC saved by it to a temporary file
 /// for Send to Atrium (<c>archicad.translators</c>, <c>archicad.saveIfc</c>). The command <c>archicad.receive</c>, one undo step.
 /// None is a guest's to make (EngineDispatcher.HostOnlyQueries and HostOnlyCommands: Archicad runs on the host's computer).
 /// Desktop only (module.json).
@@ -74,6 +74,9 @@ public sealed class ArchicadModule : ILapinModule
             }
             catch (OperationCanceledException) { throw new CommandException("Stopped: nothing was received."); }
         });
+
+        // Archicad's Project Info as Tapir gives it (raw, for Send to Atrium's proposal) and what taking it would do here (A1b).
+        r.Query("archicad.projectInfo", (q, a) => ArchicadProjectInfo.Read(Client(a, q.Cancellation), q.Model, q.Cancellation));
 
         r.Query("archicad.translators", (q, a) =>
         {

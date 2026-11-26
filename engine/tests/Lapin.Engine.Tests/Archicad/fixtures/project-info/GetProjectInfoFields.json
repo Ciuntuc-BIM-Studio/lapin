@@ -1,0 +1,177 @@
+{
+ "about": "Synthetic: every field the archicad table maps filled (A1b tests), in the shape of Tapir 2.0.1's GetProjectInfoFields answer.",
+ "response": {
+  "succeeded": true,
+  "result": {
+   "addOnCommandResponse": {
+    "fields": [
+     {
+      "projectInfoId": "PROJECTNAME",
+      "projectInfoName": "Project Name",
+      "projectInfoValue": "Locuință P+1 Huși"
+     },
+     {
+      "projectInfoId": "PROJECTNUMBER",
+      "projectInfoName": "Project Number",
+      "projectInfoValue": "104/2026"
+     },
+     {
+      "projectInfoId": "PROJECT_CODE",
+      "projectInfoName": "Project Code",
+      "projectInfoValue": "LH"
+     },
+     {
+      "projectInfoId": "PROJECT_ID",
+      "projectInfoName": "Project ID",
+      "projectInfoValue": "P-104"
+     },
+     {
+      "projectInfoId": "PROJECTSTATUS",
+      "projectInfoName": "Project Status",
+      "projectInfoValue": "dtac"
+     },
+     {
+      "projectInfoId": "PROJECT_DESCRIPTION",
+      "projectInfoName": "Project Description",
+      "projectInfoValue": "Casă unifamilială P+1"
+     },
+     {
+      "projectInfoId": "KEYWORDS",
+      "projectInfoName": "Keywords",
+      "projectInfoValue": "casă, lemn"
+     },
+     {
+      "projectInfoId": "NOTES",
+      "projectInfoName": "Notes",
+      "projectInfoValue": ""
+     },
+     {
+      "projectInfoId": "SITE_NAME",
+      "projectInfoName": "Site Name",
+      "projectInfoValue": "Teren Florilor"
+     },
+     {
+      "projectInfoId": "SITEFULLADDRESS",
+      "projectInfoName": "Site Full Address",
+      "projectInfoValue": ""
+     },
+     {
+      "projectInfoId": "SITEADDRESS1",
+      "projectInfoName": "Site Address 1",
+      "projectInfoValue": "Str. Florilor 12"
+     },
+     {
+      "projectInfoId": "SITEADDRESS2",
+      "projectInfoName": "Site Address 2",
+      "projectInfoValue": ""
+     },
+     {
+      "projectInfoId": "SITECITY",
+      "projectInfoName": "Site City",
+      "projectInfoValue": "Huși"
+     },
+     {
+      "projectInfoId": "SITESTATE",
+      "projectInfoName": "Site State",
+      "projectInfoValue": "Vaslui"
+     },
+     {
+      "projectInfoId": "SITEPOSTCODE",
+      "projectInfoName": "Site Postcode",
+      "projectInfoValue": "735100"
+     },
+     {
+      "projectInfoId": "SITECOUNTRY",
+      "projectInfoName": "Site Country",
+      "projectInfoValue": "România"
+     },
+     {
+      "projectInfoId": "CLIENTCOMPANY",
+      "projectInfoName": "Client Company",
+      "projectInfoValue": ""
+     },
+     {
+      "projectInfoId": "CLIENT_FULLNAME",
+      "projectInfoName": "Client Full Name",
+      "projectInfoValue": "Ion Popescu"
+     },
+     {
+      "projectInfoId": "CLIENTFULLADDRESS",
+      "projectInfoName": "Client Full Address",
+      "projectInfoValue": "Str. Mare 1, Iași"
+     },
+     {
+      "projectInfoId": "CLIENTCITY",
+      "projectInfoName": "Client City",
+      "projectInfoValue": "Iași"
+     },
+     {
+      "projectInfoId": "CLIENTEMAIL",
+      "projectInfoName": "Client E-mail",
+      "projectInfoValue": "ion@example.com"
+     },
+     {
+      "projectInfoId": "CONTACTCOMPANY",
+      "projectInfoName": "Company",
+      "projectInfoValue": "Ciuntuc BIM Studio SRL"
+     },
+     {
+      "projectInfoId": "CONTACTFULLADDRESS",
+      "projectInfoName": "Company Full Address",
+      "projectInfoValue": ""
+     },
+     {
+      "projectInfoId": "CONTACTADDRESS1",
+      "projectInfoName": "Company Address 1",
+      "projectInfoValue": "Str. Huși 1"
+     },
+     {
+      "projectInfoId": "CONTACTCITY",
+      "projectInfoName": "Company City",
+      "projectInfoValue": "Huși"
+     },
+     {
+      "projectInfoId": "CONTACTCOUNTRY",
+      "projectInfoName": "Company Country",
+      "projectInfoValue": "România"
+     },
+     {
+      "projectInfoId": "CONTACT_COMPANYCODE",
+      "projectInfoName": "Company Code",
+      "projectInfoValue": "J2025031471009"
+     },
+     {
+      "projectInfoId": "CONTACTPHONE",
+      "projectInfoName": "Phone",
+      "projectInfoValue": "0770 000 000"
+     },
+     {
+      "projectInfoId": "CONTACTEMAIL",
+      "projectInfoName": "E-mail",
+      "projectInfoValue": "office@example.com"
+     },
+     {
+      "projectInfoId": "CONTACT_FULLNAME",
+      "projectInfoName": "Contact Full Name",
+      "projectInfoValue": "Ionuț Ciuntuc"
+     },
+     {
+      "projectInfoId": "CONTACT_ROLE",
+      "projectInfoName": "Contact Role",
+      "projectInfoValue": "Architect"
+     },
+     {
+      "projectInfoId": "CAD_TECHNICIAN_FULLNAME",
+      "projectInfoName": "CAD Technician Full Name",
+      "projectInfoValue": "Ana Popescu"
+     },
+     {
+      "projectInfoId": "autotext-PROJECT-1",
+      "projectInfoName": "Permit authority",
+      "projectInfoValue": "Primăria Huși"
+     }
+    ]
+   }
+  }
+ }
+}

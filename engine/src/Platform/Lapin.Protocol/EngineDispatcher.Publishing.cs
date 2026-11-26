@@ -232,7 +232,7 @@ public sealed partial class EngineDispatcher
     /// <summary>The commit the issue goes with: the project's head, saved to the remote (an issued revision is on the shared history).</summary>
     string IssuedCommit(PackageHistory h, RemoteEntry e)
     {
-        if (h.HeadCommit is not { } head || h.Uncommitted(ProjectPackage.Build(session).Manifest, IssuesApart(h)))
+        if (h.HeadCommit is not { } head || h.Uncommitted(Compared(h), IssuesApart(h)))
             throw new CommandException("The project has changes the server has not got: save to the server first, so the issue's commit is there.");
         var seen = h.Seen.GetValueOrDefault(e.Name)?.Refs.Values.Where(h.HasCommit).ToList() ?? [];
         if (!h.Closure(seen).ContainsKey(head)) throw new CommandException("The project's last commit is not on the server: save to the server first.");

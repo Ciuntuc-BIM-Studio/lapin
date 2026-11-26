@@ -50,6 +50,92 @@ public static class ProjectInfo
     /// <summary>The information as kept; empty when none.</summary>
     public static JsonObject Of(IModelView m) => Spatial.Project(m)?.Attrs[Key] as JsonObject ?? [];
 
+    /// <summary>
+    /// What sources said that no field took (A1b): <c>info.source</c>, by source and the source's own id, <c>{label?, value}</c>
+    /// (Archicad's autotexts, its project description…), as Atrium Server's record keeps them under <c>source</c>. Read-only here:
+    /// written by a receive from the source (Archicad's replaces its own whole), shown in Project information, never synced or exported.
+    /// </summary>
+    public const string SourceKey = "source";
+
+    /// <summary>The name the project has when nobody named it (<see cref="Set"/> gives it to a cleared name; <see cref="Sheets.ProjectName"/> reads it as none).</summary>
+    public const string DefaultName = "Project";
+
+    /// <summary>The project's name as a field of its information: null when it has none of its own (blank, or the default "Project").</summary>
+    public static string? Name(IModelView m) => Spatial.Project(m)?.Name?.Trim() is { Length: > 0 } n && n != DefaultName ? n : null;
+
+    /// <summary>A field by its key, <c>name</c> included: null when not set.</summary>
+    public static string? FieldValue(IModelView m, string key) => key == "name" ? Name(m) : Get(m, key);
+
+    /// <summary>What sources said that no field took (<see cref="SourceKey"/>), by source; empty when none.</summary>
+    public static JsonObject Sources(IModelView m) => Of(m)[SourceKey] as JsonObject ?? [];
+
+    /// <summary>What a source's mapped fields would do to the project: fill an empty field, differ from one set, or say the same; and its extras.</summary>
+    public sealed record SourceReport(IReadOnlyList<(string Key, string Value)> Filled, IReadOnlyList<(string Key, string Lapin, string Source)> Differs,
+        IReadOnlyList<string> Same, IReadOnlyDictionary<string, SourceValue> Kept)
+    {
+        public JsonObject ToJson(string source) => new()
+        {
+            ["source"] = source,
+            ["filled"] = new JsonArray([.. Filled.Select(f => (JsonNode)new JsonObject { ["key"] = f.Key, ["value"] = f.Value })]),
+            ["differs"] = new JsonArray([.. Differs.Select(d => (JsonNode)new JsonObject { ["key"] = d.Key, ["lapin"] = d.Lapin, [source] = d.Source })]),
+            ["same"] = new JsonArray([.. Same.Select(k => (JsonNode)k)]),
+            ["kept"] = new JsonArray([.. Kept.Select(kv => (JsonNode)new JsonObject { ["id"] = kv.Key, ["label"] = kv.Value.Label, ["value"] = kv.Value.Value })]),
+        };
+    }
+
+    /// <summary>A source's mapped fields against the project's (in Lapin's order): those that would fill an empty field, those that differ, those the same.</summary>
+    public static SourceReport Compare(IModelView m, IReadOnlyDictionary<string, string> fields, IReadOnlyDictionary<string, SourceValue>? extras = null)
+    {
+        var filled = new List<(string, string)>();
+        var differs = new List<(string, string, string)>();
+        var same = new List<string>();
+        foreach (var key in new[] { "name" }.Concat(Fields.Select(f => f.Key)))
+        {
+            if (!fields.TryGetValue(key, out var v) || v.Trim() is not { Length: > 0 } value) continue;
+            var here = FieldValue(m, key);
+            if (here == null) filled.Add((key, value));
+            else if (here == value) same.Add(key);
+            else differs.Add((key, here, value));
+        }
+        return new SourceReport(filled, differs, same, extras ?? new Dictionary<string, SourceValue>());
+    }
+
+    /// <summary>
+    /// A source's values taken, as one change of the project (the caller's undo step): the <paramref name="fields"/> given set (<c>name</c>
+    /// renames the project), and what the source said that no field took kept as <c>info.source.&lt;source&gt;</c>, replacing what it said before
+    /// (null leaves it as it is).
+    /// </summary>
+    public static void Take(IEdit edit, string source, IReadOnlyDictionary<string, string> fields, IReadOnlyDictionary<string, SourceValue>? extras)
+    {
+        var project = Spatial.Project(edit.Model) ?? throw new CommandException("The model has no project.");
+        var attrs = project.CloneAttrs();
+        var info = (attrs[Key] as JsonObject)?.DeepClone() as JsonObject ?? new JsonObject();
+        foreach (var (key, _) in Fields)
+            if (fields.TryGetValue(key, out var v) && v.Trim() is { Length: > 0 } t) info[key] = t;
+        if (extras != null)
+        {
+            var sources = info[SourceKey] as JsonObject ?? new JsonObject();
+            if (extras.Count == 0) sources.Remove(source);
+            else
+            {
+                var o = new JsonObject();
+                foreach (var (id, sv) in extras.OrderBy(kv => kv.Key, StringComparer.Ordinal))
+                {
+                    var entry = new JsonObject();
+                    if (sv.Label != null) entry["label"] = sv.Label;
+                    entry["value"] = sv.Value;
+                    o[id] = entry;
+                }
+                sources[source] = o;
+            }
+            if (sources.Count > 0) info[SourceKey] = sources; else info.Remove(SourceKey);
+        }
+        if (info.Count > 0) attrs[Key] = info; else attrs.Remove(Key);
+        var name = fields.TryGetValue("name", out var n) && n.Trim() is { Length: > 0 } nn ? nn : null;
+        var changed = project.With(name: name, attrs: attrs);
+        if ((name != null && name != project.Name) || !JsonNode.DeepEquals(attrs[Key], project.Attrs[Key])) edit.Replace(changed);
+    }
+
     /// <summary>One field, trimmed; null when it is not set.</summary>
     public static string? Get(IModelView m, string key) => Of(m)[key] is JsonValue v && v.TryGetValue<string>(out var s) && s.Trim().Length > 0 ? s.Trim() : null;
 
@@ -61,7 +147,7 @@ public static class ProjectInfo
         Cde.CdeCheckContext.Field(sheet, key) ?? (TitleBlockFallback.TryGetValue(key, out var info) ? Get(m, info) : null);
 
     /// <summary>The fields given set (an empty or null value clears one; <c>name</c> renames the project), as one undo step.</summary>
-    public static void Set(ICommandContext ctx, JsonObject a)
+    public static void Set(IEdit ctx, JsonObject a)
     {
         var project = Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
         var attrs = project.CloneAttrs();
@@ -132,7 +218,8 @@ public static class ProjectInfo
         }
     }
 
-    static void WriteCustoms(ICommandContext ctx, List<Custom> list)
+    /// <summary>The user's own parameters written as given, in their order (a sync's, or a command's), in the caller's undo step.</summary>
+    public static void WriteCustoms(IEdit ctx, List<Custom> list)
     {
         var project = Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
         var attrs = project.CloneAttrs();
@@ -181,6 +268,7 @@ public static class ProjectInfo
         o["fields"] = new JsonArray(Grouped.Select(f => (JsonNode)new JsonObject { ["key"] = f.Key, ["label"] = f.Label, ["group"] = f.Group }).ToArray());
         o["groups"] = new JsonArray(Groups.Select(g => (JsonNode)new JsonObject { ["key"] = g.Key, ["label"] = g.Label }).ToArray());
         o["custom"] = new JsonArray(Customs(q.Model).Select(c => (JsonNode)c.ToJson()).ToArray());
+        o["source"] = Sources(q.Model).DeepClone();
         o["phases"] = new JsonArray(Phases.Select(p => (JsonNode)p).ToArray());
         // The project's own parameters ({{param.Name}}): edited through element.setParam on the project.
         o["projectId"] = Spatial.Project(q.Model)?.Id;

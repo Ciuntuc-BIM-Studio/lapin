@@ -61,8 +61,12 @@ public sealed record ArchicadReceiveResult(int Added, int Updated, int Unchanged
             ["native"] = Native, ["references"] = References, ["storeys"] = Counts(Storeys), ["skipped"] = Counts(Skipped),
             ["recognized"] = Recognition?.Recognized ?? 0, ["recognition"] = Recognition?.ToJson(), ["levels"] = Levels?.ToJson(), ["groupId"] = GroupId,
             ["notes"] = new JsonArray([.. Notes.Select(n => (JsonNode)n)]),
+            ["projectInfo"] = ProjectInfo?.ToJson(ArchicadProjectInfo.Source),
         };
     }
+
+    /// <summary>What Archicad's Project Info did (A1b): the empty fields it filled, those that differ (left as they are), what was kept apart; null when it was not read.</summary>
+    public Lapin.Platform.Documents.ProjectInfo.SourceReport? ProjectInfo { get; init; }
 }
 
 /// <summary>
@@ -166,6 +170,7 @@ public static class ArchicadReceive
             ["elements"] = taken.Count, ["byType"] = byType, ["native"] = native, ["references"] = taken.Count - candidates, ["skipped"] = skip,
             ["existing"] = existing.Count, ["updates"] = updates, ["adds"] = taken.Count - updates, ["removes"] = Math.Max(0, existing.Select(e => (string?)(e.Attrs[Key] as JsonObject)?["guid"]).OfType<string>().Distinct().Count(g => !taken.Any(t => t.Guid == g))),
             ["fromThisProject"] = nativeHere > 0, ["ms"] = Math.Round(a.Milliseconds), ["notes"] = new JsonArray([.. a.Notes.Select(n => (JsonNode)n)]),
+            ["projectInfo"] = a.ProjectInfoFields is { } info ? ArchicadProjectInfo.Compare(m, info).ToJson(ArchicadProjectInfo.Source) : null,
         };
     }
 
@@ -315,7 +320,12 @@ public static class ArchicadReceive
         storeys.Finish(edit);
         var now = Existing(m, key).Where(e => (string?)(e.Attrs[Key] as JsonObject)?["role"] is null or "element").ToList();
         var nativeNow = now.Count(e => !StoredBodies.Has(e));
-        return new ArchicadReceiveResult(added, updated, unchanged, removed, nativeNow, now.Count - nativeNow, perStorey, skipped, recognition, storeys.Report, groupId, notes);
+        // Archicad's Project Info: the project's empty fields filled in this same undo step; one set already is left as it is (A1b).
+        var info = a.ProjectInfoFields is { } fields ? ArchicadProjectInfo.Apply(edit, fields) : null;
+        return new ArchicadReceiveResult(added, updated, unchanged, removed, nativeNow, now.Count - nativeNow, perStorey, skipped, recognition, storeys.Report, groupId, notes)
+        {
+            ProjectInfo = info,
+        };
     }
 
     /// <summary>The class a reference stands for: Archicad's IFC type for it (IfcWallStandardCase read as IfcWall), else a proxy.</summary>

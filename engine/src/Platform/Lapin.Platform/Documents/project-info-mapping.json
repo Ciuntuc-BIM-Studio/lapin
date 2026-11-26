@@ -1,0 +1,52 @@
+{
+  "format": "lapin-project-info-mapping",
+  "version": 1,
+  "about": "How a source's project information becomes Lapin's project information (ProjectInfo.Grouped and name). Data only; Atrium Server embeds this file and Lapin reads the same table. The semantics are in docs/atrium-server.md, § Project information (A1b), The mapping tables.",
+  "keys": [
+    "name", "number", "phase", "phaseName", "contract",
+    "client", "clientAddress",
+    "address", "cadastral", "landBook", "permit", "permitDate",
+    "designer", "designerAddress", "designerRegistration", "designerPhone", "designerEmail",
+    "projectManager", "chiefArchitect", "structuralEngineer", "mepEngineer", "author", "checkedBy", "approvedBy"
+  ],
+  "phaseCodes": ["SF", "DALI", "PUZ", "PUD", "DTAC", "DTOE", "PT", "DE", "PTh"],
+  "join": ", ",
+  "sources": {
+    "archicad": [
+      { "key": "name", "from": ["PROJECTNAME"] },
+      { "key": "number", "from": ["PROJECTNUMBER", "PROJECT_CODE", "PROJECT_ID"] },
+      { "key": "phase", "from": ["PROJECTSTATUS"], "match": "phaseCode" },
+      { "key": "phaseName", "from": ["PROJECTSTATUS"], "match": "notPhaseCode" },
+      { "key": "client", "from": ["CLIENTCOMPANY", "CLIENT_FULLNAME"] },
+      { "key": "clientAddress", "from": ["CLIENTFULLADDRESS"], "parts": ["CLIENTADDRESS1", "CLIENTADDRESS2", "CLIENTADDRESS3", "CLIENTPOSTBOX", "CLIENTCITY", "CLIENTSTATE", "CLIENTPOSTCODE", "CLIENTCOUNTRY"] },
+      { "key": "address", "from": ["SITEFULLADDRESS"], "parts": ["SITEADDRESS1", "SITEADDRESS2", "SITEADDRESS3", "SITEPOSTBOX", "SITECITY", "SITESTATE", "SITEPOSTCODE", "SITECOUNTRY"] },
+      { "key": "designer", "from": ["CONTACTCOMPANY"] },
+      { "key": "designerAddress", "from": ["CONTACTFULLADDRESS"], "parts": ["CONTACTADDRESS1", "CONTACTADDRESS2", "CONTACTADDRESS3", "CONTACTPOSTBOX", "CONTACTCITY", "CONTACTSTATE", "CONTACTPOSTCODE", "CONTACTCOUNTRY"] },
+      { "key": "designerRegistration", "from": ["CONTACT_COMPANYCODE"] },
+      { "key": "designerPhone", "from": ["CONTACTPHONE"] },
+      { "key": "designerEmail", "from": ["CONTACTEMAIL"] },
+      { "key": "projectManager", "from": ["CONTACT_FULLNAME"] },
+      { "key": "author", "from": ["CAD_TECHNICIAN_FULLNAME"] }
+    ],
+    "ifc": [
+      { "key": "name", "from": ["IfcProject.LongName", "IfcProject.Name"] },
+      { "key": "number", "from": ["IfcProject.Name"], "when": "IfcProject.LongName" },
+      { "key": "phase", "from": ["IfcProject.Phase"], "match": "phaseCode" },
+      { "key": "phaseName", "from": ["IfcProject.Phase"], "match": "notPhaseCode" },
+      { "key": "client", "from": ["Actor.CLIENT.Name", "Actor.OWNER.Name"] },
+      { "key": "clientAddress", "from": ["Actor.CLIENT.Address", "Actor.OWNER.Address"] },
+      { "key": "address", "from": ["IfcSite.SiteAddress", "IfcBuilding.BuildingAddress"] },
+      { "key": "landBook", "from": ["IfcSite.LandTitleNumber"] },
+      { "key": "designer", "from": ["Actor.ARCHITECT.Organization", "Actor.ARCHITECT.Name", "OwnerHistory.Organization"] },
+      { "key": "designerAddress", "from": ["Actor.ARCHITECT.Address", "OwnerHistory.OrganizationAddress"] },
+      { "key": "designerPhone", "from": ["Actor.ARCHITECT.Phone", "OwnerHistory.OrganizationPhone"] },
+      { "key": "designerEmail", "from": ["Actor.ARCHITECT.Email", "OwnerHistory.OrganizationEmail"] },
+      { "key": "projectManager", "from": ["Actor.PROJECTMANAGER.Person", "Actor.PROJECTMANAGER.Name"] },
+      { "key": "chiefArchitect", "from": ["Actor.ARCHITECT.Person"] },
+      { "key": "structuralEngineer", "from": ["Actor.STRUCTURALENGINEER.Person", "Actor.STRUCTURALENGINEER.Name"] },
+      { "key": "mepEngineer", "from": ["Actor.MECHANICALENGINEER.Person", "Actor.MECHANICALENGINEER.Name", "Actor.ELECTRICALENGINEER.Person", "Actor.ELECTRICALENGINEER.Name"] },
+      { "key": "author", "from": ["OwnerHistory.Person"] }
+    ],
+    "manual": []
+  }
+}

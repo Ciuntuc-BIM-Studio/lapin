@@ -7,8 +7,11 @@ namespace Lapin.Protocol;
 public static class ProjectPackage
 {
     /// <summary>The session as the parts of a package: what a save writes, what a version keeps (the modules' texts too: a project's scripts).</summary>
-    public static PackageBuild Build(Session session) =>
-        LapinPackage.Build(session.Model, session.ModuleOf, id => Spatial.StoreyOf(session.Model, id)?.Id,
+    public static PackageBuild Build(Session session) => Build(session, session.Model);
+
+    /// <summary>The package of <paramref name="model"/> (the session's, or a view of it: the "uncommitted" question's, EngineDispatcher.Compared).</summary>
+    public static PackageBuild Build(Session session, Lapin.Model.IModelView model) =>
+        LapinPackage.Build(model, session.ModuleOf, id => Spatial.StoreyOf(model, id)?.Id,
             $"Lapin {typeof(ProjectPackage).Assembly.GetName().Version}", session.Product.Id,
             session.Catalog.Modules.Select(m => new PackageModule(m.Id, m.SchemaVersion)).ToList(),
             texts: session.Catalog.All<IPackageTexts>().SelectMany(s => s.Texts(session.Model).Select(t => new ModuleText(t.Path, t.Text, s.Module))));

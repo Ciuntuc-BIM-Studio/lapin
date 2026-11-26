@@ -123,6 +123,7 @@ public sealed partial class EngineDispatcher
                 CommitObject commit;
                 try { commit = h.CommitLive(build.Manifest, me, message, session.Model.Entities.Count(), now, IssuesApart(h)); }
                 catch (InvalidDataException e) { throw new CommandException(e.Message); }
+                KeepCommittedInfo(h, Spatial.Project(session.Model));
                 var (r, d) = files.WriteHistory(session, h, build, asBytes, new JsonObject { ["commit"] = CommitJson(commit, h) });
                 r["status"] = Status(files.History(session));
                 return (r, d);
@@ -228,6 +229,7 @@ public sealed partial class EngineDispatcher
             case "remote.syncIssues": return await SyncIssues(p, me, tokens, now, asBytes);
             case "remote.syncReferences": return await SyncReferences(p, me, tokens, now, asBytes);
             case "remote.referenceFile": return await ReferenceFile(p, me, tokens);
+            case "remote.syncProjectInfo": return await SyncProjectInfo(p, me, tokens, now, asBytes);
             case "remote.issueInfo":
             {
                 var h = files.History(session);
@@ -278,7 +280,7 @@ public sealed partial class EngineDispatcher
         var build = ProjectPackage.Build(session);
         var o = new JsonObject
         {
-            ["branch"] = h.Head, ["head"] = h.HeadCommit, ["uncommitted"] = h.HeadCommit == null ? build.Manifest.Parts.Count > 0 : h.Uncommitted(build.Manifest, IssuesApart(h)),
+            ["branch"] = h.Head, ["head"] = h.HeadCommit, ["uncommitted"] = h.HeadCommit == null ? build.Manifest.Parts.Count > 0 : h.Uncommitted(Compared(h), IssuesApart(h)),
             ["saved"] = session.Path != null,
             ["problems"] = new JsonArray([.. h.Problems.Select(x => (JsonNode)x)]),
             ["unreadable"] = h.Unreadable,
@@ -325,7 +327,7 @@ public sealed partial class EngineDispatcher
     /// </summary>
     Func<string, (byte[] Ifc, string Schema)?> Viewer(PackageHistory h) => commit =>
     {
-        if (commit != h.HeadCommit || h.Uncommitted(ProjectPackage.Build(session).Manifest, IssuesApart(h))) return null;
+        if (commit != h.HeadCommit || h.Uncommitted(Compared(h), IssuesApart(h))) return null;
         ReportProgress("Exporting the viewer copy", 0, 0);
         var (bytes, _) = IfcExport.Bytes(session, "viewer.ifc", new IfcExportOptions("IFC4"));
         return (bytes, "IFC4");
@@ -368,7 +370,7 @@ public sealed partial class EngineDispatcher
     {
         var h = files.History(session).Clone();
         var e = TheRemote(h, p);
-        if (h.HeadCommit != null && h.Uncommitted(ProjectPackage.Build(session).Manifest, IssuesApart(h)))
+        if (h.HeadCommit != null && h.Uncommitted(Compared(h), IssuesApart(h)))
             throw new CommandException("The project has changes that are not committed: commit first, then pull.");
         using var remote = await OpenRemote(e, me, tokens);
         var fetched = await RemoteOps.FetchAsync(remote, h, e.Name, me, now);
@@ -426,11 +428,16 @@ public sealed partial class EngineDispatcher
         {
             entities = [.. entities.Where(x => x.Class != Remarks.Class && x.Class != RefDocs.Class), .. session.Model.OfClass(Remarks.Class), .. session.Model.OfClass(RefDocs.Class)];
             // Their folders, types and checklist too (kept on the project): what the commit held would read as a change made here.
+            // And the project's information once it is synced with the server's record (A1b): its name and info stay as they are here.
+            var infoApart = h.ProjectInfo.ContainsKey(e.Name);
             if (Spatial.Project(session.Model) is { } here)
-                entities = [.. entities.Select(x => x.Id != here.Id ? x : x.With(attrs: KeepReferenceSettings(x.CloneAttrs(), here)))];
+                entities = [.. entities.Select(x => x.Id != here.Id ? x : infoApart ? x.With(name: here.Name, attrs: KeepProjectInfo(KeepReferenceSettings(x.CloneAttrs(), here), here)) : x.With(attrs: KeepReferenceSettings(x.CloneAttrs(), here)))];
         }
+        // The commit's own name and information, which the "uncommitted" question compares the project's kept ones as (A1b).
+        var committedProject = content.Entities.FirstOrDefault(x => x.Class == IfcClass.Project);
         var diff = session.Edit("Pull", edit => { ModelCompare.Apply(edit, entities, relations); session.AdoptClasses(content.Classes); });
         h.Move(h.Head, theirs, me, "pull", now);
+        KeepCommittedInfo(h, committedProject);
         var (r, saved) = files.WriteHistory(session, h, ProjectPackage.Build(session), asBytes, o);
         r["pulled"] = true;
         r["kind"] = kind == PullKind.Diverged ? "resolved" : "fastForward";
@@ -443,6 +450,55 @@ public sealed partial class EngineDispatcher
     static System.Text.Json.Nodes.JsonObject KeepReferenceSettings(JsonObject attrs, Entity here)
     {
         if (here.Attrs[RefDocs.Key] is { } mine) attrs[RefDocs.Key] = mine.DeepClone(); else attrs.Remove(RefDocs.Key);
+        return attrs;
+    }
+
+    /// <summary>
+    /// The project's name and information as the head commit has them, kept in the project information's sync state (remotes.json): once
+    /// they are synced with the server's record on their own (A1b), a sync or a pull that changes them here is not a change to commit,
+    /// as a server's issues are not. Commits still carry them (a folder remote, the history, an export read them there).
+    /// </summary>
+    static void KeepCommittedInfo(PackageHistory h, Entity? project)
+    {
+        if (project == null) return;
+        foreach (var r in h.Remotes.Where(r => r.Kind == "server"))
+            if (h.ProjectInfo.GetValueOrDefault(r.Name) is { } st)
+                st["committed"] = new JsonObject { ["name"] = project.Name, ["info"] = project.Attrs[Lapin.Platform.Documents.ProjectInfo.Key]?.DeepClone() };
+    }
+
+    /// <summary>
+    /// The manifest the "uncommitted" questions compare with the head commit: the live project's, with the project's name and information
+    /// as last committed (<see cref="KeepCommittedInfo"/>) when they are synced on their own with a server; else the live project's.
+    /// </summary>
+    PackageManifest Compared(PackageHistory h)
+    {
+        var committed = h.Remotes.Where(r => r.Kind == "server").Select(r => h.ProjectInfo.GetValueOrDefault(r.Name)?["committed"] as JsonObject).FirstOrDefault(x => x != null);
+        if (committed == null || Spatial.Project(session.Model) is not { } project) return ProjectPackage.Build(session).Manifest;
+        var attrs = project.CloneAttrs();
+        if (committed["info"] is JsonObject info) attrs[Lapin.Platform.Documents.ProjectInfo.Key] = info.DeepClone(); else attrs.Remove(Lapin.Platform.Documents.ProjectInfo.Key);
+        var swapped = new Entity(project.Id, project.Class, (string?)committed["name"] ?? project.Name, attrs, project.PredefinedType);
+        return ProjectPackage.Build(session, new OneEntityView(session.Model, swapped)).Manifest;
+    }
+
+    /// <summary>A model seen with one entity in another state (the project as last committed): everything else is the model's own.</summary>
+    sealed class OneEntityView(IModelView inner, Entity swapped) : IModelView
+    {
+        Entity Swap(Entity e) => e.Id == swapped.Id ? swapped : e;
+        public Entity? Get(string id) => id == swapped.Id ? swapped : inner.Get(id);
+        public Relation? GetRelation(string id) => inner.GetRelation(id);
+        public IEnumerable<Entity> Entities => inner.Entities.Select(Swap);
+        public IEnumerable<Entity> AnyOrder => inner.AnyOrder.Select(Swap);
+        public IEnumerable<Relation> Relations => inner.Relations;
+        public IEnumerable<Entity> OfClass(string @class) => inner.OfClass(@class).Select(Swap);
+        public IEnumerable<Relation> RelationsOf(string id, string? relationClass = null) => inner.RelationsOf(id, relationClass);
+        public IEnumerable<Relation> RelatedBy(string id, string? relationClass = null) => inner.RelatedBy(id, relationClass);
+        public int Order(string id) => inner.Order(id);
+        public long Revision => -1 - inner.Revision;
+    }
+
+    static JsonObject KeepProjectInfo(JsonObject attrs, Entity here)
+    {
+        if (here.Attrs[Lapin.Platform.Documents.ProjectInfo.Key] is { } mine) attrs[Lapin.Platform.Documents.ProjectInfo.Key] = mine.DeepClone(); else attrs.Remove(Lapin.Platform.Documents.ProjectInfo.Key);
         return attrs;
     }
 
@@ -650,6 +706,57 @@ public sealed partial class EngineDispatcher
                     else if (existing is { Class: RefDocs.Class }) edit.Replace(existing.With(name: d.Title, attrs: d.Attrs));
                     else if (existing == null) edit.Add(new Entity(id, RefDocs.Class, d.Title, d.Attrs));
                 }
+            });
+        var o = new JsonObject { ["report"] = outcome.Report };
+        Tokens(o, tokens);
+        if (asBytes)
+        {
+            var (r, saved) = files.WriteHistory(session, h, ProjectPackage.Build(session), true, o);
+            r["status"] = Status(files.History(session));
+            return (r, diff == null ? saved : saved == null ? diff : Merge(diff, saved));
+        }
+        files.KeepHistory(session, h);
+        o["status"] = Status(h);
+        return (o, diff);
+    }
+
+    // ------------------------------------------------------------ the project's information (docs/plan-archicad.md A1b)
+
+    /// <summary>
+    /// The project's information synced with the server project's record (<see cref="ProjectInfoSync"/>): what came from the server applied in one
+    /// undo step ("Sync project information"), the state kept with the history (remotes.json, never in a commit), as <see cref="SyncReferences"/>.
+    /// A server without the record (an older one) answers <c>offered: false</c> and nothing changes.
+    /// </summary>
+    async Task<(object? Result, Diff? Diff)> SyncProjectInfo(JsonObject p, RemoteAuthor me, RemoteTokens tokens, DateTime now, bool asBytes)
+    {
+        var h = files.History(session).Clone();
+        var e = IssueRemote(h, p) ?? throw new CommandException("The project information is synced with a server: connect one in File → Collaborate….");
+        var m = session.Model;
+        var fields = ProjectInfoSync.FieldKeys.ToDictionary(k => k, k => Lapin.Platform.Documents.ProjectInfo.FieldValue(m, k), StringComparer.Ordinal);
+        ProjectInfoSync.Outcome outcome;
+        using (var remote = (HttpRemote)await OpenRemote(e, me, tokens))
+        {
+            ReportProgress("Syncing the project information", 0, 0);
+            outcome = await new ProjectInfoSync(remote, e.Project).RunAsync(fields, Lapin.Platform.Documents.ProjectInfo.Customs(m), h.ProjectInfo.GetValueOrDefault(e.Name), e.Url, now);
+        }
+        if (outcome.Report["offered"] is JsonValue ov && ov.TryGetValue<bool>(out var offered) && !offered)
+        {
+            var none = new JsonObject { ["report"] = outcome.Report, ["status"] = Status(h) };
+            Tokens(none, tokens);
+            return (none, null);
+        }
+        // What the head commit has, carried over; on the first sync of a project with nothing to commit, the project's as it is now.
+        var committed = h.ProjectInfo.GetValueOrDefault(e.Name)?["committed"]?.DeepClone();
+        if (committed == null && h.HeadCommit != null && !h.Uncommitted(ProjectPackage.Build(session).Manifest, IssuesApart(h)) && Spatial.Project(m) is { } clean)
+            committed = new JsonObject { ["name"] = clean.Name, ["info"] = clean.Attrs[Lapin.Platform.Documents.ProjectInfo.Key]?.DeepClone() };
+        if (committed != null) outcome.State["committed"] = committed;
+        h.ProjectInfo[e.Name] = outcome.State;
+        Diff? diff = null;
+        if (outcome.Fields != null || outcome.Custom != null)
+            diff = session.Edit("Sync project information", edit =>
+            {
+                if (outcome.Fields is { } given) Lapin.Platform.Documents.ProjectInfo.Set(edit, given);
+                if (outcome.Custom is { } list) Lapin.Platform.Documents.ProjectInfo.WriteCustoms(edit, list);
             });
         var o = new JsonObject { ["report"] = outcome.Report };
         Tokens(o, tokens);
