@@ -26,7 +26,7 @@ Trage un document (sau mai multe, cu Ctrl sau Cmd apăsat) peste un folder ca s�
 
 Formularul ține titlul, tipul, emitentul, numărul, data, valabilitatea, fazele, rolul și folderul, plus câmpurile suplimentare ale tipului. Fișierele se pot previzualiza (un PDF pagină cu pagină, o imagine direct), salva ca o copie, scoate din document sau completa. Un IFC (sau un .ifczip) are **Open as link**: se deschide în proiect ca legătură doar pentru citire, ca File → Link IFC…. Un fișier pe care proiectul nu-l ține (unul peste limita de mărime, pe un server) se aduce întâi de pe server.
 
-**Suggest** citește textul fișierului și propune numărul, data, emitentul, tipul și valabilitatea, fiecare cu cuvintele din care a fost citit. Bifezi ce e corect și aplici; nimic nu se scrie fără tine. Un scan nu are text și nu primește sugestii. O valabilitate care vine doar din perioada obișnuită a tipului e marcată *orientativ*: contează datele scrise pe document.
+**Suggest** citește textul fișierului și propune numărul, data, emitentul, tipul și valabilitatea, fiecare cu cuvintele din care a fost citit. Bifezi ce e corect și aplici; nimic nu se scrie fără tine. Un scan nu are text și nu primește sugestii. În fila **Documente** a unui server CDE, **Suggest** întreabă serverul, care citește textul fișierului după aceleași reguli (un server prea vechi pentru asta o spune). O valabilitate care vine doar din perioada obișnuită a tipului e marcată *orientativ*: contează datele scrise pe document.
 
 ![Suggest, cu cuvintele din care a fost citită fiecare valoare](shots/reference-suggest.webp)
 
@@ -39,6 +39,10 @@ Un document de tipul *Certificat de urbanism* are fila **Checklist**: avizele ș
 ![Lista: un aviz primit, unul cerut, unul lipsă](shots/reference-checklist.webp)
 
 Lista livrată cu Lapin e orientativă. Normele și perioadele de valabilitate sunt ale tale: Lapin nu pretinde nicio perioadă legală.
+
+Lista oferită e a proiectului: **Foldere și tipuri → Listă de verificare** o editează. Redenumești un punct, îi dai folderul în care merge un document cerut pentru el, ordonezi lista, scoți puncte, adaugi ale tale (**Punct nou**) și apeși **Salvează lista de verificare**. **Lista orientativă** reia lista livrată cu Lapin. Un certificat păstrează punctele bifate oricum ar deveni lista. Pe un server CDE lista e a serverului, editată la fel de proprietarii lui.
+
+![Lista oferită, în Foldere și tipuri](shots/reference-checklist-offered.webp)
 
 ## Valabilitatea
 
@@ -68,7 +72,7 @@ Certificatul citit e cel mai nou certificat primit și încă valabil.
 
 ## Trimiterea lor cu o emitere
 
-**Gestionare → Emite…** are **Include documentele de referință**. Bifează documentele unul câte unul sau un folder, ca să bifezi documentele din el și din subfolderele lui (un document cerut nu are fișier și nu poate pleca; un folder nu ia documentele înlocuite sau retrase). Fișierele lor pleacă odată cu emiterea, copii sub numele lor (un al doilea fișier cu același nume primește un număr), trecute în borderoul de transmitere (tipul `REF`, cu numărul și titlul documentului) și în manifest, cu SHA-256. Pe un server CDE sunt fișiere ale emiterii, nu documente ale registrului.
+**Gestionare → Emite…** are **Include documentele de referință**. Bifează documentele unul câte unul sau un folder, ca să bifezi documentele din el și din subfolderele lui (un document cerut nu are fișier și nu poate pleca; un folder nu ia documentele înlocuite sau retrase). Fișierele lor pleacă odată cu emiterea, copii sub numele lor (un al doilea fișier cu același nume primește un număr; fereastra listează numele pe care le vor avea fișierele, cel numerotat marcat), trecute în borderoul de transmitere (tipul `REF`, cu numărul și titlul documentului) și în manifest, cu SHA-256. Pe un server CDE sunt fișiere ale emiterii, nu documente ale registrului.
 
 ![Emite: certificatul și folderul de avize bifate](shots/issue-references.webp)
 

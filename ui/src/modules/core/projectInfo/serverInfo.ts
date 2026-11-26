@@ -84,6 +84,8 @@ export function sourceRows(record: InfoRecord | null | undefined): { source: str
 export function infoPerms(role: 'viewer' | 'editor' | 'owner', authorId: string | null) {
   return {
     edit: role !== 'viewer',
+    /** The record's name is the project's name: only owners rename the project. */
+    rename: role === 'owner',
     apply: role === 'owner',
     dismiss: (p: Pick<InfoProposal, 'createdBy'>) => role === 'owner' || (role === 'editor' && !!authorId && p.createdBy === authorId),
   };

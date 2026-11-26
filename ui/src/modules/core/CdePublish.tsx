@@ -222,13 +222,16 @@ function ContainersView({ server, project, name, data, busy, run, folders = fals
       <span className="cde-row-body">
         <span className="recent-name"><span data-no-i18n>{r.title}</span>{r.suitability && <span className="chip" data-no-i18n>{r.suitability}</span>}
           {r.fromSubmission && <span className="chip">approved</span>}
+          {r.filesOnly && <span className="chip" data-cde-files-only title="Files submitted from disk: the issue names the project's commit at the time">Files from disk</span>}
           {r.supersededBy && <span className="muted small"> <span>superseded by</span> <span data-no-i18n>{tagShort(r.supersededBy)}</span></span>}</span>
         <span className="muted small" data-no-i18n>{r.by} · {when(r.at)} · {short(r.commit)}{r.note ? ` · ${r.note}` : ''}</span>
       </span>
       <span className="cde-row-actions">
         <button type="button" className="btn" disabled={busy} title="Open this revision, read-only" onClick={() => void run(() => openRevision(server, project, name, r.commit))}><FolderOpen size={13} />Open</button>
         <button type="button" className="icon" disabled={busy} title="Download the .lapin" onClick={() => void run(() => saveFromServer(server, `${P(project)}/commits/${r.commit}/package?viewer=false`, safeFileName(`${name} ${r.revision ?? short(r.commit)}.lapin`)))}><Download size={13} /><span>.lapin</span></button>
-        <button type="button" className="icon" disabled={busy} title="Download the IFC copy" onClick={() => void run(() => downloadIfc(server, project, name, r.commit))}><Download size={13} /><span>IFC</span></button>
+        {/* An issue of files from disk has no model of its own: its IFC is the one it carries, if any, never main's. */}
+        {!r.filesOnly && <button type="button" className="icon" disabled={busy} title="Download the IFC copy" onClick={() => void run(() => downloadIfc(server, project, name, r.commit))}><Download size={13} /><span>IFC</span></button>}
+        {r.ifcFile && <button type="button" className="icon" disabled={busy} title="Download the IFC file issued" onClick={() => { const f = r.ifcFile!; void run(() => saveFromServer(server, `${P(project)}/objects/${f.sha256}`, f.name)); }}><Download size={13} /><span>IFC</span></button>}
         {r.files > 0 && <button type="button" className="link small" onClick={() => setFiles(files === r.key ? null : r.key)} title="The files issued with this revision">{r.files} <span>files</span></button>}
       </span>
       {files === r.key && r.tag && <ul className="cde-issued-files">{r.tag.files.map(file)}</ul>}

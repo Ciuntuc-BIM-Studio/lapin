@@ -18065,6 +18065,24 @@ export const scenes = [
       t.expect(await state('water') === 'requested', 'a requested document stands for the water item');
       t.expect(await state('sewerage') === 'missing', 'the sewerage item is still missing');
       await t.shot('reference-checklist', { of: '.dialog', pad: 0 });
+      // The checklist offered, the project's own: an item added in Folders and types → Checklist, and saved.
+      await t.page.locator('[data-testid=refs-open-settings]').click();
+      await t.page.locator('[data-testid=refs-settings-checklist]').click();
+      await t.page.waitForSelector('[data-testid=refs-checklist-offered]', { timeout: 10_000 });
+      const offered = await t.page.locator('[data-testid=refs-checklist-offered] tbody tr').count();
+      const answers = t.page.listeners('dialog');
+      t.page.removeAllListeners('dialog');
+      t.page.once('dialog', (d) => void d.accept(t.lang === 'ro' ? 'Aviz drumuri județene' : 'County roads permit'));
+      await t.page.locator('[data-testid=refs-checklist-add]').click();
+      await t.wait(300);
+      for (const l of answers) t.page.on('dialog', l);
+      t.expect(await t.page.locator('[data-testid=refs-checklist-offered] tbody tr').count() === offered + 1, 'the new item is on the list offered');
+      await t.page.locator('[data-testid=refs-save-checklist]').click();
+      await t.wait(800);
+      t.expect(await t.page.evaluate(async () => (await (await import('/src/engine/session.ts')).query('references.types', {})).checklist.length) === offered + 1, 'the project keeps its own list');
+      await t.shot('reference-checklist-offered', { of: '[data-testid=refs-settings]', pad: 6 });
+      await t.page.locator('[data-testid=refs-open-settings]').click();
+      await t.wait(300);
       // The list, with the permit's badge.
       await t.page.locator('[data-testid=refs-tab-details]').click();
       await t.page.locator('[data-folder=permits]').first().locator('button.refs-name').click();
@@ -18122,6 +18140,9 @@ export const scenes = [
       t.expect(await t.page.locator(`[data-field="issue-ref-${water}"]`).isChecked(), 'the permits folder ticks the water permit');
       t.expect(await t.page.locator(`[data-field="issue-ref-${fire}"]`).isDisabled(), 'the permit asked for has no file: it cannot go');
       t.expect((await t.page.locator('[data-field=issue-references-list]').innerText()).includes('2'), 'two reference documents go with the issue');
+      // The names the reference files will have in the issue (the names' preview follows the choice a moment later).
+      await t.page.waitForSelector('[data-field=issue-references-names] code', { timeout: 10_000 });
+      t.expect((await t.page.locator('[data-field=issue-references-names]').innerText()).includes('.pdf'), 'the files\' names in the issue are listed');
       await t.page.locator('[data-field=issue-references-list]').scrollIntoViewIfNeeded();
       await t.shot('issue-references', { of: '.dialog .cde-sheets', pad: 6 });
       await t.page.locator('.dialog-head button[title=Close]').click(); await t.wait(300);

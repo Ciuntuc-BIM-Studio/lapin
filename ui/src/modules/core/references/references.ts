@@ -226,3 +226,5 @@ export const withdrawRef = (id: string, reason: string) => execute('references.w
 export const deleteRef = (id: string) => execute('references.delete', { id });
 export const setFolders = (args: { folders?: unknown; typeFolders?: Record<string, string>; roleFolders?: Record<string, string>; language?: string }) => execute('references.setFolders', args);
 export const setTypes = (types: RefType[]) => execute('references.setTypes', { types });
+/** The certificate's checklist items offered (§3.3): the project's own list; null takes the indicative defaults again. */
+export const setChecklist = (checklist: ChecklistOption[] | null) => execute('references.setChecklist', { checklist });

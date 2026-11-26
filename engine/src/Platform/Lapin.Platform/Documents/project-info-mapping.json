@@ -47,6 +47,19 @@
       { "key": "mepEngineer", "from": ["Actor.MECHANICALENGINEER.Person", "Actor.MECHANICALENGINEER.Name", "Actor.ELECTRICALENGINEER.Person", "Actor.ELECTRICALENGINEER.Name"] },
       { "key": "author", "from": ["OwnerHistory.Person"] }
     ],
+    "titleblock": [
+      { "key": "name", "from": ["project"] },
+      { "key": "number", "from": ["projectNumber"] },
+      { "key": "phase", "from": ["phase"], "match": "phaseCode" },
+      { "key": "phaseName", "from": ["phase"], "match": "notPhaseCode" },
+      { "key": "client", "from": ["client"] },
+      { "key": "address", "from": ["address"] },
+      { "key": "designer", "from": ["designer"] },
+      { "key": "projectManager", "from": ["projectManager"] },
+      { "key": "author", "from": ["drawnBy"] },
+      { "key": "checkedBy", "from": ["checkedBy"] },
+      { "key": "approvedBy", "from": ["approvedBy"] }
+    ],
     "manual": []
   }
 }

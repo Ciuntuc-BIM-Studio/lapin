@@ -40,7 +40,7 @@ public static class CdeIssue
         var model = Flag(p, "model");
         // The written documents only when asked (docs/plan-documents.md): each as a PDF, and as a DOCX too with documentsDocx.
         var documents = p["documents"] is JsonArray ? Cde.DocumentsOf(m, p["documents"]) : [];
-        var references = ReferencesOf(m, p["references"], p["referenceFolders"]);
+        var references = Cde.ReferencesOf(m, p["references"], p["referenceFolders"]);
         if (sheets.Count == 0 && !model && documents.Count == 0 && references.Count == 0) throw new CommandException("Choose at least one sheet, a document, a reference document, or the model.");
         var names = Cde.Names(m, p);
         var revision = (string)names["revision"]!;
@@ -150,8 +150,7 @@ public static class CdeIssue
                     skipped.Add($"{e.Name}: {rf.Name} is not held here (larger than the project keeps, and not in the project folder): it was left out of the issue.");
                     continue;
                 }
-                var fileName = rf.Name;
-                for (var i = 2; !used.Add(fileName); i++) fileName = $"{Path.GetFileNameWithoutExtension(rf.Name)} ({i}){Path.GetExtension(rf.Name)}";
+                var fileName = Cde.ReferenceFileName(rf.Name, used);
                 rows.Add(new CdeTransmittal.Row(Write(fileName, bytes, "reference", referenceId: e.Id, keep: bytes.LongLength <= keepLimit), e.Str("number"), e.Name));
             }
         if (model)
@@ -186,34 +185,6 @@ public static class CdeIssue
         result["warnings"] = new JsonArray(findings.Where(f => !f.Blocking).Select(f => (JsonNode)f.ToJson()).ToArray());
         if (skipped.Count > 0) result["skipped"] = new JsonArray([.. skipped.Select(x => (JsonNode)x)]);
         return (result, diff);
-    }
-
-    /// <summary>
-    /// The reference documents an issue sends (stage R5): those named (<c>references</c>: ids) and those in the folders named
-    /// (<c>referenceFolders</c>: ids, each with its subfolders), once each, in the folder tree's order; superseded and withdrawn ones
-    /// only when named, never through a folder, and requested ones (no file yet) never.
-    /// </summary>
-    public static List<Entity> ReferencesOf(IModelView m, JsonNode? ids, JsonNode? folders)
-    {
-        var named = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var id in (ids as JsonArray ?? []).Select(x => (string?)x).OfType<string>())
-        {
-            if (m.Get(id) is not { Class: Refs.Class }) throw new CommandException("There is no such reference document.");
-            named.Add(id);
-        }
-        var tree = Refs.Index(Refs.Folders(m));
-        var inFolders = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var f in (folders as JsonArray ?? []).Select(x => (string?)x).OfType<string>())
-        {
-            if (!tree.ContainsKey(f)) throw new CommandException($"There is no folder {f} in the project's tree.");
-            inFolders.Add(f);
-            foreach (var fi in tree.Values)
-                for (var p = fi.Parent; p != null; p = tree.GetValueOrDefault(p)?.Parent)
-                    if (p == f) { inFolders.Add(fi.Id); break; }
-        }
-        var today = ReferenceDocumentFields.Today();
-        return ReferenceDocumentFields.Ordered(m, tree).Where(e => Refs.Files(e).Count > 0 && (named.Contains(e.Id)
-            || inFolders.Contains(e.Str("folder") ?? "") && Refs.StatusOf(e, today) is not ("superseded" or "withdrawn"))).ToList();
     }
 
     static bool Flag(JsonObject p, string key) => p[key] is JsonValue v && v.TryGetValue<bool>(out var b) && b;

@@ -7,8 +7,8 @@
 
 import { createContext, useContext } from 'react';
 import {
-  addRef, attachFiles, checklistOf, deleteRef, detachFile, fileOf, folderTree, listRefs, moveRefs, scanFolder, setFolders, setTypes, suggestFor, supersedeRef, textOf, typeList, updateRef, withdrawRef,
-  type AddResult, type Checklist, type FolderTree, type RefDoc, type RefFile, type RefFileData, type RefType, type ScanResult, type Suggestion, type TypeList,
+  addRef, attachFiles, checklistOf, setChecklist, deleteRef, detachFile, fileOf, folderTree, listRefs, moveRefs, scanFolder, setFolders, setTypes, suggestFor, supersedeRef, textOf, typeList, updateRef, withdrawRef,
+  type AddResult, type Checklist, type ChecklistOption, type FolderTree, type RefDoc, type RefFile, type RefFileData, type RefType, type ScanResult, type Suggestion, type TypeList,
 } from './references';
 
 export type FilePart = { name: string; data: string };
@@ -19,7 +19,7 @@ export interface IfcHeaderInfo { schema?: string | null; application?: string | 
 export interface ModelInfo { kind: string | null; ifc: IfcHeaderInfo | null; ids: import('../../../engine/serverIds').IdsReport | null }
 
 export interface RefAdapter {
-  /** Where the documents are: the project open here, or a server (some things then do not exist: Suggest, Scan folder, the keep limit). */
+  /** Where the documents are: the project open here, or a server (some things then do not exist: Scan folder, the keep limit). */
   kind: 'engine' | 'server';
   list(): Promise<RefDoc[]>;
   folders(): Promise<FolderTree | null>;
@@ -37,10 +37,12 @@ export interface RefAdapter {
   remove(id: string): Promise<unknown>;
   setFolders(args: { folders?: unknown; typeFolders?: Record<string, string>; roleFolders?: Record<string, string>; language?: string }): Promise<unknown>;
   setTypes(types: RefType[]): Promise<unknown>;
+  /** The certificate's checklist items offered; null (the engine only) the indicative defaults again. */
+  setChecklist(items: ChecklistOption[] | null): Promise<unknown>;
   /** Server only (R7): the server project the documents are in, and what reading a model found (its IFC header, its IDS report). */
   project?: { id: string; name: string };
   model?(id: string, name: string): Promise<ModelInfo | null>;
-  /** Engine only: what a file's text suggests, and the project folder's scan. */
+  /** What a file's text suggests (the engine's patterns, or the server's copy of them); the project folder's scan (engine only). */
   suggest?(id: string, name?: string): Promise<Suggestion | null>;
   scan?(): Promise<ScanResult | null>;
 }
@@ -52,7 +54,7 @@ export const engineAdapter: RefAdapter = {
   kind: 'engine',
   list: listRefs, folders: folderTree, types: typeList, checklist: checklistOf, file: fileOf, text: textOf,
   add: addRef, update: updateRef, move: moveRefs, attach: attachFiles, detach: detachFile, supersede: supersedeRef, withdraw: withdrawRef, remove: deleteRef,
-  setFolders, setTypes, suggest: suggestFor, scan: scanFolder,
+  setFolders, setTypes, setChecklist, suggest: suggestFor, scan: scanFolder,
 };
 
 /** The permissions of the open project: everything, except for a guest of a shared session. */

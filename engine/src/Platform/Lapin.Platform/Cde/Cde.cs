@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Lapin.Model;
+using Lapin.Platform.Documents;
 
 namespace Lapin.Platform.Cde;
 
@@ -80,7 +81,7 @@ public static class Cde
         var series = CdeIssues.AllSeries(m);
         var match = CdeIssues.Matching(m, SheetsOf(m, a["sheets"]).Select(x => x.Id), a["documents"] is JsonArray ? DocumentsOf(m, a["documents"]).Select(x => x.Id) : [],
             a["model"] is JsonValue mv && mv.TryGetValue<bool>(out var withModel) && withModel);
-        return new JsonObject
+        var result = new JsonObject
         {
             ["revision"] = revision, ["status"] = status, ["number"] = n, ["of"] = of?.IssueId,
             ["series"] = new JsonArray([.. series.Select(x => (JsonNode)x.ToJson())]),
@@ -108,7 +109,76 @@ public static class Cde
             ["set"] = CdeNaming.WithRevision(naming.ForSet(), status, revision, "pdf"),
             ["transmittal"] = CdeNaming.WithRevision(naming.ForTransmittal(n), status, revision, "pdf"),
         };
+        if (a["references"] is JsonArray || a["referenceFolders"] is JsonArray) result["references"] = ReferenceNames(m, a, result);
+        return result;
     }
+
+    /// <summary>
+    /// The names the reference documents' files take in the issue (<c>references</c>, <c>referenceFolders</c> as <c>cde.issue</c> takes
+    /// them): each its own name, a number after it when a file written before it in the issue (the sheets' PDFs and DXFs, the set, the
+    /// documents' PDFs and DOCXs, an earlier reference file) has it already. <c>dxf</c>, <c>set</c> and <c>documentsDocx</c> say which
+    /// of those the issue writes, as for <c>cde.issue</c>.
+    /// </summary>
+    static JsonArray ReferenceNames(IModelView m, JsonObject a, JsonObject names)
+    {
+        bool Flag(string key) => a[key] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
+        var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var sheets = (names["sheets"] as JsonArray ?? []).OfType<JsonObject>().ToList();
+        foreach (var sh in sheets)
+        {
+            used.Add((string)sh["file"]!);
+            if (Flag("dxf")) used.Add(Path.ChangeExtension((string)sh["file"]!, ".dxf"));
+        }
+        if (sheets.Count > 1 && Flag("set")) used.Add((string)names["set"]!);
+        if (a["documents"] is JsonArray)
+            foreach (var d in (names["documents"] as JsonArray ?? []).OfType<JsonObject>())
+            {
+                used.Add((string)d["file"]!);
+                if (Flag("documentsDocx")) used.Add(Path.ChangeExtension((string)d["file"]!, ".docx"));
+            }
+        return new JsonArray([.. ReferencesOf(m, a["references"], a["referenceFolders"]).Select(e => (JsonNode)new JsonObject
+        {
+            ["id"] = e.Id, ["title"] = e.Name, ["number"] = e.Str("number"),
+            ["files"] = new JsonArray([.. References.References.Files(e).Select(f => (JsonNode)new JsonObject { ["name"] = f.Name, ["file"] = ReferenceFileName(f.Name, used) })]),
+        })]);
+    }
+
+    /// <summary>A reference file's name in an issue: its own, or with " (2)", " (3)"… before its extension when one written before has it.</summary>
+    public static string ReferenceFileName(string name, ISet<string> used)
+    {
+        var fileName = name;
+        for (var i = 2; !used.Add(fileName); i++) fileName = $"{Path.GetFileNameWithoutExtension(name)} ({i}){Path.GetExtension(name)}";
+        return fileName;
+    }
+
+    /// <summary>
+    /// The reference documents an issue sends (stage R5): those named (<c>references</c>: ids) and those in the folders named
+    /// (<c>referenceFolders</c>: ids, each with its subfolders), once each, in the folder tree's order; superseded and withdrawn ones
+    /// only when named, never through a folder, and requested ones (no file yet) never.
+    /// </summary>
+    public static List<Entity> ReferencesOf(IModelView m, JsonNode? ids, JsonNode? folders)
+    {
+        var named = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var id in (ids as JsonArray ?? []).Select(x => (string?)x).OfType<string>())
+        {
+            if (m.Get(id) is not { Class: References.References.Class }) throw new CommandException("There is no such reference document.");
+            named.Add(id);
+        }
+        var tree = References.References.Index(References.References.Folders(m));
+        var inFolders = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var f in (folders as JsonArray ?? []).Select(x => (string?)x).OfType<string>())
+        {
+            if (!tree.ContainsKey(f)) throw new CommandException($"There is no folder {f} in the project's tree.");
+            inFolders.Add(f);
+            foreach (var fi in tree.Values)
+                for (var p = fi.Parent; p != null; p = tree.GetValueOrDefault(p)?.Parent)
+                    if (p == f) { inFolders.Add(fi.Id); break; }
+        }
+        var today = ReferenceDocumentFields.Today();
+        return ReferenceDocumentFields.Ordered(m, tree).Where(e => References.References.Files(e).Count > 0 && (named.Contains(e.Id)
+            || inFolders.Contains(e.Str("folder") ?? "") && References.References.StatusOf(e, today) is not ("superseded" or "withdrawn"))).ToList();
+    }
+
 
     public static void Register(IModuleRegistry r)
     {

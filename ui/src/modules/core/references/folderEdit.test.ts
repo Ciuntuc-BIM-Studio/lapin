@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addFolder, addTypeField, draftOf, moveFolder, newFolderId, removeFolder, renameFolder, renameType, sameTree, typeIdOf } from './folderEdit';
+import { addFolder, addOption, addTypeField, draftOf, moveFolder, moveOption, newFolderId, plainOptions, removeFolder, renameFolder, renameOption, renameType, sameTree, typeIdOf } from './folderEdit';
 import type { RefFolder, RefType } from './references';
 
 const node = (id: string, en: string, children: RefFolder[] = [], derived?: string): RefFolder => ({ id, name: { ro: `r-${en}`, en }, text: en, count: 3, total: 5, children, ...(derived ? { derived } : {}) });
@@ -50,5 +50,29 @@ describe('the type list', () => {
     expect(renameType(types, 'cu', 'ro', 'CU')[0].name).toEqual({ ro: 'CU', en: 'Certificate' });
     const t = addTypeField(types, 'cu', 'Cadastral number', 'en')[0];
     expect(t.fields).toEqual([{ key: 'cadastralNumber', label: { en: 'Cadastral number', ro: 'Cadastral number' }, kind: 'text' }]);
+  });
+});
+
+describe('the checklist offered', () => {
+  const items = [{ key: 'water', group: 'utilities', label: { ro: 'Apă', en: 'Water supply' }, text: 'Water supply', folder: 'permits' }, { key: 'gas', label: { ro: 'Gaz', en: 'Gas' } }];
+
+  it('adds an item with a key of its own from the label, in every language it lacks', () => {
+    const out = addOption(addOption(items, 'Aviz drumuri', 'ro'), 'Aviz drumuri', 'ro');
+    expect(out.map((o) => o.key)).toEqual(['water', 'gas', 'aviz-drumuri', 'aviz-drumuri-2']);
+    expect(out[2].label).toEqual({ en: 'Aviz drumuri', ro: 'Aviz drumuri' });
+  });
+
+  it('renames in a language and keeps the key the certificates name', () => {
+    const out = renameOption(items, 'water', 'ro', 'Alimentare cu apă');
+    expect(out[0]).toMatchObject({ key: 'water', label: { ro: 'Alimentare cu apă', en: 'Water supply' }, folder: 'permits' });
+  });
+
+  it('moves an item and stops at the ends', () => {
+    expect(moveOption(items, 'gas', -1).map((o) => o.key)).toEqual(['gas', 'water']);
+    expect(moveOption(items, 'gas', 1)).toBe(items);
+  });
+
+  it('sends back the key, label, group and folder only', () => {
+    expect(plainOptions(items)).toEqual([{ key: 'water', group: 'utilities', label: { ro: 'Apă', en: 'Water supply' }, folder: 'permits' }, { key: 'gas', label: { ro: 'Gaz', en: 'Gas' } }]);
   });
 });

@@ -94,9 +94,11 @@ function Details({ m, installed }: { m: Manifest; installed?: InstalledExtension
       )}
       {info.code && (
         <div className="ext-code small">
-          <p><ShieldAlert size={13} /> A script can do on this computer what you can. Installing it runs nothing: it runs only when you press its tool in My tools, or Run script here, and asks you to trust it first.</p>
+          {m.kind === 'module'
+            ? <p><ShieldAlert size={13} /> An extension module runs code with everything you can do on this computer. Lapin Extensions reviewed its source and signed it; it is desktop only.</p>
+            : <p><ShieldAlert size={13} /> A script can do on this computer what you can. Installing it runs nothing: it runs only when you press its tool in My tools, or Run script here, and asks you to trust it first.</p>}
           {!!m.permissions?.length && <><span className="eyebrow">It asks to</span><ul>{m.permissions.map((p) => <li key={p}>{PERMISSION_LABELS[p]}</li>)}</ul></>}
-          {!runnable(m, app) && <p className="muted">Not runnable yet: Lapin has no Python console in this edition.</p>}
+          {m.kind === 'script' && !runnable(m, app) && <p className="muted">Not runnable yet: Lapin has no Python console in this edition.</p>}
         </div>
       )}
       {paid && (
@@ -208,7 +210,7 @@ function Installed() {
             <span className="recent-body">
               <span className="recent-name" data-no-i18n>{x.name}</span>
               <span className="muted small"><span>{KIND_INFO[x.kind].label}</span><span data-no-i18n> · {x.version} · {x.manifest.license} · {when(x.at)}</span></span>
-              {KIND_INFO[x.kind].code && !runnable(x.manifest, app) && <span className="muted small">Runs once the Python console is in Lapin.</span>}
+              {x.kind === 'script' && !runnable(x.manifest, app) && <span className="muted small">Runs once the Python console is in Lapin.</span>}
               {isRevoked(licences, x.id) && <span className="small ext-revoked" role="note" data-testid="installed-revoked">{REVOKED_NOTE}</span>}
             </span>
             {licences[x.id] && <button type="button" className="btn small" data-action="extension-forget-key" onClick={() => forget(x)}><KeyRound size={12} />Forget licence key</button>}
