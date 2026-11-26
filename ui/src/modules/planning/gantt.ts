@@ -13,7 +13,9 @@ export interface TaskDto {
   id: string; row: number; name: string; wbs: string; level: number; parent: string | null;
   summary: boolean; milestone: boolean; duration: number; start: string; finish: string; lateStart: string; lateFinish: string;
   totalFloat: number; freeFloat: number; critical: boolean; predecessors: string;
-  constraint?: 'snet' | 'mso'; constraintDate?: string; wet?: boolean; kind?: string; notes?: string;
+  constraint?: Constraint; constraintDate?: string; wet?: boolean; kind?: string; notes?: string;
+  /** A level of effort task (a hammock): its dates and duration derived from the task it starts with and the one it finishes with (or its SS / FF predecessors); its own duration is used only without a finish. */
+  effort?: 'loe'; effortFrom?: string; effortTo?: string; ownDuration?: number;
   /** Its elements (stage 2): how many, which (a summary's: its tasks' too), the rule they are found by, the part taken, the exceptions. */
   count: number; elements?: string[]; rule?: TaskRule; part?: string; added?: number; removed?: number;
   /** Made by the generator (stage 3): its step (and storey), edited by hand since (kept as it is), and where its duration came from. */
@@ -34,6 +36,10 @@ export interface TaskDto {
   header?: boolean;
 }
 export type TaskStatus = 'planned' | 'started' | 'done';
+/** A task's constraint: none is as soon as possible; ALAP as late as possible (no date); start no earlier than and must start on (with a date). */
+export type Constraint = 'alap' | 'snet' | 'mso';
+/** The constraints that need a date. */
+export const datedConstraint = (c: string | null | undefined): c is 'snet' | 'mso' => c === 'snet' || c === 'mso';
 export type ProgressFrom = 'none' | 'manual' | 'elements' | 'actual' | 'children';
 export interface ElementMark { started?: string; done?: string }
 /** A task's rule: every condition given must hold (ids, classes by their IFC name). */
@@ -291,6 +297,32 @@ export function barOf(t: Pick<TaskDto, 'start' | 'finish' | 'milestone'>, row: n
   const w = t.milestone ? 0 : (dayOf(t.finish) + 1 - dayOf(t.start)) * pxPerDay;
   const h = Math.round(rowH * 0.5);
   return { x, w, y: row * rowH + Math.round((rowH - h) / 2), h };
+}
+
+/** Whether a task is a level of effort task (its dates derived, never dragged or typed). */
+export const isLoe = (t: Pick<TaskDto, 'effort' | 'summary'>) => t.effort === 'loe' && !t.summary;
+
+/** Whether a task's duration is typed (a summary's and a level of effort task's are derived). */
+export const durationTyped = (t: Pick<TaskDto, 'effort' | 'summary'>) => !t.summary && !isLoe(t);
+
+/** A level of effort task's bar: a thin line across the bar's middle with a tick down at each end (a hammock), as an SVG path. */
+export function loePath(b: Bar): string {
+  const cy = b.y + b.h / 2;
+  const w = Math.max(2, b.w);
+  const tick = Math.round(b.h / 2);
+  return `M${b.x},${cy - tick} v${tick * 2} M${b.x},${cy} h${w} M${b.x + w},${cy - tick} v${tick * 2}`;
+}
+
+/**
+ * The tasks a level of effort task made from a selection spans: from the one that starts first to the one that finishes
+ * last (summaries count, level of effort tasks do not); null with none.
+ */
+export function loeSpanOf(tasks: readonly Pick<TaskDto, 'id' | 'start' | 'finish' | 'effort' | 'summary' | 'row'>[], ids: readonly string[]): { from: string; to: string } | null {
+  const picked = tasks.filter((t) => ids.includes(t.id) && !isLoe(t));
+  if (picked.length === 0) return null;
+  const first = [...picked].sort((a, b) => a.start.localeCompare(b.start) || a.row - b.row)[0];
+  const last = [...picked].sort((a, b) => b.finish.localeCompare(a.finish) || b.row - a.row)[0];
+  return { from: first.id, to: last.id };
 }
 
 /** A drag along the time scale in whole days. */

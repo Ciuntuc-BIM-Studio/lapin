@@ -92,6 +92,12 @@ The estimate is in **RON** or **EUR**. **1 EUR =** is the project's rate: a pric
 
 The toolbar also warns about what is not priced: **N type(s) unpriced** (click it to open Map articles), and the codes no price list has. **A line of your own** adds work the model does not have (the site fence, a provision): type its code, description, unit, quantity and prices. A line with a code and no prices takes them from the price list.
 
+### Time-related items
+
+Some costs run for as long as the works do: the site manager, supervision, the site office, a crane on hire, security. A percentage of overheads cannot say that a delay makes them cost more. **A time-related item (rate × duration)**, under the lines, adds one: a rate by the **week**, the **month**, the **working day** or the **calendar day** (pick it beside its description) times how long its task lasts. Pick the task beside it: a [level of effort task](planning.md) usually (site management from the first works to the handover), any task, or **The whole project**. Its quantity is that time, worked out from the schedule on every change, and the days it runs over show beside its description: when the works slip, the item lasts longer and costs more. Type its rate in the price columns (Material for a lump rate, Labour for people paid by the hour on site, as you price it).
+
+It goes in its own chapter, **Time-related / preliminaries**, unless you name another, and adds to the direct costs like any line. The overheads, the profit and the VAT stay percentages, as before: a time-related item is beside them, not instead of them. Without a schedule (or without the Planning module) its quantity is the one you type, and a note says why.
+
 ## The Romanian forms
 
 ![The bill of quantities (F3) of the same estimate](shots/estimate-f3.webp)
@@ -120,7 +126,7 @@ With a work schedule in the project (the **Construction** tab), the estimate is 
 - above it, the **budget at completion** (the estimate's direct costs), the **cost to date** and what is **not scheduled**, if anything: lines whose elements no task builds (click it to open the estimate);
 - under it, the **month table**: each chapter's cost a month, what is not scheduled and its total.
 
-The values are direct costs, as the estimate's lines are. The Gantt shows each task's cost in its **Cost** column (see [Planning](planning.md)).
+A time-related item is spread over the working days of its task, or of the whole project when it names none; over the whole project, its part done is the part of those days up to the status date. The values are direct costs, as the estimate's lines are. The Gantt shows each task's cost in its **Cost** column (see [Planning](planning.md)).
 
 ![The S-curve on a sheet](shots/cost-curve-sheet.webp)
 
@@ -132,6 +138,6 @@ Monthly progress billing (*situații de lucrări*), earned value and several bas
 
 ## IFC
 
-**File → Export → Export IFC, Fragments or BOS…** writes the estimate as an **IfcCostSchedule**: its chapters and lines as **IfcCostItem**s, each line's quantity and its unit prices as four **IfcCostValue**s (Material, Labour, Equipment, Transport), the elements each line measures assigned to it (**IfcRelAssignsToControl**), the currency as the project's **IfcMonetaryUnit**. Imported, an estimate keeps the lines as the file has them, with the same totals. Tick **Lines from the model** to add the lines your model gives.
+**File → Export → Export IFC, Fragments or BOS…** writes the estimate as an **IfcCostSchedule**: its chapters and lines as **IfcCostItem**s, each line's quantity and its unit prices as four **IfcCostValue**s (Material, Labour, Equipment, Transport), the elements each line measures assigned to it (**IfcRelAssignsToControl**), the currency as the project's **IfcMonetaryUnit**. A time-related item carries its rate's unit in `Lapin_CostItem` (*Per*) and its task as the line's task, so read back it keeps following the schedule. Imported, an estimate keeps the lines as the file has them, with the same totals. Tick **Lines from the model** to add the lines your model gives.
 
 With a work schedule, each line is also assigned to the tasks it is done in (**IfcRelAssignsToControl** to their **IfcTask**s). Imported, the lines keep their tasks, so the S-curve comes back the same. A line priced by the time on site carries its **Time** and **Duration** in **Lapin_CostItem**.

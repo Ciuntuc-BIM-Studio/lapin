@@ -93,7 +93,8 @@ Celelalte lucrări provizorii făcute și desfăcute în aceeași fază, care nu
 
 - o **sarcină** e o bară albastră, roșie când e pe drumul critic;
 - un **rezumat** (o sarcină cu alte sarcini sub ea) e o acoladă închisă la culoare, de la începutul primei sarcini până la sfârșitul ultimei;
-- un **jalon** e un romb.
+- un **jalon** e un romb;
+- o sarcină de **nivel de efort** e o linie subțire cu câte o liniuță la fiecare capăt (vezi mai jos).
 
 Zilele nelucrătoare sunt hașurate, iar ziua de azi e o linie punctată. **Zile**, **Săptămâni**, **Luni** și **Trimestre** schimbă scara, la fel <kbd>Ctrl</kbd> + rotița mouse-ului. Butonul cu patru colțuri arată tot programul, iar **Azi** derulează la ziua de azi. **Drumul critic** pornește și oprește roșul. Săgeata de lângă numele unui rezumat strânge și desface sarcinile de sub el.
 
@@ -125,10 +126,21 @@ Fiecare schimbare e un singur pas de anulare.
 
 Selectezi o sarcină și Proprietățile o arată: numele, felul ei în IFC, durata, dacă e jalon, datele și:
 
-- **Constrângere**: **Cât mai devreme** (implicit), **Începe nu mai devreme de** o dată sau **Trebuie să înceapă pe** o dată. O sarcină care trebuie să înceapă înainte să se termine predecesorii ei le ia acestora din rezervă. Rezerva lor devine negativă și ei devin critici.
+- **Constrângere**: **Cât mai devreme** (implicit), **Cât mai târziu**, **Începe nu mai devreme de** o dată sau **Trebuie să înceapă pe** o dată. O sarcină care trebuie să înceapă înainte să se termine predecesorii ei le ia acestora din rezervă. Rezerva lor devine negativă și ei devin critici. O sarcină **cât mai târziu** se mută atât de târziu cât îi permit ce urmează după ea și finalul proiectului: fără nimic după ea, la datele ei târzii; înaintea altor sarcini, până la începutul lor. Rezerva ei liberă se consumă (0) și a predecesorilor ei crește, dar rezerva ei totală, finalul proiectului și drumul critic rămân cum erau. E bună pentru lucrări făcute exact la timp, cum e o livrare sau o lucrare provizorie.
+- **Nivel de efort**: vezi mai jos.
 - **Lucrări umede**: betoane, șape, tencuieli. O sarcină umedă nu lucrează în pauza de iarnă a calendarului, când pauza e pornită.
 - **Rezervă totală** și **Rezervă liberă**: câte zile lucrătoare poate întârzia sarcina fără să mute finalul, respectiv fără să mute ce urmează după ea. **Început târziu** și **Sfârșit târziu** sunt cele mai târzii date care păstrează finalul.
 - **Predecesori**: fiecare legătură care intră, cu tipul și decalajul de schimbat, sau de scos. **Succesori** arată ce urmează după sarcină.
+
+## Sarcini de nivel de efort
+
+O sarcină de **nivel de efort** (*hammock*) e o lucrare care ține cât țin alte lucrări: conducerea șantierului, dirigenția, o macara închiriată, o baracă de șantier. Nu are o durată a ei. Începe când începe **sarcina de la care pornește** și se termină când se termină **sarcina la care ajunge**, iar când acestea se mută, se mută cu ele. Nu ține pe loc nicio altă sarcină (o legătură de la ea nu întârzie nimic), nu are rezervă și nu e niciodată pe drumul critic.
+
+Ca s-o faci, selectează în Gantt sarcinile pe care le acoperă (prima și ultima ajung) și apasă **Nivel de efort** în bara Gantt-ului: sarcina nouă începe cu cea care începe prima și se termină cu cea care se termină ultima. Sau selectează o sarcină, bifează **Nivel de efort** în Proprietăți și alege-i **sarcina de început** și **sarcina de final**. În loc să le alegi, o poți lega ca în MS Project: o legătură început-început de la sarcina cu care începe și una final-final de la cea cu care se termină (decalajele contează). Fără final, își păstrează durata ei de la început; fără început, începe odată cu proiectul.
+
+**Durata** ei din tabel și din Proprietăți e numărul de zile lucrătoare pe care le acoperă, calculat, nu scris; bara ei nu se trage. Poate sta sub un rezumat: rezumatul o cuprinde, dar își ia rezerva și starea critică de la celelalte sarcini ale lui. Un rezumat nu poate fi el însuși sarcină de nivel de efort.
+
+Ce costă o sarcină de nivel de efort cât ține (un șef de șantier pe săptămână) intră în deviz ca **rând legat de timp**: vezi [Devizul](cost.md).
 
 ## Planificare după câmpurile tale
 
@@ -160,7 +172,7 @@ La **Elements** în Proprietăți, sub **Găsește-le după o regulă**, **Condi
 
 ## Drumul critic
 
-Lapin calculează programul după fiecare schimbare. O trecere înainte găsește datele cele mai devreme, una înapoi pe cele mai târzii. Sarcinile fără rezervă fac drumul critic: întârzierea oricăreia mută finalul. O legătură spre un rezumat ține toate sarcinile de sub el. O legătură dintr-un rezumat pornește de la începutul primei lui sarcini și se termină la sfârșitul ultimei. Lapin refuză o legătură care ar face o buclă.
+Lapin calculează programul după fiecare schimbare. O trecere înainte găsește datele cele mai devreme, una înapoi pe cele mai târzii. Sarcinile fără rezervă fac drumul critic: întârzierea oricăreia mută finalul. O legătură spre un rezumat ține toate sarcinile de sub el. O legătură dintr-un rezumat pornește de la începutul primei lui sarcini și se termină la sfârșitul ultimei. Lapin refuză o legătură care ar face o buclă. Apoi sarcinile cât mai târziu se mută la datele lor cele mai târzii, ultima întâi, iar sarcinile de nivel de efort se pun pe sarcinile pe care le acoperă. Niciuna nu schimbă datele celorlalte sarcini, finalul sau drumul critic.
 
 ## Elementele modelului în sarcini
 
@@ -348,7 +360,7 @@ Duratele și decalajele numără zilele lucrătoare ale acestui calendar; la fel
 - **Exportă IFC…** (și din **Fișier → Exportă**) scrie programul în fișierul IFC, împreună cu modelul: un IfcWorkSchedule, IfcTask-urile cu timpii lor, legăturile IfcRelSequence și IfcWorkCalendar. Importul unui fișier IFC care are un program îl aduce și pe acesta.
 - **Export XLSX** scrie un registru de calcul: tabelul Gantt-ului și zilele libere ale calendarului.
 
-Câmpurile proprii ale lui Lapin pentru care alte programe n-au loc (constrângerea unei sarcini, dacă e umedă, pauza de iarnă) merg în IFC ca seturile de proprietăți `Lapin_Task` și `Lapin_Calendar`. MS Project nu are sarcini umede, deci pauza de iarnă rămâne în Lapin.
+Câmpurile proprii ale lui Lapin pentru care alte programe n-au loc (constrângerea unei sarcini, dacă e umedă, dacă e de nivel de efort și sarcinile pe care le acoperă, pauza de iarnă) merg în IFC ca seturile de proprietăți `Lapin_Task` și `Lapin_Calendar`. MS Project nu are sarcini umede, deci pauza de iarnă rămâne în Lapin. Cât mai târziu e constrângerea lui MS Project (ALAP). MS Project nu are sarcini de nivel de efort: primește una ca o sarcină de zilele pe care le acoperă care începe nu mai devreme de începutul ei, marcată în câmpul Text2 (*Lapin effort*), deci Lapin o citește înapoi ca sarcină de nivel de efort. Nici IFC nu are un asemenea fel de sarcină, deci Lapin nu scrie unul inventat.
 
 ## Ce urmează
 

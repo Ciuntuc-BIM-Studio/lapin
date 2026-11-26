@@ -51,11 +51,37 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
     }
 
     /// <summary>What makes a generated task the user's when changed by hand.</summary>
-    static readonly string[] OwnKeys = ["name", "duration", "finish", "start", "constraint", "constraintDate", "milestone", "kind", "wet", "rule", "part",
+    static readonly string[] OwnKeys = ["name", "duration", "finish", "start", "constraint", "constraintDate", "milestone", "kind", "wet", "rule", "part", "effort", "effortFrom", "effortTo",
         TaskTiming.DurationKey, TaskTiming.QuantityKey, "norm", "crew"];
 
     static Entity RequireTask(IModelView m, string? id) =>
         m.Get(id ?? "") is { Class: Plan.TaskClass } e ? e : throw new CommandException("There is no such task.");
+
+    /// <summary>
+    /// A task made a level of effort task (<c>effort: "loe"</c>) or a plain one again (<c>effort: null</c>), with the task
+    /// it starts with (<c>effortFrom</c>) and the one it finishes with (<c>effortTo</c>): tasks of the schedule, not itself,
+    /// not level of effort tasks; null clears one (its SS / FF predecessors then give its dates).
+    /// </summary>
+    static void SetEffort(Plan p, string id, JsonObject attrs, JsonObject a)
+    {
+        if (a.ContainsKey("effort"))
+        {
+            var v = (string?)a["effort"];
+            if (v is null or "") { attrs.Remove("effort"); attrs.Remove("effortFrom"); attrs.Remove("effortTo"); }
+            else if (v == Plan.LevelOfEffort) { attrs["effort"] = v; attrs.Remove("milestone"); }
+            else throw new CommandException("A task's effort is loe (level of effort) or none.");
+        }
+        foreach (var key in new[] { "effortFrom", "effortTo" })
+        {
+            if (!a.ContainsKey(key)) continue;
+            if ((string?)a[key] is not { Length: > 0 } other) { attrs.Remove(key); continue; }
+            if ((string?)attrs["effort"] != Plan.LevelOfEffort) throw new CommandException("Only a level of effort task spans from a task to another.");
+            if (other == id || !p.ById.TryGetValue(other, out var ot)) throw new CommandException("A level of effort task spans other tasks of the schedule.");
+            if (Cpm.IsLoe(p, other)) throw new CommandException("A level of effort task does not span another level of effort task.");
+            if (p.Ancestors(id).Contains(other)) throw new CommandException("A level of effort task does not span the summary it is under.");
+            attrs[key] = ot.Id;
+        }
+    }
 
     static void Set(ICommandContext ctx, Entity e, Action<JsonObject> change, string? name = null, string? kind = null)
     {
@@ -225,6 +251,8 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
             var attrs = new JsonObject { ["schedule"] = schedule.Id, ["order"] = at + 1, ["duration"] = duration };
             if (parent != null) attrs["parent"] = parent;
             if (milestone) attrs["milestone"] = true;
+            // A level of effort task made at once, with the tasks it spans (one undo step).
+            if (a.ContainsKey("effort")) SetEffort(p, id, attrs, a);
             ctx.Add(new Entity(id, Plan.TaskClass, name, attrs));
             siblings.Insert(at, id);
             Renumber(ctx, siblings);
@@ -260,14 +288,15 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
             {
                 var c = (string?)a["constraint"];
                 if (c is null or "" or "asap") { attrs.Remove("constraint"); attrs.Remove("constraintDate"); }
-                else if (!Plan.Constraints.Contains(c)) throw new CommandException("A constraint is snet (start no earlier than) or mso (must start on).");
+                else if (!Plan.Constraints.Contains(c)) throw new CommandException("A constraint is asap (as soon as possible), alap (as late as possible), snet (start no earlier than) or mso (must start on).");
+                else if (c == "alap") { attrs["constraint"] = c; attrs.Remove("constraintDate"); }
                 else
                 {
                     attrs["constraint"] = c;
                     attrs["constraintDate"] = WorkCalendar.Date(a.ContainsKey("constraintDate") ? DateArg(a["constraintDate"], "constraint's date") : Solve(ReadResolved(ctx.Query)).Result.Times[e.Id].Start);
                 }
             }
-            else if (a.ContainsKey("constraintDate") && attrs["constraint"] != null) attrs["constraintDate"] = WorkCalendar.Date(DateArg(a["constraintDate"], "constraint's date"));
+            else if (a.ContainsKey("constraintDate") && (string?)attrs["constraint"] is { } dated && Plan.DatedConstraints.Contains(dated)) attrs["constraintDate"] = WorkCalendar.Date(DateArg(a["constraintDate"], "constraint's date"));
             // Dragged or typed to a start: it starts no earlier than that (its must-start-on date moves, when it has one).
             if (a.ContainsKey("start"))
             {
@@ -286,6 +315,13 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
                 attrs.Remove("milestone");
             }
             if (a.ContainsKey("wet")) { if (a["wet"] is JsonValue wv && wv.TryGetValue<bool>(out var w) && w) attrs["wet"] = true; else attrs.Remove("wet"); }
+            if (a.ContainsKey("effort") || a.ContainsKey("effortFrom") || a.ContainsKey("effortTo"))
+            {
+                if (summary) throw new CommandException("A summary task takes its dates from the tasks under it: it cannot be a level of effort task.");
+                SetEffort(p, e.Id, attrs, a);
+            }
+            if ((string?)attrs["effort"] == Plan.LevelOfEffort && (a.ContainsKey("start") || a.ContainsKey("finish")))
+                throw new CommandException("A level of effort task takes its dates from the tasks it spans: change those, or its from and to tasks.");
             if (a.ContainsKey("notes")) { if (((string?)a["notes"])?.Trim() is { Length: > 0 } notes) attrs["notes"] = notes; else attrs.Remove("notes"); }
             SetLinks(attrs, a);
             // Its days or its quantity read from its elements' fields (docs/plan-user-extensibility.md §12), worked out now and on Retime from fields.
@@ -749,18 +785,27 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
         {
             var tm = r.Times[t.Id];
             var summary = p.IsSummary(t.Id);
-            var milestone = !summary && (t.Milestone || t.Duration == 0);
+            var loe = Cpm.IsLoe(p, t.Id);
+            var milestone = !summary && !loe && (t.Milestone || t.Duration == 0);
             var o = new JsonObject
             {
                 ["id"] = t.Id, ["row"] = p.RowOf[t.Id], ["name"] = t.Name, ["wbs"] = p.Wbs[t.Id], ["level"] = p.Level[t.Id],
                 ["parent"] = t.Parent is { } par && p.ById.ContainsKey(par) ? par : null,
-                ["summary"] = summary, ["milestone"] = milestone, ["duration"] = summary ? tm.Duration : milestone ? 0 : t.Duration,
+                ["summary"] = summary, ["milestone"] = milestone, ["duration"] = summary || loe ? tm.Duration : milestone ? 0 : t.Duration,
                 ["start"] = D(tm.Start), ["finish"] = D(tm.Finish),
                 ["lateStart"] = D(tm.LateStart), ["lateFinish"] = D(tm.LateFinish > tm.LateStart ? tm.LateFinish.AddDays(-1) : tm.LateStart),
                 ["totalFloat"] = tm.TotalFloat, ["freeFloat"] = tm.FreeFloat, ["critical"] = tm.Critical,
                 ["predecessors"] = string.Join(", ", (incoming.GetValueOrDefault(t.Id) ?? []).Select(p.LinkText)),
             };
             if (t.Constraint != null && t.ConstraintDate is { } cd) { o["constraint"] = t.Constraint; o["constraintDate"] = D(cd); }
+            else if (t.Constraint == "alap") o["constraint"] = "alap";
+            if (loe)
+            {
+                o["effort"] = Plan.LevelOfEffort;
+                if (t.EffortFrom is { } ef && p.ById.ContainsKey(ef)) o["effortFrom"] = ef;
+                if (t.EffortTo is { } et && p.ById.ContainsKey(et)) o["effortTo"] = et;
+                o["ownDuration"] = t.Duration;
+            }
             if (t.Wet) o["wet"] = true;
             if (t.LevelStart is { } lvs) o["levelStart"] = D(lvs);
             if (t.Kind != null) o["kind"] = t.Kind;

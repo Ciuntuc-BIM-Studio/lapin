@@ -84,6 +84,14 @@ public sealed class EstimateLine(string key, string chapter, string code)
     public HashSet<string> Untimed { get; } = [];
     /// <summary>Why no element of the line has a duration, when the project cannot give one (no Planning module, no schedule).</summary>
     public string? TimeProblem { get; set; }
+    /// <summary>
+    /// A time-related item of the user's (preliminaries, site management): the time unit its rate is by (days, workingDays,
+    /// weeks, months; null: an ordinary line). Its quantity is the time its tasks last (<see cref="Tasks"/>; none: the whole
+    /// project) as the schedule has them, so it grows when they slip; with no schedule, the quantity typed.
+    /// </summary>
+    public string? Per { get; set; }
+    /// <summary>The days a time-related item runs over, first and last (null: not one, or no schedule).</summary>
+    public (DateOnly From, DateOnly To)? Span { get; set; }
 
     /// <summary>The duration used, as shown: one value when all its elements have the same, else the least and the most; null when none.</summary>
     public string? Duration => DurationIn(false);
@@ -523,6 +531,7 @@ public static class Costing
                 }
                 if (o["elements"] is JsonArray els) foreach (var x in els.Select(x => (string?)x).OfType<string>()) line.Elements.Add(x);
                 if (o["tasks"] is JsonArray tks) line.Tasks.AddRange(tks.Select(x => (string?)x).OfType<string>().Distinct());
+                if ((string?)o["per"] is { } per && TimeRelated.Units.Contains(per)) TimeRelated.Measure(line, per, planning, Times);
                 lines[line.Key] = line;
                 chapterMeta.TryAdd(chapter, OrderOf(chapter, null));
             }
@@ -534,6 +543,9 @@ public static class Costing
         return new EstimateResult(estimate, s, chapters, totals,
             unpriced.Values.Select(u => new Unpriced(u.Type, u.Class, u.Name, u.Elements.Count, u.Elements)).OrderByDescending(u => u.Count).ToList(), missing.ToList());
     }
+
+    /// <summary>The chapter a time-related item goes in unless the user names one.</summary>
+    public const string TimeRelatedChapter = "Time-related / preliminaries";
 
     static bool IsCoreLayer(IModelView m, string id, string part) =>
         Parts.LayerIndex(part) is { } i && LayerSets.BandsOf(m, id)?.FirstOrDefault(b => b.Index == i) is { Core: true };
@@ -565,5 +577,38 @@ public static class Costing
             o.Add((c, n, v, Money.Round(n + v)));
         }
         return o;
+    }
+}
+
+/// <summary>
+/// Time-related items (docs/plan-4d5d.md, "Time-related costs"): a rate a day, working day, week or month times how long
+/// its tasks last (a level of effort task usually; any task, or the whole project when it names none), read from the work
+/// schedule on every ask, never stored. Percentage overheads stay as they are, beside them.
+/// </summary>
+public static class TimeRelated
+{
+    public static readonly string[] Units = [MeasureUnits.Days, MeasureUnits.WorkingDays, MeasureUnits.Weeks, MeasureUnits.Months];
+
+    /// <summary>The item's quantity from its tasks' span (or the project's), or why the quantity typed is kept.</summary>
+    public static void Measure(EstimateLine line, string per, bool planning, Func<ScheduleTimes?> times)
+    {
+        line.Per = per;
+        line.Time = per;
+        if (!planning) { line.TimeProblem = "The Planning module is not in this edition: the quantity typed is used."; return; }
+        if (times() is not { } st) { line.TimeProblem = "The project has no work schedule: the quantity typed is used."; return; }
+        DateOnly? from = null, to = null;
+        if (line.Tasks.Count == 0) { from = st.Start; to = st.Finish; }
+        else
+            foreach (var id in line.Tasks)
+                if (st.Task(id) is { } t)
+                {
+                    if (from == null || t.Start < from) from = t.Start;
+                    if (to == null || t.Finish > to) to = t.Finish;
+                }
+        if (from is not { } f || to is not { } e) { line.TimeProblem = "None of its tasks is in the work schedule: the quantity typed is used."; return; }
+        if (e < f) e = f;
+        line.Span = (f, e);
+        line.Quantity = st.Length(f, e, per);
+        line.Durations["span"] = line.Quantity;
     }
 }

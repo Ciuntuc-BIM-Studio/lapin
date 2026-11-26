@@ -205,6 +205,7 @@ public static class Measures
             MeasureUnits.WorkingDays => $"{n} {(v == 1 ? "zi lucrătoare" : "zile lucrătoare")}",
             MeasureUnits.Days => $"{n} {(v == 1 ? "zi calendaristică" : "zile calendaristice")}",
             MeasureUnits.Hours => $"{n} {(v == 1 ? "oră" : "ore")}",
+            MeasureUnits.Weeks => $"{n} {(v == 1 ? "săptămână" : "săptămâni")}",
             _ => n,
         };
         return time switch
@@ -213,6 +214,7 @@ public static class Measures
             MeasureUnits.WorkingDays => $"{n} {(v == 1 ? "working day" : "working days")}",
             MeasureUnits.Days => $"{n} {(v == 1 ? "calendar day" : "calendar days")}",
             MeasureUnits.Hours => $"{n} {(v == 1 ? "hour" : "hours")}",
+            MeasureUnits.Weeks => $"{n} {(v == 1 ? "week" : "weeks")}",
             _ => n,
         };
     }

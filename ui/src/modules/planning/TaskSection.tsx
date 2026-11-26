@@ -1,6 +1,7 @@
 /**
  * A task in Properties: its name and kind, its duration (a milestone has none), its dates as the critical path gives them,
- * a constraint on its start, whether it is wet (it keeps the calendar's winter break), its predecessors with their type and
+ * a constraint on its start (as soon as possible, as late as possible, or a date), whether it is a level of effort task
+ * (a hammock: its dates from the task it starts with and the one it finishes with), whether it is wet (it keeps the calendar's winter break), its predecessors with their type and
  * lag, what follows it, its floats, and notes; its progress (stage 5): the percentage (typed, or from its elements marked
  * on site, or a summary's from its tasks), its actual start and finish, its status, its baseline and the variances.
  * Every change one undo step.
@@ -11,7 +12,7 @@ import { RefreshCw, Trash2, X } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute } from '../../engine/session';
 import { select } from '../../app/store';
-import { costText, linkLabel, parsePercent, percentText, showDate, varianceText, type LinkType, type TaskDto } from './gantt';
+import { costText, datedConstraint, isLoe, linkLabel, parsePercent, percentText, showDate, varianceText, type LinkType, type TaskDto } from './gantt';
 import { openGantt, retimeFromFields, taskOf, useSchedule } from './schedule';
 import { quantityText } from './generator';
 import { FieldPicker } from '../../shell/FieldPicker';
@@ -29,6 +30,11 @@ export function TaskSection({ node }: { node: NodeDto }) {
   const preds = data.links.filter((l) => l.to === t.id);
   const succs = data.links.filter((l) => l.from === t.id);
   const nameOf = (id: string) => data.tasks.find((x) => x.id === id);
+  const loe = isLoe(t);
+  // The tasks a level of effort task may span: any but itself, the summaries above it and other level of effort tasks.
+  const above = new Set<string>();
+  for (let p = t.parent; p; p = nameOf(p)?.parent ?? null) above.add(p);
+  const spannable = data.tasks.filter((x) => x.id !== t.id && !isLoe(x) && !above.has(x.id));
   return (
     <dl className="fields" data-testid="task-section">
       <dt>Name</dt>
@@ -40,6 +46,9 @@ export function TaskSection({ node }: { node: NodeDto }) {
       </select></dd>
       {t.summary ? <>
         <dt>Duration</dt><dd>{`${t.duration} d`} <span className="muted small">from the tasks under it</span></dd>
+      </> : loe ? <>
+        <dt title="In working days of the calendar">Duration</dt>
+        <dd data-testid="task-duration-derived">{`${t.duration} d`} <span className="muted small">from the tasks it spans</span></dd>
       </> : <>
         <dt title="In working days of the calendar">Duration</dt>
         <dd><input key={`${t.id}:${t.duration}`} type="number" min={0} step={1} defaultValue={t.duration} data-testid="task-duration"
@@ -71,6 +80,22 @@ export function TaskSection({ node }: { node: NodeDto }) {
         <dt>Milestone</dt>
         <dd><input type="checkbox" checked={t.milestone} onChange={(e) => update(t.id, { milestone: e.target.checked })} /></dd>
       </>}
+      {!t.summary && <>
+        <dt title="A hammock (site management, supervision): it starts with one task and finishes with another, follows them when they move, drives nothing and is never critical">Level of effort</dt>
+        <dd><input type="checkbox" checked={loe} onChange={(e) => update(t.id, { effort: e.target.checked ? 'loe' : null })} data-testid="task-loe" /></dd>
+        {loe && <>
+          <dt title="It starts when this task starts (none: its start-to-start predecessors, else the project's start)">From task</dt>
+          <dd><select value={t.effortFrom ?? ''} onChange={(e) => update(t.id, { effortFrom: e.target.value || null })} data-testid="task-loe-from">
+            <option value="">(its SS predecessors)</option>
+            {spannable.map((x) => <option key={x.id} value={x.id} data-no-i18n>{`${x.row}. ${x.name}`}</option>)}
+          </select></dd>
+          <dt title="It finishes when this task finishes (none: its finish-to-finish predecessors, else its own duration)">To task</dt>
+          <dd><select value={t.effortTo ?? ''} onChange={(e) => update(t.id, { effortTo: e.target.value || null })} data-testid="task-loe-to">
+            <option value="">(its FF predecessors)</option>
+            {spannable.map((x) => <option key={x.id} value={x.id} data-no-i18n>{`${x.row}. ${x.name}`}</option>)}
+          </select></dd>
+        </>}
+      </>}
       <dt>Start</dt><dd>{showDate(t.start)}</dd>
       <dt data-i18n-ctx="schedule">Finish</dt><dd>{showDate(t.finish)}</dd>
       <TaskProgress t={t} />
@@ -79,15 +104,18 @@ export function TaskSection({ node }: { node: NodeDto }) {
         <dd data-testid="task-cost"><span data-no-i18n>{costText(t.cost) || '0'}</span>{t.costDone ? <><span data-no-i18n>{` · ${costText(t.costDone)} `}</span><span className="muted small">to date</span></> : null}</dd>
       </>}
       {!t.summary && <>
-        <dt title="What holds the start, besides the links">Constraint</dt>
+        {!loe && <>
+        <dt title="What holds the start, besides the links. As late as possible: as late as what follows it and the project's finish let it (its free float used up)">Constraint</dt>
         <dd>
-          <select value={t.constraint ?? ''} onChange={(e) => update(t.id, { constraint: e.target.value || null, ...(e.target.value ? { constraintDate: t.constraintDate ?? t.start } : {}) })} data-testid="task-constraint">
+          <select value={t.constraint ?? ''} onChange={(e) => update(t.id, { constraint: e.target.value || null, ...(datedConstraint(e.target.value) ? { constraintDate: t.constraintDate ?? t.start } : {}) })} data-testid="task-constraint">
             <option value="">As soon as possible</option>
+            <option value="alap">As late as possible</option>
             <option value="snet">Start no earlier than</option>
             <option value="mso">Must start on</option>
           </select>
-          {t.constraint && <input type="date" value={t.constraintDate ?? t.start} onChange={(e) => e.target.value && update(t.id, { constraintDate: e.target.value })} />}
+          {datedConstraint(t.constraint) && <input type="date" value={t.constraintDate ?? t.start} onChange={(e) => e.target.value && update(t.id, { constraintDate: e.target.value })} />}
         </dd>
+        </>}
         <dt title="Concrete, screeds, plaster: the task does not work in the calendar's winter break, when it is switched on">Wet works</dt>
         <dd><input type="checkbox" checked={!!t.wet} onChange={(e) => update(t.id, { wet: e.target.checked })} /></dd>
       </>}

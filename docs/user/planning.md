@@ -93,7 +93,8 @@ On the left is the task table: the row number, the **WBS** code, the name, the *
 
 - a **task** is a blue bar, red when it is on the critical path;
 - a **summary** (a task with tasks under it) is a dark bracket from its first task's start to its last task's finish;
-- a **milestone** is a diamond.
+- a **milestone** is a diamond;
+- a **level of effort** task is a thin line with a tick at each end (see below).
 
 Days not worked are shaded, and today is a dashed line. **Days**, **Weeks**, **Months** and **Quarters** change the scale, as does <kbd>Ctrl</kbd> + the mouse wheel. The four-corners button shows the whole schedule and **Today** scrolls to today. **Critical path** turns the red on and off. The arrow next to a summary's name folds and unfolds the tasks under it.
 
@@ -125,10 +126,21 @@ Every change is one step to undo.
 
 Select a task and Properties shows it: its name, its IFC kind, its duration, whether it is a milestone, its dates, and:
 
-- **Constraint**: **As soon as possible** (the default), **Start no earlier than** a date, or **Must start on** a date. A task that must start before its predecessors finish takes float away from them. Their float then turns negative and they become critical.
+- **Constraint**: **As soon as possible** (the default), **As late as possible**, **Start no earlier than** a date, or **Must start on** a date. A task that must start before its predecessors finish takes float away from them. Their float then turns negative and they become critical. A task **as late as possible** moves as late as what follows it and the project's finish let it: with nothing after it, to its late dates; before other tasks, up to their starts. Its free float is then used up (0) and its predecessors' grows, but its total float, the project's finish and the critical path stay as they were. Use it for work you want done just in time, such as a delivery or a temporary works item.
+- **Level of effort**: see below.
 - **Wet works**: concrete, screeds, plaster. A wet task does not work in the calendar's winter break, when the break is on.
 - **Total float** and **Free float**: how many working days the task can slip without moving the finish, or without moving what follows it. **Late start** and **Late finish** are the latest dates that keep the finish.
 - **Predecessors**: each link in, with its type and lag to change, or removed. **Successors** lists what follows the task.
+
+## Level of effort tasks
+
+A **level of effort** task (a *hammock*) is work that lasts as long as other work: site management, supervision, a crane on hire, a site office. It does not have a duration of its own. It starts when its **From task** starts and finishes when its **To task** finishes, and when those move, it moves with them. It drives nothing (a link from it holds no task back), has no float and is never on the critical path.
+
+To make one, select in the Gantt the tasks it spans (the first and the last will do) and click **Level of effort** in the Gantt's toolbar: the new task starts with the one that starts first and finishes with the one that finishes last. Or select any task and tick **Level of effort** in Properties, then pick its **From task** and **To task**. Instead of picking them, you can link it as in MS Project: a start-to-start link from the task it starts with and a finish-to-finish link from the one it finishes with (lags count). Without a finish it keeps its own duration from its start; without a start it starts with the project.
+
+Its **Duration** in the table and in Properties is the working days it spans, worked out, not typed; its bar is not dragged. It may be under a summary: the summary spans it, but takes its float and critical flag from its other tasks. A summary itself cannot be a level of effort task.
+
+What a level of effort task costs while it lasts (a site manager by the week) goes in the estimate as a **time-related item**: see [Cost estimate](cost.md).
 
 ## Planning by your own fields
 
@@ -160,7 +172,7 @@ In **Generate schedule…**, the pencil of a step opens **Only the elements with
 
 ## The critical path
 
-Lapin works out the schedule after every change. A forward pass finds the earliest dates and a backward pass the latest. The tasks with no float make the critical path, and a delay to any of them moves the finish. A link to a summary holds every task under it. A link from a summary starts at its first task's start and ends at its last task's finish. Lapin refuses a link that would make a loop.
+Lapin works out the schedule after every change. A forward pass finds the earliest dates and a backward pass the latest. The tasks with no float make the critical path, and a delay to any of them moves the finish. A link to a summary holds every task under it. A link from a summary starts at its first task's start and ends at its last task's finish. Lapin refuses a link that would make a loop. Tasks as late as possible are then moved to their latest dates, the last first, and level of effort tasks are placed on the tasks they span. Neither changes the other tasks' dates, the finish or the critical path.
 
 ## The model's elements in the tasks
 
@@ -348,7 +360,7 @@ Durations and lags count working days of this calendar; so do the estimate's art
 - **Export IFC…** (also under **File → Export**) writes the schedule into the IFC file with the model: an IfcWorkSchedule, its IfcTasks with their times, the IfcRelSequence links and the IfcWorkCalendar. Importing an IFC file that has a schedule brings it in too.
 - **Export XLSX** writes a workbook: the Gantt's table and the calendar's days off.
 
-Lapin's own fields that other programs have no place for (a task's constraint, whether it is wet, the winter break) travel in IFC as the property sets `Lapin_Task` and `Lapin_Calendar`. MS Project has no wet tasks, so the winter break stays in Lapin.
+Lapin's own fields that other programs have no place for (a task's constraint, whether it is wet, whether it is a level of effort task and the tasks it spans, the winter break) travel in IFC as the property sets `Lapin_Task` and `Lapin_Calendar`. MS Project has no wet tasks, so the winter break stays in Lapin. As late as possible is MS Project's own constraint (ALAP). MS Project has no level of effort tasks: it gets one as a task of the days it spans that starts no earlier than its start, marked in the custom field Text2 (*Lapin effort*), so Lapin reads it back as a level of effort task. IFC has no such kind of task either, so Lapin never writes a made-up one.
 
 ## What comes next
 

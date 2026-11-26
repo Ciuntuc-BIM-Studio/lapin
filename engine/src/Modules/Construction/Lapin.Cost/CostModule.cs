@@ -106,6 +106,15 @@ public sealed class CostModule : ILapinModule
         return e.Id;
     }
 
+    /// <summary>A time-related item's rate unit (days, workingDays, weeks, months; also day, week, month), null for none.</summary>
+    static string? PerArg(JsonNode? n)
+    {
+        var v = ((string?)n)?.Trim();
+        if (string.IsNullOrEmpty(v)) return null;
+        var unit = v switch { "day" => MeasureUnits.Days, "workingDay" => MeasureUnits.WorkingDays, "week" => MeasureUnits.Weeks, "month" => MeasureUnits.Months, _ => v };
+        return TimeRelated.Units.Contains(unit) ? unit : throw new CommandException("A time-related item's rate is by days, workingDays, weeks or months.");
+    }
+
     static JsonObject LineJson(EstimateLine l, EstimateSettings s) => new()
     {
         ["key"] = l.Key, ["code"] = l.Code, ["name"] = l.Name, ["unit"] = l.Unit, ["qty"] = l.Qty, ["basis"] = l.Basis,
@@ -115,6 +124,8 @@ public sealed class CostModule : ILapinModule
         ["tasks"] = l.Tasks.Count > 0 ? new JsonArray(l.Tasks.Select(x => (JsonNode)x).ToArray()) : null,
         // "× duration": the time its quantity is multiplied by, the duration used (one, or the least and the most) and what went wrong.
         ["time"] = l.Time, ["duration"] = l.Duration,
+        // A time-related item: the unit of its rate and the days it runs over (its quantity is how long that is).
+        ["per"] = l.Per, ["spanFrom"] = l.Span is { } sp ? CostOverTime.WorkDate(sp.From) : null, ["spanTo"] = l.Span is { } sp2 ? CostOverTime.WorkDate(sp2.To) : null,
         ["notes"] = l.Notes.Count > 0 ? new JsonArray(l.Notes.Select(x => (JsonNode)x).ToArray()) : null,
     };
 
@@ -358,9 +369,11 @@ public sealed class CostModule : ILapinModule
             var attrs = e.CloneAttrs();
             var lines = attrs["lines"] as JsonArray ?? [];
             var id = ctx.NewId();
-            var o = new JsonObject { ["id"] = id, ["chapter"] = ((string?)a["chapter"])?.Trim() is { Length: > 0 } c ? c : "Other", ["code"] = (string?)a["code"] ?? "", ["name"] = (string?)a["name"] ?? "New line", ["unit"] = (string?)a["unit"] ?? "pcs", ["qty"] = Json.Number(a["qty"]) ?? 1 };
+            var per = PerArg(a["per"]);
+            var o = new JsonObject { ["id"] = id, ["chapter"] = ((string?)a["chapter"])?.Trim() is { Length: > 0 } c ? c : per != null ? Costing.TimeRelatedChapter : "Other", ["code"] = (string?)a["code"] ?? "", ["name"] = (string?)a["name"] ?? "New line", ["unit"] = (string?)a["unit"] ?? "pcs", ["qty"] = Json.Number(a["qty"]) ?? 1 };
             foreach (var k in new[] { "m", "l", "e", "t", "hours" }) if (Json.Number(a[k]) is { } v) o[k] = v;
             if (TasksArg(ctx.Model, a["tasks"]) is { Count: > 0 } tasks) o["tasks"] = new JsonArray(tasks.Select(x => (JsonNode)x).ToArray());
+            if (per != null) o["per"] = per;
             lines.Add((JsonNode)o);
             attrs["lines"] = lines;
             ctx.Replace(e.With(attrs: attrs));
@@ -384,6 +397,7 @@ public sealed class CostModule : ILapinModule
                 var tasks = TasksArg(ctx.Model, a["tasks"]);
                 if (tasks.Count > 0) line["tasks"] = new JsonArray(tasks.Select(x => (JsonNode)x).ToArray()); else line.Remove("tasks");
             }
+            if (a.ContainsKey("per")) { if (PerArg(a["per"]) is { } per) line["per"] = per; else line.Remove("per"); }
             ctx.Replace(e.With(attrs: attrs));
             return null;
         });

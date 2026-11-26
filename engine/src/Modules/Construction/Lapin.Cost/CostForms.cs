@@ -136,10 +136,14 @@ public static class CostForms
     /// A line's description with the duration its quantity was multiplied by ("× duration": „× 3 months”) and, when some
     /// element had none, the note that says so.
     /// </summary>
+    static string WorkDay(DateOnly d) => d.ToString("dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
+
     public static string Described(EstimateLine l, string name, bool ro)
     {
         if (l.Time == null) return name;
-        if (l.DurationIn(ro) is { } d) name += $" (× {d})";
+        // A time-related item: its quantity is the time; the days it runs over said instead.
+        if (l.Per != null && l.Span is { } sp) name += $" ({WorkDay(sp.From)} – {WorkDay(sp.To)})";
+        else if (l.DurationIn(ro) is { } d) name += $" (× {d})";
         if (l.Notes.Count > 0) name += ro ? $" [durată lipsă: {(l.TimeProblem != null ? "fără planificare" : $"{l.Untimed.Count} element(e) fără sarcină")}]" : $" [{l.Notes[0]}]";
         return name;
     }

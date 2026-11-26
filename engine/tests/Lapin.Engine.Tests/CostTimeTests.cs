@@ -24,7 +24,7 @@ public sealed class CostTimeTests : IDisposable
     readonly string _dir = Directory.CreateTempSubdirectory("lapin-cost-time-").FullName;
     public void Dispose() => Directory.Delete(_dir, recursive: true);
 
-    static Fixture F() => new(new ArchitectureModule(), new PhasesModule(), new PlanningModule(), new CostModule());
+    internal static Fixture F() => new(new ArchitectureModule(), new PhasesModule(), new PlanningModule(), new CostModule());
 
     const string Csv =
         "Cod articol;Denumire;U.M.;Material;Manoperă;Utilaj;Transport\n" +
@@ -39,7 +39,7 @@ public sealed class CostTimeTests : IDisposable
     /// 7.5 m³ × 485 = 3637.50; the plaster TEN01, 60 m² × 42 = 2520.00; 6157.50 direct. The schedule starts on Monday
     /// 26.04.2027: Masonry (the walls' core, 5 days), then Plaster (their finishes, 10 days), under a summary Walls.
     /// </summary>
-    static (Fixture F, string Wall, string Type, Dictionary<string, string> Tasks) House(string start = "2027-04-26")
+    internal static (Fixture F, string Wall, string Type, Dictionary<string, string> Tasks) House(string start = "2027-04-26")
     {
         var f = F();
         f.Run("cost.importPrices", new JsonObject { ["data"] = Convert.ToBase64String(Encoding.UTF8.GetBytes(Csv)), ["name"] = "Prețuri.csv" });

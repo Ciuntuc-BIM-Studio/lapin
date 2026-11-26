@@ -170,3 +170,19 @@ describe('money, rates and dates (audit 22.11)', () => {
     expect(inOther(100, { currency: 'EUR', eurRate: 4.9765 })).toBe(497.65);
   });
 });
+
+describe('time-related items', () => {
+  it('show the days they run over instead of a duration, and their quantity is not typed once the schedule gives it', async () => {
+    const { durationText, quantityDerived, spanText, TIME_UNITS } = await import('./estimate');
+    const item = { time: 'weeks', duration: '3.29 weeks', per: 'weeks' as const, spanFrom: '2027-04-26', spanTo: '2027-05-18' };
+    expect(durationText(item)).toBe('');
+    expect(spanText(item)).toBe('26.04.2027 – 18.05.2027');
+    expect(quantityDerived(item)).toBe(true);
+    // No schedule: the quantity typed.
+    expect(quantityDerived({ per: 'weeks', spanFrom: null })).toBe(false);
+    expect(spanText({ spanFrom: null, spanTo: null })).toBe('');
+    // An ordinary line multiplied by a duration keeps its "×".
+    expect(durationText({ time: 'months', duration: '3 months', per: null })).toBe('× 3 months');
+    expect(TIME_UNITS.map((u) => u.id)).toEqual(['weeks', 'months', 'workingDays', 'days']);
+  });
+});
