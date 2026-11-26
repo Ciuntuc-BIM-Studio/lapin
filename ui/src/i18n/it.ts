@@ -7783,6 +7783,10 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "L'app si è registrata da sola sul server e ha scelto questo nome: nessuno l'ha verificato.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "Revocare {name}? Si ferma subito e funziona di nuovo solo se la colleghi di nuovo.",
   "App revoked.": "App revocata.",
+  // Curtain walls from lines (forum topic 282).
+  "Curtain walls from lines": "Facciate continue da linee",
+  "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Seleziona prima linee, polilinee o archi disegnati su una pianta, poi fai clic su Facciate continue da linee.",
+  "A curtain wall along each segment of a line, polyline, arc or circle, of the type chosen.": "Una facciata continua lungo ogni segmento di una linea, polilinea, arco o cerchio, del tipo scelto.",
   "Give the token a name.": "Dai un nome al token.",
   "Personal access tokens for AI clients (MCP)": "Token di accesso personali per client di IA (MCP)",
   "You have a token of that name: choose another, or revoke it first.": "Hai già un token con quel nome: scegline un altro o revocalo prima.",
@@ -8460,4 +8464,7 @@ export const IT_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Richiede „${m[1]}”, che questa edizione non ha.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Manca il suo file „${m[1]}”: installalo di nuovo.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Il suo file „${m[1]}” è stato modificato: non è stato caricato. Installalo di nuovo.`],
+  // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `${m[1]} facciate continue create dalle linee.`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `${m[1]} facciate continue create dalle linee, ${m[2]} tratti sotto i 100 mm tralasciati.`],
 ];

@@ -14438,4 +14438,7 @@ export const RU_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Ему нужен „${m[1]}”, которого нет в этой редакции.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Его файл „${m[1]}” отсутствует: установите его заново.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Его файл „${m[1]}” изменён: он не загружен. Установите его заново.`],
+  // Curtain walls from lines (forum topic 282).
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `Создано навесных стен из линий: ${m[1]}.`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `Создано навесных стен из линий: ${m[1]}; пропущено отрезков короче 100 мм: ${m[2]}.`],
 ];

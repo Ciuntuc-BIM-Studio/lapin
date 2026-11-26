@@ -291,20 +291,34 @@ public static class CurtainWalls
 
         r.Command("addCurtainWall", "Curtain wall", (ctx, a) =>
         {
-            var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
             var (s, e) = (Args.Point(a, "x1", "y1"), Args.Point(a, "x2", "y2"));
-            if ((e - s).Length < 0.1) throw new CommandException("A curtain wall needs two points at least 100 mm apart.");
-            var type = (string?)a["typeId"] is { } tid ? Spatial.Require(ctx.Model, tid, TypeClass) : EnsureType(ctx);
-            var height = Json.Number(a["height"]) ?? Walls.DefaultHeight;
-            if (!(height >= 0.1)) throw new CommandException("A curtain wall is at least 100 mm high.");
-            var attrs = new JsonObject { ["start"] = new JsonArray(s.X, s.Y), ["end"] = new JsonArray(e.X, e.Y), ["height"] = height, ["baseOffset"] = Json.Number(a["baseOffset"]) ?? 0 };
-            if (Args.Rise(a, s, e) is var rise && rise != 0) attrs[PathCurve.Key] = rise;
-            var w = new Entity(ctx.NewId(), Class, type.Name, attrs, "NOTDEFINED");
-            CheckFits(SpecOf(ctx.Model, type), w);
-            ctx.Add(w);
-            Spatial.Contain(ctx, storeyId, w.Id);
-            ctx.Relate(IfcClass.RelDefinesByType, type.Id, w.Id);
-            return new JsonObject { ["id"] = w.Id };
+            if ((e - s).Length < MinLength) throw new CommandException("A curtain wall needs two points at least 100 mm apart.");
+            var (storeyId, type, height, baseOffset) = Placing(ctx, a);
+            return new JsonObject { ["id"] = Place(ctx, storeyId, type, s, e, Args.Rise(a, s, e), height, baseOffset) };
+        });
+
+        // Curtain walls along a drafted path (forum topic 282, Convert to… → Curtain walls): {storeyId, points: [[x, y], …], arcs?
+        // (each segment's rise, 0 straight), closed?, typeId?, height?, baseOffset?}. One curtain wall per segment, in the path's
+        // order so they follow on end to end; a segment under 100 mm is left out and counted (skipped).
+        r.Command("curtainWallsAlong", "Curtain walls along a path", (ctx, a) =>
+        {
+            var (storeyId, type, height, baseOffset) = Placing(ctx, a);
+            var pts = (a["points"] as JsonArray ?? throw new CommandException("Curtain walls along what? Give the path's points.")).Select(p => p is JsonArray { Count: >= 2 } q && Json.Number(q[0]) is { } x && Json.Number(q[1]) is { } y ? new Vec2(x, y) : throw new CommandException("A path is a list of [x, y] points.")).ToList();
+            var closed = a["closed"] is JsonValue cv && cv.TryGetValue<bool>(out var c) && c && pts.Count > 2;
+            var segments = closed ? pts.Count : pts.Count - 1;
+            if (segments < 1) throw new CommandException("A path needs two points at least.");
+            var arcs = a["arcs"] as JsonArray;
+            var ids = new JsonArray();
+            var skipped = 0;
+            for (var i = 0; i < segments; i++)
+            {
+                var (s, e) = (pts[i], pts[(i + 1) % pts.Count]);
+                if ((e - s).Length < MinLength) { skipped++; continue; }
+                var rise = arcs != null && i < arcs.Count && Json.Number(arcs[i]) is { } r0 ? PathCurve.CheckRise(r0, (e - s).Length) : 0;
+                ids.Add((JsonNode)Place(ctx, storeyId, type, s, e, rise, height, baseOffset));
+            }
+            if (ids.Count == 0) throw new CommandException("Every segment is shorter than 100 mm: no curtain wall is made.");
+            return new JsonObject { ["ids"] = ids, ["skipped"] = skipped };
         });
 
         r.Command("updateCurtainWall", "Change curtain wall", (ctx, a) =>
@@ -452,6 +466,33 @@ public static class CurtainWalls
         var spec = CurtainSpec.From(n);
         if (spec.Problem() is { } p) throw new CommandException(p);
         return spec;
+    }
+
+    /// <summary>The shortest curtain wall: 100 mm between its ends.</summary>
+    public const double MinLength = 0.1;
+
+    /// <summary>Where and of what new curtain walls stand, from a command's arguments: the storey, the type (the project's first, made when it has none), the height and the base offset, checked.</summary>
+    static (string StoreyId, Entity Type, double Height, double BaseOffset) Placing(ICommandContext ctx, JsonObject a)
+    {
+        var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
+        var type = (string?)a["typeId"] is { } tid ? Spatial.Require(ctx.Model, tid, TypeClass) : EnsureType(ctx);
+        var height = Json.Number(a["height"]) ?? Walls.DefaultHeight;
+        if (!(height >= 0.1)) throw new CommandException("A curtain wall is at least 100 mm high.");
+        return (storeyId, type, height, Json.Number(a["baseOffset"]) ?? 0);
+    }
+
+    /// <summary>One curtain wall from s to e (an arc of that rise when not 0) on the storey, of the type: checked to fit its grid, contained and typed. Its id.</summary>
+    static string Place(ICommandContext ctx, string storeyId, Entity type, Vec2 s, Vec2 e, double rise, double height, double baseOffset)
+    {
+        if ((e - s).Length < MinLength) throw new CommandException("A curtain wall needs two points at least 100 mm apart.");
+        var attrs = new JsonObject { ["start"] = new JsonArray(s.X, s.Y), ["end"] = new JsonArray(e.X, e.Y), ["height"] = height, ["baseOffset"] = baseOffset };
+        if (rise != 0) attrs[PathCurve.Key] = rise;
+        var w = new Entity(ctx.NewId(), Class, type.Name, attrs, "NOTDEFINED");
+        CheckFits(SpecOf(ctx.Model, type), w);
+        ctx.Add(w);
+        Spatial.Contain(ctx, storeyId, w.Id);
+        ctx.Relate(IfcClass.RelDefinesByType, type.Id, w.Id);
+        return w.Id;
     }
 
     /// <summary>The project's first curtain wall type, made (the default) when it has none.</summary>

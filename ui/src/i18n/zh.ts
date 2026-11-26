@@ -7817,6 +7817,10 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "该应用自行在服务器上注册并选择了这个名称：没有人核实过。",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "撤销 {name}？它会立即停止，只有再次连接后才能重新工作。",
   "App revoked.": "应用已撤销。",
+  // Curtain walls from lines (forum topic 282).
+  "Curtain walls from lines": "由线生成幕墙",
+  "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "请先在平面图上选择绘制的直线、多段线或圆弧，然后点击“由线生成幕墙”。",
+  "A curtain wall along each segment of a line, polyline, arc or circle, of the type chosen.": "沿直线、多段线、圆弧或圆的每一段生成一面所选类型的幕墙。",
   "Give the token a name.": "请为令牌命名。",
   "Personal access tokens for AI clients (MCP)": "供 AI 客户端使用的个人访问令牌（MCP）",
   "You have a token of that name: choose another, or revoke it first.": "你已有同名令牌：请换一个名称，或先将其撤销。",
@@ -8494,4 +8498,7 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `它需要“${m[1]}”，此版本没有该模块.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `其文件“${m[1]}”缺失：请重新安装.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `其文件“${m[1]}”已被更改：未加载。请重新安装.`],
+  // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `已由线生成 ${m[1]} 面幕墙。`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `已由线生成 ${m[1]} 面幕墙，跳过 ${m[2]} 段短于 100 mm 的线段。`],
 ];

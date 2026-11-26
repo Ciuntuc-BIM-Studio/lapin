@@ -7818,6 +7818,10 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "Appen registrerede sig selv hos serveren og valgte dette navn: ingen har kontrolleret det.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "Tilbagekald {name}? Den stopper med det samme og virker kun igen, hvis du forbinder den igen.",
   "App revoked.": "App tilbagekaldt.",
+  // Curtain walls from lines (forum topic 282).
+  "Curtain walls from lines": "Facadeglasvægge fra linjer",
+  "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Vælg først tegnede linjer, polylinjer eller buer på en plan, og klik derefter på Facadeglasvægge fra linjer.",
+  "A curtain wall along each segment of a line, polyline, arc or circle, of the type chosen.": "En facadeglasvæg langs hvert segment af en linje, polylinje, bue eller cirkel, af den valgte type.",
   "Give the token a name.": "Giv tokenet et navn.",
   "Personal access tokens for AI clients (MCP)": "Personlige adgangstokens til AI-klienter (MCP)",
   "You have a token of that name: choose another, or revoke it first.": "Du har allerede et token med det navn: vælg et andet, eller tilbagekald det først.",
@@ -8495,4 +8499,7 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Det kræver „${m[1]}”, som denne udgave ikke har.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Dets fil „${m[1]}” mangler: installer det igen.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Dets fil „${m[1]}” er ændret: det blev ikke indlæst. Installer det igen.`],
+  // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `${m[1]} facadeglasvægge lavet ud fra linjerne.`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `${m[1]} facadeglasvægge lavet ud fra linjerne, ${m[2]} stykker under 100 mm udeladt.`],
 ];

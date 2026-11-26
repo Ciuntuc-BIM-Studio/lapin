@@ -14440,4 +14440,7 @@ export const UK_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Йому потрібен „${m[1]}”, якого немає в цій редакції.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Його файлу „${m[1]}” немає: встановіть його знову.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Його файл „${m[1]}” змінено: його не завантажено. Встановіть його знову.`],
+  // Curtain walls from lines (forum topic 282).
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `Створено навісних стін з ліній: ${m[1]}.`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `Створено навісних стін з ліній: ${m[1]}; пропущено відрізків коротших за 100 мм: ${m[2]}.`],
 ];

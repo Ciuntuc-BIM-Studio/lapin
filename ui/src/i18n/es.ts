@@ -7823,6 +7823,10 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "La aplicación se registró sola en el servidor y eligió este nombre: nadie lo comprobó.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "¿Revocar {name}? Se detiene de inmediato y solo vuelve a funcionar si la conectas de nuevo.",
   "App revoked.": "Aplicación revocada.",
+  // Curtain walls from lines (forum topic 282).
+  "Curtain walls from lines": "Muros cortina desde líneas",
+  "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Seleccione primero líneas, polilíneas o arcos dibujados en una planta y haga clic en Muros cortina desde líneas.",
+  "A curtain wall along each segment of a line, polyline, arc or circle, of the type chosen.": "Un muro cortina a lo largo de cada tramo de una línea, polilínea, arco o círculo, del tipo elegido.",
   "Give the token a name.": "Ponle un nombre al token.",
   "Personal access tokens for AI clients (MCP)": "Tokens de acceso personales para clientes de IA (MCP)",
   "You have a token of that name: choose another, or revoke it first.": "Ya tienes un token con ese nombre: elige otro o revócalo primero.",
@@ -8500,4 +8504,7 @@ export const ES_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Necesita „${m[1]}”, que esta edición no tiene.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Falta su archivo „${m[1]}”: instálalo de nuevo.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Su archivo „${m[1]}” se ha modificado: no se ha cargado. Instálalo de nuevo.`],
+  // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `${m[1]} muros cortina creados a partir de las líneas.`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `${m[1]} muros cortina creados a partir de las líneas, ${m[2]} tramos de menos de 100 mm omitidos.`],
 ];

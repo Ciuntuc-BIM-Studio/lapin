@@ -7781,6 +7781,10 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "Die App hat sich selbst beim Server registriert und diesen Namen gewählt: Niemand hat ihn geprüft.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "{name} widerrufen? Sie hört sofort auf und funktioniert erst wieder, wenn Sie sie erneut verbinden.",
   "App revoked.": "App widerrufen.",
+  // Curtain walls from lines (forum topic 282).
+  "Curtain walls from lines": "Vorhangfassaden aus Linien",
+  "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Wählen Sie zuerst gezeichnete Linien, Polylinien oder Bögen in einem Grundriss und klicken Sie dann auf Vorhangfassaden aus Linien.",
+  "A curtain wall along each segment of a line, polyline, arc or circle, of the type chosen.": "Eine Vorhangfassade entlang jedes Abschnitts einer Linie, Polylinie, eines Bogens oder Kreises, vom gewählten Typ.",
   "Give the token a name.": "Geben Sie dem Token einen Namen.",
   "Personal access tokens for AI clients (MCP)": "Persönliche Zugriffstoken für KI-Clients (MCP)",
   "You have a token of that name: choose another, or revoke it first.": "Sie haben bereits ein Token mit diesem Namen: Wählen Sie einen anderen oder widerrufen Sie es zuerst.",
@@ -8458,4 +8462,7 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Es braucht „${m[1]}”, das diese Edition nicht hat.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Seine Datei „${m[1]}” fehlt: installiere es erneut.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Seine Datei „${m[1]}” wurde geändert: es wurde nicht geladen. Installiere es erneut.`],
+  // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `${m[1]} Vorhangfassaden aus den Linien erstellt.`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `${m[1]} Vorhangfassaden aus den Linien erstellt, ${m[2]} Stücke unter 100 mm ausgelassen.`],
 ];

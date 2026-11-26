@@ -7820,6 +7820,10 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "O aplicativo se registrou sozinho no servidor e escolheu este nome: ninguém o verificou.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "Revogar {name}? Ele para de imediato e só volta a funcionar se você o conectar de novo.",
   "App revoked.": "Aplicativo revogado.",
+  // Curtain walls from lines (forum topic 282).
+  "Curtain walls from lines": "Paredes-cortina a partir de linhas",
+  "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Selecione primeiro linhas, polilinhas ou arcos desenhados numa planta e clique em Paredes-cortina a partir de linhas.",
+  "A curtain wall along each segment of a line, polyline, arc or circle, of the type chosen.": "Uma parede-cortina ao longo de cada segmento de uma linha, polilinha, arco ou círculo, do tipo escolhido.",
   "Give the token a name.": "Dê um nome ao token.",
   "Personal access tokens for AI clients (MCP)": "Tokens de acesso pessoais para clientes de IA (MCP)",
   "You have a token of that name: choose another, or revoke it first.": "Já tem um token com esse nome: escolha outro ou revogue-o primeiro.",
@@ -8497,4 +8501,7 @@ export const PT_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Precisa de „${m[1]}”, que esta edição não tem.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Falta o seu ficheiro „${m[1]}”: instale-o de novo.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `O seu ficheiro „${m[1]}” foi alterado: não foi carregado. Instale-o de novo.`],
+  // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `${m[1]} paredes-cortina criadas a partir das linhas.`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `${m[1]} paredes-cortina criadas a partir das linhas, ${m[2]} trechos com menos de 100 mm deixados de fora.`],
 ];

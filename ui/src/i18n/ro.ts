@@ -7775,6 +7775,10 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "Aplicația s-a înregistrat singură la server și și-a ales acest nume: nimeni nu l-a verificat.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "Revoci {name}? Se oprește imediat și funcționează din nou doar dacă o conectezi din nou.",
   "App revoked.": "Aplicație revocată.",
+  // Curtain walls from lines (forum topic 282).
+  "Curtain walls from lines": "Pereți cortină din linii",
+  "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Selectează mai întâi linii, polilinii sau arce desenate pe un plan, apoi apasă Pereți cortină din linii.",
+  "A curtain wall along each segment of a line, polyline, arc or circle, of the type chosen.": "Un perete cortină de-a lungul fiecărui segment al unei linii, polilinii, al unui arc sau cerc, de tipul ales.",
   "Give the token a name.": "Dă un nume tokenului.",
   "Personal access tokens for AI clients (MCP)": "Tokenuri personale de acces pentru clienți AI (MCP)",
   "You have a token of that name: choose another, or revoke it first.": "Ai deja un token cu acest nume: alege altul sau revocă-l mai întâi.",
@@ -8452,4 +8456,7 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Are nevoie de „${m[1]}”, pe care această ediție nu îl are.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Îi lipsește fișierul „${m[1]}”: instalează-l din nou.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Fișierul lui „${m[1]}” a fost modificat: nu a fost încărcat. Instalează-l din nou.`],
+  // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `${m[1]} pereți cortină creați din linii.`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `${m[1]} pereți cortină creați din linii, ${m[2]} bucăți sub 100 mm lăsate deoparte.`],
 ];

@@ -230,6 +230,9 @@ describe('the languages', () => {
     '3 line(s) have no graph node, the first at line 5:',
     'Open the partial graph (4 nodes)',
     'Python cell 3',
+    // Curtain walls from lines (forum topic 282).
+    '4 curtain walls made from the lines.',
+    '3 curtain walls made from the lines, 1 pieces under 100 mm left out.',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 

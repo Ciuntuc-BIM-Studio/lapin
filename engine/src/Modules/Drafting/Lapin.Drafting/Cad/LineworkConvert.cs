@@ -177,6 +177,7 @@ public static class LineworkConvert
             var catalog = ctx.Services as ModuleCatalog ?? throw new CommandException("No commands to convert through here.");
             var keep = a["keep"] is JsonValue kv && kv.TryGetValue<bool>(out var k) ? k : a["ids"] == null;
             var made = new JsonArray();
+            var skipped = 0;
             foreach (var (id, _, steps, error, _) in plan)
             {
                 if (error != null) continue;
@@ -188,10 +189,14 @@ public static class LineworkConvert
                     else if (result?["ids"] is JsonArray nids) foreach (var x in nids) made.Add(x?.DeepClone());
                     // What a command makes beside (walls along a shape's bottom and top floors).
                     if (result?["slabs"] is JsonArray more) foreach (var x in more) made.Add(x?.DeepClone());
+                    // The pieces a command left out (curtain walls along a path: segments under 100 mm).
+                    if (Json.Number(result?["skipped"]) is { } sk) skipped += (int)sk;
                 }
                 if (!keep && ctx.Model.Get(id) != null) ctx.Remove(id);
             }
-            return new JsonObject { ["ids"] = made, ["converted"] = plan.Count(p => p.Error == null), ["left"] = plan.Count(p => p.Error != null) };
+            var outcome = new JsonObject { ["ids"] = made, ["converted"] = plan.Count(p => p.Error == null), ["left"] = plan.Count(p => p.Error != null) };
+            if (skipped > 0) outcome["skipped"] = skipped;
+            return outcome;
         });
     }
 }

@@ -7785,6 +7785,10 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "L'application s'est enregistrée elle-même auprès du serveur et a choisi ce nom : personne ne l'a vérifié.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "Révoquer {name} ? Elle s'arrête aussitôt et ne fonctionne de nouveau que si vous la reconnectez.",
   "App revoked.": "Application révoquée.",
+  // Curtain walls from lines (forum topic 282).
+  "Curtain walls from lines": "Murs-rideaux depuis des lignes",
+  "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Sélectionnez d’abord des lignes, polylignes ou arcs dessinés sur un plan, puis cliquez sur Murs-rideaux depuis des lignes.",
+  "A curtain wall along each segment of a line, polyline, arc or circle, of the type chosen.": "Un mur-rideau le long de chaque segment d’une ligne, d’une polyligne, d’un arc ou d’un cercle, du type choisi.",
   "Give the token a name.": "Donnez un nom au jeton.",
   "Personal access tokens for AI clients (MCP)": "Jetons d'accès personnels pour les clients d'IA (MCP)",
   "You have a token of that name: choose another, or revoke it first.": "Vous avez déjà un jeton de ce nom : choisissez-en un autre ou révoquez-le d'abord.",
@@ -8462,4 +8466,7 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Il lui faut „${m[1]}”, que cette édition n’a pas.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Son fichier „${m[1]}” manque : installez-le à nouveau.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Son fichier „${m[1]}” a été modifié : il n’a pas été chargé. Installez-le à nouveau.`],
+  // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `${m[1]} murs-rideaux créés à partir des lignes.`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `${m[1]} murs-rideaux créés à partir des lignes, ${m[2]} tronçons de moins de 100 mm laissés de côté.`],
 ];
