@@ -2,7 +2,7 @@
   <!--
     Booleans between solids, by manifold (github.com/elalish/manifold, Apache-2.0)
     through its C API. The native library is built by scripts/build-manifold.mjs
-    into engine/native/<rid>/ and travels next to the engine.
+    into engine/native/<rid>/ (on Linux by this build, below) and travels next to the engine.
   -->
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -11,7 +11,7 @@
     <ProjectReference Include="../Lapin.Geometry/Lapin.Geometry.csproj" />
   </ItemGroup>
   <!--
-    The library of the platform built for: LapinNativeRid when the build names it (scripts/build-product.mjs does, as a
+    The library of the platform built for: LapinNativeRid when the build names it (scripts/build-product.mjs and build-web.mjs do, as a
     global property: a published app's runtime id does not reach the libraries it references), else the runtime id
     asked for, else the machine's own.
   -->
@@ -22,9 +22,25 @@
     <LapinNativeRid Condition="'$(LapinNativeRid)' == '' And $([MSBuild]::IsOSPlatform('Windows'))">win-x64</LapinNativeRid>
     <LapinNative>$(MSBuildThisFileDirectory)../../../native/$(LapinNativeRid)/</LapinNative>
   </PropertyGroup>
+  <!--
+    Linux's library is not committed: a build on a Linux x64 machine that does not have it yet makes it first, as CI and
+    scripts/build-linux-docker.sh do, so the engine and its tests never run there without booleans by accident (openings
+    left in their walls, and the tests that measure a cut body failing far from the cause). -p:LapinMakeManifold=false
+    builds without it.
+  -->
+  <PropertyGroup>
+    <LapinMakeManifold Condition="'$(LapinNativeRid)' == 'linux-x64' And $([MSBuild]::IsOSPlatform('Linux')) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64' And !Exists('$(LapinNative)libmanifoldc.so')">true</LapinMakeManifold>
+  </PropertyGroup>
+  <Target Name="LapinMakeManifold" BeforeTargets="BeforeBuild" Condition="'$(LapinMakeManifold)' == 'true'">
+    <Message Importance="high" Text="Lapin.Booleans: building manifold's library for Linux once (scripts/build-manifold.mjs → engine/native/linux-x64/libmanifoldc.so)" />
+    <Exec Command="node &quot;$(MSBuildThisFileDirectory)../../../../scripts/build-manifold.mjs&quot;" IgnoreExitCode="true">
+      <Output TaskParameter="ExitCode" PropertyName="_LapinManifoldExit" />
+    </Exec>
+    <Error Condition="'$(_LapinManifoldExit)' != '0'" Text="manifold's library for Linux (engine/native/linux-x64/libmanifoldc.so) could not be built: run node scripts/build-manifold.mjs to see why (it needs git, cmake, a C++ compiler and the static C++ runtime, libstdc++.a: the libstdc++-static package on Fedora/RHEL). Without it the engine cuts nothing and its tests fail; -p:LapinMakeManifold=false builds without it." />
+  </Target>
   <ItemGroup>
     <None Include="$(LapinNative)libmanifoldc.dylib" Condition="$(LapinNativeRid.StartsWith('osx')) And Exists('$(LapinNative)libmanifoldc.dylib')" Link="libmanifoldc.dylib" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <None Include="$(LapinNative)libmanifoldc.so" Condition="$(LapinNativeRid.StartsWith('linux')) And Exists('$(LapinNative)libmanifoldc.so')" Link="libmanifoldc.so" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="$(LapinNative)libmanifoldc.so" Condition="$(LapinNativeRid.StartsWith('linux')) And (Exists('$(LapinNative)libmanifoldc.so') Or '$(LapinMakeManifold)' == 'true')" Link="libmanifoldc.so" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <None Include="$(LapinNative)manifoldc.dll" Condition="$(LapinNativeRid.StartsWith('win')) And Exists('$(LapinNative)manifoldc.dll')" Link="manifoldc.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

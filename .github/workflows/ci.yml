@@ -88,6 +88,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
         env:
           CI: 'true'
+      # On a cache miss (a new build-manifold.mjs), with the workload's Emscripten (DOTNET_ROOT, set by setup-dotnet above).
+      - run: test -f engine/native/browser-wasm/manifoldc.a || node scripts/build-manifold.mjs --browser-wasm
       - run: node scripts/build-web.mjs lapin
       # A runner is slower than a laptop: the start budget is looser here.
       - run: node scripts/check-web.mjs lapin

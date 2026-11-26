@@ -67,7 +67,9 @@ we credit it anyway. What came from where is listed in [docs/acknowledgements.md
 
 ## Run
 
-Requires .NET 10, Node 22 + pnpm, Rust (for the desktop shell).
+Requires .NET 10, Node 22 + pnpm, Rust (for the desktop shell); on Linux also git, cmake, a C++ compiler and
+the static C++ runtime (`libstdc++.a`: on Fedora, RHEL, AlmaLinux and Rocky the `libstdc++-static` package, from the CRB
+repository on the RHEL family), for the engine's boolean library.
 
 ```sh
 pnpm setup        # packages, engine build
@@ -76,4 +78,5 @@ pnpm dev:desktop  # the same in the Lapin window
 pnpm test         # UI (vitest) and engine (xUnit)
 ```
 
-Note: the engine's boolean library (manifold) is built for macOS arm64 only for now.
+The engine's boolean library (manifold) is committed for macOS arm64 and Windows x64; on Linux x64 the engine's build
+makes it the first time (`engine/native/README.md`).
