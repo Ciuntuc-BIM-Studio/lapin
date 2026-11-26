@@ -3202,6 +3202,8 @@ path.part-flex-ghost { fill: none; stroke: var(--accent); stroke-width: 1.6; str
 .hp-list { display: flex; flex-direction: column; gap: 6px; min-width: 0; overflow: auto; max-height: 70vh; }
 .hp-items { display: flex; flex-direction: column; gap: 1px; margin: 0; padding: 0; }
 .hp-item { display: flex; gap: 6px; width: 100%; text-align: left; padding: 2px 6px; border: 0; background: transparent; border-radius: 3px; cursor: pointer; }
+.hp-row { display: flex; align-items: center; gap: 2px; }
+.hp-row .hp-item { flex: 1; min-width: 0; }
 .hp-item:hover { background: var(--hover, rgba(128, 128, 128, 0.12)); }
 .hp-item.on { background: var(--accent-soft, rgba(80, 120, 255, 0.18)); }
 .hp-editor { display: flex; flex-direction: column; gap: 8px; min-width: 0; overflow: auto; max-height: 70vh; }

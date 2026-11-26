@@ -156,8 +156,10 @@ public static class HatchPatternCommands
                 foreach (var k in o.Select(kv => kv.Key).ToList())
                 {
                     var v = o[k];
-                    var named = v is JsonValue && (k is "hatch" or "cutHatch" or "surfaceHatch" || k == "pattern" && parentKey == "hatch")
-                        && string.Equals((string?)v, from, StringComparison.OrdinalIgnoreCase);
+                    // Only a name is a pattern's: the same keys also hold switches (a view style's surfaceHatch: true) and
+                    // numbers, which are passed over (forum 275: reading them as text failed every hatch.get).
+                    var named = v is JsonValue jv && (k is "hatch" or "cutHatch" or "surfaceHatch" || k == "pattern" && parentKey == "hatch")
+                        && jv.TryGetValue<string>(out var s) && string.Equals(s, from, StringComparison.OrdinalIgnoreCase);
                     if (named)
                     {
                         n++;

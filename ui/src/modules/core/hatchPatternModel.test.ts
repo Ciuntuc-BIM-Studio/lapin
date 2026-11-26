@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   addDash, addFamily, cellOf, createArgs, dashKind, dashText, deletePattern, draftOf, draftProblem, freeName, newDraft, parseDashes, parseNum, patchFamily, previewArgs,
-  realSizeNote, removeDash, removeFamily, renameImpact, resultNote, setDashKind, setDashLength, skippedNote, toPatternArgs, updateArgs, withOrigin, MAX_DASHES, MAX_FAMILIES,
+  canCopy, canEdit, keepsOpen, realSizeNote, removeDash, startFrom, removeFamily, renameImpact, resultNote, setDashKind, setDashLength, skippedNote, toPatternArgs, updateArgs, withOrigin, MAX_DASHES, MAX_FAMILIES,
   type Draft,
 } from './hatchPatternModel';
 
@@ -174,5 +174,48 @@ describe('export and Save as hatch pattern', () => {
   it('say what the pattern became', () => {
     expect(resultNote({ kind: 'tile' }).text).toMatch(/tile/);
     expect(resultNote({ kind: 'lines', families: [{}, {}] }).vars).toEqual({ n: 2 });
+  });
+});
+
+describe('starting from an existing pattern (forum 275)', () => {
+  const def = { name: 'BRICK', description: 'Courses', units: 'model' as const, kind: 'lines' as const, project: false, families: lines().families, uses: 3 };
+
+  it('copies any pattern with lines or a tile into a new draft under a free name, the original untouched', () => {
+    const d = startFrom(def, ['BRICK', 'BRICK-COPY']);
+    expect(d.name).toBe('BRICK-COPY-2');
+    expect(d.description).toBe('Courses');
+    expect(d.units).toBe('model');
+    expect(d.families).toEqual(def.families);
+    expect(d.families[0]).not.toBe(def.families[0]);
+    expect(d.families[0].dashes).not.toBe(def.families[0].dashes);
+    expect(createArgs(d)).toEqual({ name: 'BRICK-COPY-2', description: 'Courses', units: 'model', families: def.families });
+    const mine = startFrom({ ...def, name: 'MINE', project: true }, ['MINE']);
+    expect(mine.name).toBe('MINE-COPY');
+    const tile = { width: 10, height: 10, lines: [[0, 0, 10, 0]], arcs: [] };
+    const t = startFrom({ ...def, kind: 'tile', families: undefined, tile }, []);
+    expect(t.tile).toEqual(tile);
+    expect(createArgs(t)).toMatchObject({ tile });
+    expect(draftProblem(t, ['BRICK'])).toBeNull();
+  });
+
+  it('copies patterns that have lines or a tile; edits only the project\'s own', () => {
+    expect(canCopy(def)).toBe(true);
+    expect(canCopy({ ...def, kind: 'tile', families: undefined, tile: { width: 1, height: 1, lines: [], arcs: [] } })).toBe(true);
+    expect(canCopy({ ...def, kind: 'solid', families: [] })).toBe(false);
+    expect(canCopy({ ...def, kind: 'batt', families: [] })).toBe(false);
+    expect(canEdit(def)).toBe(false);
+    expect(canEdit({ ...def, project: true })).toBe(true);
+    expect(canEdit(null)).toBe(false);
+  });
+});
+
+describe('choosing a pattern in the list (forum 275)', () => {
+  it('keeps the editor open when the pattern shown is clicked again, and reads any other', () => {
+    // The pattern just made is the one selected: clicking its name again must not empty the editor (nothing reads it back).
+    expect(keepsOpen('DIAGONAL-5', false, true, 'DIAGONAL-5')).toBe(true);
+    expect(keepsOpen('DIAGONAL-5', false, true, 'BRICK')).toBe(false);
+    // A new pattern being made, or nothing read yet: the click reads it.
+    expect(keepsOpen(null, true, true, 'DIAGONAL-5')).toBe(false);
+    expect(keepsOpen('DIAGONAL-5', false, false, 'DIAGONAL-5')).toBe(false);
   });
 });

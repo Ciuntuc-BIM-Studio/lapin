@@ -106,6 +106,46 @@ public class PatternEditorTests
     }
 
     [Fact]
+    public void A_pattern_is_read_renamed_and_deleted_beside_switches_of_the_same_name()
+    {
+        // Forum 275: a view style keeps surfaceHatch as a switch (true/false), not a pattern's name. Reading what names a pattern
+        // must pass over it, or hatch.get fails for every pattern and the editor never opens (nor its Delete).
+        var f = F();
+        var plan = Plan(f);
+        var style = (string)f.Run("viewStyle.create", new JsonObject { ["name"] = "Mine", ["surfaceHatch"] = true })!["id"]!;
+        Assert.Contains("\"surfaceHatch\":true", Spatial.Project(f.Model)!.Attrs.ToJsonString());
+        var cross = f.Session.Query("hatch.get", new JsonObject { ["name"] = "CROSS" })!;
+        Assert.Equal(("lines", false, 0), ((string?)cross["kind"], (bool)cross["project"]!, (int)cross["uses"]!));
+
+        f.Wall(0, 0, 5, 0, f.Type("Concrete 20", ("Concrete", 0.2, true)));
+        f.Run("hatch.create", new JsonObject { ["name"] = "MINE", ["families"] = new JsonArray(Family(45, 2)) });
+        var concrete = Mat(f, "Concrete");
+        f.Run("material.update", new JsonObject { ["id"] = concrete, ["section"] = new JsonObject { ["hatch"] = "MINE" } });
+        Draw(f, plan, new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(J(0, 2), J(2, 2), J(2, 4), J(0, 4)), ["closed"] = true });
+        var hatch = (string)f.Run("drafting.hatch", new JsonObject { ["viewId"] = plan, ["at"] = J(1, 3), ["pattern"] = "MINE" })!["id"]!;
+        Assert.Equal(2, (int)f.Session.Query("hatch.get", new JsonObject { ["name"] = "MINE" })!["uses"]!);
+
+        // Edited: its spacing and angle; renamed, followed everywhere; the switch left as it was.
+        f.Run("hatch.update", new JsonObject { ["name"] = "MINE", ["newName"] = "MINE-2", ["families"] = new JsonArray(Family(30, 4)) });
+        var p = DraftingResources.Patterns(f.Model).Single();
+        Assert.Equal(("MINE-2", 30.0, 4.0), (p.Name, p.Families[0].AngleDeg, p.Families[0].DeltaY));
+        Assert.Equal("MINE-2", (string?)f.Model.Get(hatch)!.Attrs["hatch"]!["pattern"]);
+        Assert.True(ViewStyles.All(f.Model).Single(s => s.Id == style).SurfaceHatch);
+
+        // Deleted in use (forced, as the dialog asks): what named it falls back, the same entities (their GlobalIds) kept; one undo step.
+        var before = f.Model.Entities.Select(e => e.Id).ToHashSet();
+        Assert.Equal(2, (int)f.Run("hatch.delete", new JsonObject { ["name"] = "MINE-2", ["force"] = true })!["repointed"]!);
+        Assert.Empty(DraftingResources.Patterns(f.Model));
+        Assert.True(before.SetEquals(f.Model.Entities.Select(e => e.Id)));
+        Assert.Null(MaterialGraphics.Resolve(f.Model.Get(concrete), "section").Hatch);
+        Assert.Equal(HatchPatternCommands.DraftedFallback, (string?)f.Model.Get(hatch)!.Attrs["hatch"]!["pattern"]);
+        Assert.True(ViewStyles.All(f.Model).Single(s => s.Id == style).SurfaceHatch);
+        f.Session.Undo();
+        Assert.Equal("MINE-2", DraftingResources.Patterns(f.Model).Single().Name);
+        Assert.Equal("MINE-2", (string?)f.Model.Get(hatch)!.Attrs["hatch"]!["pattern"]);
+    }
+
+    [Fact]
     public void The_editor_previews_a_pattern_not_saved()
     {
         var f = F();

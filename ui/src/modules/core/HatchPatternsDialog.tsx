@@ -1,8 +1,9 @@
 /**
- * Manage → Hatch patterns (docs/plan-material-graphics.md, stage 7): the built-in patterns (read-only, Duplicate) and the project's
- * (kind, units, uses), a line-family editor with a live preview (`hatch.preview` with the pattern inline, at a scale chosen), rename
- * (the places that follow it are counted), delete (asking `hatch.usage` first), Export and Import .pat, and My patterns (this
- * computer's files and the firm folders').
+ * Manage → Hatch patterns (docs/plan-material-graphics.md, stage 7): the built-in patterns (read-only) and the project's (kind, units,
+ * uses, edited in place), a line-family editor with a live preview (`hatch.preview` with the pattern inline, at a scale chosen), rename
+ * (the places that follow it are counted), delete (asking `hatch.usage` first; from the editor or the list), Export and Import .pat,
+ * and My patterns (this computer's files and the firm folders'). Any pattern with lines or a tile is the start of a new one
+ * (Duplicate, or New pattern → Start from: forum 275), kept unsaved until Make pattern.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -17,8 +18,8 @@ import { forgetHatchPreviews } from './hatchCache';
 import { leaveHatchPatterns, useHatchEditor } from './hatchEditorOpen';
 import { UNITS_HELP, UNITS_LABEL, type HatchUnits } from './hatchUnits';
 import {
-  MAX_DASHES, MAX_FAMILIES, MODEL_SCALES, PAPER_SCALES, addDash, addFamily, createArgs, dashKind, deletePattern, draftOf, draftProblem, freeName, newDraft, parseNum, patchFamily,
-  previewArgs, realSizeNote, removeDash, removeFamily, renameImpact, setDashKind, setDashLength, skippedNote, updateArgs, withOrigin,
+  MAX_DASHES, MAX_FAMILIES, MODEL_SCALES, PAPER_SCALES, addDash, addFamily, canCopy, canEdit, createArgs, keepsOpen, dashKind, deletePattern, draftOf, draftProblem, newDraft, parseNum, patchFamily,
+  previewArgs, realSizeNote, removeDash, removeFamily, renameImpact, setDashKind, setDashLength, skippedNote, startFrom, updateArgs, withOrigin,
   type DashKind, type Draft, type Family, type PatternDef, type PatternKind,
 } from './hatchPatternModel';
 import { forgetPatterns, keepPatterns, myPatterns } from './myPatterns';
@@ -46,6 +47,9 @@ export function HatchPatternsDialog() {
   const [def, setDef] = useState<PatternDef | null>(null);
   const [draft, setDraft] = useState<Draft | null>(open.fresh ? newDraft() : null);
   const [fresh, setFresh] = useState(open.fresh);
+  /** The pattern a new one was started from (Duplicate or Start from), shown above it. */
+  const [from, setFrom] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
   const [filter, setFilter] = useState('');
   const [mine, setMine] = useState(myPatterns);
   const [bump, setBump] = useState(0);
@@ -58,17 +62,24 @@ export function HatchPatternsDialog() {
   useEffect(() => {
     if (!selected || fresh) return;
     let live = true;
-    void query<PatternDef>('hatch.get', { name: selected }).then((r) => { if (live && r) { setDef(r); setDraft(draftOf(r)); } });
+    void query<PatternDef>('hatch.get', { name: selected }).then((r) => {
+      if (!live) return;
+      setFailed(!r);
+      if (r) { setDef(r); setDraft(draftOf(r)); }
+    });
     return () => { live = false; };
   }, [selected, fresh, nodes, bump]);
 
   const taken = useMemo(() => list.map((p) => p.name), [list]);
   const shown = list.filter((p) => !filter.trim() || p.name.toLowerCase().includes(filter.trim().toLowerCase()));
   const builtIns = shown.filter((p) => !p.project), project = shown.filter((p) => p.project);
-  const editable = fresh || (def?.project ?? false);
+  const editable = fresh || canEdit(def);
 
-  const choose = (name: string) => { setFresh(false); setSelected(name); setDef(null); setDraft(null); };
-  const startNew = () => { setFresh(true); setSelected(null); setDef(null); setDraft(newDraft()); };
+  // The pattern shown clicked again stays as it is: clearing it would leave the editor empty, since the selection did not change (forum 275).
+  const choose = (name: string) => { if (keepsOpen(selected, fresh, !!draft, name)) return; setFresh(false); setFrom(null); setFailed(false); setSelected(name); setDef(null); setDraft(null); };
+  const startNew = () => { setFresh(true); setFrom(null); setFailed(false); setSelected(null); setDef(null); setDraft(newDraft()); };
+  /** A new pattern that starts as a copy of `d` (built in or the project's): nothing is saved until Make pattern. */
+  const startFromDef = (d: PatternDef) => { setFresh(true); setFrom(d.name); setFailed(false); setSelected(null); setDef(null); setDraft(startFrom(d, taken)); };
 
   const refresh = () => { forgetHatchPreviews(); setBump((b) => b + 1); };
 
@@ -76,7 +87,7 @@ export function HatchPatternsDialog() {
     if (!draft) return;
     if (fresh) {
       const r = await execute('hatch.create', createArgs(draft)) as { name: string } | null;
-      if (r) { refresh(); setFresh(false); setSelected(r.name); notify('Pattern made.'); }
+      if (r) { refresh(); setFresh(false); setFrom(null); setSelected(r.name); notify('Pattern made.'); }
       return;
     }
     if (!def) return;
@@ -87,22 +98,29 @@ export function HatchPatternsDialog() {
     notify(r.repointed ? phrase('Pattern saved: {n} place(s) now name {name}.', { n: r.repointed, name: r.name }) : 'Pattern saved.');
   };
 
-  const duplicate = async () => {
+  const duplicate = () => {
     if (!def) return;
-    const copy: Draft = { ...draftOf(def), name: freeName(`${def.name}-COPY`, taken) };
-    if (!copy.tile && copy.families.length === 0) { notify('This pattern has no line families to copy.'); return; }
-    const r = await execute('hatch.create', createArgs(copy)) as { name: string } | null;
-    if (r) { refresh(); setFresh(false); setSelected(r.name); }
+    if (!canCopy(def)) { notify('This pattern has no line families to copy.'); return; }
+    startFromDef(def);
   };
 
-  const remove = async () => {
-    if (!def) return;
-    const result = await deletePattern(def.name, {
+  /** New pattern → Start from: the chosen pattern read in full, then copied into the new draft. */
+  const startFromName = async (name: string) => {
+    if (!name) { startNew(); return; }
+    const d = await query<PatternDef>('hatch.get', { name });
+    if (!d) { notify('The pattern could not be read.'); return; }
+    if (!canCopy(d)) { notify('This pattern has no line families to copy.'); return; }
+    startFromDef(d);
+  };
+
+  const remove = async (name = def?.name) => {
+    if (!name) return;
+    const result = await deletePattern(name, {
       usage: async (n) => ((await query<{ count: number }>('hatch.usage', { name: n }))?.count ?? null),
       confirm: (text, vars) => confirmAction(text, vars),
       remove: async (n, force) => (await execute('hatch.delete', { name: n, ...(force ? { force: true } : {}) })) != null,
     });
-    if (result === 'deleted') { refresh(); setSelected(null); setDef(null); setDraft(null); }
+    if (result === 'deleted') { refresh(); if (!fresh && selected === name) { setSelected(null); setDef(null); setDraft(null); } }
     else if (result === 'failed') notify(useSession.getState().error ?? 'The pattern could not be deleted.');
   };
 
@@ -139,7 +157,7 @@ export function HatchPatternsDialog() {
           <span className="eyebrow">This project</span>
           <ul className="plain hp-items">
             {project.length === 0 && <li className="muted small">None yet: make one, or import a .pat file.</li>}
-            {project.map((p) => <PatternItem key={p.name} p={p} on={!fresh && selected === p.name} onPick={() => choose(p.name)} />)}
+            {project.map((p) => <PatternItem key={p.name} p={p} on={!fresh && selected === p.name} onPick={() => choose(p.name)} onDelete={() => void remove(p.name)} />)}
           </ul>
           <span className="eyebrow">Built in</span>
           <ul className="plain hp-items">{builtIns.map((p) => <PatternItem key={p.name} p={p} on={!fresh && selected === p.name} onPick={() => choose(p.name)} />)}</ul>
@@ -147,7 +165,7 @@ export function HatchPatternsDialog() {
         </div>
 
         <div className="hp-editor" data-testid="hp-editor">
-          {!draft ? <p className="muted small">Choose a pattern, or make a new one.</p> : (
+          {!draft ? <p className="muted small" data-testid={failed ? 'hp-failed' : undefined}>{failed ? 'The pattern could not be read.' : 'Choose a pattern, or make a new one.'}</p> : (
             <>
               <div className="row hp-head">
                 <label className="grow">
@@ -157,9 +175,21 @@ export function HatchPatternsDialog() {
                 </label>
                 {!fresh && def && <span className="units-badge muted small">{KIND_LABEL[def.kind]}{def.project ? '' : ' · built in'}</span>}
                 <span className="grow" />
-                {!fresh && def && !def.project && <button type="button" className="btn" data-testid="hp-duplicate" onClick={() => void duplicate()}><Copy size={13} />Duplicate</button>}
+                {!fresh && def && canCopy(def) && <button type="button" className="btn" data-testid="hp-duplicate" title="A new pattern starting from this one" onClick={duplicate}><Copy size={13} />Duplicate</button>}
                 {!fresh && def?.project && <button type="button" className="btn" data-testid="hp-delete" onClick={() => void remove()}><Trash2 size={13} />Delete</button>}
               </div>
+              {fresh && (
+                <label className="row" data-testid="hp-start-from">
+                  <span className="muted small">Start from</span>
+                  <select aria-label="Start from" data-field="hp-start-from" value={from ?? ''} onChange={(e) => void startFromName(e.target.value)}>
+                    <option value="">Blank: one line at 45°</option>
+                    {list.filter((p) => p.kind === 'lines' || p.kind === 'tile').map((p) => <option key={p.name} value={p.name} data-no-i18n>{p.name}</option>)}
+                  </select>
+                </label>
+              )}
+              {fresh && from && <p className="muted small" data-testid="hp-from-note">{phrase('A copy of {name}: change it, then Make pattern.', { name: from })}</p>}
+              {!fresh && def && !def.project && <p className="muted small" data-testid="hp-builtin-note">Built-in patterns are fixed: Duplicate one to make a copy you can change.</p>}
+              {!fresh && def?.project && def.kind === 'lines' && <p className="muted small" data-testid="hp-edit-note">Change its numbers, then Save. Duplicate starts a new pattern from it.</p>}
               {!fresh && def?.project && <RenameNote was={def.name} name={draft.name} uses={def.uses ?? 0} />}
               <label>
                 <span className="muted small">Description</span>
@@ -177,7 +207,7 @@ export function HatchPatternsDialog() {
               {def?.kind === 'solid' && !fresh && <p className="muted small">The solid fill has no lines.</p>}
               {def?.kind === 'batt' && !fresh && <p className="muted small">The batt insulation is drawn by Lapin as loops along its band: it has no line families.</p>}
               {draft.tile && <p className="muted small" data-testid="hp-tile-note">{phrase('A tile pattern drawn in a cell of {w} × {h} mm. Draw it again and Save as hatch pattern to change its lines.', { w: +draft.tile.width.toFixed(3), h: +draft.tile.height.toFixed(3) })}</p>}
-              {!draft.tile && def?.kind !== 'solid' && def?.kind !== 'batt' && <Families draft={draft} editable={editable} onChange={(families) => setDraft({ ...draft, families })} />}
+              {!draft.tile && (fresh || (def?.kind !== 'solid' && def?.kind !== 'batt')) && <Families draft={draft} editable={editable} onChange={(families) => setDraft({ ...draft, families })} />}
 
               <HatchPreview draft={draft} />
 
@@ -194,13 +224,14 @@ export function HatchPatternsDialog() {
   );
 }
 
-function PatternItem({ p, on, onPick }: { p: PatternRow; on: boolean; onPick: () => void }) {
+function PatternItem({ p, on, onPick, onDelete }: { p: PatternRow; on: boolean; onPick: () => void; onDelete?: () => void }) {
   return (
-    <li>
+    <li className="hp-row">
       <button type="button" className={`hp-item${on ? ' on' : ''}`} data-pattern={p.name} onClick={onPick} title={p.description}>
         <span className="grow" data-no-i18n>{p.name}</span>
         <span className="muted small">{p.kind ? KIND_LABEL[p.kind] : ''}{p.units === 'model' ? ' · ' : ''}{p.units === 'model' ? UNITS_LABEL.model : ''}</span>
       </button>
+      {onDelete && <button type="button" className="icon mini" data-testid="hp-row-delete" title="Delete this pattern" onClick={onDelete}><Trash2 size={12} /></button>}
     </li>
   );
 }
@@ -213,9 +244,9 @@ function RenameNote({ was, name, uses }: { was: string; name: string; uses: numb
 
 // ------------------------------------------------------------ the line-family editor
 
-function NumCell({ value, onCommit, label, className }: { value: number; onCommit: (v: number) => void; label: string; className?: string }) {
+function NumCell({ value, onCommit, label, className, disabled }: { value: number; onCommit: (v: number) => void; label: string; className?: string; disabled?: boolean }) {
   return (
-    <input className={`num ${className ?? ''}`} aria-label={label} inputMode="decimal" key={value} defaultValue={String(value)}
+    <input className={`num ${className ?? ''}`} aria-label={label} inputMode="decimal" key={value} defaultValue={String(value)} disabled={disabled}
       onBlur={(e) => { const v = parseNum(e.target.value); if (v === null) { e.target.value = String(value); return; } if (v !== value) onCommit(v); }}
       onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
   );
@@ -230,12 +261,12 @@ function Families({ draft, editable, onChange }: { draft: Draft; editable: boole
         <tbody>
           {fs.map((f, i) => (
             <tr key={i} data-family={i}>
-              <td><NumCell label="Angle" value={f.angle} onCommit={(v) => onChange(patchFamily(fs, i, { angle: v }))} /></td>
-              <td><NumCell label="Origin x" value={f.origin[0]} onCommit={(v) => onChange(patchFamily(fs, i, { origin: withOrigin(f, 0, v) }))} /></td>
-              <td><NumCell label="Origin y" value={f.origin[1]} onCommit={(v) => onChange(patchFamily(fs, i, { origin: withOrigin(f, 1, v) }))} /></td>
-              <td><NumCell label="Delta x" value={f.deltaX} onCommit={(v) => onChange(patchFamily(fs, i, { deltaX: v }))} /></td>
-              <td><NumCell label="Delta y" value={f.deltaY} onCommit={(v) => onChange(patchFamily(fs, i, { deltaY: v }))} /></td>
-              <td><DashList dashes={f.dashes} onChange={(dashes) => onChange(patchFamily(fs, i, { dashes }))} /></td>
+              <td><NumCell label="Angle" disabled={!editable} value={f.angle} onCommit={(v) => onChange(patchFamily(fs, i, { angle: v }))} /></td>
+              <td><NumCell label="Origin x" disabled={!editable} value={f.origin[0]} onCommit={(v) => onChange(patchFamily(fs, i, { origin: withOrigin(f, 0, v) }))} /></td>
+              <td><NumCell label="Origin y" disabled={!editable} value={f.origin[1]} onCommit={(v) => onChange(patchFamily(fs, i, { origin: withOrigin(f, 1, v) }))} /></td>
+              <td><NumCell label="Delta x" disabled={!editable} value={f.deltaX} onCommit={(v) => onChange(patchFamily(fs, i, { deltaX: v }))} /></td>
+              <td><NumCell label="Delta y" disabled={!editable} value={f.deltaY} onCommit={(v) => onChange(patchFamily(fs, i, { deltaY: v }))} /></td>
+              <td><DashList dashes={f.dashes} editable={editable} onChange={(dashes) => onChange(patchFamily(fs, i, { dashes }))} /></td>
               <td className="row-tools">{editable && fs.length > 1 && <button type="button" className="icon mini" title="Remove this family" onClick={() => onChange(removeFamily(fs, i))}><X size={12} /></button>}</td>
             </tr>
           ))}
@@ -247,25 +278,25 @@ function Families({ draft, editable, onChange }: { draft: Draft; editable: boole
 }
 
 /** The dashes of one family as a list: each a dash, a gap or a dot with its length; empty is a continuous line. */
-function DashList({ dashes, onChange }: { dashes: number[]; onChange: (d: number[]) => void }) {
+function DashList({ dashes, editable, onChange }: { dashes: number[]; editable: boolean; onChange: (d: number[]) => void }) {
   const add = (k: DashKind) => onChange(addDash(dashes, k));
   return (
     <div className="hp-dashes">
       {dashes.length === 0 && <span className="muted small">continuous</span>}
       {dashes.map((d, i) => (
         <span key={i} className="hp-dash" data-kind={dashKind(d)}>
-          <select aria-label="Dash kind" value={dashKind(d)} onChange={(e) => onChange(setDashKind(dashes, i, e.target.value as DashKind))}>
+          <select aria-label="Dash kind" value={dashKind(d)} disabled={!editable} onChange={(e) => onChange(setDashKind(dashes, i, e.target.value as DashKind))}>
             <option value="dash">dash</option><option value="gap">gap</option><option value="dot">dot</option>
           </select>
-          {d !== 0 && <NumCell label="Length" className="hp-dash-len" value={Math.abs(d)} onCommit={(v) => onChange(setDashLength(dashes, i, v))} />}
-          <button type="button" className="icon mini" title="Remove" onClick={() => onChange(removeDash(dashes, i))}><X size={10} /></button>
+          {d !== 0 && <NumCell label="Length" className="hp-dash-len" disabled={!editable} value={Math.abs(d)} onCommit={(v) => onChange(setDashLength(dashes, i, v))} />}
+          {editable && <button type="button" className="icon mini" title="Remove" onClick={() => onChange(removeDash(dashes, i))}><X size={10} /></button>}
         </span>
       ))}
-      <span className="hp-dash-add">
+      {editable && <span className="hp-dash-add">
         <button type="button" className="btn compact" disabled={dashes.length >= MAX_DASHES} onClick={() => add('dash')}>+ dash</button>
         <button type="button" className="btn compact" disabled={dashes.length >= MAX_DASHES} onClick={() => add('gap')}>+ gap</button>
         <button type="button" className="btn compact" disabled={dashes.length >= MAX_DASHES} onClick={() => add('dot')}>+ dot</button>
-      </span>
+      </span>}
     </div>
   );
 }

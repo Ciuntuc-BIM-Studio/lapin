@@ -153,6 +153,15 @@ Ca să schimbi hașura unui singur element într-o singură vedere (scara hașur
 
 ![Un model făcut din numerele lui](shots/hatch-patterns-family.webp)
 
+Dă clic pe numele unui model ca să-l deschizi. Modelele **Acestui proiect** se editează pe loc: schimbă unghiul, originea, decalajele și liniuțele, numele, descrierea sau unitățile, apoi **Salvează**. Cele incluse sunt fixe (câmpurile lor sunt gri); ca să schimbi unul, pornește de la el un model al tău:
+
+- **Duplică** (orice model cu linii sau cu o celulă, inclus sau al tău) deschide un model nou care pornește ca o copie a lui, numit *NUME-COPY*; schimbă-l, apoi **Fă modelul**. Până atunci nu se salvează nimic.
+- **Model nou → Pornește de la** face același lucru din listă: alege modelul de la care pornești, sau *Gol* pentru o linie la 45°.
+
+![Un model nou pornit de la unul inclus](shots/hatch-patterns-start-from.webp)
+
+**Șterge** (în editor, sau coșul de lângă un model al proiectului în listă) scoate un model al proiectului, după ce te întreabă. Un model folosit spune în câte locuri e numit: dacă îl ștergi oricum, materialele, standardele și seturile pierd hașura aceea, iar hașurile desenate iau liniile la 45° (*LINES45*); elementele rămân cum sunt, iar **Anulează** aduce totul înapoi într-un singur pas. Modelele incluse nu se pot șterge.
+
 ### Salvează ca model de hașură
 
 Desenează modelul cu linii, polilinii, arce și cercuri în orice vedere (o țesătură de cărămizi, un rost de placă), selectează-le și alege **Desen → Umplutură → Salvează ca model de hașură** (sau scrie **SAVEHATCH**). Fă clic pe două colțuri pentru celulă (sau <kbd>Enter</kbd> pentru limitele desenului), apoi dă-i un nume și alege unitățile **Desen** sau **Mărime reală**.
