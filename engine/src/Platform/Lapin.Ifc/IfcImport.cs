@@ -1006,9 +1006,10 @@ public static partial class IfcImport
                 rest.Add(e);
             }
             // A wall Lapin wrote over its parts also carries their bodies as its own (issue #29, for readers that colour the wall): read as
-            // references, its parts are taken, as before, and that body is left, so nothing comes twice.
+            // references, its parts are taken, as before, and that body is left, so nothing comes twice. A floor of parts the same with its
+            // plain body (#140, the export's FloorBody).
             var wholes = parentOf.Values.ToHashSet();
-            bool BodyOfItsParts(StepEntity e) => o.ReferenceOnly && e.Type is "IFCWALL" or "IFCWALLSTANDARDCASE" && wholes.Contains(e.Id) && IntentOf(e.Id) != null;
+            bool BodyOfItsParts(StepEntity e) => o.ReferenceOnly && e.Type is "IFCWALL" or "IFCWALLSTANDARDCASE" or "IFCSLAB" && wholes.Contains(e.Id) && IntentOf(e.Id) != null;
             rest.RemoveAll(e =>
             {
                 if (!BodyOfItsParts(e)) return false;

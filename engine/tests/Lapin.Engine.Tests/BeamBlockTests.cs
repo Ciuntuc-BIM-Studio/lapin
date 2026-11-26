@@ -198,6 +198,117 @@ public class BeamBlockTests
         Assert.True((int)p["counts"]!["joists"]! > 0);
     }
 
+    [Fact]
+    public void The_floors_ifc_net_area_and_volume_stay_within_its_gross_ones_its_joists_bearings_left_out()
+    {
+        // #140: joists 125 mm into the walls at both ends made NetArea and NetVolume larger than the gross ones.
+        var (f, slab, _) = Floor(Rect);
+        var g = f.Session.Geometry(slab)!;
+        var built = g.Parts.Sum(p => Measure.Volume(p.Solid));
+        var sets = f.Session.Quantities(slab);
+        var qto = sets.Single(s => s.Name == "Qto_SlabBaseQuantities").Quantities;
+        double Q(string n) => qto.Single(x => x.Name == n).Value;
+        var bearings = 8 * 2 * 0.125 * JoistArea;
+        Assert.Equal(built - bearings, Q("NetVolume"), 6);
+        Assert.True(Q("NetVolume") <= Q("GrossVolume") + 1e-9);
+        Assert.True(Q("NetArea") <= Q("GrossArea") + 1e-9);
+        Assert.Equal(Q("NetVolume") / Q("Width"), Q("NetArea"), 9);
+        // With no opening the floor is whole: net is gross.
+        Assert.Equal(Q("GrossVolume"), Q("NetVolume"), 4);
+        // The floor's own set keeps all it builds, the bearings too (audit 15.11.2026, M2).
+        Assert.Equal(built, sets.Single(s => s.Name == "Lapin_BeamBlockQuantities").Quantities.Single(x => x.Name == "NetVolume").Value, 9);
+        Assert.Equal(bearings, BeamBlock.BearingVolume(BeamBlock.Of(f.Model, f.Model.Get(slab)!)!), 9);
+    }
+
+    [Fact]
+    public void A_self_supporting_i_joist_has_a_top_flange_and_the_concrete_is_less_by_it()
+    {
+        // #152: an I-shaped joist, its top flange 90 × 40 mm at its top.
+        var spec = Spec with { TopFlangeWidth = 0.09, TopFlangeHeight = 0.04 };
+        Assert.Null(spec.Problem());
+        var area = JoistArea + (0.09 - 0.06) * 0.04;
+        Assert.Equal(area, spec.JoistArea, 9);
+        Assert.Equal(12, spec.JoistSection().Count);
+        Assert.Equal(8, Spec.JoistSection().Count);
+        Assert.Equal(JoistArea, Spec.JoistArea, 9);
+        var (f, slab, type) = Floor(Rect, spec: spec);
+        var g = f.Session.Geometry(slab)!;
+        Assert.Equal(4.25 * area, Measure.Volume(g.Parts.First(p => p.Key == "bb-joist:1").Solid), 6);
+        var concrete = Measure.Volume(g.Parts.Single(p => p.Key == "bb-concrete").Solid);
+        Assert.Equal(20 * 0.25 - 8 * 4 * area - 112 * 0.25 * 0.465 * 0.19, concrete, 4);
+        // The blocks between the feet are as before.
+        Assert.Equal(112, g.Parts.Single(p => p.Key == "bb-blocks").Instances!.Count);
+        // Kept on the type and read back; the preview's section draws the I.
+        var kept = BeamBlockSpec.Of(f.Model.Get(type))!;
+        Assert.Equal((0.09, 0.04), (kept.TopFlangeWidth, kept.TopFlangeHeight));
+        var p = (JsonObject)f.Session.Query("architecture.beamBlockPreview", new JsonObject { ["spec"] = spec.ToJson() })!;
+        Assert.Equal(24, ((JsonArray)((JsonArray)p["section"]!).Select(x => x!["role"]!.ToString() == "joist" ? x : null).First(x => x != null)!["pts"]!).Count);
+        // Too wide, too high, or no wider than the web: refused.
+        Assert.NotNull((Spec with { TopFlangeWidth = 0.2, TopFlangeHeight = 0.04 }).Problem());
+        Assert.NotNull((Spec with { TopFlangeWidth = 0.06, TopFlangeHeight = 0.04 }).Problem());
+        Assert.NotNull((Spec with { TopFlangeWidth = 0.09, TopFlangeHeight = 0.12 }).Problem());
+        // An I-joist preset is offered.
+        Assert.Contains(BeamBlockSpec.Presets, x => x.HasTopFlange && x.Problem() == null);
+    }
+
+    [Fact]
+    public void A_type_with_no_top_flange_is_kept_as_before()
+    {
+        // Floors saved before #152 stay byte for byte: no top flange keys written, an inverted T built.
+        var json = Spec.ToJson();
+        Assert.False(json.ContainsKey("topFlangeWidth"));
+        Assert.False(json.ContainsKey("topFlangeHeight"));
+        Assert.Equal(Spec, BeamBlockSpec.From(json) with { Preset = Spec.Preset, Mesh = Spec.Mesh });
+        var i = BeamBlockSpec.From((Spec with { TopFlangeWidth = 0.09, TopFlangeHeight = 0.04 }).ToJson());
+        Assert.True(i.HasTopFlange);
+        // The catalogue's columns.
+        var specs = BeamBlock.ParseCsv("Name;Joist width (mm);Joist height (mm);Spacing (mm);Top flange width (mm);Top flange height (mm)\nI 22/70;120;220;700;90;40\nT;160;175;625;;\n");
+        Assert.Equal((0.09, 0.04), (specs[0].TopFlangeWidth, specs[0].TopFlangeHeight));
+        Assert.False(specs[1].HasTopFlange);
+        Assert.Contains("Top flange width (mm)", BeamBlock.CsvTemplate());
+    }
+
+    [Fact]
+    public void Ifc_floor_body_option_gives_the_floor_a_plain_extrusion_beside_its_parts()
+    {
+        // #140: CYPECAD MEP skips a floor with no body of its own; the option writes its outline extruded by its depth.
+        var (f, slab, _) = Floor(Rect);
+        StepFile Export(IfcExportOptions o)
+        {
+            var path = Path.Combine(Path.GetTempPath(), $"bb-{Guid.NewGuid():N}.ifc");
+            try { IfcExport.Write(f.Session, path, o); return StepFile.Read(path); }
+            finally { File.Delete(path); }
+        }
+        // Off (the default): the parent has no body of its own, its parts have them.
+        var off = Export(new IfcExportOptions());
+        Assert.Empty(off.OfType("IFCEXTRUDEDAREASOLID"));
+        Assert.Equal(8, off.OfType("IFCBEAM").Count());
+        var on = Export(new IfcExportOptions(FloorBody: true));
+        var solid = Assert.Single(on.OfType("IFCEXTRUDEDAREASOLID"));
+        var depth = Slabs.Section(f.Model, f.Model.Get(slab)!).Sum(b => b.To - b.From);
+        Assert.Equal(depth, Convert.ToDouble(solid[3]), 6);
+        Assert.Contains(on.OfType("IFCSHAPEREPRESENTATION"), r => r[1] as string == "Body" && r[2] as string == "SweptSolid");
+        // The parts stay as they were.
+        Assert.Equal(8, on.OfType("IFCBEAM").Count());
+        Assert.Equal(off.OfType("IFCBUILDINGELEMENTPART").Count(), on.OfType("IFCBUILDINGELEMENTPART").Count());
+
+        // Read back by Lapin: the floor rebuilt, no reference; as references, the parts and not the floor's plain body too (nothing twice).
+        var path = Path.Combine(Path.GetTempPath(), $"bb-{Guid.NewGuid():N}.ifc");
+        try
+        {
+            IfcExport.Write(f.Session, path, new IfcExportOptions(FloorBody: true));
+            var back = new Fixture(new ArchitectureModule());
+            var r = IfcImport.Run(back.Session, path, null, out _);
+            Assert.Equal(0, r.References);
+            Assert.Single(back.Model.OfClass(IfcClass.Slab));
+            var refs = new Fixture(new ArchitectureModule());
+            IfcImport.Run(refs.Session, path, new IfcImportOptions(Mode: "reference"), out _);
+            Assert.Null(refs.Model.Get(slab));
+            Assert.Equal(8, refs.Model.Entities.Count(e => on.OfType("IFCBEAM").Any(x => (string?)x[0] == e.Id)));
+        }
+        finally { File.Delete(path); }
+    }
+
     sealed class Qc(Fixture f) : IQueryContext
     {
         public IModelView Model => f.Model;

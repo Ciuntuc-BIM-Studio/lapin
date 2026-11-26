@@ -679,6 +679,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         new Schedules.ScheduleEntity().Register(r);
         r.Service<IScheduleSource>(new RoomSchedule());
         r.Service<IScheduleSource>(new BeamBlockSchedule());
+        // A floor of parts with a plain body of its own in IFC, when the export asks (#140).
+        r.Service<IIfcEnvelopes>(new SlabEnvelopes());
         r.Service<IElementBuildUps>(new RoomFinishBuildUps());
         r.Service<IElementUpdate>(new RoomUpdate());
         r.Service<IProjectUpgrade>(new RoomNameUpgrade());

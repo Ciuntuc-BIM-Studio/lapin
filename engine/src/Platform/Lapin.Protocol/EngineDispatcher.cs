@@ -1297,7 +1297,9 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                     // `advancedBrep` (docs/plan-studio-freeform.md §9): bodies known exactly (Studio's) as IfcAdvancedBrep on their exact surfaces.
                     p["advancedBrep"] is JsonValue abv && abv.TryGetValue<bool>(out var advanced) && advanced,
                     // `derivedLoadBearing` (docs/plan-structural-usage.md): Pset_…Common.LoadBearing also where only the rule says it.
-                    p["derivedLoadBearing"] is JsonValue dlv && dlv.TryGetValue<bool>(out var derived) && derived);
+                    p["derivedLoadBearing"] is JsonValue dlv && dlv.TryGetValue<bool>(out var derived) && derived,
+                    // `floorBody` (#140): a floor of parts (beam and block, timber, CLT) also with a plain body of its own, its outline by its depth.
+                    p["floorBody"] is JsonValue fbv && fbv.TryGetValue<bool>(out var floorBody) && floorBody);
                 if ((string?)p["path"] is { Length: > 0 } ifcPath) return (IfcExport.Write(session, RefuseOverRead(HostFiles.Check(ifcPath)), options).ToJson(), null);
                 // The file made once, of its size: a hall of 33 bays is 150 MB of IFC (report #156).
                 var (ifc, _) = IfcExport.Bytes(session, "project.ifc", options);

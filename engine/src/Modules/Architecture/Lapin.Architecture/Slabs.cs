@@ -381,12 +381,16 @@ public static class Slabs
         var area = Area(slab) - OutlineHoles.Area(slab);
         var section = Section(m, slab);
         var width = section.Max(b => b.To) - section.Min(b => b.From);
-        if (BeamBlock.Of(m, slab) is { } bb)
+        var bb = BeamBlock.Of(m, slab);
+        if (bb != null)
             foreach (var q in BeamBlock.Quantities(bb, g, m, area * width)) yield return q;
         var net = g.Parts.Sum(p => Measure.Volume(p.Solid));
         // A shaped floor's gross volume is its shaped envelope's (the same as area × width when nothing steps or is held).
         var shaped = FloorSlopes.Has(slab);
         var gross = shaped && FloorSlopes.GrossVolume(slab, m) is { } gv ? gv : area * width;
+        // A beam-and-block floor's joists bear into the supports past its outline (#140): IFC's net is the floor's, within its gross
+        // (its own set, Lapin_BeamBlockQuantities, keeps all it builds).
+        if (bb != null) net = Math.Min(net - BeamBlock.BearingVolume(bb), gross);
         yield return new QuantitySet("Qto_SlabBaseQuantities",
         [
             new("Width", width, "LENGTH"),
@@ -418,5 +422,21 @@ public static class Slabs
             ], $"layer:{index}", name, material);
         }
         if (shaped) foreach (var q in FloorSlopes.Quantities(slab, g, m)) yield return q;
+    }
+}
+
+/// <summary>
+/// A floor's plain body for the IFC export's option (#140, <c>IfcExportOptions.FloorBody</c>): its whole thickness over its outline,
+/// an extrusion from its bottom when its top is flat, its shaped envelope's body when not.
+/// </summary>
+public sealed class SlabEnvelopes : IIfcEnvelopes
+{
+    public IfcEnvelope? EnvelopeOf(IModelView model, Entity element)
+    {
+        if (element.Class != IfcClass.Slab || Slabs.Envelope(element, model) is not { } body) return null;
+        if (FloorSlopes.Has(element)) return new IfcEnvelope(body);
+        var section = Slabs.Section(model, element);
+        var bottom = section.Min(b => b.From);
+        return new IfcEnvelope(body, Slabs.Top(model, element) + bottom, section.Max(b => b.To) - bottom);
     }
 }
