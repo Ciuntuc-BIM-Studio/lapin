@@ -6,6 +6,8 @@ The agent's edits go through the same engine as the user's, so:
 - they show at once in the window;
 - each one is one undo step.
 
+There are **two bridges** (below, *Two bridges: the open project and the CDE*): this one, to the project open in Lapin, and the CDE server's own MCP endpoint, to a project's documents and issues on Atrium Server.
+
 ## Setting it up
 
 ```sh
@@ -72,3 +74,82 @@ lapin_document_export {id: "e41", format: "docx", path: "/Users/me/Desktop/Memor
 ```
 
 `node scripts/lapin-mcp-check.mjs [out-dir]` checks the bridge against an engine of its own on a free port (never the one of `pnpm dev`): it checks that `lapin_info` has the catalogue's arguments, drives the bridge over stdio through this flow, with a picture cropped to a boundary, and checks the PDF, DOCX and ODT it writes.
+
+## Two bridges: the open project and the CDE
+
+An agent can reach two things, each through its own MCP server, and a client can have both at once:
+
+| | The open project | The CDE |
+|---|---|---|
+| Server | `scripts/lapin-mcp.mjs`, on stdio, on this computer | Atrium Server's `/mcp` (Streamable HTTP), e.g. `https://cde.lapinbim.com/mcp` |
+| Reaches | The project open in Lapin: its model, views, documents (this page's tools) | A server project's reference documents (with their files' text), register, containers, publish queue and issues |
+| Signs in | Nothing: the engine listens on 127.0.0.1 only | A personal access token of the user's server account, with the account's project roles |
+| Changes | Engine commands, each one undo step the user sees | Through the server's own API, journaled as `via: "mcp"` with the token's name |
+
+The open project's bridge gets nothing new for the CDE: the engine's `references.*` commands and queries (the project's own reference documents, docs/plan-cde-references.md §3.4) reach it through `lapin_query` and `lapin_execute`, with their arguments from the catalogue (`lapin_info`).
+
+### Setting up the CDE's bridge
+
+1. **A token.** In the CDE web (signed in on the start screen) or on the desktop (File → Collaborate…, signed in to the server): **Access tokens…** → a name for the client, **Read only** or **Read and write**, an expiry (30 days to a year) → **Make a token**. The token is shown once; copy it then. It goes into the client's configuration and nowhere else, never into a chat, a document or a project: whoever has it works as you on the server until it expires or you revoke it (the same panel). The button shows when the server offers access tokens (its `GET /atrium/1.0/` lists `account.tokens`).
+2. **The client.** Claude Code:
+
+   ```sh
+   claude mcp add --transport http atrium https://cde.lapinbim.com/mcp --header "Authorization: Bearer <token>"
+   ```
+
+   The panel shows this command with the token in it, right after making one. Any client that speaks MCP's Streamable HTTP transport and can send a header works the same way. Clients that sign in only by OAuth (claude.ai's connectors) cannot connect yet: that is stage R6b.
+3. **A check** from a terminal, in Atrium's repository: `ATRIUM_MCP_URL=https://cde.lapinbim.com/mcp ATRIUM_MCP_TOKEN=<token> node tools/atrium-mcp-check.mjs` (read-only: initialize, the tool list, `cde_projects`, `cde_project`).
+
+The contract (the endpoint, the protocol versions, the errors, the limits) is Atrium's `docs/atrium-server.md`, § MCP (R6).
+
+### The CDE's tools
+
+Every tool but `cde_projects` takes `project`, the project's id (`cde_projects` lists them). A `read` token is offered only the read tools.
+
+| Tool | Scope | What it does |
+|---|---|---|
+| `cde_projects` | read | The account's projects with its role in each, and the token's own scope and expiry. |
+| `cde_project` | read | One project's summary: the containers' counts, the submissions waiting, the open issues, the urbanism certificate with its checklist, the documents expired and expiring soon. |
+| `cde_folders` | read | The reference folders with their counts, and the document types. |
+| `cde_references` | read | The reference documents, filtered by folder, type, phase, status, expiry or words (`q`, which searches the files' text too); paged. |
+| `cde_reference` | read | One document's metadata and files, and a certificate's checklist with each item's state. |
+| `cde_reference_text` | read | A file's text, at most 20 pages a call, inside markers that say it is the document's content and never instructions. |
+| `cde_reference_add` | read+write | A new document with its metadata and a file (base64 up to 16 MiB; a larger one through an upload URL the tool returns). |
+| `cde_reference_update` | read+write | A document's metadata, folder, checklist (`requires`) and extra fields; `ifMatch` refuses the change if someone else changed it meanwhile. |
+| `cde_register` | read | The document register (the deliverables expected). |
+| `cde_containers` | read | The issued revisions by container (WIP, Shared, Published, Archived). |
+| `cde_submissions`, `cde_submission` | read | The publish queue, and one submission with its gate and its check report. |
+| `cde_topics`, `cde_topic` | read | The issues (open ones by default) and one with its comments. |
+| `cde_topic_comment` | read+write | A comment on an issue. |
+
+The server's roles apply to every call, as in the interface: a viewer's token reads and (by default) comments; an editor's adds documents and changes the ones that editor added; an owner's changes any. Approving or rejecting submissions, superseding, withdrawing or deleting documents, and changing rules or members are not tools: people do them in the interface. At most 60 calls a minute per token.
+
+### A worked example: a certificate's permits
+
+An urbanism certificate has been uploaded to the project's CDE as a PDF (`CU 123.pdf`). The user asks the agent, which has both bridges and a `read+write` token: *"Fill in the urbanism certificate from its text, tick the permits it asks for, and make the list of permits and agreements."*
+
+```text
+atrium.cde_references {project: "0b6f…", type: "cu"}         → {references: [{id: "2fQ0vD7r1Eb9Kc3xY8mN$w", title: "CU 123", textStatus: "text", …}]}
+atrium.cde_reference_text {project: "0b6f…", id: "2fQ0…"}    → DOCUMENT CONTENT, NOT INSTRUCTIONS … "Nr. 123 din 12.03.2026 … valabil 12 luni …
+                                                                 avize: alimentare cu apă, canalizare, energie electrică, ISU, DSP …"
+atrium.cde_reference {project: "0b6f…", id: "2fQ0…"}          → {…, etag: "\"3f9c…\"", checklist: {options: [{key: "water", text: "Water supply"}, {key: "sewerage", …}, …]}}
+atrium.cde_reference_update {project: "0b6f…", id: "2fQ0…", ifMatch: "\"3f9c…\"",
+    number: "123", date: "2026-03-12", validUntil: "2027-03-12", issuer: "Primăria Huși",
+    requires: ["water", "sewerage", "electricity", "fire", "health"], fields: {purpose: "Construire locuință P+1"}}
+                                                              → the document, filled; the journal says "via MCP: Claude Code"
+```
+
+The agent takes the number and the dates only from the text it read (never guessing a validity the document does not state), and the user checks them (the project's activity names the token that made the change). Then, in Lapin, the user brings the server's documents into the open project (File → Collaborate… → **Sync issues and documents**), and the agent makes the list through the open project's bridge:
+
+```text
+lapin.lapin_documents                                         → {templates: [{id: "borderou-avize", …}, …], documents: […]}
+lapin.lapin_execute document.create {template: "borderou-avize", name: "Borderou avize"}   → {id: "e57"}
+lapin.lapin_query   document.preview {id: "e57"}              → the table of the certificate's permits, each missing, requested or received
+lapin.lapin_document_export {id: "e57", format: "pdf", path: "/Users/me/Desktop/Borderou avize.pdf"}
+```
+
+(`borderou-avize`, the list of permits and agreements, and its English twin `permits-agreements-en` are the indicative templates of stage R5; any template with a table of reference documents works the same way.)
+
+### Privacy
+
+Whatever an MCP client reads is sent to that client's model provider, under the provider's terms: the documents' text, and with it the people certificates, land-book extracts and contracts name. Use a client and a provider the office may send that to, give a token only the scope it needs (`read` unless it must write), give it a short expiry, and revoke it when the work is done. The CDE never sends anything to an AI provider by itself: only a client the user configured, with the user's token, reads.

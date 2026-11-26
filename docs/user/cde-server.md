@@ -1,7 +1,7 @@
 ---
 title: Working on a CDE server
 order: 126
-summary: Sign in to your office's CDE server (Atrium Server, such as cde.lapinbim.com), clone a project, save your work to the server and get the others', keep the issues in step, and, as an administrator, manage the accounts and projects.
+summary: Sign in to your office's CDE server (Atrium Server, such as cde.lapinbim.com), clone a project, save your work to the server and get the others', keep the issues in step, connect an AI client with an access token, and, as an administrator, manage the accounts and projects.
 ---
 
 A CDE server keeps your office's projects in one place: every save with its author and note, the versions and issue tags, the members of each project and their roles, and the issues (BCF topics) everyone answers. Lapin works on it from the desktop app and from the browser. The company's server is at **cde.lapinbim.com**; your office can run its own, Atrium Server, which is free.
@@ -144,6 +144,28 @@ With a project open (File → Collaborate → Collaborate…), owners also have 
 A submission's checks show an **IDS** group after the documents: how many specifications pass and fail, then each IDS file over each model, specification by specification, **Pass**, **Fail** or **Skipped** (written for another IFC version). A failing one shows what it requires, the failing elements (GlobalId, class and name, the requirement, what the element has and what is expected; the first 50, and how many more), and **Failing GlobalIds**, with a button that copies them. Notes and warnings say when the commit has no IFC copy on the server, or a model could not be read, was too large, or took too long.
 
 Before submitting, **Manage → Issue… → On the CDE server → Check on the server** (editors and owners) saves the project to the server and runs its IDS files there on that commit, showing the same report; nothing is submitted. It is the server's own check, the one the approval counts; the project's own IDS files (Manage → IDS…) still run here before Submit for approval as they did.
+
+## Access tokens and AI clients
+
+An AI client (Claude Code, Claude Desktop, or another client of the Model Context Protocol) can work on the server's projects for you: read the reference documents and the text of their files, the register, the containers, the submissions and the issues, and, when you let it write, add and fill reference documents and comment on issues. It signs in with an **access token** you make; it then has your account's role in each project, no more. Approving and rejecting submissions, superseding, withdrawing or deleting documents, and changing rules or members stay with people.
+
+**Access tokens…** (beside **Change password…**, on the start screen in the browser, and in **File → Collaborate → Collaborate…** on the desktop, signed in to the server) lists your tokens: their name, their scope, when they expire and when they were last used. It shows when the server offers access tokens.
+
+To connect a client:
+
+1. Type a name for the client (*Claude Code on the office laptop*: it shows in the project's activity beside what the client changed), choose **Read only** or **Read and write**, choose how long the token lasts (30 days to a year; 90 days by default), and click **Make a token**.
+2. The token is shown **once**. Copy it with the button beside it; it cannot be shown again (if you lose it, revoke it and make another).
+3. Paste it **only into the AI client's configuration**: never into a chat, a document, an e-mail or a project. Whoever has it works on the server as you until it expires or you revoke it. For Claude Code, the panel shows the command to run, with the token in it:
+
+   ```sh
+   claude mcp add --transport http atrium https://cde.lapinbim.com/mcp --header "Authorization: Bearer <token>"
+   ```
+
+The trash button **revokes** a token: the clients using it stop at once. Changing your password, or an administrator disabling your account, revokes all your tokens too.
+
+What the client changes is in the project's **Activity** like any other change, marked as made through MCP with the token's name.
+
+Whatever a client reads is sent to its model provider: the documents' text, and the people that certificates, land-book extracts and contracts name. Use a client your office may send that to, give a token **Read only** unless it must write, and revoke it when the work is done. For developers, the tools and an example are in docs/mcp.md.
 
 ## Administration
 
