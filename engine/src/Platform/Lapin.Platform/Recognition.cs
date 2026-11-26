@@ -100,6 +100,12 @@ public sealed class RecognitionContext(IServices services)
 
     public void Skip(string reason) => Skipped[reason] = Skipped.GetValueOrDefault(reason) + 1;
 
+    /// <summary>Whether the fidelity gate enforces: what differs from the file comes back as its reference.</summary>
+    public bool GateEnforced { get; init; }
+
+    /// <summary>The elements a recogniser keeps references (their GlobalIds), not to be tried again from their triangles.</summary>
+    public HashSet<string> Kept { get; } = [];
+
     /// <summary>
     /// Whether a column or beam whose section is none of the parametric ones (a steel profile, a shaped concrete section) is
     /// made with its body's own section as an outline (or its type's catalogue profile when that is the body's), the fidelity gate

@@ -31,7 +31,7 @@ public static partial class IfcImport
         void PrepareRecognition()
         {
             recognizers = [.. s.Catalog.All<IIfcRecognizer>()];
-            recognition = new RecognitionContext(s.Catalog);
+            recognition = new RecognitionContext(s.Catalog) { GateEnforced = o.Gate.Enforcing };
             fillOf = [];
             fillIdOf = [];
             foreach (var r in f.OfType("IFCRELFILLSELEMENT")) if (f.Get(r[5]) is { } filler) { fillOf[Ref(r[4])] = filler; if (Str(filler[0]) is { } fg) fillIdOf[fg] = filler.Id; }
@@ -146,6 +146,9 @@ public static partial class IfcImport
         FidelityReport? fidelity;
         /// <summary>The elements the gate made references again (enforce), with the fills and finishes that went with them.</summary>
         public HashSet<string> Reverted { get; } = [];
+
+        /// <summary>Whether a recogniser keeps this element the reference it came as (<see cref="RecognitionContext.Kept"/>).</summary>
+        public bool Kept(string id) => recognition?.Kept.Contains(id) == true;
 
         /// <summary>The file's bodies of the gated elements (by file id), read in <see cref="Gate"/>; kept for <see cref="Measure"/> when the gate only reports.</summary>
         System.Collections.Concurrent.ConcurrentDictionary<int, List<MeshBuilder>>? gateBodies;

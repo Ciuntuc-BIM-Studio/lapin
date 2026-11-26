@@ -593,6 +593,13 @@ public sealed class ForeignElements : IIfcRecognizer
         if (contour.Count < 3) { ctx.Skip("a floor without a readable contour"); return null; }
         var storey = edit.Model.Get(e.StoreyId);
         if (storey == null) { ctx.Skip("a floor without a storey"); return null; }
+        var voids = e.Openings.Select(op => (Opening: op, Ring: op.Fill == null ? ThroughVoid(op, prism) : null)).ToList();
+        if (ctx.GateEnforced && voids.Any(v => v.Ring != null) && voids.Any(v => v.Ring == null))
+        {
+            ctx.Kept.Add(e.GlobalId);
+            ctx.Skip("a floor with a through opening and another it cannot take (not one vertical void through its whole depth, or with a door or window in it)");
+            return null;
+        }
         var offset = Math.Round(prism.TopZ - storey.Num("elevation"), 6);
         var type = SlabType(edit, e, thickness, ctx);
         var slab = new Entity(e.GlobalId, IfcClass.Slab, e.Name ?? type.Name, new JsonObject { ["contour"] = Slabs.ContourJson(contour), ["offset"] = offset }, e.PredefinedType is "ROOF" or "LANDING" or "BASESLAB" ? e.PredefinedType : "FLOOR");
@@ -606,12 +613,12 @@ public sealed class ForeignElements : IIfcRecognizer
             try { Slabs.AddOpening(edit, slab, ring); } catch (CommandException ex) { ctx.Notes.Add($"Floor {e.Name}: {ex.Message}"); }
         }
         // What the file voids it with (an IfcOpeningElement's body): a vertical void through its whole depth, its outline in plan
-        // (a recess, a sloped void, one the file clipped or one with holes of its own is no such opening); the file's GlobalId
-        // and name kept, as a wall's opening keeps them. What is not carried leaves the floor a reference at the gate.
-        foreach (var op in e.Openings)
+        // (a recess, a sloped void, one the file clipped, one with holes of its own or one with a door or window in it is no
+        // such opening); the file's GlobalId and name kept, as a wall's opening keeps them. A floor none of whose openings is
+        // carried is the gate's to judge.
+        foreach (var (op, ring) in voids)
         {
-            if (op.Fill != null) { ctx.Skip("a floor opening with a door or window in it"); continue; }
-            if (ThroughVoid(op, prism) is not { } ring) { ctx.Skip("a floor opening that is not a vertical void through its whole depth"); continue; }
+            if (ring == null) continue;
             try
             {
                 var opening = Slabs.AddOpening(edit, slab, ring, id: op.GlobalId, name: op.Name?.Trim());

@@ -42,7 +42,7 @@ public static class ArchicadRecognition
         var recognizers = services.All<IIfcRecognizer>();
         var kept = new Dictionary<string, int>();
         void Keep(string why, int n = 1) => kept[why] = kept.GetValueOrDefault(why) + n;
-        var ctx = new RecognitionContext(services);
+        var ctx = new RecognitionContext(services) { GateEnforced = gate.Enforcing };
         var elOf = offered.GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.First().El);
         var meta = new Dictionary<string, (JsonNode? Meta, JsonNode? Props, JsonNode? Source, JsonNode? Classes)>();
         void Remember(Entity e) => meta[e.Id] = (e.Attrs[ArchicadReceive.Key]?.DeepClone(), e.Attrs["properties"]?.DeepClone(), e.Attrs["source"]?.DeepClone(), e.Attrs[Classifications.Key]?.DeepClone());
