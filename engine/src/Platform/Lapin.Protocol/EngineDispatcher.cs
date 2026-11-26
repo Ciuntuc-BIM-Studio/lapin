@@ -864,7 +864,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     /// changes the keys other people's sheets show), and deleting a reference document outright (<c>references.delete</c>,
     /// docs/plan-cde-references.md §3.4: an owner's; a guest withdraws or supersedes one instead).
     /// </summary>
-    public static readonly string[] HostOnlyCommands = ["scripting.", "graphs.", "marks.renumber", "markRules.renumber", "speckle.", "material.renumberKeys", "references.delete"];
+    public static readonly string[] HostOnlyCommands = ["scripting.", "graphs.", "marks.renumber", "markRules.renumber", "speckle.", "archicad.", "material.renumberKeys", "references.delete"];
 
     /// <summary>
     /// The namespaces of queries no guest asks: a project's graphs (their evaluation runs the host's commands on a copy of the
@@ -872,7 +872,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     /// the scan of the project folder for reference documents (<c>references.scan</c>): it reads the host's disk. The other
     /// <c>references.*</c> queries (list, get, file, text, suggest, checklist, folders, types) are open to every guest through <c>doc.query</c>.
     /// </summary>
-    public static readonly string[] HostOnlyQueries = ["graphs.", "speckle.", "references.scan"];
+    public static readonly string[] HostOnlyQueries = ["graphs.", "speckle.", "archicad.", "references.scan"];
 
     /// <summary>Whether a <c>doc.execute</c> names a host-only command, itself or as a step of its batch.</summary>
     static bool HostOnly(JsonObject p)

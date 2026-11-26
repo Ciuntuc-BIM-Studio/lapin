@@ -1,0 +1,1 @@
+{ "id": "archicad", "name": "Archicad", "assembly": "Lapin.Archicad.dll", "requires": ["core"], "desktopOnly": true }

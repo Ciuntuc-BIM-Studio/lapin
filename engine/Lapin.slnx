@@ -30,6 +30,7 @@
     <Project Path="src/Modules/Drafting/Lapin.Drafting/Lapin.Drafting.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Exchange/">
+    <Project Path="src/Modules/Exchange/Lapin.Archicad/Lapin.Archicad.csproj" />
     <Project Path="src/Modules/Exchange/Lapin.Speckle/Lapin.Speckle.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Interior/">

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The Archicad connector (docs/plan-archicad.md, decision 882), stage A1: a running Archicad's model received through
+    Archicad's JSON API and the Tapir add-on (MIT, which the user installs in Archicad; Lapin neither ships nor links it: it
+    speaks JSON over HTTP to 127.0.0.1). No package. Desktop only ("desktopOnly" in module.json): the browser cannot reach a
+    local Archicad, so the web build never builds it in.
+  -->
+  <PropertyGroup>
+    <LapinModuleId>archicad</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+    <!-- The fidelity gate (RecognitionFidelity), as the IFC import and the Speckle receive measure with it. -->
+    <ProjectReference Include="../../../Platform/Lapin.Ifc/Lapin.Ifc.csproj" Private="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Lapin.Engine.Tests" />
+  </ItemGroup>
+</Project>
