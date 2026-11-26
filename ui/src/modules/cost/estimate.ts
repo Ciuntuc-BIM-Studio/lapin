@@ -159,7 +159,7 @@ export async function exportPdf(form?: string): Promise<void> {
 /** A form as a schedule, placed on a new sheet (A3), the sheet opened. */
 export async function formOnSheet(form: string): Promise<void> {
   const kind = form === 'estimate' ? 'estimate' : `estimate-${form}`;
-  const label = FORMS.find((f) => f.id === form)?.label ?? 'Estimate';
+  const label = FORMS.find((f) => f.id === form)?.label ?? (form === 'cashflow' ? 'Cash flow' : 'Estimate');
   const r = await execute('architecture.createSchedule', { kind, name: label }) as { id?: string } | null;
   if (!r?.id) return;
   // The new sheet takes the schedule in its own command (`viewId`). The schedule's id is only known once it is made, so

@@ -4,13 +4,15 @@
  * and go on sheets like views. The estimate (docs/plan-4d5d.md, stage 6): the user's price lists, the articles on types
  * and the rules on materials (Map articles), the estimate worked out from the model, its Romanian forms (F3, F2,
  * C6–C9) on sheets, in a workbook and a PDF. The tab was Quantities until the estimate came. Cost over time (stage 7): the
- * estimate laid on the work schedule, the S-curve and the month table, when the Planning module is there too.
+ * estimate laid on the work schedule, the S-curve and the month table, when the Planning module is there too; the cash
+ * flow beside it (the payments on the contract's terms, the peak funding need).
  */
 
-import { Calculator, CalendarRange, FileSpreadsheet, FileText, ListChecks, Sheet, Sigma, Table2, Tags } from 'lucide-react';
+import { Calculator, CalendarRange, FileSpreadsheet, FileText, ListChecks, Sheet, Sigma, Table2, Tags, Wallet } from 'lucide-react';
 import type { LapinModule } from '../../platform/module';
 import { useUi } from '../../app/store';
 import { openCostTime } from './costTime';
+import { openCashFlow } from './cashFlow';
 import { exportPdf, exportXlsx, formOnSheet, openEstimate, useEstimate } from './estimate';
 import { exportTakeoff, takeoff } from './schedules';
 import { lazyPart } from '../../platform/lazyPart';
@@ -23,6 +25,7 @@ const PriceListsDialog = lazyPart(() => import('./PriceListsDialog').then((m) =>
 const MapArticlesDialog = lazyPart(() => import('./MapArticlesDialog').then((m) => m.MapArticlesDialog), { title: 'Map articles' });
 const EstimateView = lazyPart(() => import('./EstimateView').then((m) => m.EstimateView), { inline: true });
 const CostTimeView = lazyPart(() => import('./CostTimeView').then((m) => m.CostTimeView), { inline: true });
+const CashFlowView = lazyPart(() => import('./CashFlowView').then((m) => m.CashFlowView), { inline: true });
 
 const cost: LapinModule = {
   id: 'cost',
@@ -49,6 +52,7 @@ const cost: LapinModule = {
         label: 'Estimate', tools: [
           { id: 'cost.estimate', label: 'Estimate…', icon: Calculator, run: () => void openEstimate() },
           { id: 'cost.overTime', label: 'Cost over time', icon: CalendarRange, run: () => openCostTime() },
+          { id: 'cost.cashFlow', label: 'Cash flow', icon: Wallet, run: () => openCashFlow() },
         ],
         small: [
           { id: 'cost.formSheet', label: 'Form on sheet', icon: Sheet, run: () => void formOnSheet(useEstimate.getState().form) },
@@ -58,7 +62,7 @@ const cost: LapinModule = {
       },
     ],
   }],
-  views: { estimate: { label: 'Estimate', component: EstimateView }, costTime: { label: 'Cost over time', component: CostTimeView } },
+  views: { estimate: { label: 'Estimate', component: EstimateView }, costTime: { label: 'Cost over time', component: CostTimeView }, cashFlow: { label: 'Cash flow', component: CashFlowView } },
   dialogs: { schedules: SchedulesDialog, 'cost.prices': PriceListsDialog, 'cost.map': MapArticlesDialog },
 };
 

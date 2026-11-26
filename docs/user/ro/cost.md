@@ -16,6 +16,7 @@ Grupurile de cost sunt pe tabul **Execuție**, după cele ale programului lucră
 - **Deviz…**: deschide devizul sub vedere (prima dată îl și face).
 - **Formular pe planșă**, **Deviz XLSX** și **Deviz PDF**: devizul și formularele lui pe o planșă, într-un registru de calcul sau într-un PDF (mai jos).
 - **Costul în timp**: devizul pus pe programul lucrărilor, curba S și tabelul lunar (mai jos).
+- **Flux de numerar**: plățile după condițiile contractului tău, lună de lună, și necesarul maxim de finanțare (mai jos).
 
 Devizul se calculează din model la fiecare schimbare. Un perete pe care îl desenezi acum intră imediat în deviz, cu cantitățile lui. Se păstrează doar prețurile, articolele de pe tipuri, regulile și rândurile tale.
 
@@ -130,8 +131,28 @@ Valorile sunt cheltuieli directe, ca rândurile devizului. Gantt-ul arată costu
 
 Situațiile de lucrări lunare, valoarea câștigată și mai multe linii de bază sunt pentru ediția premium.
 
+## Fluxul de numerar
+
+Curba S e costul *făcut*. Fluxul de numerar sunt banii: ce plătește beneficiarul și când, ce plătești tu și când, și cât trebuie să găsești între timp. **Execuție → Flux de numerar** (sau **Flux de numerar** din bara curbei S) îl deschide în locul curbei S; **Curba S** te întoarce.
+
+Merge pe programul **planificat** și se calculează din deviz la fiecare schimbare. Se păstrează doar condițiile tale, pe deviz:
+
+- **Contract**: **valoarea certificată**: **devizul fără TVA** (cheltuieli directe, indirecte și profit), **cheltuielile directe** sau un **preț de contract** pe care îl scrii (prețul beneficiarului; certificatele îl împart proporțional cu costurile planificate). Cu **TVA** bifat, TVA-ul la cota devizului se plătește odată cu fiecare plată, la încasări și la plăți.
+- **Avans**: un procent din valoarea contractului, plătit într-o zi aleasă (o dată sau începutul unei sarcini ori al unui jalon; implicit începutul programului). Fiecare certificat îl recuperează proporțional (valoarea lui × avans ÷ valoarea contractului); ultimul recuperează ce a rămas.
+- **Garanția de bună execuție (reținerea)**: procentul reținut din fiecare certificat, eliberat în două părți: o parte la **recepția la terminarea lucrărilor** (o dată sau sfârșitul unei sarcini; implicit sfârșitul programului), restul după **perioada de garanție** (luni de la recepție). Fiecare eliberare se plătește cu termenul de plată.
+- **Certificate și plată**: **lunar** (într-o zi a lunii; 0 e ultima ei zi) sau **săptămânal** (în fiecare duminică). Un certificat ia lucrul planificat de la cel dinainte; se plătește valoarea lui netă (certificat − reținere − avans recuperat) după **plătit după** zile.
+- **Plăți**: bifează **Arată plățile** ca să vezi ce plătești: **cheltuielile directe** sau **costurile cu indirectele** (tot, fără profit), fiecare plătit furnizorilor după numărul de zile ales de la data la care s-a făcut.
+
+Fără nimic setat se arată valorile implicite ale Lapin, marcate **orientative**: practica românească așa cum o citește Lapin (situații de lucrări lunare la sfârșitul lunii, plătite în 30 de zile, garanție 5 % eliberată jumătate la recepție și jumătate după o perioadă de garanție de 24 de luni, fără avans, furnizori plătiți în 30 de zile). Contractul tău decide: schimbă oricare dintre ele; **Valorile implicite Lapin** le pune înapoi. Fiecare schimbare e un pas de anulare.
+
+Graficul arată o bară pe perioadă pentru **fluxul net** (verde când intră mai mult, roșu când iese mai mult), **cumulatul** ca linie și un punct roșu la **necesarul maxim de finanțare**: cel mai jos punct al cumulatului, banii pe care trebuie să-i finanțezi, și luna în care se întâmplă (scris și deasupra graficului). Sub el, tabelul pe luni (sau **pe săptămâni**): costul făcut, certificatul, reținerea, avansul recuperat, încasările, plățile, netul, cumulatul și soldurile încă reținute; apoi fiecare certificat cu data lui, deducerile, valoarea netă și ziua plății, și eliberările garanției.
+
+**Tabel pe planșă** pune tabelul pe o planșă nouă (extrasul **Cash flow**, pe luni). **XLSX** salvează perioadele și certificatele într-un registru, **CSV** perioadele.
+
+Cu toate condițiile la zero (valoarea certificată: cheltuielile directe, fără avans, fără reținere, plătit după 0 zile, furnizori după 0 zile, la plăți cheltuielile directe), încasările sunt costul fiecărei luni, ca în tabelul curbei S. Certificatele lucrului realizat efectiv (situațiile de lucrări din progres) sunt pentru ediția premium; când e prezentă, certificatele ei iau locul celor planificate până la ultimul emis.
+
 ## IFC
 
 **Fișier → Exportă → Exportă IFC, Fragments sau BOS…** scrie devizul ca **IfcCostSchedule**: capitolele și rândurile ca **IfcCostItem**, cantitatea fiecărui rând și prețurile lui unitare ca patru **IfcCostValue** (Material, Labour, Equipment, Transport), elementele pe care le măsoară fiecare rând atribuite lui (**IfcRelAssignsToControl**), moneda ca **IfcMonetaryUnit** al proiectului. La import, un deviz își păstrează rândurile cum le are fișierul, cu aceleași totaluri. Bifează **Rânduri din model** ca să adaugi rândurile pe care le dă modelul tău.
 
-Cu un program al lucrărilor, fiecare rând e atribuit și sarcinilor în care se execută (**IfcRelAssignsToControl** spre **IfcTask**-urile lor). La import, rândurile își păstrează sarcinile, deci curba S revine la fel. Un rând prețuit după timpul pe șantier își scrie **Time** și **Duration** în **Lapin_CostItem**.
+Cu un program al lucrărilor, fiecare rând e atribuit și sarcinilor în care se execută (**IfcRelAssignsToControl** spre **IfcTask**-urile lor). La import, rândurile își păstrează sarcinile, deci curba S revine la fel. Un rând prețuit după timpul pe șantier își scrie **Time** și **Duration** în **Lapin_CostItem**. Condițiile fluxului de numerar pe care le-ai setat se scriu în **Lapin_Estimate** (**CashFlow.Advance**, **CashFlow.Retention**, **CashFlow.PaymentDays**…) și se citesc înapoi; o sarcină aleasă pentru avans sau recepție nu, deci data ei revine la cea a programului.
