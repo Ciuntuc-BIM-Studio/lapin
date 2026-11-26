@@ -56,6 +56,10 @@ export function ExchangeExportDialog() {
   const [derivedLoadBearing, setDerivedLoadBearing] = useState(false);
   // Studio solids known exactly as IfcAdvancedBrep (docs/plan-studio-freeform.md §9): off, every body is written as its facets, as before.
   const [advancedBrep, setAdvancedBrep] = useState(false);
+  // A mirrored door or window an occurrence of its own type, its hand in its OperationType (issue #141): off, a "(mirrored)" type of its own, as before.
+  const [mirroredSameType, setMirroredSameType] = useState(false);
+  // Lintels IfcBeam LINTEL of their own with a type and their quantities in either detail (issue #150): off, as before.
+  const [lintelBeams, setLintelBeams] = useState(false);
   const [busy, setBusy] = useState(false);
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
@@ -87,7 +91,7 @@ export function ExchangeExportDialog() {
       } catch (e) {
         notify(e instanceof Error ? e.message : String(e));
       }
-    } else if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}), ...(bonsai && isDesktop() ? { bonsaiStyles: true } : {}), ...(structural ? { structural: true } : {}), ...(typeProps ? { typePropertiesOnOccurrences: true } : {}), ...(spaceBrep ? { spaceBrep: true } : {}), ...(derivedLoadBearing ? { derivedLoadBearing: true } : {}), ...(advancedBrep ? { advancedBrep: true } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
+    } else if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}), ...(bonsai && isDesktop() ? { bonsaiStyles: true } : {}), ...(structural ? { structural: true } : {}), ...(typeProps ? { typePropertiesOnOccurrences: true } : {}), ...(spaceBrep ? { spaceBrep: true } : {}), ...(derivedLoadBearing ? { derivedLoadBearing: true } : {}), ...(advancedBrep ? { advancedBrep: true } : {}), ...(mirroredSameType ? { mirroredSameType: true } : {}), ...(lintelBeams ? { lintelBeams: true } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
     else if (format === 'step') {
       const { phase: _phase, voids: _voids, ...chosen } = common as Record<string, unknown>;
       await exportFile('project.exportStep', { ...chosen, entourage: true }, `${projectTitle(path)}.step`, 'step');
@@ -158,6 +162,10 @@ export function ExchangeExportDialog() {
                 )}
                 <dt title="A type's property sets (Pset_WallCommon.IsExternal on the wall type) also written on each element of the type, for programs that read only the element; an element's own value wins">Type properties</dt>
                 <dd><label><input type="checkbox" data-testid="export-type-properties" style={{ width: 'auto', marginRight: 6 }} checked={typeProps} onChange={(e) => setTypeProps(e.target.checked)} /> Also write type properties on each occurrence</label></dd>
+                <dt title="A door or window flipped on one axis written as an occurrence of its own type, its hand said by its own OperationType and panels; unticked, it is of the type's mirror image, a type of its own named '… (mirrored)'">Mirrored doors and windows</dt>
+                <dd><label><input type="checkbox" data-testid="export-mirrored-same-type" style={{ width: 'auto', marginRight: 6 }} checked={mirroredSameType} onChange={(e) => setMirroredSameType(e.target.checked)} /> Mirrored doors keep the same type (the hand only in OperationType)</label></dd>
+                <dt title="Each lintel an IfcBeam LINTEL of its own under its wall, also with one body each, with its Qto_BeamBaseQuantities, and typed: by its beam type, else by a generic IfcBeamType LINTEL by its name and material">Lintels</dt>
+                <dd><label><input type="checkbox" data-testid="export-lintel-beams" style={{ width: 'auto', marginRight: 6 }} checked={lintelBeams} onChange={(e) => setLintelBeams(e.target.checked)} /> Lintels as their own beams</label></dd>
                 <dt title="LoadBearing in each element's Pset_…Common also where nothing says it, from the rule: a wall unless it is a partition, floors, roofs, columns, beams and footings; the elements whose Structural tick or LoadBearing property says it are written so either way">Load-bearing</dt>
                 <dd><label><input type="checkbox" data-testid="export-derived-load-bearing" style={{ width: 'auto', marginRight: 6 }} checked={derivedLoadBearing} onChange={(e) => setDerivedLoadBearing(e.target.checked)} /> Write derived LoadBearing</label></dd>
                 <dt title="The analytical model (bearing walls, floors, columns and beams as structural members) with the load cases, the loads and the combinations, as an IFC Structural Analysis View">Structural analysis</dt>
