@@ -49,7 +49,7 @@ New fields of the joinery type (the configurator, a "Details" group), each a par
 - **Surround** (`surround`, "ancadrament"): a band on the facade around the opening, width (80 mm), projection (20 mm), material; optionally only the jambs and the head.
 - **Threshold** (`threshold`, doors): a strip in the opening at floor level, height, material.
 
-Defaults are per type; each field can be off. The schedule's section symbol draws the sills. The parts carry their material and area in the quantities. IFC: parts of the door or window (`IfcBuildingElementPart` under the fill), with their materials.
+Defaults are per type; each field can be off. The schedule's section symbol draws the sills. Plans draw them seen under the cut (GitHub issue #153, `JoinerySymbols.SillsPlan`, in `Openings.Symbol`): at LOD 300 and up each detailed sill from the frame's face to its front edge, the opening's width within the wall and its overhang past the face (the plain boards it replaces left out), at the symbol pen; a type's `sillsInPlan` (configurator: **Sills drawn in plan at LOD 200**) draws them, or the plain boards, at LOD 200 too; curved walls keep the plain boards as before. The parts carry their material and area in the quantities. IFC: parts of the door or window (`IfcBuildingElementPart` under the fill), with their materials.
 
 ## 4. Per-mullion widths and meeting leaves (decision 466): the API
 

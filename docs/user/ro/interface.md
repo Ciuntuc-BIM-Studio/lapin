@@ -164,7 +164,7 @@ Un fișier scris de această versiune spune sus cine l-a scris: *Scris de Lapin 
 
 ### Salvează în bibliotecă la configuratorul unui tip
 
-Dialogurile care fac tipuri (pereți, plăci, uși și ferestre, scări, pereți cortină, stâlpi și grinzi, oțel și mobilier) au **Salvează în bibliotecă**: tipul ales se scrie ca `.lapintypes`, cu straturile, materialele, profilele și parametrii lui, pe **Acest calculator** sau într-un folder al firmei care poate fi scris. Apoi apare în Catalog, gata de adăugat într-un alt proiect cu un clic.
+Dialogurile care fac tipuri (pereți, plăci, uși și ferestre, scări, pereți cortină, stâlpi și grinzi, oțel și mobilier, finisaje de încăperi) au **Salvează în bibliotecă**: tipul ales se scrie ca `.lapintypes`, cu straturile, materialele, profilele și parametrii lui, pe **Acest calculator** sau într-un folder al firmei care poate fi scris. Apoi apare în Catalog, gata de adăugat într-un alt proiect cu un clic.
 
 ![Salvează în bibliotecă la tipurile de pereți](shots/save-type-library.webp)
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_MARK_PATTERN, isDefaultRule, patternOk, sameRule } from './MarkRulesDialog';
+import { DEFAULT_MARK_PATTERN, isDefaultRule, patternOk, sameRule, usesVariant } from './MarkRulesDialog';
 
 // Decision 737: the rules dialog sends only what changed, a rule back to the built-in one as null, and no pattern the engine refuses.
 describe('mark rules', () => {
@@ -23,5 +23,17 @@ describe('mark rules', () => {
     expect(patternOk('{prefix}{n')).toBe(false);
     expect(patternOk('n}')).toBe(false);
     expect(patternOk('{{n}}')).toBe(false);
+  });
+
+  // Issue #148: {variant}, one number per size of a type, told by the rule's Variant by (empty: the category's own).
+  it('knows a pattern reading the variant, and a Variant by makes the rule the user\'s', () => {
+    expect(usesVariant('{prefix}{variant}')).toBe(true);
+    expect(usesVariant('{type.mark}{= variant | 00}')).toBe(true);
+    expect(usesVariant('{prefix}{n}')).toBe(false);
+    expect(usesVariant('{variants}')).toBe(false);
+    expect(isDefaultRule({ ...builtIn, variantBy: '{width}' })).toBe(false);
+    expect(isDefaultRule({ ...builtIn, variantBy: ' ' })).toBe(true);
+    expect(sameRule(builtIn, { ...builtIn, variantBy: '' })).toBe(true);
+    expect(sameRule({ ...builtIn, variantBy: '{width}' }, builtIn)).toBe(false);
   });
 });

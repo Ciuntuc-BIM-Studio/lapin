@@ -12,23 +12,31 @@ public sealed record MarkCategory(string Id, string Label, string[] Classes, boo
 
 /// <summary>
 /// A category's mark rule (decision 737): a <see cref="Pattern"/> of live text with its <see cref="Prefix"/> and <see cref="Suffix"/>,
-/// its number counted in the whole project or on each storey (<see cref="Scope"/>).
+/// its number counted in the whole project or on each storey (<see cref="Scope"/>), and what tells one variant of a type from another
+/// for <c>{variant}</c> (<see cref="VariantBy"/>, issue #148; empty: the category's own, <see cref="MarkRules.DefaultVariantBy"/>).
 /// </summary>
-public sealed record MarkRule(string Prefix = "", string Suffix = "", string Pattern = MarkRules.DefaultPattern, string Scope = "project")
+public sealed record MarkRule(string Prefix = "", string Suffix = "", string Pattern = MarkRules.DefaultPattern, string Scope = "project", string VariantBy = "")
 {
     /// <summary>The built-in rule: the mark Lapin gives by itself, nothing before or after it.</summary>
-    public bool IsDefault => Prefix.Length == 0 && Suffix.Length == 0 && Pattern == MarkRules.DefaultPattern && Scope == "project";
+    public bool IsDefault => Prefix.Length == 0 && Suffix.Length == 0 && Pattern == MarkRules.DefaultPattern && Scope == "project" && VariantBy.Length == 0;
     public bool PerStorey => Scope == "storey";
     public bool UsesNumber => MarkRules.UsesNumber(Pattern);
+    public bool UsesVariant => MarkRules.UsesVariant(Pattern);
 
-    public JsonObject ToJson() => new() { ["prefix"] = Prefix, ["suffix"] = Suffix, ["pattern"] = Pattern, ["scope"] = Scope };
+    /// <summary>As the project keeps it; <c>variantBy</c> only when the user gave one, so the rules of before are written as they were.</summary>
+    public JsonObject ToJson()
+    {
+        var o = new JsonObject { ["prefix"] = Prefix, ["suffix"] = Suffix, ["pattern"] = Pattern, ["scope"] = Scope };
+        if (VariantBy.Length > 0) o["variantBy"] = VariantBy;
+        return o;
+    }
 
     public static MarkRule From(JsonNode? n)
     {
         if (n is not JsonObject o) return new();
         string Text(string k) => o[k] is JsonValue v && v.TryGetValue<string>(out var s) ? s : "";
         var pattern = Text("pattern").Trim();
-        return new(Text("prefix"), Text("suffix"), pattern.Length > 0 ? pattern : MarkRules.DefaultPattern, Text("scope") == "storey" ? "storey" : "project");
+        return new(Text("prefix"), Text("suffix"), pattern.Length > 0 ? pattern : MarkRules.DefaultPattern, Text("scope") == "storey" ? "storey" : "project", Text("variantBy").Trim());
     }
 }
 
@@ -44,7 +52,8 @@ public sealed record MarkRule(string Prefix = "", string Suffix = "", string Pat
 /// both, as before. Numbers are given when a rule first reads <c>{n}</c> (seeded from the names Lapin numbered, D3 → 3, or from an
 /// element's own mark), to each new element after any command (the next in its category, or on its storey), and again by
 /// <c>markRules.renumber</c>, in one undo step. Elements an IFC file brought keep the file's marks: no rule reads them.
-/// Rebar keeps its own scheme (decision 729), written the same way.
+/// Rebar keeps its own scheme (decision 729), written the same way. <c>{variant}</c> (issue #148) numbers the distinct sizes of each
+/// type (<see cref="Variant"/>): one type of window in two sizes gives V1 and V2 while keeping one type and each window's own size.
 /// </summary>
 public static partial class MarkRules
 {
@@ -53,7 +62,7 @@ public static partial class MarkRules
     public const string DefaultPattern = "{prefix}{mark}{suffix}";
     public static readonly string[] Orders = ["rows", "columns", "current"];
     /// <summary>The tokens a rule reads besides any field of the element.</summary>
-    public static readonly string[] Tokens = ["prefix", "suffix", "mark", "n"];
+    public static readonly string[] Tokens = ["prefix", "suffix", "mark", "n", "variant"];
 
     public static readonly IReadOnlyList<MarkCategory> Categories =
     [
@@ -86,6 +95,12 @@ public static partial class MarkRules
 
     [GeneratedRegex(@"\{=[^{}]*(?<![\w.])n(?![\w.(])[^{}]*\}")]
     private static partial Regex FormulaN();
+
+    /// <summary>Whether a pattern reads the variant: {variant}, or variant in a formula.</summary>
+    public static bool UsesVariant(string pattern) => pattern.Contains("{variant}", StringComparison.Ordinal) || FormulaVariant().IsMatch(pattern);
+
+    [GeneratedRegex(@"\{=[^{}]*(?<![\w.])variant(?![\w.(])[^{}]*\}")]
+    private static partial Regex FormulaVariant();
 
     /// <summary>The rules the project keeps, read once per project as it is (an edit makes a new one).</summary>
     static readonly ConditionalWeakTable<Entity, Dictionary<string, MarkRule>> cache = [];
@@ -140,6 +155,7 @@ public static partial class MarkRules
                 ["prefix"] = rule.Prefix, ["suffix"] = rule.Suffix, ["n"] = n?.ToString(CultureInfo.InvariantCulture) ?? "",
                 ["mark"] = coded, ["tag"] = coded,
             };
+            if (rule.UsesVariant && CategoryOf(e.Class) is { } c) extra["variant"] = Variant(m, c, rule, e).ToString(CultureInfo.InvariantCulture);
             var text = TagText.Fill(rule.Pattern, m, e, extra).Trim();
             return text.Length > 0 ? text : coded;
         }
@@ -148,6 +164,67 @@ public static partial class MarkRules
 
     /// <summary>A type's mark as tags and IFC read it: its own, else its category's rule; null when neither gives one.</summary>
     public static string? TypeMark(IModelView m, Entity? type) => type == null ? null : type.Str("mark") ?? Evaluate(m, type);
+
+    // ------------------------------------------------------------ variants
+
+    /// <summary>
+    /// What tells one variant of a type from another when a rule says nothing (issue #148): a door's or window's wall opening
+    /// (width × height, the sizes its tags read). Other categories have none of their own (their sizes are worked out with their
+    /// geometry, which a mark does not read): their elements are one variant of their type until the rule's <c>variantBy</c> names
+    /// the fields that tell them apart (<c>{height}</c>, a parameter). Fields as a tag reads them.
+    /// </summary>
+    public static string DefaultVariantBy(string category) => category is "door" or "window" ? "{openingWidth}x{openingHeight}" : "";
+
+    /// <summary>The fields that tell the element's variant, as written for it (its rule's variantBy, else its category's).</summary>
+    public static string VariantKey(IModelView m, MarkCategory c, MarkRule rule, Entity e)
+    {
+        var by = rule.VariantBy.Length > 0 ? rule.VariantBy : DefaultVariantBy(c.Id);
+        if (by.Length == 0) return "";
+        var extra = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["prefix"] = rule.Prefix, ["suffix"] = rule.Suffix, ["variant"] = "" };
+        return TagText.Fill(by, m, e, extra).Trim();
+    }
+
+    static readonly ConditionalWeakTable<IModelView, VariantCache> variants = [];
+    sealed class VariantCache { public long Revision = -1; public readonly Dictionary<(string Category, string Type, string By), Dictionary<string, int>> Maps = []; }
+
+    /// <summary>
+    /// The element's variant within its type (issue #148), from 1: the elements of its category given the same type, the same
+    /// <see cref="VariantKey"/> sharing a number, the numbers given in the order the sizes first appear in the model (the oldest
+    /// element first), so a size added later takes the next number and those there keep theirs. Counted in the whole project (the
+    /// same window on two storeys is the same variant) whatever the rule's scope. A type is its own one variant (1). Worked out on
+    /// every ask, nothing kept on the elements.
+    /// </summary>
+    public static int Variant(IModelView m, MarkCategory c, MarkRule rule, Entity e)
+    {
+        if (c.IsType) return 1;
+        var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Id ?? "";
+        var by = rule.VariantBy.Length > 0 ? rule.VariantBy : DefaultVariantBy(c.Id);
+        Dictionary<string, int> Map()
+        {
+            var keys = new Dictionary<string, int>(StringComparer.Ordinal);
+            var map = new Dictionary<string, int>();
+            foreach (var x in Members(m, c))
+            {
+                if ((m.RelatingOf(x.Id, IfcClass.RelDefinesByType)?.Id ?? "") != type) continue;
+                var k = VariantKey(m, c, rule, x);
+                if (!keys.TryGetValue(k, out var v)) keys[k] = v = keys.Count + 1;
+                map[x.Id] = v;
+            }
+            return map;
+        }
+        Dictionary<string, int> got;
+        if (m is not ModelStore store) got = Map();
+        else
+        {
+            var cache = variants.GetOrCreateValue(store);
+            lock (cache)
+            {
+                if (cache.Revision != store.Revision) { cache.Maps.Clear(); cache.Revision = store.Revision; }
+                if (!cache.Maps.TryGetValue((c.Id, type, by), out got!)) cache.Maps[(c.Id, type, by)] = got = Map();
+            }
+        }
+        return got.GetValueOrDefault(e.Id, 1);
+    }
 
     // ------------------------------------------------------------ numbers
 
@@ -276,14 +353,20 @@ public static partial class MarkRules
         var rule = MarkRule.From(node);
         if (rule.Prefix.Length > 16 || rule.Suffix.Length > 16) throw new CommandException("A mark's prefix or suffix is 16 characters at most.");
         if (rule.Pattern.Length > 120) throw new CommandException("A mark's pattern is 120 characters at most.");
+        if (rule.VariantBy.Length > 120) throw new CommandException("What tells a variant is 120 characters at most.");
+        if (rule.VariantBy.Contains("{variant}", StringComparison.Ordinal) || rule.VariantBy.Contains("{mark}", StringComparison.Ordinal))
+            throw new CommandException("A variant is told by its sizes or other fields, not by its mark or its variant.");
         if (rule.Prefix.IndexOfAny(['{', '}']) >= 0 || rule.Suffix.IndexOfAny(['{', '}']) >= 0) throw new CommandException("A prefix or a suffix is plain text: the pattern holds the {fields}.");
-        var open = 0;
-        foreach (var ch in rule.Pattern)
+        foreach (var text in new[] { rule.Pattern, rule.VariantBy })
         {
-            open += ch == '{' ? 1 : ch == '}' ? -1 : 0;
-            if (open is < 0 or > 1) throw new CommandException("A mark's pattern closes each {field} it opens.");
+            var open = 0;
+            foreach (var ch in text)
+            {
+                open += ch == '{' ? 1 : ch == '}' ? -1 : 0;
+                if (open is < 0 or > 1) throw new CommandException("A mark's pattern closes each {field} it opens.");
+            }
+            if (open != 0) throw new CommandException("A mark's pattern closes each {field} it opens.");
         }
-        if (open != 0) throw new CommandException("A mark's pattern closes each {field} it opens.");
         if (node is JsonObject o && o["scope"] is JsonValue sv && sv.TryGetValue<string>(out var scope) && scope is not ("project" or "storey"))
             throw new CommandException("A mark is numbered in the project or on each storey.");
         return rule;
@@ -313,6 +396,7 @@ public static partial class MarkRules
         }
         var o = rule.ToJson();
         o["id"] = c.Id; o["label"] = c.Label; o["isType"] = c.IsType; o["count"] = members.Count; o["isDefault"] = rule.IsDefault; o["samples"] = samples;
+        if (!c.IsType && DefaultVariantBy(c.Id) is { Length: > 0 } dv) o["defaultVariantBy"] = dv;
         return o;
     }
 

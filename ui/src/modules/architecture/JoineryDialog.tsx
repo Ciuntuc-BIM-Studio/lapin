@@ -76,6 +76,8 @@ interface Spec {
   board: { interior: number; exterior: number }; threshold: number;
   /** A door's plan draws its threshold seen under the cut (forum topic 204); null or false: not, as before. */
   thresholdInPlan?: boolean | null;
+  /** GitHub issue #153: the sills drawn in plan from LOD 200 too (null: from LOD 300, as decisions 404 and 405 have them). */
+  sillsInPlan?: boolean | null;
   colors: { frame: string; glass: string; leaf: string }; isExternal: boolean; thermalTransmittance?: number | null;
   lintel?: Rule | null;
   details?: Details | null;
@@ -1170,6 +1172,8 @@ export function JoineryDialog() {
               </>}
               {spec.kind === 'door' && <label className="field-line check" title="Draws the door's threshold seen under the plan's cut (LOD 200 and up): the detailed threshold across the wall, else the frame's bottom member. Sections cut it as the door has it">
                 <input type="checkbox" data-field="threshold-in-plan" checked={spec.thresholdInPlan === true} onChange={(e) => set({ thresholdInPlan: e.target.checked ? true : null })} /><span>Threshold drawn in plan</span></label>}
+              {spec.kind === 'window' && <label className="field-line check" title="Draws the interior and exterior sills seen under the plan's cut at LOD 200 as well: the detailed sills past the wall's faces, else the plain boards. At LOD 300 and up plans always draw them">
+                <input type="checkbox" data-field="sills-in-plan" checked={spec.sillsInPlan === true} onChange={(e) => set({ sillsInPlan: e.target.checked ? true : null })} /><span>Sills drawn in plan at LOD 200</span></label>}
               <DressingFields kind={spec.kind} height={spec.height} details={details} onChange={setDetails} />
               <HardwareFields spec={spec} onChange={set} />
               {spec.kind === 'door' && !spec.materials?.leaf && <label className="field-line"><span className="eyebrow">Leaf</span><ColourField value={spec.colors.leaf} onChange={(v) => set({ colors: { ...spec.colors, leaf: v } })} /></label>}

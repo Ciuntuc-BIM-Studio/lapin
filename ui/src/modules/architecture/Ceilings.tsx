@@ -1,8 +1,9 @@
 /**
  * False ceilings (report #44, decision 192): the tools (a ceiling over an outline or over the room
  * clicked, a light panel or an air diffuser in the cell clicked), the ceiling types' dialog (the
- * system, the tile, the grid, the hangers, the colours) and the ceiling in the inspector (its type and
- * height, fixtures laid out every so many cells).
+ * system, the tile, the grid, the hangers, the colours, where a new ceiling is hung: under the slab with a
+ * plenum, or at a height over the finished floor, issue #145) and the ceiling in the inspector (its type, its
+ * height and what it is measured from, fixtures laid out every so many cells).
  */
 
 import { EllipseShapeBar, toggleOutlineArcs } from '../../viewport/outlineShape';
@@ -20,12 +21,15 @@ import { PendingDialog } from '../core/PendingDialog';
 import { newElement, typedBy } from './NewElement';
 import { SlabThumb } from './Thumbs';
 import { TypeMarkField } from '../core/MarkField';
+import { TypeParamsBlock, useNewTypeDraft } from '../../shell/TypeParamsBlock';
 import { openTypeDialog, typeToEdit } from '../../shell/typeToEdit';
 
 export interface CeilingSpec {
   name: string; system: 'grid' | 'plain'; tileWidth: number; tileLength: number; thickness: number;
   gridWidth: number; gridDepth: number; rotation: number; hangers: boolean; hangerSpacing: number;
   tileMaterial: string; gridMaterial: string; tileColor: string; gridColor: string; lightColor: string; diffuserColor: string;
+  /** Where a new ceiling is hung when no height is given (issue #145): null/"slab" under the slab above, "floor" over the finished floor. */
+  placement?: 'slab' | 'floor' | null; height?: number | null; plenum?: number | null;
 }
 
 /** A ceiling: click its corners, then the first one again (or Enter). */
@@ -81,6 +85,8 @@ export function CeilingTypesDialog() {
   const [spec, setSpec] = useState<CeilingSpec | null>(null);
   // What a new type starts from (a new object on each New…, so the editor reloads).
   const [fresh, setFresh] = useState<{ system: 'grid' | 'plain' }>({ system: 'grid' });
+  // A new type's mark and parameters (issues #146, #147), sent with it by Create type.
+  const draft = useNewTypeDraft();
   const modelRef = useRef(model);
   modelRef.current = model;
   useEffect(() => {
@@ -93,7 +99,7 @@ export function CeilingTypesDialog() {
   const close = () => useUi.setState({ dialog: null });
   const save = async () => {
     if (editing) await execute('architecture.updateCeilingType', { id: editing, spec });
-    else { const r = await execute('architecture.createCeilingType', { spec }) as { id?: string } | null; if (r?.id) setEditing(r.id); }
+    else { const r = await execute('architecture.createCeilingType', { spec, ...draft.args() }) as { id?: string } | null; if (r?.id) { draft.reset(); setEditing(r.id); } }
   };
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="Ceiling types">
@@ -113,7 +119,7 @@ export function CeilingTypesDialog() {
           <div className="type-edit">
             <label className="field-line"><span className="eyebrow">Name</span><input value={spec.name} onChange={(e) => set({ name: e.target.value })} /></label>
             {/* The type's mark (forum topic 177), as a door's or window's type has it. */}
-            <TypeMarkField typeId={editing} />
+            <TypeMarkField typeId={editing} draft={draft} />
             <label className="field-line"><span className="eyebrow">System</span>
               <select data-field="ceiling-system" value={spec.system} onChange={(e) => set({ system: e.target.value as CeilingSpec['system'] })}>
                 <option value="grid">Tiles on an exposed grid</option><option value="plain">Plasterboard, continuous</option>
@@ -133,9 +139,22 @@ export function CeilingTypesDialog() {
               <label className="field-line check"><input type="checkbox" checked={spec.hangers} onChange={(e) => set({ hangers: e.target.checked })} /><span>Hangers up to the structure</span></label>
               {spec.hangers && <Mm label="Hanger spacing" value={spec.hangerSpacing} onChange={(v) => set({ hangerSpacing: v })} />}
             </>}
+            <p className="eyebrow">Placed</p>
+            <label className="field-line"><span className="eyebrow">Height</span>
+              <select data-field="ceiling-placement" value={spec.placement ?? 'slab'} title="Where a new ceiling of this type is hung when you place it (its own height can be changed after)"
+                onChange={(e) => set({ placement: e.target.value === 'floor' ? 'floor' : null })}>
+                <option value="slab">Under the slab above</option><option value="floor">Over the finished floor</option>
+              </select></label>
+            {(spec.placement ?? 'slab') === 'slab' && (
+              <label className="field-line"><span className="eyebrow">Plenum depth</span>
+                <LengthField testId="ceiling-plenum" metres={spec.plenum ?? 0} min={0} title="The space between the slab's underside and the ceiling's top" onCommit={(m) => set({ plenum: m && m > 0 ? m : null })} /></label>
+            )}
+            <label className="field-line"><span className="eyebrow">{(spec.placement ?? 'slab') === 'floor' ? 'Height over the finished floor' : 'Height with no slab above'}</span>
+              <LengthField testId="ceiling-type-height" metres={spec.height ?? 2.7} min={1.5} onCommit={(m) => { if (m != null && m >= 1.5) set({ height: m }); }} /></label>
             <p className="eyebrow">In the cells</p>
             <label className="field-line"><span className="eyebrow">Light panels</span><ColourField value={spec.lightColor} onChange={(v) => set({ lightColor: v })} /></label>
             <label className="field-line"><span className="eyebrow">Air diffusers</span><ColourField value={spec.diffuserColor} onChange={(v) => set({ diffuserColor: v })} /></label>
+            <TypeParamsBlock typeClass="LapinCeilingType" typeId={editing} draft={draft} />
             <div className="row joinery-actions">
               <span className="grow" />
               {editing && <button type="button" className="btn" onClick={() => useUi.setState({ ceilingTypeId: editing })}>Place with it</button>}
@@ -172,6 +191,14 @@ export function CeilingSection({ node }: { node: NodeDto }) {
       <dl className="fields">
         <dt>Height</dt>
         <dd><LengthField testId="ceiling-height" metres={height} min={0.01} readOnly={!node.editable} onCommit={(m) => { if (m != null) set({ height: m }); }} /></dd>
+        {typeof node.props.roomId === 'string' && (
+          <>
+            <dt title="What the height is measured from: the storey's level, or the finished floor of the room it was placed in (as a room finish's wall height is)">Measured from</dt>
+            <dd><select data-field="ceiling-height-from" value={node.props.heightFrom === 'floor' ? 'floor' : ''} disabled={!node.editable} onChange={(e) => set({ heightFrom: e.target.value || null })}>
+              <option value="">the storey's level</option><option value="floor">the room's finished floor</option>
+            </select></dd>
+          </>
+        )}
         <dt>Light panels</dt><dd><span className="num">{fixtures.filter((f) => f.kind === 'light').length}</span></dd>
         <dt>Air diffusers</dt><dd><span className="num">{fixtures.filter((f) => f.kind === 'diffuser').length}</span></dd>
       </dl>

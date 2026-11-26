@@ -14,11 +14,13 @@ namespace Lapin.Architecture;
 /// high, <see cref="BlockLength"/> along the joists, as wide as the gap between the joists' feet), and a cast topping
 /// <see cref="Topping"/> thick over them; the joists run the short way of the floor, along x or y, or at <see cref="Angle"/>,
 /// and go <see cref="Bearing"/> into the supports past the floor's edge. Kept on the floor type as <c>beamBlock</c>; the
-/// type's core is the structure, as deep as the blocks and the topping (<see cref="Depth"/>).
+/// type's core is the structure, as deep as the blocks and the topping (<see cref="Depth"/>). A self-supporting joist (#152) has a top
+/// flange too (an I: <see cref="TopFlangeWidth"/> wide, <see cref="TopFlangeHeight"/> high at the joist's top, no wider than its foot so
+/// the blocks between the feet stay as they are); 0 (the default) is the inverted T, the floor built as before.
 /// </summary>
 public sealed record BeamBlockSpec(string Preset, double JoistWidth, double JoistHeight, double FlangeHeight, double WebWidth, string JoistMaterial,
     double Spacing, double BlockHeight, double BlockLength, string BlockMaterial, double Topping, string ToppingMaterial,
-    string Direction, double Angle, double Bearing, string Mesh)
+    string Direction, double Angle, double Bearing, string Mesh, double TopFlangeWidth = 0, double TopFlangeHeight = 0)
 {
     public const string Key = "beamBlock";
     public static readonly string[] Directions = ["auto", "x", "y", "angle"];
@@ -27,6 +29,23 @@ public sealed record BeamBlockSpec(string Preset, double JoistWidth, double Jois
     public double Depth => BlockHeight + Topping;
     /// <summary>A block's width across the joists: the gap between their feet.</summary>
     public double BlockWidth => Spacing - JoistWidth;
+    /// <summary>Whether the joist has a top flange (an I-joist, #152).</summary>
+    public bool HasTopFlange => TopFlangeWidth > 0 && TopFlangeHeight > 0;
+
+    /// <summary>
+    /// The joist's section, (across, up) from the middle of its underside, anticlockwise: the inverted T (8 corners), or with a top
+    /// flange the I (12 corners).
+    /// </summary>
+    public IReadOnlyList<(double V, double Z)> JoistSection()
+    {
+        var (bf, bw, hf, h) = (JoistWidth / 2, WebWidth / 2, FlangeHeight, JoistHeight);
+        if (!HasTopFlange) return [(-bf, 0), (bf, 0), (bf, hf), (bw, hf), (bw, h), (-bw, h), (-bw, hf), (-bf, hf)];
+        var (bt, ht) = (TopFlangeWidth / 2, h - TopFlangeHeight);
+        return [(-bf, 0), (bf, 0), (bf, hf), (bw, hf), (bw, ht), (bt, ht), (bt, h), (-bt, h), (-bt, ht), (-bw, ht), (-bw, hf), (-bf, hf)];
+    }
+
+    /// <summary>The joist's section's area.</summary>
+    public double JoistArea => JoistWidth * FlangeHeight + WebWidth * (JoistHeight - FlangeHeight) + (HasTopFlange ? (TopFlangeWidth - WebWidth) * TopFlangeHeight : 0);
 
     /// <summary>
     /// A few systems to start from, indicative only (after the usual POT joist with MIAKO blocks): each the user's to change,
@@ -38,11 +57,21 @@ public sealed record BeamBlockSpec(string Preset, double JoistWidth, double Jois
         new("POT + MIAKO 19/50", 0.16, 0.175, 0.06, 0.06, "Precast joist", 0.5, 0.19, 0.25, "Ceramic infill block", 0.06, "Concrete C20/25", "auto", 0, 0.125, "Mesh 6/100-6/100"),
         new("POT + MIAKO 23/62.5", 0.16, 0.175, 0.06, 0.06, "Precast joist", 0.625, 0.23, 0.25, "Ceramic infill block", 0.06, "Concrete C20/25", "auto", 0, 0.125, "Mesh 6/100-6/100"),
         new("POT + MIAKO 25/50", 0.16, 0.175, 0.06, 0.06, "Precast joist", 0.5, 0.25, 0.25, "Ceramic infill block", 0.05, "Concrete C20/25", "auto", 0, 0.125, "Mesh 6/100-6/100"),
+        // A self-supporting I-joist (#152, Spanish practice for ventilated ground floors with no formwork), indicative.
+        new("I-joist + block 25/70", 0.12, 0.22, 0.05, 0.05, "Precast joist", 0.7, 0.25, 0.25, "Concrete infill block", 0.05, "Concrete C25/30", "auto", 0, 0.1, "Mesh 6/150-6/150", 0.09, 0.04),
     ];
 
     public static BeamBlockSpec Default => Presets[0];
 
-    public JsonObject ToJson() => new()
+    /// <summary>As the type keeps it: the top flange only when it has one (a floor type saved before #152 is written as it was).</summary>
+    public JsonObject ToJson()
+    {
+        var o = Fields();
+        if (TopFlangeWidth > 0 || TopFlangeHeight > 0) { o["topFlangeWidth"] = TopFlangeWidth; o["topFlangeHeight"] = TopFlangeHeight; }
+        return o;
+    }
+
+    JsonObject Fields() => new()
     {
         ["preset"] = Preset, ["joistWidth"] = JoistWidth, ["joistHeight"] = JoistHeight, ["flangeHeight"] = FlangeHeight, ["webWidth"] = WebWidth,
         ["joistMaterial"] = JoistMaterial, ["spacing"] = Spacing, ["blockHeight"] = BlockHeight, ["blockLength"] = BlockLength, ["blockMaterial"] = BlockMaterial,
@@ -59,7 +88,8 @@ public sealed record BeamBlockSpec(string Preset, double JoistWidth, double Jois
         var dir = S("direction", d.Direction);
         return new BeamBlockSpec(S("preset", ""), N("joistWidth", d.JoistWidth), N("joistHeight", d.JoistHeight), N("flangeHeight", d.FlangeHeight), N("webWidth", d.WebWidth),
             S("joistMaterial", d.JoistMaterial), N("spacing", d.Spacing), N("blockHeight", d.BlockHeight), N("blockLength", d.BlockLength), S("blockMaterial", d.BlockMaterial),
-            N("topping", d.Topping), S("toppingMaterial", d.ToppingMaterial), Directions.Contains(dir) ? dir : "auto", N("angle", 0), N("bearing", d.Bearing), S("mesh", ""));
+            N("topping", d.Topping), S("toppingMaterial", d.ToppingMaterial), Directions.Contains(dir) ? dir : "auto", N("angle", 0), N("bearing", d.Bearing), S("mesh", ""),
+            N("topFlangeWidth", 0), N("topFlangeHeight", 0));
     }
 
     public static BeamBlockSpec? Of(Entity? type) => type?.Attrs[Key] is JsonObject o ? From(o) : null;
@@ -76,6 +106,12 @@ public sealed record BeamBlockSpec(string Preset, double JoistWidth, double Jois
         if (!(BlockLength >= 0.1 && BlockLength <= 1)) return "A block is 100 to 1000 mm long along the joists.";
         if (!(Topping >= 0.02 && Topping <= 0.2)) return "The topping is 20 to 200 mm thick.";
         if (JoistHeight >= Depth) return "The joist must stay under the top of the topping.";
+        if (TopFlangeWidth < 0 || TopFlangeHeight < 0) return "A joist's top flange is not negative.";
+        if (HasTopFlange)
+        {
+            if (TopFlangeWidth <= WebWidth || TopFlangeWidth > JoistWidth) return "A joist's top flange is wider than its web and no wider than its foot.";
+            if (FlangeHeight + TopFlangeHeight >= JoistHeight) return "A joist's foot and top flange are lower than the joist together.";
+        }
         if (!(Bearing >= 0 && Bearing <= 0.5)) return "The bearing is 0 to 500 mm.";
         if (string.IsNullOrWhiteSpace(JoistMaterial) || string.IsNullOrWhiteSpace(BlockMaterial) || string.IsNullOrWhiteSpace(ToppingMaterial)) return "The joists, the blocks and the topping each need a material.";
         return null;
@@ -217,12 +253,10 @@ public static class BeamBlock
         return new Floor(slab, spec, Layout(spec, outline, holes, dir), top - spec.Depth, core.Index, area, core.To - core.From);
     }
 
-    /// <summary>A joist's body: its inverted T swept along its run.</summary>
+    /// <summary>A joist's body: its section (an inverted T, or an I) swept along its run.</summary>
     static Solid? JoistSolid(Result r, BeamBlockSpec spec, Joist j, double z0)
     {
-        var (bf, bw, hf, h) = (spec.JoistWidth / 2, spec.WebWidth / 2, spec.FlangeHeight, spec.JoistHeight);
-        (double V, double Z)[] t = [(-bf, 0), (bf, 0), (bf, hf), (bw, hf), (bw, h), (-bw, h), (-bw, hf), (-bf, hf)];
-        var profile = t.Select(p => r.W(j.U0, j.V + p.V).At(z0 + p.Z)).ToList();
+        var profile = spec.JoistSection().Select(p => r.W(j.U0, j.V + p.V).At(z0 + p.Z)).ToList();
         var dir = r.Along * j.Length;
         return Prism.Extrude(profile, null, new Vec3(dir.X, dir.Y, 0), "joist");
     }
@@ -323,6 +357,26 @@ public static class BeamBlock
     static string Num(double v) => Math.Round(v, 3).ToString(CultureInfo.InvariantCulture);
 
     /// <summary>
+    /// The joists' volume past the floor's outline: their bearings in the supports (#140). Built and ordered with the floor, but not
+    /// the floor's: IFC's net volume is within its gross one, the outline by its depth.
+    /// </summary>
+    public static double BearingVolume(Floor f)
+    {
+        var outline = Slabs.Contour(f.Slab);
+        if (outline.Count < 3) return 0;
+        var r = f.Result;
+        var d = r.Along;
+        var n = r.Across;
+        var outside = 0.0;
+        foreach (var j in r.Joists)
+        {
+            var inside = RoofParts.Crossings(outline, n * j.V, d).Sum(c => Math.Max(0, Math.Min(j.U1, c.T1) - Math.Max(j.U0, c.T0)));
+            outside += Math.Max(0, j.Length - inside);
+        }
+        return outside * f.Spec.JoistArea;
+    }
+
+    /// <summary>
     /// The floor's beam-and-block quantities: the joists (count, length), the blocks (whole, cut), the cast concrete, the area,
     /// the mesh; the floor's whole volume (all it builds) and its gross volume (<paramref name="grossVolume"/>, its outline by its
     /// depth), the set a takeoff and the estimate read for the element (audit 15.11.2026, M2).
@@ -382,7 +436,7 @@ public static class BeamBlock
         Slabs.UpdateType(edit, edit.Model.Get(type.Id)!, null, layers);
     }
 
-    static readonly string[] CsvColumns = ["Name", "Joist width (mm)", "Joist height (mm)", "Foot height (mm)", "Web width (mm)", "Spacing (mm)", "Block height (mm)", "Block length (mm)", "Topping (mm)", "Bearing (mm)", "Joist material", "Block material", "Topping material", "Mesh"];
+    static readonly string[] CsvColumns = ["Name", "Joist width (mm)", "Joist height (mm)", "Foot height (mm)", "Web width (mm)", "Spacing (mm)", "Block height (mm)", "Block length (mm)", "Topping (mm)", "Bearing (mm)", "Joist material", "Block material", "Topping material", "Mesh", "Top flange width (mm)", "Top flange height (mm)"];
 
     /// <summary>The catalogue's CSV header, for a sheet to fill in.</summary>
     public static string CsvTemplate()
@@ -390,7 +444,7 @@ public static class BeamBlock
         var p = BeamBlockSpec.Default;
         string M(double v) => Math.Round(v * 1000, 1).ToString(CultureInfo.InvariantCulture);
         return string.Join(";", CsvColumns) + "\n" + string.Join(";", [p.Preset, M(p.JoistWidth), M(p.JoistHeight), M(p.FlangeHeight), M(p.WebWidth), M(p.Spacing), M(p.BlockHeight),
-            M(p.BlockLength), M(p.Topping), M(p.Bearing), p.JoistMaterial, p.BlockMaterial, p.ToppingMaterial, p.Mesh]) + "\n";
+            M(p.BlockLength), M(p.Topping), M(p.Bearing), p.JoistMaterial, p.BlockMaterial, p.ToppingMaterial, p.Mesh, M(p.TopFlangeWidth), M(p.TopFlangeHeight)]) + "\n";
     }
 
     /// <summary>
@@ -421,7 +475,8 @@ public static class BeamBlock
             var name = Cell("Name") ?? throw new CommandException($"Line {li + 1}: no name.");
             var spec = new BeamBlockSpec(name, Mm("Joist width (mm)", d.JoistWidth), Mm("Joist height (mm)", d.JoistHeight), Mm("Foot height (mm)", d.FlangeHeight), Mm("Web width (mm)", d.WebWidth),
                 Cell("Joist material") ?? d.JoistMaterial, Mm("Spacing (mm)", d.Spacing), Mm("Block height (mm)", d.BlockHeight), Mm("Block length (mm)", d.BlockLength), Cell("Block material") ?? d.BlockMaterial,
-                Mm("Topping (mm)", d.Topping), Cell("Topping material") ?? d.ToppingMaterial, "auto", 0, Mm("Bearing (mm)", d.Bearing), Cell("Mesh") ?? "");
+                Mm("Topping (mm)", d.Topping), Cell("Topping material") ?? d.ToppingMaterial, "auto", 0, Mm("Bearing (mm)", d.Bearing), Cell("Mesh") ?? "",
+                Mm("Top flange width (mm)", 0), Mm("Top flange height (mm)", 0));
             if (spec.Problem() is { } problem) throw new CommandException($"Line {li + 1} ({name}): {problem}");
             o.Add(spec);
         }
@@ -453,13 +508,14 @@ public static class BeamBlock
         Vec2[] hole = [new(3.4, 2.6), new(4.4, 2.6), new(4.4, 3.8), new(3.4, 3.8)];
         var r = Layout(spec, outline, [hole], Direction(spec, outline));
         JsonArray Pts(IEnumerable<Vec2> ps) => new([.. ps.SelectMany(p => new[] { (JsonNode)Math.Round(p.X, 4), Math.Round(p.Y, 4) })]);
-        var (bf, bw, hf, h) = (spec.JoistWidth / 2, spec.WebWidth / 2, spec.FlangeHeight, spec.JoistHeight);
+        var bf = spec.JoistWidth / 2;
+        var joist = spec.JoistSection();
         var section = new JsonArray();
         // Two bays across: three joists, two blocks, the concrete outline over the whole.
         for (var k = 0; k < 3; k++)
         {
             var v = k * spec.Spacing;
-            section.Add((JsonNode)new JsonObject { ["role"] = "joist", ["pts"] = Pts(new (double, double)[] { (-bf, 0), (bf, 0), (bf, hf), (bw, hf), (bw, h), (-bw, h), (-bw, hf), (-bf, hf) }.Select(p => new Vec2(v + p.Item1, p.Item2))) });
+            section.Add((JsonNode)new JsonObject { ["role"] = "joist", ["pts"] = Pts(joist.Select(p => new Vec2(v + p.V, p.Z))) });
             if (k < 2) section.Add((JsonNode)new JsonObject { ["role"] = "block", ["pts"] = Pts([new(v + bf, 0), new(v + spec.Spacing - bf, 0), new(v + spec.Spacing - bf, spec.BlockHeight), new(v + bf, spec.BlockHeight)]) });
         }
         section.Insert(0, (JsonNode)new JsonObject { ["role"] = "concrete", ["pts"] = Pts([new(-spec.Spacing / 2, 0), new(2.5 * spec.Spacing, 0), new(2.5 * spec.Spacing, spec.Depth), new(-spec.Spacing / 2, spec.Depth)]) });

@@ -80,6 +80,11 @@ export function RoomSection({ node }: { node: NodeDto }) {
         )}
         <dt title="Empty: the storey's height">Height</dt>
         <dd><LengthCell metres={typeof node.props.height === 'number' ? node.props.height : null} placeholder="the storey's" onCommit={(m) => update('height', m)} /></dd>
+        {/* What the room's ceiling is (issue #145): the slab above (as before), or the false ceiling over it, for its finished ceiling height, its volume and its walls' finish "up to the ceiling". */}
+        <dt title="What the room's finished ceiling height, its volume and its walls' finish up to the ceiling are measured to: the slab above (with its finish's ceiling layers), or the false ceiling over the room when it has one">Ceiling</dt>
+        <dd><select data-field="room-ceiling-from" value={node.props.ceilingFrom === 'falseCeiling' ? 'falseCeiling' : ''} onChange={(e) => update('ceilingFrom', e.target.value)}>
+          <option value="">the slab above</option><option value="falseCeiling">the false ceiling</option>
+        </select></dd>
         <dt title="How far above its storey's level the room starts (a gallery, a raised floor)">Base offset</dt>
         <dd><LengthCell metres={typeof node.props.baseOffset === 'number' ? node.props.baseOffset : null} placeholder="0" onCommit={(m) => update('baseOffset', m)} /></dd>
         <dt title="The room's own colour, over its colour scheme's">Own colour</dt>

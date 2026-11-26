@@ -37,7 +37,11 @@ public static class Openings
     /// Sill is over the wall's base whatever the opening's sill is measured from (forum topic 192, <see cref="OpeningSills"/>):
     /// <see cref="SillBase"/> is the finished floor's height over the base for one measured from it, else 0.
     /// </remarks>
-    public readonly record struct Placed(Entity Opening, Entity? Fill, JoinerySpec? Spec, double Along, double Sill, double Width, double Height, JoineryShape? Shape = null, double FillOffset = 0, double SillBase = 0)
+    /// <remarks>
+    /// <see cref="Drop"/> (GitHub #149, <see cref="OpeningSills.ReachKey"/>): how far a door's or window's hole was taken down below
+    /// its sill to the structure, the finished floor's height; it is in Sill, Height and FillOffset already, so the fill stands where it did.
+    /// </remarks>
+    public readonly record struct Placed(Entity Opening, Entity? Fill, JoinerySpec? Spec, double Along, double Sill, double Width, double Height, JoineryShape? Shape = null, double FillOffset = 0, double SillBase = 0, double Drop = 0)
     {
         /// <summary>Where the door or window stands, over the wall's base: the hole's sill, raised by its offset.</summary>
         public double FillSill => Sill + FillOffset;
@@ -146,8 +150,11 @@ public static class Openings
         // Over the finished floor (forum topic 192): raised by the floor's height over the wall's base, worked out now.
         var sillBase = OpeningSills.BaseOf(m, opening);
         var sill = OpeningSills.FromFinished(opening) ? opening.Num("sill") + sillBase : opening.Num("sill");
-        return new Placed(opening, fill, spec, opening.Num("along"), sill, width, height, fill == null ? BareShape(opening) : spec?.Shape,
-            spec == null ? 0 : opening.Num(FillOffsetKey), sillBase);
+        var offset = spec == null ? 0 : opening.Num(FillOffsetKey);
+        // Its hole down to the structure (GitHub #149): the finished floor's height below the door, which stays on the floor.
+        var drop = spec != null && OpeningSills.ReachesStructure(opening) ? Math.Clamp(sillBase, 0, Math.Max(0, sill)) : 0;
+        return new Placed(opening, fill, spec, opening.Num("along"), sill - drop, width, height + drop, fill == null ? BareShape(opening) : spec?.Shape,
+            offset + drop, sillBase, drop);
     }
 
     /// <summary>The head kinds a bare opening takes (decision 253): "round" is the semicircle.</summary>
@@ -321,7 +328,10 @@ public static class Openings
         if (Joinery.Problem(spec) is { } problem) throw new CommandException(problem);
         if ((type.Class == IfcClass.DoorType) != spec.IsDoor) throw new CommandException("A door type stays a door type, a window type a window type.");
         BayWindows.EnsureMaterials(edit, spec);
-        edit.Replace(type.With(name: spec.Name, attrs: TypeAttrs(spec)));
+        // What the configurator does not set stays (issue #141): the type's parameters, classification and the rest of its attributes.
+        var attrs = type.CloneAttrs();
+        foreach (var (k, v) in TypeAttrs(spec).ToList()) attrs[k] = v?.DeepClone();
+        edit.Replace(type.With(name: spec.Name, attrs: attrs));
         foreach (var fill in edit.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).ToList())
             if (OpeningOf(edit.Model, fill.Id) is { } opening && WallOf(edit.Model, opening.Id) is { } wall)
             {
@@ -446,9 +456,10 @@ public static class Openings
         // The wall's finished floor (its own, else its type's).
         var floor = finished && wall.Class == IfcClass.Wall ? OpeningSills.FinishedFloor(edit.Model, wall) : 0;
         // A door's or window's sill is its own: its opening's lies its offset under it (Openings.FillOffsetKey).
-        var s = sill is { } given ? given - (fillOrOpening.Class == IfcClass.OpeningElement ? 0 : placed.FillOffset) + (finished ? floor : 0)
-            : finished && wasFinished ? opening.Num("sill") + floor : placed.Sill;
-        CheckFits(edit.Model, wall, a, s, placed.Width, placed.Height, opening.Id);
+        // Its hole taken down to the structure (GitHub #149) is not in the stored sill: the offset and the sill without it.
+        var s = sill is { } given ? given - (fillOrOpening.Class == IfcClass.OpeningElement ? 0 : placed.FillOffset - placed.Drop) + (finished ? floor : 0)
+            : finished && wasFinished ? opening.Num("sill") + floor : placed.Sill + placed.Drop;
+        CheckFits(edit.Model, wall, a, s, placed.Width, placed.Height - placed.Drop, opening.Id);
         var attrs = opening.CloneAttrs();
         attrs["along"] = a;
         attrs["sill"] = finished ? s - floor : s;
@@ -1270,11 +1281,21 @@ public static class Openings
         // The symbol engine's plan (docs/simboluri-tamplarie.md): the frame cut, the glass, a door's leaves and their arcs; once
         // for each level a view may draw it at (decision 405: LOD 100 the opening and its swing, 200 simplified, 300 and up whole).
         foreach (var level in new[] { PlanDetail.Coarse, PlanDetail.Medium, PlanDetail.Fine })
-            foreach (var st in JoinerySymbols.Plan(spec, level: level, windowSwing: windowSwing, sill: p.FillSill, openMode: openMode))
+            foreach (var st in JoinerySymbols.Plan(spec, level: level, windowSwing: windowSwing, sill: p.FillSill, openMode: openMode, sillsApart: dressed))
                 o.Add(new PlanItem(st.Weight == "cut" ? "heavy" : st.Dashed ? "dashed" : "symbol", st.Closed, st.Pts.Select(q => P(q.X, q.Y)).ToList(), level, level));
         // A door's threshold seen under the cut, when its type asks for it (forum topic 204): at LOD 200 and up.
         foreach (var st in JoinerySymbols.ThresholdPlan(spec, depth))
             o.Add(new PlanItem("symbol", true, st.Pts.Select(q => P(q.X, q.Y)).ToList(), PlanDetail.Medium));
+        // The sills seen under the cut where the body has them (GitHub issue #153): the detailed ones at LOD 300 and up (the plain
+        // boards the symbol engine draws there), from LOD 200 with the boards too when the type asks for it.
+        if (dressed)
+        {
+            foreach (var st in JoinerySymbols.SillsPlan(spec, depth))
+                o.Add(new PlanItem("symbol", true, st.Pts.Select(q => P(q.X, q.Y)).ToList(), PlanDetail.Fine));
+            if (spec.SillsInPlan == true)
+                foreach (var st in JoinerySymbols.SillsPlan(spec, depth, boards: true))
+                    o.Add(new PlanItem("symbol", true, st.Pts.Select(q => P(q.X, q.Y)).ToList(), PlanDetail.Medium, PlanDetail.Medium));
+        }
         // The dressings seen in plan: what crosses the cut (shutters, a grille) cut, a window box below it seen, a canopy above it overhead.
         if (dressed)
             foreach (var (kind, x0, x1, y0, y1) in DressingPlan(spec, depth, cutOverSill))

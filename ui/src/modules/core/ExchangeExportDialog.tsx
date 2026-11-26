@@ -52,10 +52,16 @@ export function ExchangeExportDialog() {
   // A type's properties also on each of its elements (issue #30), for programs that read only the element: off, the export is as it was.
   const [typeProps, setTypeProps] = useState(false);
   const [spaceBrep, setSpaceBrep] = useState(false);
+  const [roofSlopes, setRoofSlopes] = useState(false);
+  const [floorBody, setFloorBody] = useState(false);
   // Pset_…Common.LoadBearing also where only the rule says it (docs/plan-structural-usage.md): off, written where the Structural tick or a Pset value says it.
   const [derivedLoadBearing, setDerivedLoadBearing] = useState(false);
   // Studio solids known exactly as IfcAdvancedBrep (docs/plan-studio-freeform.md §9): off, every body is written as its facets, as before.
   const [advancedBrep, setAdvancedBrep] = useState(false);
+  // A mirrored door or window an occurrence of its own type, its hand in its OperationType (issue #141): off, a "(mirrored)" type of its own, as before.
+  const [mirroredSameType, setMirroredSameType] = useState(false);
+  // Lintels IfcBeam LINTEL of their own with a type and their quantities in either detail (issue #150): off, as before.
+  const [lintelBeams, setLintelBeams] = useState(false);
   const [busy, setBusy] = useState(false);
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
@@ -87,7 +93,7 @@ export function ExchangeExportDialog() {
       } catch (e) {
         notify(e instanceof Error ? e.message : String(e));
       }
-    } else if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}), ...(bonsai && isDesktop() ? { bonsaiStyles: true } : {}), ...(structural ? { structural: true } : {}), ...(typeProps ? { typePropertiesOnOccurrences: true } : {}), ...(spaceBrep ? { spaceBrep: true } : {}), ...(derivedLoadBearing ? { derivedLoadBearing: true } : {}), ...(advancedBrep ? { advancedBrep: true } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
+    } else if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}), ...(bonsai && isDesktop() ? { bonsaiStyles: true } : {}), ...(structural ? { structural: true } : {}), ...(typeProps ? { typePropertiesOnOccurrences: true } : {}), ...(spaceBrep ? { spaceBrep: true } : {}), ...(roofSlopes ? { roofSlopes: true } : {}), ...(floorBody && detail === 'group' ? { floorBody: true } : {}), ...(mirroredSameType ? { mirroredSameType: true } : {}), ...(lintelBeams ? { lintelBeams: true } : {}), ...(derivedLoadBearing ? { derivedLoadBearing: true } : {}), ...(advancedBrep ? { advancedBrep: true } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
     else if (format === 'step') {
       const { phase: _phase, voids: _voids, ...chosen } = common as Record<string, unknown>;
       await exportFile('project.exportStep', { ...chosen, entourage: true }, `${projectTitle(path)}.step`, 'step');
@@ -158,12 +164,24 @@ export function ExchangeExportDialog() {
                 )}
                 <dt title="A type's property sets (Pset_WallCommon.IsExternal on the wall type) also written on each element of the type, for programs that read only the element; an element's own value wins">Type properties</dt>
                 <dd><label><input type="checkbox" data-testid="export-type-properties" style={{ width: 'auto', marginRight: 6 }} checked={typeProps} onChange={(e) => setTypeProps(e.target.checked)} /> Also write type properties on each occurrence</label></dd>
+                <dt title="A door or window flipped on one axis written as an occurrence of its own type, its hand said by its own OperationType and panels; unticked, it is of the type's mirror image, a type of its own named '… (mirrored)'">Mirrored doors and windows</dt>
+                <dd><label><input type="checkbox" data-testid="export-mirrored-same-type" style={{ width: 'auto', marginRight: 6 }} checked={mirroredSameType} onChange={(e) => setMirroredSameType(e.target.checked)} /> Mirrored doors keep the same type (the hand only in OperationType)</label></dd>
+                <dt title="Each lintel an IfcBeam LINTEL of its own under its wall, also with one body each, with its Qto_BeamBaseQuantities, and typed: by its beam type, else by a generic IfcBeamType LINTEL by its name and material">Lintels</dt>
+                <dd><label><input type="checkbox" data-testid="export-lintel-beams" style={{ width: 'auto', marginRight: 6 }} checked={lintelBeams} onChange={(e) => setLintelBeams(e.target.checked)} /> Lintels as their own beams</label></dd>
                 <dt title="LoadBearing in each element's Pset_…Common also where nothing says it, from the rule: a wall unless it is a partition, floors, roofs, columns, beams and footings; the elements whose Structural tick or LoadBearing property says it are written so either way">Load-bearing</dt>
                 <dd><label><input type="checkbox" data-testid="export-derived-load-bearing" style={{ width: 'auto', marginRight: 6 }} checked={derivedLoadBearing} onChange={(e) => setDerivedLoadBearing(e.target.checked)} /> Write derived LoadBearing</label></dd>
                 <dt title="The analytical model (bearing walls, floors, columns and beams as structural members) with the load cases, the loads and the combinations, as an IFC Structural Analysis View">Structural analysis</dt>
                 <dd><label><input type="checkbox" data-testid="export-structural" style={{ width: 'auto', marginRight: 6 }} checked={structural} onChange={(e) => setStructural(e.target.checked)} /> Structural analysis view (analytical model and loads)</label></dd>
                 <dt title="Export IfcSpace geometry as faceted B-rep (or face set) instead of SweptSolid extrusions, for IFC readers such as CYPECAD MEP that fail on extruded space profiles">Spaces</dt>
                 <dd><label><input type="checkbox" data-testid="export-space-brep" style={{ width: 'auto', marginRight: 6 }} checked={spaceBrep} onChange={(e) => setSpaceBrep(e.target.checked)} /> export as faceted B-rep (instead of SweptSolid)</label></dd>
+                <dt title="A sloped roof's covering (its deck, its layers) written as one IfcSlab ROOF per slope under the IfcRoof, for IFC readers such as CYPECAD MEP that fit one plane to each slab; timber, gutters and downpipes as before">Roofs</dt>
+                <dd><label><input type="checkbox" data-testid="export-roof-slopes" style={{ width: 'auto', marginRight: 6 }} checked={roofSlopes} onChange={(e) => setRoofSlopes(e.target.checked)} /> one slab per slope</label></dd>
+                {detail === 'group' && (
+                  <>
+                    <dt title="A floor made of parts (beam and block, timber, CLT) also gets a plain body of its own, its outline extruded by its depth, beside its parts, for IFC readers such as CYPECAD MEP that skip a floor with no body of its own">Floors of parts</dt>
+                    <dd><label><input type="checkbox" data-testid="export-floor-body" style={{ width: 'auto', marginRight: 6 }} checked={floorBody} onChange={(e) => setFloorBody(e.target.checked)} /> also a plain body: the outline extruded by the floor's depth</label></dd>
+                  </>
+                )}
                 <dt title="Studio solids Lapin knows exactly (primitives, extrusions of lines and arcs, revolutions, smooth lofts, closed SubDs) written as IfcAdvancedBrep on planes, cylinders, cones, spheres, tori and B-spline surfaces instead of facets; the rest as before">Exact surfaces</dt>
                 <dd><label><input type="checkbox" data-testid="export-advanced-brep" style={{ width: 'auto', marginRight: 6 }} checked={advancedBrep} onChange={(e) => setAdvancedBrep(e.target.checked)} /> Studio solids as advanced B-rep on their exact surfaces</label></dd>
                 <dt>Simplify</dt>

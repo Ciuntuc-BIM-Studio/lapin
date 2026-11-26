@@ -2,8 +2,9 @@
  * Room finishes (decision 265), the Finishes tab's Room group: the configurator (a finish's floor from the top down, its
  * walls from the wall's face into the room with their pieces up the height, its ceiling from the slab down, the walls'
  * height, the skirting, the floor through the doors, a structural slab under the floor, how plans hatch the floor and a
- * reflected ceiling plan the ceiling (decision 299); the ready-made library), the
- * room's finish in its properties; the tools are in roomFinishTools.ts.
+ * reflected ceiling plan the ceiling (decision 299); the ready-made library; issue #143: duplicate, save to the
+ * user's library, the type's parameters, and a type of their own for the floor, walls and ceiling, each with its
+ * parameters), the room's finish in its properties; the tools are in roomFinishTools.ts.
  */
 
 import { ColourField } from '../../shell/ColourField';
@@ -22,6 +23,9 @@ import { PendingDialog } from '../core/PendingDialog';
 import { openPainter } from './finishPainter';
 import { PatternOptions } from '../core/hatchUnits';
 import { useHatchNames } from '../core/hatchCache';
+import { TypeListActions, endsOf } from '../../shell/TypeListActions';
+import { SaveTypeToLibrary } from '../core/SaveTypeToLibrary';
+import { ParamsSection } from '../../shell/ParamsSection';
 
 interface FinishPart { material: string; height: number; thickness?: number | null }
 interface FinishLayer { material: string; thickness: number; parts?: FinishPart[] | null }
@@ -30,10 +34,13 @@ export interface RoomFinishSpec {
   name: string; floor?: FinishLayer[] | null; walls?: FinishLayer[] | null; ceiling?: FinishLayer[] | null;
   wallHeight?: number | null; skirting?: string | null; thresholds: boolean; slab?: FinishSlab | null;
   floorHatch?: FinishHatch | null; ceilingHatch?: FinishHatch | null;
+  /** The floor, the walls and the ceiling each typed by a part type of its own (issue #143); null: one type for the three. */
+  partTypes?: boolean | null;
 }
 type Catalog = { spec: RoomFinishSpec; library: RoomFinishSpec[] };
 
 const TYPE = 'LapinRoomFinishType';
+const PART_TYPE = 'LapinRoomFinishPartType';
 
 /** One part's layers: material and thickness each; on the walls, each layer's pieces up the height. */
 function LayersTable({ layers, onChange, pieces, testId }: { layers: FinishLayer[]; onChange: (l: FinishLayer[]) => void; pieces?: boolean; testId: string }) {
@@ -153,6 +160,8 @@ export function RoomFinishesDialog() {
   const close = () => useUi.setState({ dialog: null });
   const rooms = selected.filter((id) => nodes.get(id)?.type === 'IfcSpace');
   const using = editing ? [...nodes.values()].filter((n) => n.type === 'IfcSpace' && n.props.finishType === editing).length : 0;
+  const typeNode = editing ? nodes.get(editing) : undefined;
+  const partTypes = editing ? [...nodes.values()].filter((n) => n.type === PART_TYPE && n.props.finishType === editing) : [];
   const save = async (): Promise<string | null> => {
     if (editing) { await execute('architecture.updateRoomFinishType', { id: editing, spec }); return editing; }
     const r = await execute('architecture.createRoomFinishType', { spec }) as { id?: string } | null;
@@ -187,6 +196,11 @@ export function RoomFinishesDialog() {
           </ul>
           <div className="type-edit room-finish-edit">
             <label className="field-line"><span className="eyebrow">Name</span><input value={spec.name} onChange={(e) => set({ name: e.target.value })} /></label>
+            {/* Duplicate, move, and save to the user's library, as every type dialog has them (issue #143). */}
+            <div className="row">
+              <TypeListActions id={editing} onDuplicated={setEditing} {...endsOf(types, editing)} />
+              {editing && <SaveTypeToLibrary ids={[editing]} />}
+            </div>
             {PARTS.map(([key, label, hint, material]) => {
               const layers = spec[key] ?? [];
               return (
@@ -215,6 +229,23 @@ export function RoomFinishesDialog() {
                 <option value="">none</option>
                 {[...new Set([...skirtings.map((s) => s.name), ...skirtingLibrary])].map((n) => <option key={n} value={n} data-no-i18n>{n}</option>)}
               </select></label>
+            <section className="finish-part" data-part="types">
+              <label className="check" title="Off: one type (this finish) for its floor, walls and ceiling. On: each part has a type of its own (Name · Floor, · Walls, · Ceiling), with its own parameters and its layers in IFC">
+                <input type="checkbox" data-testid="finish-part-types" checked={spec.partTypes === true} onChange={(e) => set({ partTypes: e.target.checked ? true : null })} /> A type of its own for the floor, the walls and the ceiling</label>
+              {typeNode && (
+                <details className="finish-params" data-testid="finish-params">
+                  <summary className="eyebrow">Type parameters</summary>
+                  <ParamsSection node={typeNode} ids={() => [typeNode.id]} isType />
+                  {spec.partTypes === true && partTypes.map((p) => (
+                    <div key={p.id} className="finish-part-params" data-part-type={String(p.props.part ?? '')}>
+                      <p className="eyebrow" data-no-i18n>{p.name}</p>
+                      <ParamsSection node={p} ids={() => [p.id]} isType />
+                    </div>
+                  ))}
+                  {spec.partTypes === true && partTypes.length === 0 && <p className="muted small">Save to make the parts' types.</p>}
+                </details>
+              )}
+            </section>
             <section className="finish-part" data-part="slab">
               <label className="check"><input type="checkbox" data-testid="finish-slab" checked={Boolean(spec.slab)}
                 onChange={(e) => set({ slab: e.target.checked ? { material: 'Reinforced concrete', thickness: 0.15, extend: 0 } : null })} /> A structural slab under the floor <span className="muted small">(a floor of its own, in the structure)</span></label>

@@ -65,7 +65,11 @@ public static class TypeOrder
     public static Entity Duplicate(ICommandContext ctx, Entity type, string? name)
     {
         var m = ctx.Model;
-        var copy = new Entity(ctx.NewId(), type.Class, name?.Trim() is { Length: > 0 } n ? n : CopyName(m, type.Class, type.Name), type.CloneAttrs(), type.PredefinedType);
+        var copyName = name?.Trim() is { Length: > 0 } n ? n : CopyName(m, type.Class, type.Name);
+        var copyAttrs = type.CloneAttrs();
+        // A type whose spec carries its name (a room finish, a ceiling type: issue #143) has the copy's name there too, so its dialog shows it.
+        if (copyAttrs["spec"] is JsonObject spec && (string?)spec["name"] == type.Name) spec["name"] = copyName;
+        var copy = new Entity(ctx.NewId(), type.Class, copyName, copyAttrs, type.PredefinedType);
         ctx.Add(copy);
         foreach (var rel in m.RelatedBy(type.Id).ToList())
         {
