@@ -74,7 +74,7 @@ Every stroke is one command, one undo step.
    (copy, storey copies, groups); IFC import of Lapin's own coverings back into zones; build-up tags of zones; the
    planning generator's exterior finishes phase; textures that follow the zones' frames.
 
-## Curved walls (forum topic 288, decision 886)
+## Curved walls (forum topic 288, decision 888)
 
 Done (26.11.2026). A curved (arc) wall's `Face.Left` and `Face.Right` are named by `ArchitectureFaces` as curves along the
 arc at its base (they stay so for formwork and the other users of the faces); the painter takes them as paintable faces and
