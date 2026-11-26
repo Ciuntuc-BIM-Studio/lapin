@@ -16,7 +16,10 @@ namespace Lapin.Engine.Tests;
 /// from the civil module to <c>Lapin.Geometry</c>, where the floors' <see cref="PlanMesh"/> shares its predicates. Nothing may
 /// change: a terrain with a feature line, a terrain on an outline with an arc, a hardscape on corners out of one plane, a grading
 /// patch between two plazas and a floor with drains, a line, points, edge slopes and a region are built and their bodies hashed
-/// (every vertex to the nanometre, every face), against the hashes taken before the move.
+/// (every vertex to the nanometre, every face), against the hashes taken before the move. The order a body lists its vertices
+/// and faces in is not hashed: it follows the order the TIN's triangles are made in, so the order its points are inserted in
+/// (by x, then y), which the libm's last bit moves: the upper plaza's arc has corners that mirror each other at the same x, and
+/// glibc on x64 and the arm64 Mac's libm round some of those x an ulp apart. The geometry is the same on both.
 /// </summary>
 public sealed class TriangulationGoldenTests
 {
@@ -25,7 +28,10 @@ public sealed class TriangulationGoldenTests
     static JsonArray Pts(params double[][] pts) => new([.. pts.Select(p => (JsonNode)P(p))]);
     static JsonArray Rect(double x0, double y0, double x1, double y1) => Pts([x0, y0], [x1, y0], [x1, y1], [x0, y1]);
 
-    /// <summary>A body as text: each part's key, its vertices to the nanometre and its faces' loops, hashed.</summary>
+    /// <summary>
+    /// A body as text, hashed: each part's key, its vertices to the nanometre, sorted, and its faces sorted, each by its loops
+    /// written in those vertices (from the rotation that sorts first, the way round kept; the holes sorted).
+    /// </summary>
     static string Hash(Fixture f, string id)
     {
         var g = f.Session.Geometry(id)!;
@@ -33,14 +39,11 @@ public sealed class TriangulationGoldenTests
         string N(double v) => Math.Round(v, 9).ToString("0.#########", CultureInfo.InvariantCulture);
         foreach (var p in g.Parts)
         {
-            b.Append(p.Key).Append('|');
-            foreach (var v in p.Solid.Vertices) b.Append(N(v.X)).Append(',').Append(N(v.Y)).Append(',').Append(N(v.Z)).Append(';');
-            foreach (var face in p.Solid.Faces)
-            {
-                b.Append('[').Append(string.Join(',', face.Outer));
-                foreach (var h in face.Holes) b.Append('/').Append(string.Join(',', h));
-                b.Append(']');
-            }
+            var at = p.Solid.Vertices.Select(v => $"{N(v.X)},{N(v.Y)},{N(v.Z)}").ToArray();
+            string Loop(int[] loop) => Enumerable.Range(0, loop.Length).Select(k => string.Join(';', loop[k..].Concat(loop[..k]).Select(i => at[i]))).Min(StringComparer.Ordinal)!;
+            b.Append(p.Key).Append('|').AppendJoin(';', at.Order(StringComparer.Ordinal)).Append('|');
+            foreach (var face in p.Solid.Faces.Select(x => $"[{Loop(x.Outer)}{string.Concat(x.Holes.Select(h => "/" + Loop(h)).Order(StringComparer.Ordinal))}]").Order(StringComparer.Ordinal))
+                b.Append(face);
             b.Append('\n');
         }
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(b.ToString())))[..16];
@@ -96,5 +99,8 @@ public sealed class TriangulationGoldenTests
     }
 
     // The terrain's: its feature line crosses the lower hardscape and stops at its edge now (decision 814), the rest as before the move.
-    static readonly string[] Golden = ["98CEF6F7AC190BE5", "88BC0FB3700E4363", "45EC1C6398C70CD9", "1DE14F7C52A63E04", "F6EA2D624EB253DD", "5437249887C1927B", "7AE8FB9AD106BA1D"];
+    // The bodies hashed are the ones the arm64 Mac's hashes, taken in order, were of (98CEF6F7AC190BE5 88BC0FB3700E4363
+    // 45EC1C6398C70CD9 1DE14F7C52A63E04 F6EA2D624EB253DD 5437249887C1927B 7AE8FB9AD106BA1D): on x64 they all held once the two
+    // pairs of the upper plaza's arc corners at x 31.45 and 31.85 were inserted in the Mac's order.
+    static readonly string[] Golden = ["C0B2EE5818E193F2", "17C7F5D587AC1E28", "72CFFC3D0DE7B8D4", "AC4EE86D17D20AC0", "2D7C5BBBB7877FFA", "35D834AB0F8742E9", "E71FB2707BB06F4E"];
 }
