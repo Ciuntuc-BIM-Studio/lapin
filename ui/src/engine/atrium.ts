@@ -16,20 +16,32 @@ export class AtriumError extends Error {
   constructor(public status: number, public code: string, message: string, public serverMessage: string | null = null, public body: Record<string, unknown> | null = null) { super(message); }
 }
 
-interface Answer<T> { status: number; body: T | null; etag: string | null }
+export interface Answer<T> { status: number; body: T | null; etag: string | null }
 
-async function request<T>(server: string, method: string, path: string, body?: unknown): Promise<Answer<T>> {
+async function request<T>(server: string, method: string, path: string, body?: unknown, ifMatch?: string | null): Promise<Answer<T>> {
   if (isCdeServer(server)) {
     const r = await api(`/${path}`, {
       method,
-      headers: body === undefined ? {} : { 'content-type': 'application/json' },
+      headers: { ...(body === undefined ? {} : { 'content-type': 'application/json' }), ...(ifMatch ? { 'if-match': ifMatch } : {}) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
     let json: T | null = null;
     try { json = await r.json() as T; } catch { json = null; }
     return { status: r.status, body: json, etag: r.headers.get('etag') };
   }
-  return remoteCall<Answer<T>>('remote.atrium', { url: server, method, path, ...(body === undefined ? {} : { body }) }, server);
+  return remoteCall<Answer<T>>('remote.atrium', { url: server, method, path, ...(body === undefined ? {} : { body }), ...(ifMatch ? { ifMatch } : {}) }, server);
+}
+
+/**
+ * A request with its whole answer (status, JSON, ETag), `ifMatch` sent as If-Match: for a record changed with its version (the project
+ * information, A1b), whose 412 the caller reads again. A refusal other than 412 is thrown as by need().
+ */
+export async function send<T>(server: string, method: string, path: string, body?: unknown, ifMatch?: string | null): Promise<Answer<T>> {
+  const a = await request<T>(server, method, path, body, ifMatch);
+  if ((a.status >= 200 && a.status < 300) || a.status === 412) return a;
+  const b = (a.body ?? {}) as { code?: string; message?: string };
+  const code = b.code ?? (a.status === 404 || a.status === 405 ? 'not_offered' : a.status === 401 ? 'unauthorized' : `http_${a.status}`);
+  throw new AtriumError(a.status, code, refusalText(code, b.message ?? `The server answered ${a.status}.`), b.message ?? null, (a.body ?? null) as Record<string, unknown> | null);
 }
 
 /** A request whose answer must be a success: its JSON, or the refusal thrown with its code and the message said here. */

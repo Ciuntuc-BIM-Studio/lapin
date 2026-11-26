@@ -8,6 +8,7 @@ import { engine } from '../../engine/session';
 import { LONG_TIMEOUT_MS } from '../../engine/client';
 import { need, putObject } from '../../engine/atrium';
 import { syncReferences } from '../../engine/remote';
+import { archicadProposal, propose, proposalMade } from '../core/projectInfo/serverInfo';
 
 export const GUIDE_URL = 'https://lapinbim.com/docs/archicad/';
 
@@ -20,14 +21,28 @@ export interface ArchicadSurvey {
   port: number; project: string | null; archicad: string | null; tapir: string | null; storeys: ArchicadStorey[];
   elements: number; byType: Record<string, number>; native: Record<string, number>; references: number; skipped: Record<string, number>;
   existing: number; updates: number; adds: number; removes: number; fromThisProject: boolean; ms: number; notes: string[];
+  projectInfo?: ArchicadProjectInfo | null;
 }
 export interface ArchicadRecognition { recognized: number; offered: number; byClass: Record<string, number>; kept: Record<string, number>; reverted: number }
 export interface ArchicadLevels { matched: number; made: number; renamed: number; moved: number; removed: number; kept: number }
+/**
+ * What Archicad's Project Info does to the project's information (A1b): the empty fields it fills, those set here with another value
+ * (left as they are: the dialog offers to take them), those the same, and what no field takes (kept apart as `info.source.archicad`).
+ */
+export interface ArchicadProjectInfo {
+  source: 'archicad';
+  filled: { key: string; value: string }[];
+  differs: { key: string; lapin: string; archicad: string }[];
+  same: string[];
+  kept: { id: string; label: string | null; value: string }[];
+}
 export interface ArchicadReceived {
   elements: number; added: number; updated: number; unchanged: number; removed: number; native: number; references: number;
   storeys: Record<string, number>; levels: ArchicadLevels | null; recognition: ArchicadRecognition | null;
-  skipped: Record<string, number>; notes: string[]; groupId: string | null;
+  skipped: Record<string, number>; notes: string[]; groupId: string | null; projectInfo?: ArchicadProjectInfo | null;
 }
+/** Archicad's Project Info for Send to Atrium's proposal: Tapir's answer as it is, the project file's name, and what it would do here. */
+export interface ArchicadProjectInfoRead extends ArchicadProjectInfo { raw: unknown[]; file: string | null }
 export interface ArchicadTranslator { name: string; preview: boolean }
 export interface ArchicadIfc { name: string; size: number; sha256: string; data: string }
 
@@ -142,6 +157,13 @@ export const instances = () => ask<ArchicadInstance[]>('archicad.instances');
 export const survey = (port: number) => ask<ArchicadSurvey>('archicad.survey', { port }, true);
 export const translators = (port: number) => ask<ArchicadTranslator[]>('archicad.translators', { port });
 export const saveIfc = (port: number, translator: string) => ask<ArchicadIfc>('archicad.saveIfc', { port, translator }, true);
+export const readProjectInfo = (port: number) => ask<ArchicadProjectInfoRead>('archicad.projectInfo', { port });
+
+/** The fields ticked among those that differ, as project.setInfo takes them (Archicad's values). */
+export function takenFields(info: ArchicadProjectInfo, keys: Iterable<string>): Record<string, string> {
+  const want = new Set(keys);
+  return Object.fromEntries(info.differs.filter((d) => want.has(d.key)).map((d) => [d.key, d.archicad]));
+}
 
 /** The model into the project: one undo step; its diff arrives as an event. */
 export async function receive(port: number, o: ReceiveOptions): Promise<ArchicadReceived> {
@@ -155,13 +177,16 @@ export async function createReference(server: string, project: string, body: Rec
   await need<unknown>(server, 'POST', `atrium/1.0/projects/${encodeURIComponent(project)}/references`, body);
 }
 
-export type SendStep = 'saving' | 'uploading' | 'creating' | 'syncing';
+export type SendStep = 'saving' | 'uploading' | 'creating' | 'syncing' | 'proposing';
+
+/** What the proposal of Send to Atrium did: its number and how many changes it holds, or nothing differed, or why it was not made. */
+export type ProposalOutcome = { made: true; number: number; changes: number } | { made: false; reason: string };
 
 /** Archicad's IFC to the server as a reference model, step by step (`step` is told before each). */
 export async function sendToServer(
-  a: { server: string; project: string; port: number; translator: string; title: string; folder: string; discipline: string; file: string },
+  a: { server: string; project: string; port: number; translator: string; title: string; folder: string; discipline: string; file: string; proposeInfo?: boolean },
   step: (s: SendStep) => void = () => undefined,
-): Promise<{ id: string; size: number }> {
+): Promise<{ id: string; size: number; proposal?: ProposalOutcome }> {
   step('saving');
   const ifc = await saveIfc(a.port, a.translator);
   step('uploading');
@@ -172,5 +197,14 @@ export async function sendToServer(
   step('syncing');
   await syncReferences(a.server, true);
   rememberPort(a.port);
-  return { id, size: ifc.size };
+  if (!a.proposeInfo) return { id, size: ifc.size };
+  // A1b: Archicad's Project Info proposed to the server's record (an owner applies it); a failure here leaves the model sent.
+  step('proposing');
+  let proposal: ProposalOutcome;
+  try {
+    const info = await readProjectInfo(a.port);
+    const answer = await propose(a.server, a.project, archicadProposal(info.raw, info.file, id));
+    proposal = proposalMade(answer) ? { made: true, number: answer.number, changes: answer.changes.length } : { made: false, reason: 'no_changes' };
+  } catch (e) { proposal = { made: false, reason: e instanceof Error ? e.message : String(e) }; }
+  return { id, size: ifc.size, proposal };
 }

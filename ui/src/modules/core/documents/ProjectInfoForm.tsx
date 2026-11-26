@@ -7,7 +7,7 @@
  */
 
 import { backdropClose } from '../../../shell/Dialog';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../../app/store';
 import { execute, useSession } from '../../../engine/session';
@@ -105,6 +105,28 @@ function ParametersForm({ info }: { info: ProjectInfo }) {
   );
 }
 
+const SOURCE_NAMES: Record<string, string> = { archicad: 'From Archicad', ifc: 'From IFC' };
+
+/**
+ * What a source said that no field takes (A1b: Archicad's description, keywords, autotexts… kept by File → Collaborate → Archicad:
+ * Receive… as `info.source.archicad`), read-only: replaced at the next receive, never synced or exported.
+ */
+function SourceValues({ info }: { info: ProjectInfo }) {
+  const sources = Object.entries((info.source ?? {}) as Record<string, Record<string, { label?: string | null; value: string }>>).filter(([, v]) => Object.keys(v ?? {}).length > 0);
+  if (sources.length === 0) return null;
+  return <>{sources.map(([source, values]) => (
+    <section key={source} className="doc-info-group" data-field={`info-source-${source}`}>
+      <h4 className="eyebrow">{SOURCE_NAMES[source] ?? source}</h4>
+      <p className="muted small">What the model's own project information says that no field above takes, kept as it said it (read-only; replaced when it is received again).</p>
+      <dl className="fields small">
+        {Object.entries(values).sort(([, a], [, b]) => (a.label ?? '').localeCompare(b.label ?? '')).map(([id, v]) => (
+          <Fragment key={id}><dt data-no-i18n title={id}>{v.label || id}</dt><dd data-no-i18n>{v.value}</dd></Fragment>
+        ))}
+      </dl>
+    </section>
+  ))}</>;
+}
+
 export function ProjectInfoForm({ info }: { info: ProjectInfo }) {
   const put = (key: string) => (v: string) => void setProjectInfo({ [key]: v.trim() || null });
   const text = (key: string) => (typeof info[key] === 'string' ? (info[key] as string) : '');
@@ -124,6 +146,7 @@ export function ProjectInfoForm({ info }: { info: ProjectInfo }) {
       ))}
       <datalist id="doc-info-phases">{info.phases.map((p) => <option key={p} value={p} />)}</datalist>
       <ParametersForm info={info} />
+      <SourceValues info={info} />
       <p className="muted small">Documents and title blocks read these fields; a sheet's title block takes who drew and checked from here when the sheet does not say.</p>
     </div>
   );

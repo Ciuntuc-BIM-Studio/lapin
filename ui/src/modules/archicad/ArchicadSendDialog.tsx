@@ -15,12 +15,13 @@ import { useLang, t } from '../../i18n';
 import { folderNames, type FolderNode } from '../core/references/roleFolders';
 import {
   defaultFileName, defaultTitle, GUIDE_URL, instanceLabel, instances, lastPort, pickInstance, pickTranslator, sendProblems, sendToServer, translators,
-  type ArchicadInstance, type ArchicadTranslator, type SendStep,
+  type ArchicadInstance, type ArchicadTranslator, type ProposalOutcome, type SendStep,
 } from './archicad';
 
 const messageOf = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const STEPS: Record<SendStep, string> = {
   saving: 'Saving the IFC in Archicad…', uploading: 'Putting the file on the server…', creating: 'Making the reference document…', syncing: 'Updating the project\'s register…',
+  proposing: 'Proposing the project information…',
 };
 
 export function ArchicadSendDialog() {
@@ -42,7 +43,8 @@ export function ArchicadSendDialog() {
   const [step, setStep] = useState<SendStep | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState<{ title: string; folder: string } | null>(null);
+  const [sent, setSent] = useState<{ title: string; folder: string; proposal?: ProposalOutcome } | null>(null);
+  const [proposeInfo, setProposeInfo] = useState(true);
 
   useEffect(() => {
     let live = true;
@@ -97,9 +99,9 @@ export function ArchicadSendDialog() {
     if (!server || !chosen) return;
     setBusy(true); setError(null); setSent(null);
     try {
-      await sendToServer({ server, project, port: chosen.port, translator, title, folder, discipline, file }, setStep);
+      const r = await sendToServer({ server, project, port: chosen.port, translator, title, folder, discipline, file, proposeInfo }, setStep);
       const text = folders.find((f) => f.id === folder)?.text ?? folder;
-      setSent({ title: title.trim(), folder: text });
+      setSent({ title: title.trim(), folder: text, proposal: r.proposal });
       notify('Sent to the server.');
     } catch (e) { setError(messageOf(e)); } finally { setBusy(false); setStep(null); }
   };
@@ -138,12 +140,19 @@ export function ArchicadSendDialog() {
                     <datalist id="archicad-disciplines">{DISCIPLINES.map((d) => <option key={d} value={d} />)}</datalist></dd>
                   <dt>File name</dt>
                   <dd><input className="archicad-file" value={file} onChange={(e) => { setFile(e.target.value); setFileEdited(true); }} /></dd>
+                  <dt title="Archicad's Project Info (name, number, client, site, designer…) proposed to the project's information on the server; an owner applies it">Project information</dt>
+                  <dd><label><input type="checkbox" className="archicad-propose-info" checked={proposeInfo} onChange={(e) => setProposeInfo(e.target.checked)} /> <span>Also propose the project information</span></label></dd>
                 </dl>
               )}
               {chosen && !chosen.ok && <p className="error small" data-no-i18n>{chosen.problem}</p>}
               <p className="muted small">Archicad saves its model as an IFC with the chosen translator; Lapin puts the file on the project's server as a reference model. The demo version of Archicad may refuse to save.</p>
               {step && <p className="muted small" data-testid="archicad-step">{STEPS[step]}</p>}
               {sent && <p data-testid="archicad-sent"><span>Sent:</span> <b data-no-i18n>{sent.title}</b> <span>is in the folder</span> <b data-no-i18n>{sent.folder}</b> <span>on the server.</span></p>}
+              {sent?.proposal && (sent.proposal.made
+                ? <p className="small" data-testid="archicad-proposed"><span>Project information proposed:</span> <span data-no-i18n>#{sent.proposal.number}, {sent.proposal.changes}</span> <span>changes, for an owner to apply (Publishing → Project information).</span></p>
+                : sent.proposal.reason === 'no_changes'
+                  ? <p className="muted small" data-testid="archicad-proposed">Archicad's Project Info says nothing the server's project information lacks: nothing proposed.</p>
+                  : <p className="error small" data-testid="archicad-proposed"><span>The project information was not proposed:</span> <span data-no-i18n>{sent.proposal.reason}</span></p>)}
             </>
           )}
           {error && <p className="error small" data-testid="archicad-error" data-no-i18n>{error}</p>}

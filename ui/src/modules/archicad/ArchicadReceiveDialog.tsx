@@ -12,12 +12,55 @@ import { backdropClose } from '../../shell/Dialog';
 import { engine } from '../../engine/session';
 import { begin, end } from '../../engine/ifcImport';
 import { t } from '../../i18n';
+import { setProjectInfo } from '../core/documents/documents';
+import { changeLabel } from '../core/projectInfo/serverInfo';
 import {
-  countRows, DEFAULT_OPTIONS, GUIDE_URL, instanceLabel, instances, keptRows, lastPort, pickInstance, receive, receivedSummary, reportRows, survey,
-  type ArchicadInstance, type ArchicadReceived, type ArchicadSurvey, type ReceiveOptions,
+  countRows, DEFAULT_OPTIONS, GUIDE_URL, instanceLabel, instances, keptRows, lastPort, pickInstance, receive, receivedSummary, reportRows, survey, takenFields,
+  type ArchicadInstance, type ArchicadProjectInfo, type ArchicadReceived, type ArchicadSurvey, type ReceiveOptions,
 } from './archicad';
 
 const messageOf = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+/**
+ * What Archicad's Project Info did (A1b): the empty fields filled (in the receive's undo step), the ones that differ from what the project
+ * has, to tick and take (project.setInfo, one undo step), and how many other values were kept apart.
+ */
+function ProjectInfoReport({ info }: { info: ArchicadProjectInfo }) {
+  const [ticked, setTicked] = useState<Set<string>>(new Set());
+  const [taken, setTaken] = useState<string[]>([]);
+  const left = info.differs.filter((d) => !taken.includes(d.key));
+  const take = async () => {
+    const keys = [...ticked];
+    await setProjectInfo(takenFields(info, keys));
+    setTaken((t) => [...t, ...keys]); setTicked(new Set());
+    notify('Archicad\'s values taken into the project information.');
+  };
+  return (
+    <div className="archicad-info" data-testid="archicad-info">
+      <p className="small"><b>Project information</b></p>
+      {info.filled.length > 0
+        ? <p className="muted small"><span>Filled from Archicad:</span> <span data-no-i18n>{info.filled.map((f) => changeLabel(f)).join(', ')}</span></p>
+        : <p className="muted small">No empty field of the project's information was filled.</p>}
+      {left.length > 0 && <>
+        <p className="muted small">These fields are set in the project with another value: they were left as they are. Tick the ones to take from Archicad.</p>
+        <table className="archicad-info-differs small">
+          <thead><tr><th /><th>Field</th><th>In Lapin</th><th>In Archicad</th></tr></thead>
+          <tbody>
+            {left.map((d) => (
+              <tr key={d.key} data-archicad-differs={d.key}>
+                <td><input type="checkbox" checked={ticked.has(d.key)} aria-label="Take Archicad's value"
+                  onChange={() => setTicked((s) => { const n = new Set(s); if (n.has(d.key)) n.delete(d.key); else n.add(d.key); return n; })} /></td>
+                <td>{changeLabel(d)}</td><td data-no-i18n>{d.lapin}</td><td data-no-i18n>{d.archicad}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <button type="button" className="btn" data-action="archicad-take-info" disabled={ticked.size === 0} onClick={() => void take()}>Take the ticked values</button>
+      </>}
+      {info.kept.length > 0 && <p className="muted small"><span data-no-i18n>{info.kept.length}</span> <span>other values from Archicad's Project Info are kept apart, read-only: Manage → Project information…</span></p>}
+    </div>
+  );
+}
 
 export function ArchicadReceiveDialog() {
   const close = () => useUi.setState({ dialog: null });
@@ -92,6 +135,8 @@ export function ArchicadReceiveDialog() {
                     <dt>To add</dt><dd data-no-i18n>{looked.adds}</dd>
                     <dt>To update</dt><dd data-no-i18n>{looked.updates}</dd>
                     <dt>To remove</dt><dd data-no-i18n>{looked.removes}</dd>
+                    {looked.projectInfo && <><dt title="The project's empty fields that Archicad's Project Info fills; a field set here is never overwritten">Project information to fill</dt><dd data-no-i18n>{looked.projectInfo.filled.length}</dd>
+                      {looked.projectInfo.differs.length > 0 && <><dt>Project information that differs</dt><dd data-no-i18n>{looked.projectInfo.differs.length}</dd></>}</>}
                   </dl>
                   {countRows(looked.byType).length > 0 && <p className="muted small">By type: <span data-no-i18n>{countRows(looked.byType).map(([k, n]) => `${k} ${n}`).join(', ')}</span></p>}
                   {countRows(looked.skipped).length > 0 && <p className="muted small">Left out: <span data-no-i18n>{countRows(looked.skipped).map(([k, n]) => `${k} ${n}`).join(', ')}</span></p>}
@@ -125,6 +170,7 @@ export function ArchicadReceiveDialog() {
                   {kept.length > 0 && <p className="muted small archicad-kept">Stayed references: <span data-no-i18n>{kept.map(([k, n]) => `${k} (${n})`).join('; ')}</span></p>}
                   {skipped.length > 0 && <p className="muted small">Left out: <span data-no-i18n>{skipped.map(([k, n]) => `${k} ${n}`).join(', ')}</span></p>}
                   {received.notes.map((n) => <p key={n} className="muted small" data-no-i18n>{n}</p>)}
+                  {received.projectInfo && <ProjectInfoReport info={received.projectInfo} />}
                 </div>
               )}
             </>

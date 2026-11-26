@@ -33,6 +33,7 @@ const IdsOnSubmit = lazyPart(() => import('./ids/IdsOnSubmit').then((m) => m.Ids
 const IdsPanel = lazyPart(() => import('./ids/IdsPanel').then((m) => m.IdsPanel), { inline: true });
 // W6c: the IDS files on the server and the dry run (CdeIds.tsx), when the server offers `ids`.
 const DocumentsTab = lazyPart(() => import('./references/CdeDocuments').then((m) => m.CdeDocuments), { inline: true });
+const ProjectInfoTab = lazyPart(() => import('./projectInfo/CdeProjectInfo').then((m) => m.CdeProjectInfo), { inline: true });
 const IdsServerPanel = lazyPart(() => import('./CdeIds').then((m) => m.IdsServerPanel), { inline: true });
 const IdsCheckOnServer = lazyPart(() => import('./CdeIds').then((m) => m.IdsCheckOnServer), { inline: true });
 // R7: Submit files… (another program's drawings and models from disk into the queue).
@@ -114,7 +115,7 @@ function useMe(server: string, project: string): { me: Me | null; rules: Rules |
 
 // ------------------------------------------------------------ the panel
 
-type Tab = 'containers' | 'submissions' | 'diff' | 'register' | 'serverIds' | 'ids' | 'documents';
+type Tab = 'containers' | 'submissions' | 'diff' | 'register' | 'serverIds' | 'ids' | 'documents' | 'info';
 
 /**
  * A submission read whole (with its checks report) and kept up to date while its checks run (W5): polled until they are done or
@@ -177,13 +178,14 @@ function Publishing({ server, project, name, offers, withModel }: { server: stri
         <button type="button" className="link small" data-cde="handover-report" disabled={busy} title="The issues, their comments and the journal of who changed what, as an Excel workbook" onClick={() => void run(() => exportHandover(server, project, name))}><FileSpreadsheet size={12} /> Handover report (XLSX)</button>
       </p>
       <div className="cde-tabs" role="tablist">
-        {([['containers', 'Containers'], ['submissions', 'Submissions'], ['diff', 'Handover diff'], ...(offers.includes('references') && isCdeServer(server) ? [['documents', 'Documents']] : []), ...(offers.includes('register') ? [['register', 'Register']] : []), ...(offers.includes('ids') ? [['serverIds', 'IDS on the server']] : []), ...(withModel ? [['ids', 'IDS']] : [])] as [Tab, string][]).map(([id, label]) => (
+        {([['containers', 'Containers'], ['submissions', 'Submissions'], ['diff', 'Handover diff'], ...(offers.includes('references') && isCdeServer(server) ? [['documents', 'Documents']] : []), ...(offers.includes('project.info') ? [['info', 'Project information']] : []), ...(offers.includes('register') ? [['register', 'Register']] : []), ...(offers.includes('ids') ? [['serverIds', 'IDS on the server']] : []), ...(withModel ? [['ids', 'IDS']] : [])] as [Tab, string][]).map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={tab === id} className={`tab${tab === id ? ' active' : ''}`} data-cde-tab={id} onClick={() => setTab(id)}>{label}</button>
         ))}
       </div>
       {failed && <p className="muted small">{failed}</p>}
       {tab === 'containers' && <ContainersView server={server} project={project} name={name} data={data} busy={busy} run={run} folders={offers.includes('references')} />}
       {tab === 'documents' && <DocumentsTab server={server} project={project} name={name} />}
+      {tab === 'info' && <ProjectInfoTab server={server} project={project} withModel={withModel} />}
       {tab === 'submissions' && <SubmissionsQueue server={server} project={project} who={who} onDecided={load} checks={offers.includes('checks')} files={offers.includes('submissions.files')} />}
       {tab === 'diff' && <HandoverDiffView server={server} project={project} name={name} data={data} />}
       {tab === 'ids' && <IdsPanel server={server} project={project} />}

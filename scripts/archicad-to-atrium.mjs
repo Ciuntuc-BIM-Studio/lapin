@@ -10,6 +10,10 @@
 // one route with one kind of token. Up to 12 MiB the file travels inside the call (base64); larger, the tool
 // opens an upload session and the bytes go to its URL in chunks (lapin-remote's resumable upload).
 //
+// Then (A1b) Archicad's Project Info (Tapir's GetProjectInfoFields) is proposed to the project's information record with the
+// tool cde_project_info_propose (source archicad, the reference document named): the server maps it with the table Lapin
+// shares, and an owner applies it in the CDE's Project information tab. --no-project-info skips it.
+//
 // Node 22, no dependency. The token is read from the environment (ATRIUM_TOKEN), never from an argument and
 // never written anywhere. Exit codes: 0 done, 1 failed, 2 wrong use, 3 Archicad or Tapir problem,
 // 4 server problem (sign-in, rights, refusal).
@@ -50,7 +54,7 @@ export function versionAtLeast(have, need) {
 const OPTIONS = {
   port: 'value', server: 'value', project: 'value', title: 'value', folder: 'value', discipline: 'value', type: 'value',
   translator: 'value', elements: 'value', out: 'value', phase: 'value', 'inline-limit': 'value',
-  ifczip: 'flag', 'dry-run': 'flag', 'list-translators': 'flag', 'list-instances': 'flag', help: 'flag',
+  ifczip: 'flag', 'dry-run': 'flag', 'list-translators': 'flag', 'list-instances': 'flag', help: 'flag', 'no-project-info': 'flag',
 };
 const ELEMENTS = ['EntireProject', 'VisibleElementsOnAllStories', 'AllElementsOnCurrentStory', 'VisibleElementsOnCurrentStory', 'SelectedElementsOnly'];
 
@@ -105,6 +109,26 @@ export function fileNameFor(projectName, ext) {
 
 export function mimeFor(name) {
   return /\.ifczip$/i.test(name) ? 'application/zip' : 'application/x-step';
+}
+
+/**
+ * Tapir's GetProjectInfoFields answer as the MCP tool's `raw` takes it: `{id: {label, value}}`, the empty values left out (they never
+ * propose anything).
+ */
+export function projectInfoRaw(fields) {
+  const raw = {};
+  for (const f of Array.isArray(fields) ? fields : []) {
+    const id = typeof f?.projectInfoId === 'string' ? f.projectInfoId.trim() : '';
+    const value = f?.projectInfoValue == null ? '' : String(f.projectInfoValue).trim();
+    if (!id || id.length > 100 || !value) continue;
+    raw[id] = f.projectInfoName ? { label: String(f.projectInfoName), value } : { value };
+  }
+  return raw;
+}
+
+/** The arguments of cde_project_info_propose for Archicad's Project Info, read from the reference document just added. */
+export function proposeArgs(project, fields, referenceId) {
+  return { project, source: 'archicad', raw: projectInfoRaw(fields), ...(referenceId ? { referenceId } : {}) };
 }
 
 /** The numbers an upload goes by: the byte ranges of its chunks, starting at the server's offset. */
@@ -381,6 +405,24 @@ export async function sendToAtrium({ mcp, project, file, name, size, sha256, opt
   return answer;
 }
 
+/** Archicad's Project Info proposed to the project's information (A1b); a failure is said and leaves the document added. */
+async function proposeProjectInfo(mcp, inst, project, referenceId) {
+  let fields;
+  try { fields = (await tapir(inst.port, 'GetProjectInfoFields', {}, 30000)).fields ?? []; } catch (e) {
+    console.error(`  info     Archicad's Project Info was not read (${e.message}); nothing proposed.`);
+    return;
+  }
+  const args = proposeArgs(project.id, fields, referenceId);
+  if (Object.keys(args.raw).length === 0) { console.log('  info     Archicad\'s Project Info is empty: nothing proposed.'); return; }
+  try {
+    const p = await mcp.tool('cde_project_info_propose', args);
+    if (p?.proposal === null) console.log('  info     Archicad\'s Project Info says nothing the project\'s information lacks: nothing proposed.');
+    else console.log(`  info     project information proposed: #${p.number}, ${p.changes?.length ?? 0} changes, for an owner to apply (Project information tab)`);
+  } catch (e) {
+    console.error(`  info     the project information was not proposed: ${e.message}${/unknown tool|-32602|not found/i.test(e.message) ? ' (the server is older than A1b)' : ''}`);
+  }
+}
+
 // ---------------------------------------------------------------- main
 
 const HELP = `Sends the model open in Archicad to an Atrium CDE project as a reference document of type "model".
@@ -403,6 +445,7 @@ Atrium
   --folder <id>         the folder (default: the type's folder)
   --discipline <text>   e.g. A, S, MEP
   --phase <list>        e.g. "DTAC, PT"
+  --no-project-info     do not propose Archicad's Project Info to the project's information
   --dry-run             export only; upload nothing
 
 The token is read from ATRIUM_TOKEN only. Make it in the CDE's Access tokens panel (scope read+write).
@@ -459,6 +502,7 @@ async function main(argv) {
     console.log(`  status   ${ref.status}`);
     console.log(`  open     ${opts.server}/  (project "${project.name}", Documents tab; ${project.id})`);
     for (const d of ref.duplicates ?? []) console.log(`  note     the same file is already in document ${d.id ?? d}${d.title ? ` ("${d.title}")` : ''}`);
+    if (!opts['no-project-info']) await proposeProjectInfo(mcp, inst, project, ref.id);
     return 0;
   } finally {
     if (made.dir) rmSync(made.dir, { recursive: true, force: true });

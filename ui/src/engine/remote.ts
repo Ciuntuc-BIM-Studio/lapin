@@ -322,9 +322,47 @@ export function tellReferenceSync(r: ReferenceSyncReport, quiet: boolean): void 
   if (who.length > 0) notify(`Changed by others: ${who.join(', ')}`);
 }
 
-/** The issues, then the reference documents, synced one after the other (Save to server, Get latest, Collaborate → Sync issues and documents). */
-export async function syncIssuesAndDocuments(server: string, quiet = false): Promise<{ issues: IssueSyncReport | null; documents: ReferenceSyncReport | null }> {
+// ------------------------------------------------------------ the project's information (A1b)
+
+/** What a sync of the project information did (engine ProjectInfoSync): fields changed here, sent, conflicts, refusals, who changed it there. */
+export interface ProjectInfoSyncReport {
+  offered: boolean; first?: boolean; changedHere: number; sent: number; conflicts?: number;
+  refused: { code: string; message: string; keys?: string[] }[]; by?: string | null; openProposals?: number;
+}
+
+/**
+ * The project information synced with the server's record (remote.syncProjectInfo): field by field, last writer wins; what came from the
+ * server is one undo step. A server without the record (`project.info`) does nothing, silently. Null when there is no sign-in.
+ */
+export async function syncProjectInfo(server: string, quiet = false): Promise<ProjectInfoSyncReport | null> {
+  if (!await signedIn(server)) { if (!quiet) notify('Sign in to the server first.'); return null; }
+  try {
+    const r = engineInBrowser
+      ? await writingCall<{ report: ProjectInfoSyncReport }>('remote.syncProjectInfo', {}, server)
+      : await remoteCall<{ report: ProjectInfoSyncReport }>('remote.syncProjectInfo', {}, server);
+    if (!r) return null;
+    tellProjectInfoSync(r.report, quiet);
+    return r.report;
+  } catch (e) {
+    notify(e instanceof Error ? e.message : String(e));
+    return null;
+  }
+}
+
+/** What a sync of the project information did, said: only when something moved (or asked), the conflicts, each refusal once, the open proposals. */
+export function tellProjectInfoSync(r: ProjectInfoSyncReport, quiet: boolean): void {
+  if (!r.offered) return;
+  if (r.changedHere > 0 || r.sent > 0 || !quiet) notify(r.changedHere === 0 && r.sent === 0 ? 'Project information up to date with the server.' : `Project information synced: ${r.changedHere} changed here, ${r.sent} sent.`);
+  if ((r.conflicts ?? 0) > 0) notify(`${r.conflicts} edits met someone else's: merged, the last writer's value kept.`);
+  const codes = [...new Set(r.refused.map((x) => x.code))];
+  for (const code of codes) notify(refusalText(code, r.refused.find((x) => x.code === code)?.message));
+  if ((r.openProposals ?? 0) > 0 && !quiet) notify(`Project information: ${r.openProposals} open proposals on the server (File → Collaborate → Publishing → Project information).`);
+}
+
+/** The issues, the reference documents, then the project information, synced one after the other (Save to server, Get latest, Collaborate → Sync issues and documents). */
+export async function syncIssuesAndDocuments(server: string, quiet = false): Promise<{ issues: IssueSyncReport | null; documents: ReferenceSyncReport | null; info: ProjectInfoSyncReport | null }> {
   const issues = await syncIssues(server, quiet);
   const documents = await syncReferences(server, quiet);
-  return { issues, documents };
+  const info = await syncProjectInfo(server, quiet);
+  return { issues, documents, info };
 }

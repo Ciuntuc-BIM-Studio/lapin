@@ -210,6 +210,9 @@ describe('the languages', () => {
     '2 element(s) in no task of the schedule: their quantity is not multiplied by the duration.',
     '× 3 months',
     '× 1.5–3 working days',
+    // The project information (A1b).
+    'Project information synced: 2 changed here, 3 sent.',
+    'Project information: 2 open proposals on the server (File → Collaborate → Publishing → Project information).',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 

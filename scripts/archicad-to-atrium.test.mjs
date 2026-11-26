@@ -1,7 +1,7 @@
 // The Archicad → Atrium script's pure parts: node --test scripts/archicad-to-atrium.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { candidatePorts, parseVersion, versionAtLeast, parseArgs, normaliseServer, fileNameFor, mimeFor, chunkRanges, probePort, Fail } from './archicad-to-atrium.mjs';
+import { candidatePorts, parseVersion, versionAtLeast, parseArgs, normaliseServer, fileNameFor, mimeFor, chunkRanges, probePort, projectInfoRaw, proposeArgs, Fail } from './archicad-to-atrium.mjs';
 
 test('ports 19723 to 19744', () => {
   const p = candidatePorts();
@@ -56,4 +56,19 @@ test('a port that does not answer is not Archicad', async () => {
   assert.equal(await probePort(19999, async () => { throw new Error('refused'); }), false);
   assert.equal(await probePort(19723, async () => ({ succeeded: true, result: { isAlive: true } })), true);
   assert.equal(await probePort(19723, async () => ({ succeeded: false })), false);
+});
+
+test('Archicad\'s Project Info proposed as the MCP tool takes it (A1b)', () => {
+  const fields = [
+    { projectInfoId: 'PROJECTNAME', projectInfoName: 'Project Name', projectInfoValue: ' Casa ' },
+    { projectInfoId: 'NOTES', projectInfoName: 'Notes', projectInfoValue: '' },
+    { projectInfoId: 'PROJECT_ID', projectInfoValue: 'P-1' },
+    { projectInfoName: 'no id', projectInfoValue: 'x' },
+  ];
+  assert.deepEqual(projectInfoRaw(fields), { PROJECTNAME: { label: 'Project Name', value: 'Casa' }, PROJECT_ID: { value: 'P-1' } });
+  assert.deepEqual(projectInfoRaw(undefined), {});
+  assert.deepEqual(proposeArgs('p', fields, '0ab'), { project: 'p', source: 'archicad', raw: projectInfoRaw(fields), referenceId: '0ab' });
+  assert.equal('referenceId' in proposeArgs('p', fields, null), false);
+  assert.equal(parseArgs(['--no-project-info'])['no-project-info'], true);
+  assert.equal(parseArgs([])['no-project-info'], undefined);
 });
