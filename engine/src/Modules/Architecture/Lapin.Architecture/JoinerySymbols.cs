@@ -157,7 +157,8 @@ public static class JoinerySymbols
     /// 200), the frame and a line for the glass, no sashes or board; coarse (LOD 100), the opening and its swing: a line
     /// across it on the frame's plane, a door's leaf as a line with its arc.
     /// </summary>
-    public static List<JStroke> Plan(JoinerySpec s, double? cutZ = null, string windowSwing = "none", int level = PlanDetail.Fine, double? sill = null, string openMode = "auto")
+    /// <remarks><paramref name="sillsApart"/>: the boards a detailed sill replaces are left out, the caller drawing the sills (<see cref="SillsPlan"/>).</remarks>
+    public static List<JStroke> Plan(JoinerySpec s, double? cutZ = null, string windowSwing = "none", int level = PlanDetail.Fine, double? sill = null, string openMode = "auto", bool sillsApart = false)
     {
         var z = cutZ ?? s.Height / 2;
         var boxes = Joinery.Boxes(s, open: openMode == "open");
@@ -185,7 +186,7 @@ public static class JoinerySymbols
                         : Rect(x0, b.Min.Y, x1, b.Max.Y, b.Role == "glass" ? "thin" : "cut"));
             }
         if (level >= PlanDetail.Fine)
-            foreach (var b in boxes.Where(b => b.Role == "board" && b.Max.Z < z)) o.Add(Rect(b.Min.X, b.Min.Y, b.Max.X, b.Max.Y, "outline"));
+            foreach (var b in boxes.Where(b => b.Role == "board" && b.Max.Z < z && !(sillsApart && (b.Min.Y < 0 ? s.Details?.SillInside is { On: true } : s.Details?.SillOutside is { On: true })))) o.Add(Rect(b.Min.X, b.Min.Y, b.Max.X, b.Max.Y, "outline"));
         // A floor spring's cover plate, seen on the floor (topic #28).
         if (level >= PlanDetail.Medium)
             foreach (var b in boxes.Where(b => b.Underfloor && Math.Abs(b.Max.Z) < 1e-9)) o.Add(Rect(b.Min.X, b.Min.Y, b.Max.X, b.Max.Y, "thin"));
@@ -213,6 +214,43 @@ public static class JoinerySymbols
     /// jambs stand on it, so its outline steps in to them and is not drawn through them); else the frame's bottom member between the
     /// jambs. None for a window, a type that does not ask, or a door with no threshold.
     /// </summary>
+    /// <summary>
+    /// A door's or window's sills seen in plan under the cut (GitHub issue #153, the tester's request 18), where its body has them
+    /// (<see cref="WindowSills"/>, Openings.Dressing): each detailed sill (<see cref="JoineryDetails.SillInside"/>,
+    /// <see cref="JoineryDetails.SillOutside"/>) from the frame's face to its front edge past the wall's face, as wide as the opening
+    /// within the wall (its overhang is let into the jambs, under the wall's cut) and as long as the sill with its overhang past the
+    /// face; with <paramref name="boards"/>, a window's plain boards too where no detailed sill replaces them. In the type's frame
+    /// (the interior at −y), for a wall <paramref name="thickness"/> thick. None for frameless glass or a bay window.
+    /// </summary>
+    public static List<JStroke> SillsPlan(JoinerySpec s, double thickness, bool boards = false)
+    {
+        if (s.Frameless != null || BayWindows.Projecting(s)) return [];
+        var o = new List<JStroke>();
+        var d = s.Details;
+        var (yFI, yFE) = (s.Frame.Offset - s.Frame.Depth / 2, s.Frame.Offset + s.Frame.Depth / 2);
+        var (half, face) = (s.Width / 2, thickness / 2);
+        if (d?.SillInside is { On: true } si && SillOutline(yFI, -face, -face - Math.Max(0, si.Projection), si.Overhang) is { } inside) o.Add(inside);
+        if (d?.SillOutside is { On: true } so && SillOutline(yFE, face, face + Math.Max(0, so.Projection), so.Overhang) is { } outside) o.Add(outside);
+        if (boards && !s.IsDoor)
+            foreach (var b in Joinery.Boxes(s).Where(b => b.Role == "board" && !(b.Min.Y < 0 ? d?.SillInside is { On: true } : d?.SillOutside is { On: true })))
+                o.Add(Rect(b.Min.X, b.Min.Y, b.Max.X, b.Max.Y, "outline"));
+        return o;
+
+        // From the frame's face (back) to the front edge, stepping out by the overhang at the wall's face.
+        JStroke? SillOutline(double back, double wallFace, double front, double overhang)
+        {
+            if (Math.Abs(front - back) < 1e-9) return null;
+            var sign = Math.Sign(front - back);
+            // The wall's face between the frame and the front edge (a frame flush with the face: the whole sill past it).
+            var at = sign > 0 ? Math.Clamp(wallFace, back, front) : Math.Clamp(wallFace, front, back);
+            var oh = Math.Max(0, overhang);
+            if (oh < 1e-9 || Math.Abs(front - at) < 1e-9) return Rect(-half, Math.Min(back, front), half, Math.Max(back, front), "outline");
+            if (Math.Abs(at - back) < 1e-9) return Rect(-half - oh, Math.Min(back, front), half + oh, Math.Max(back, front), "outline");
+            List<Vec2> pts = [new(-half, back), new(half, back), new(half, at), new(half + oh, at), new(half + oh, front), new(-half - oh, front), new(-half - oh, at), new(-half, at)];
+            return new JStroke(pts, "outline", true);
+        }
+    }
+
     public static List<JStroke> ThresholdPlan(JoinerySpec s, double thickness)
     {
         if (!s.IsDoor || s.ThresholdInPlan != true) return [];

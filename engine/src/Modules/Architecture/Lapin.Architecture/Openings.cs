@@ -1281,11 +1281,21 @@ public static class Openings
         // The symbol engine's plan (docs/simboluri-tamplarie.md): the frame cut, the glass, a door's leaves and their arcs; once
         // for each level a view may draw it at (decision 405: LOD 100 the opening and its swing, 200 simplified, 300 and up whole).
         foreach (var level in new[] { PlanDetail.Coarse, PlanDetail.Medium, PlanDetail.Fine })
-            foreach (var st in JoinerySymbols.Plan(spec, level: level, windowSwing: windowSwing, sill: p.FillSill, openMode: openMode))
+            foreach (var st in JoinerySymbols.Plan(spec, level: level, windowSwing: windowSwing, sill: p.FillSill, openMode: openMode, sillsApart: dressed))
                 o.Add(new PlanItem(st.Weight == "cut" ? "heavy" : st.Dashed ? "dashed" : "symbol", st.Closed, st.Pts.Select(q => P(q.X, q.Y)).ToList(), level, level));
         // A door's threshold seen under the cut, when its type asks for it (forum topic 204): at LOD 200 and up.
         foreach (var st in JoinerySymbols.ThresholdPlan(spec, depth))
             o.Add(new PlanItem("symbol", true, st.Pts.Select(q => P(q.X, q.Y)).ToList(), PlanDetail.Medium));
+        // The sills seen under the cut where the body has them (GitHub issue #153): the detailed ones at LOD 300 and up (the plain
+        // boards the symbol engine draws there), from LOD 200 with the boards too when the type asks for it.
+        if (dressed)
+        {
+            foreach (var st in JoinerySymbols.SillsPlan(spec, depth))
+                o.Add(new PlanItem("symbol", true, st.Pts.Select(q => P(q.X, q.Y)).ToList(), PlanDetail.Fine));
+            if (spec.SillsInPlan == true)
+                foreach (var st in JoinerySymbols.SillsPlan(spec, depth, boards: true))
+                    o.Add(new PlanItem("symbol", true, st.Pts.Select(q => P(q.X, q.Y)).ToList(), PlanDetail.Medium, PlanDetail.Medium));
+        }
         // The dressings seen in plan: what crosses the cut (shutters, a grille) cut, a window box below it seen, a canopy above it overhead.
         if (dressed)
             foreach (var (kind, x0, x1, y0, y1) in DressingPlan(spec, depth, cutOverSill))
