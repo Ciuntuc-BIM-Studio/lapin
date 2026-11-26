@@ -32,12 +32,12 @@ import type { TagRuleDto } from './tagRules';
 import { FieldPicker } from '../../shell/FieldPicker';
 import { parseDecimal } from '../../shell/parseDecimal';
 import { openingFormat } from './openingFormat';
-import { DEFAULT_FLOOR_SLOPE_MARKS, drawingLangArg, floorSlopeMarkChoices, floorSlopeMarksArg } from './drawingOptions';
+import { DEFAULT_FLOOR_SLOPE_MARKS, clearHeightLessThreshold, clearHeightLessThresholdArg, drawingLangArg, floorSlopeMarkChoices, floorSlopeMarksArg } from './drawingOptions';
 import { DEFAULT_KEY_FORMAT, isKeyFormat, keyFormatArg, writeKey } from './materialKeys';
 import { LANGUAGES } from '../../i18n';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
-type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; suppressZeros?: boolean; levelDecimals?: number; levelZeros?: string; floorSlopeMarks?: number | null; drawingLang?: string | null; materialKeyFormat?: string | null; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number; tagRules?: TagRuleDto[]; tableStyles?: { id: string; name: string; cells?: boolean; table?: { rows?: unknown[]; cols?: unknown[] } }[] };
+type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; suppressZeros?: boolean; levelDecimals?: number; levelZeros?: string; floorSlopeMarks?: number | null; drawingLang?: string | null; materialKeyFormat?: string | null; clearHeightLessThreshold?: boolean | null; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number; tagRules?: TagRuleDto[]; tableStyles?: { id: string; name: string; cells?: boolean; table?: { rows?: unknown[]; cols?: unknown[] } }[] };
 type Col = { key: string; label: string; title?: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[]; lineType?: boolean; labels?: Record<string, string> };
 type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
@@ -292,6 +292,9 @@ export function StandardsDialog() {
       {/* Forum topic 255: how a material's key is written from its number, where the material has no code of its own. */}
       <dt title="How a material key tag and a keyed legend write a material's number, where the material has no code of its own (Manage → Materials → Data): {n} the number, {n:00} with two digits">Material key format</dt>
       <dd className="pair"><MaterialKeyFormat value={book.materialKeyFormat ?? DEFAULT_KEY_FORMAT} /></dd>
+      {/* Forum topic 204: whether a door's clear height ({clearHeight} in tags, schedules, formulas) takes its threshold off; the Czech rule does not. */}
+      <dt title="A door's clear height ({clearHeight} in tags, schedules and formulas): ticked, the head's inside less the threshold, as before; unticked, less the frame only, the threshold left in (the Czech rule: a 2050 void, a 50 frame → 2000)">Door clear height less the threshold</dt>
+      <dd><input type="checkbox" data-field="clearHeightLessThreshold" checked={clearHeightLessThreshold(book.clearHeightLessThreshold)} onChange={(e) => void execute('standards.options', { clearHeightLessThreshold: clearHeightLessThresholdArg(e.target.checked) })} /></dd>
       {/* Forum topic 192, decision 749: what a new door's, window's or opening's sill is measured from (the architecture module's own project setting). */}
       {openingSillFrom != null && <>
         <dt title="What the sill of a new door, window or wall opening is measured from: the wall's structural base, or the finished floor above it (set on the wall or its wall type). Each opening keeps its own; this is what new ones take">Door and window sills measured from</dt>

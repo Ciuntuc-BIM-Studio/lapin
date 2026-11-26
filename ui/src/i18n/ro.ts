@@ -1,6 +1,11 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // Forum topic 204, stage R5: the clear height and the threshold in plan.
+  'Door clear height less the threshold': 'Înălțimea liberă a ușii minus pragul',
+  'A door\'s clear height ({clearHeight} in tags, schedules and formulas): ticked, the head\'s inside less the threshold, as before; unticked, less the frame only, the threshold left in (the Czech rule: a 2050 void, a 50 frame → 2000)': 'Înălțimea liberă a unei uși ({clearHeight} în etichete, extrase și formule): bifat, interiorul tocului de sus minus pragul, ca până acum; nebifat, minus tocul doar, pragul rămâne inclus (regula cehă: un gol de 2050 cu toc de 50 → 2000)',
+  'Threshold drawn in plan': 'Pragul desenat în plan',
+  'Draws the door\'s threshold seen under the plan\'s cut (LOD 200 and up): the detailed threshold across the wall, else the frame\'s bottom member. Sections cut it as the door has it': 'Desenează pragul ușii văzut sub planul de secționare (LOD 200 și peste): pragul detaliat pe grosimea peretelui, altfel traversa de jos a tocului. Secțiunile îl taie așa cum îl are ușa',
   "Same class, in this view": "Aceeași clasă, în această vedere",
   "Nothing of what this tool places is in this view.": "Nimic din ce pune această unealtă nu e în această vedere.",
   "Select an element first: Select similar takes the others of its class and type.": "Selectează mai întâi un element: Selectează similare le ia pe celelalte din clasa și tipul lui.",

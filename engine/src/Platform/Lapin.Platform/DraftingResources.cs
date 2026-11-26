@@ -899,7 +899,7 @@ public static class DraftingResources
             return null;
         });
 
-        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in), the step areas are shown to (areaRounding), how lines end on screen and paper (round, square), whether dimensions drop their trailing zeros (suppressZeros), whether values that do not fit are moved clear of their neighbours (dimAutoText) and past how many paper mm they take a leader (dimTextLeader), the decimals and trailing zeros levels are written with (levelDecimals 0–4, levelZeros project, keep or suppress), the section and elevation markers' sizes (sectionMarkSize, sectionMarkText, elevationMarkSize, elevationMarkText; markSize and markText both), how dates are written (dateFormat), the smallest scale floors' slope marks are drawn at (floorSlopeMarks, its denominator; 50), the language the engine's own words on drawings are in (drawingLang), how a material's key is written from its number (materialKeyFormat, F{n}).
+        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in), the step areas are shown to (areaRounding), how lines end on screen and paper (round, square), whether dimensions drop their trailing zeros (suppressZeros), whether values that do not fit are moved clear of their neighbours (dimAutoText) and past how many paper mm they take a leader (dimTextLeader), the decimals and trailing zeros levels are written with (levelDecimals 0–4, levelZeros project, keep or suppress), the section and elevation markers' sizes (sectionMarkSize, sectionMarkText, elevationMarkSize, elevationMarkText; markSize and markText both), how dates are written (dateFormat), the smallest scale floors' slope marks are drawn at (floorSlopeMarks, its denominator; 50), the language the engine's own words on drawings are in (drawingLang), how a material's key is written from its number (materialKeyFormat, F{n}), whether a door's clear height takes its threshold off (clearHeightLessThreshold; true or null: yes).
         r.Command("standards.options", "Change drafting standards", (ctx, a) =>
         {
             var raw = Standards.ToJson(Book(ctx.Model));
@@ -958,6 +958,13 @@ public static class DraftingResources
             {
                 if (a["materialKeyFormat"] is null || (string?)a["materialKeyFormat"] is { } kf0 && (kf0.Trim().Length == 0 || kf0.Trim() == MaterialKeys.DefaultFormat)) raw.Remove("materialKeyFormat");
                 else raw["materialKeyFormat"] = MaterialKeys.FormatOf(a["materialKeyFormat"]) ?? throw new CommandException($"A material key's format holds its number once, {{n}} or {{n:00}}, in up to {MaterialKeys.MaxFormat} characters (F{{n}}).");
+            }
+            // Whether a door's clear height ({clearHeight}) takes its threshold off (forum topic 204, the Czech rule: not); true or null: yes, as before, nothing stored.
+            if (a.ContainsKey("clearHeightLessThreshold"))
+            {
+                if (a["clearHeightLessThreshold"] is null) raw.Remove("clearHeightLessThreshold");
+                else if (a["clearHeightLessThreshold"] is JsonValue cv && cv.TryGetValue<bool>(out var less)) { if (less) raw.Remove("clearHeightLessThreshold"); else raw["clearHeightLessThreshold"] = false; }
+                else throw new CommandException("A door's clear height takes its threshold off or not (true or false).");
             }
             // The section and elevation markers' symbol size and text height (paper mm, decision 455); null: the defaults.
             void Mark(string key, double min, double max, string what)

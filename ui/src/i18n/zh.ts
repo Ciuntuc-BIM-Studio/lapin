@@ -3,6 +3,11 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Forum topic 204, stage R5: the clear height and the threshold in plan.
+  'Door clear height less the threshold': '门净高扣除门槛',
+  'A door\'s clear height ({clearHeight} in tags, schedules and formulas): ticked, the head\'s inside less the threshold, as before; unticked, less the frame only, the threshold left in (the Czech rule: a 2050 void, a 50 frame → 2000)': '门的净高（标签、明细表和公式中的 {clearHeight}）：勾选时为上框内侧减去门槛，与以前相同；不勾选时只减去门框，门槛计入在内（捷克规则：洞口 2050、门框 50 → 2000）',
+  'Threshold drawn in plan': '在平面图中绘制门槛',
+  'Draws the door\'s threshold seen under the plan\'s cut (LOD 200 and up): the detailed threshold across the wall, else the frame\'s bottom member. Sections cut it as the door has it': '绘制平面剖切面以下可见的门槛（LOD 200 及以上）：有详细门槛时为横穿墙体的门槛，否则为门框的底框。剖面按门的实际情况剖切门槛',
   "Same class, in this view": "同一类，在此视图中",
   "Nothing of what this tool places is in this view.": "此视图中没有此工具放置的元素。",
   "Select an element first: Select similar takes the others of its class and type.": "请先选择一个元素：选择相似会选取同类同类型的其他元素。",

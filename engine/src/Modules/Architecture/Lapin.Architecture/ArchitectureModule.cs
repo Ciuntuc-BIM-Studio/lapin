@@ -313,7 +313,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 {
                     ["elevation"] = Strokes([.. JoinerySymbols.Elevation(spec, false, convention, hardware), .. JoinerySymbols.Dressings(spec, wall, "elevation")]),
                     ["exterior"] = Strokes([.. JoinerySymbols.Elevation(spec, true, convention, hardware), .. JoinerySymbols.Dressings(spec, wall, "exterior")]),
-                    ["plan"] = Strokes([.. JoinerySymbols.Plan(spec, windowSwing: Joinery.WindowSwing(q.Model)), .. JoinerySymbols.Dressings(spec, wall, "plan")]),
+                    ["plan"] = Strokes([.. JoinerySymbols.Plan(spec, windowSwing: Joinery.WindowSwing(q.Model)), .. JoinerySymbols.ThresholdPlan(spec, wall), .. JoinerySymbols.Dressings(spec, wall, "plan")]),
                     ["section"] = Strokes([.. JoinerySymbols.Section(spec), .. JoinerySymbols.Dressings(spec, wall, "section", JoinerySymbols.SectionCut(spec))]),
                 },
                 ["symbols"] = new JsonObject { ["convention"] = convention, ["hardware"] = hardware, ["windowSwing"] = Joinery.WindowSwing(q.Model) },

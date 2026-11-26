@@ -1,6 +1,11 @@
 /** The interface in Thai: each English phrase as the interface shows it, and its Thai. */
 
 export const TH: Record<string, string> = {
+  // Forum topic 204, stage R5: the clear height and the threshold in plan.
+  'Door clear height less the threshold': 'ความสูงช่องประตูสุทธิหักธรณีประตู',
+  'A door\'s clear height ({clearHeight} in tags, schedules and formulas): ticked, the head\'s inside less the threshold, as before; unticked, less the frame only, the threshold left in (the Czech rule: a 2050 void, a 50 frame → 2000)': 'ความสูงสุทธิของประตู ({clearHeight} ในป้ายกำกับ ตารางรายการ และสูตร): เมื่อเลือก คือด้านในของวงกบบนหักธรณีประตู เหมือนเดิม; เมื่อไม่เลือก หักเฉพาะวงกบ โดยรวมธรณีประตูไว้ (กฎของเช็ก: ช่องเปิด 2050 วงกบ 50 → 2000)',
+  'Threshold drawn in plan': 'วาดธรณีประตูในแปลน',
+  'Draws the door\'s threshold seen under the plan\'s cut (LOD 200 and up): the detailed threshold across the wall, else the frame\'s bottom member. Sections cut it as the door has it': 'วาดธรณีประตูที่มองเห็นใต้ระนาบตัดของแปลน (LOD 200 ขึ้นไป): ธรณีประตูแบบละเอียดที่พาดขวางผนัง มิฉะนั้นคือชิ้นล่างของวงกบ รูปตัดจะตัดผ่านตามที่ประตูมี',
   "Same class, in this view": "ชั้นเดียวกันในมุมมองนี้",
   "Nothing of what this tool places is in this view.": "ไม่มีสิ่งที่เครื่องมือนี้วางอยู่ในมุมมองนี้.",
   "Select an element first: Select similar takes the others of its class and type.": "เลือกองค์ประกอบก่อน: เลือกที่คล้ายกันจะนำองค์ประกอบอื่นที่มีคลาสและชนิดเดียวกันมา.",

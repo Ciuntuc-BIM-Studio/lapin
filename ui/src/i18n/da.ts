@@ -3,6 +3,11 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // Forum topic 204, stage R5: the clear height and the threshold in plan.
+  'Door clear height less the threshold': 'Dørens frie højde minus tærsklen',
+  'A door\'s clear height ({clearHeight} in tags, schedules and formulas): ticked, the head\'s inside less the threshold, as before; unticked, less the frame only, the threshold left in (the Czech rule: a 2050 void, a 50 frame → 2000)': 'En dørs frie højde ({clearHeight} i mærker, lister og formler): markeret, indersiden af overkarmen minus tærsklen, som hidtil; umarkeret, kun minus karmen, tærsklen regnes med (den tjekkiske regel: et hul på 2050 og en karm på 50 → 2000)',
+  'Threshold drawn in plan': 'Tærskel tegnet i plan',
+  'Draws the door\'s threshold seen under the plan\'s cut (LOD 200 and up): the detailed threshold across the wall, else the frame\'s bottom member. Sections cut it as the door has it': 'Tegner dørens tærskel set under planens snit (LOD 200 og op): den detaljerede tærskel på tværs af væggen, ellers karmens nederste del. Snit skærer den, som døren har den',
   "Same class, in this view": "Samme klasse, i denne visning",
   "Nothing of what this tool places is in this view.": "Intet af det, dette værktøj placerer, er i denne visning.",
   "Select an element first: Select similar takes the others of its class and type.": "Vælg først et element: Vælg lignende tager de andre af dets klasse og type.",

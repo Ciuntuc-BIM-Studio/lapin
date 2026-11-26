@@ -1121,6 +1121,9 @@ public static class Openings
         foreach (var level in new[] { PlanDetail.Coarse, PlanDetail.Medium, PlanDetail.Fine })
             foreach (var st in JoinerySymbols.Plan(spec, level: level, windowSwing: windowSwing, sill: p.FillSill, openMode: openMode))
                 o.Add(new PlanItem(st.Weight == "cut" ? "heavy" : st.Dashed ? "dashed" : "symbol", st.Closed, st.Pts.Select(q => P(q.X, q.Y)).ToList(), level, level));
+        // A door's threshold seen under the cut, when its type asks for it (forum topic 204): at LOD 200 and up.
+        foreach (var st in JoinerySymbols.ThresholdPlan(spec, depth))
+            o.Add(new PlanItem("symbol", true, st.Pts.Select(q => P(q.X, q.Y)).ToList(), PlanDetail.Medium));
         // The dressings seen in plan: what crosses the cut (shutters, a grille) cut, a window box below it seen, a canopy above it overhead.
         if (dressed)
             foreach (var (kind, x0, x1, y0, y1) in DressingPlan(spec, depth, cutOverSill))

@@ -3,6 +3,11 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // Forum topic 204, stage R5: the clear height and the threshold in plan.
+  'Door clear height less the threshold': 'ຄວາມສູງສຸດທິຂອງປະຕູຫັກທໍລະນີປະຕູ',
+  'A door\'s clear height ({clearHeight} in tags, schedules and formulas): ticked, the head\'s inside less the threshold, as before; unticked, less the frame only, the threshold left in (the Czech rule: a 2050 void, a 50 frame → 2000)': 'ຄວາມສູງສຸດທິຂອງປະຕູ ({clearHeight} ໃນປ້າຍ, ຕາຕະລາງ ແລະ ສູດ): ເມື່ອເລືອກ, ດ້ານໃນຂອງວົງກົບເທິງຫັກທໍລະນີປະຕູ, ຄືເກົ່າ; ເມື່ອບໍ່ເລືອກ, ຫັກພຽງວົງກົບ, ລວມທໍລະນີປະຕູໄວ້ (ກົດຂອງເຊັກ: ຊ່ອງເປີດ 2050, ວົງກົບ 50 → 2000)',
+  'Threshold drawn in plan': 'ແຕ້ມທໍລະນີປະຕູໃນແຜນຜັງ',
+  'Draws the door\'s threshold seen under the plan\'s cut (LOD 200 and up): the detailed threshold across the wall, else the frame\'s bottom member. Sections cut it as the door has it': 'ແຕ້ມທໍລະນີປະຕູທີ່ເຫັນຢູ່ລຸ່ມໜ້າຕັດຂອງແຜນຜັງ (LOD 200 ຂຶ້ນໄປ): ທໍລະນີປະຕູລະອຽດທີ່ຂວາງຜ່ານຝາ, ຖ້າບໍ່ມີແມ່ນຊິ້ນລຸ່ມຂອງວົງກົບ. ຮູບຕັດຈະຕັດມັນຕາມທີ່ປະຕູມີ',
   "Same class, in this view": "ຄລາສດຽວກັນ, ໃນມຸມມອງນີ້",
   "Nothing of what this tool places is in this view.": "ບໍ່ມີສິ່ງທີ່ເຄື່ອງມືນີ້ວາງຢູ່ໃນມຸມມອງນີ້.",
   "Select an element first: Select similar takes the others of its class and type.": "ເລືອກອົງປະກອບກ່ອນ: ເລືອກທີ່ຄ້າຍກັນ ຈະເອົາອັນອື່ນທີ່ມີຄລາສ ແລະ ປະເພດດຽວກັນ.",
