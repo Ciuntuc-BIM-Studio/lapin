@@ -41,6 +41,6 @@ public sealed class ScheduleTimesOf : IWorkSchedules
         }
         var finish = r.Times.Count > 0 ? r.Times.Values.Max(t => t.Finish) : p.Start;
         return new ScheduleTimes(p.Schedule?.Id, p.Name, p.Calendar.NextWorking(p.Start), finish, p.DataDate, p.Rows.Any(t => t.Baseline != null),
-            tasks, (d, wet) => p.Calendar.Working(d, wet), TasksOf);
+            tasks, (d, wet) => p.Calendar.Working(d, wet), TasksOf, p.Calendar.Hours);
     }
 }

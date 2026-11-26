@@ -7204,6 +7204,16 @@ export const DE: Record<string, string> = {
   "Measure as": "Gemessen als",
   "No measure": "Kein Maß",
   "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "Ein platziertes Bauteil gibt diesen Parameter als Menge dieser Art aus, für Kostenpositionen, Listen und IFC",
+  // Cost articles priced by the time on site, "× duration" (R7).
+  "× Duration": "× Dauer",
+  "No duration": "Keine Dauer",
+  "Months on site": "Monate auf der Baustelle",
+  "Working days on site": "Arbeitstage auf der Baustelle",
+  "Calendar days on site": "Kalendertage auf der Baustelle",
+  "Working hours on site": "Arbeitsstunden auf der Baustelle",
+  "The quantity times how long the element is on site, from the tasks that take it in the schedule": "Die Menge mal die Zeit, die das Element auf der Baustelle ist, nach den Vorgängen, die es im Terminplan übernehmen",
+  "The Planning module is not in this edition: the quantity is not multiplied by the duration.": "Das Modul Planung ist nicht in dieser Edition: die Menge wird nicht mit der Dauer multipliziert.",
+  "The project has no work schedule: the quantity is not multiplied by the duration.": "Das Projekt hat keinen Terminplan: die Menge wird nicht mit der Dauer multipliziert.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -7982,4 +7992,7 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^(.+) covers (.+): choose another profile for (it|them) first\.$/, (m) => `${m[1]} deckt ${m[2]}: Wählen Sie zuerst ein anderes Profil.`],
   // The issue with reference documents (stage R5).
   [/^(.+): (.+) is not held here \(larger than the project keeps, and not in the project folder\): it was left out of the issue\.$/, (m) => `${m[1]}: ${m[2]} wird hier nicht gehalten (größer, als das Projekt behält, und nicht im Projektordner): die Datei wurde aus der Herausgabe ausgelassen.`],
+  // Cost articles priced by the time on site (R7): an estimate line's duration and its note.
+  [/^(\d+) element\(s\) in no task of the schedule: their quantity is not multiplied by the duration\.$/, (m) => `${m[1]} Element(e) in keinem Vorgang des Terminplans: ihre Menge wird nicht mit der Dauer multipliziert.`],
+  [/^× ([\d.]+(?:–[\d.]+)?) (months?|working days?|calendar days?|hours?)$/, (m) => `× ${m[1]} ${({ "month": "Monat", "months": "Monate", "working day": "Arbeitstag", "working days": "Arbeitstage", "calendar day": "Kalendertag", "calendar days": "Kalendertage", "hour": "Stunde", "hours": "Stunden" } as Record<string, string>)[m[2]]}`],
 ];

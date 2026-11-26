@@ -10,7 +10,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ChevronDown, ChevronRight, FileSpreadsheet, FileText, ListChecks, Plus, Sheet, Tags, Trash2 } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
-import { FORMS, exportPdf, exportXlsx, formOnSheet, linesHolding, inOther, money, parseRate, qty, EXCHANGE, PERCENT, type RateBounds, unpricedCount, useEstimate, useEstimateData, type FormDto, type LineDto } from './estimate';
+import { FORMS, exportPdf, exportXlsx, formOnSheet, linesHolding, inOther, money, parseRate, qty, EXCHANGE, PERCENT, type RateBounds, unpricedCount, useEstimate, useEstimateData, type FormDto, type LineDto, durationText } from './estimate';
 
 /** A rate typed in the toolbar, sent when it is left or Enter is pressed. */
 function RateInput({ label, value, field, title, unit = '%', testId, bounds = PERCENT }: { label: string; value: number; field: string; title: string; unit?: string; testId: string; bounds?: RateBounds }) {
@@ -165,7 +165,9 @@ export function EstimateView() {
                     <tr key={l.key} className={`row-line${holding.has(l.key) ? ' holds' : ''}${l.priced ? '' : ' unpriced'}${l.manual ? ' manual' : ''}`} onClick={(e) => !(e.target as HTMLElement).closest('input,button') && pick(l)} data-testid="estimate-line" data-code={l.code}>
                       <td data-no-i18n>{`${ci + 1}.${li + 1}`}</td>
                       <td data-no-i18n>{l.manual ? <Cell value={l.code} onCommit={(v) => update(l.manual!, 'code', v)} /> : l.code}</td>
-                      <td data-no-i18n title={l.elements.length ? 'Click to select its elements' : undefined}>{l.manual ? <Cell value={l.name} onCommit={(v) => update(l.manual!, 'name', v)} /> : l.name}{!l.priced && <>{' '}<span className="error-text small">no price</span></>}
+                      <td title={l.elements.length ? 'Click to select its elements' : undefined}><span data-no-i18n>{l.manual ? <Cell value={l.name} onCommit={(v) => update(l.manual!, 'name', v)} /> : l.name}</span>{!l.priced && <>{' '}<span className="error-text small">no price</span></>}
+                        {durationText(l) && <>{' '}<span className="muted small" title="The quantity times how long the element is on site, from the tasks that take it in the schedule" data-testid="estimate-line-duration">{durationText(l)}</span></>}
+                        {l.notes?.map((n) => <span key={n} className="cde-warn small estimate-line-note" data-testid="estimate-line-note"><AlertTriangle size={11} />{n}</span>)}
                         {l.manual && tasks.length > 0 && (
                           <select className="estimate-task" value={l.tasks?.[0] ?? ''} onChange={(e) => void execute('cost.updateLine', { line: l.manual, tasks: e.target.value ? [e.target.value] : [] })} title="The task its work is done in: its cost goes on the S-curve with it" data-testid="estimate-line-task">
                             <option value="">In no task</option>

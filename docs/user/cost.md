@@ -55,6 +55,21 @@ The formwork and scaffolding types of the site works (the **Site** tab) already 
 
 The phases count: an element that was there before the works (made in an *existing* phase) is not priced. A demolished one is priced only by its type's article whose part is **Its demolition (only when demolished)**, under the chapter **Demolition**.
 
+### Articles priced by the time on site
+
+Site set-up and safety items are often hired by the time they stay on site: a fence by the metre and the month (*m × month*), a sign by the piece and the day, a crane by the hour. The **× Duration** column of Map articles multiplies an article's quantity (a count, a length, an area…) by how long its element is on site, taken from the work schedule (see [Planning](planning.md#the-cost-of-the-tasks)):
+
+- **By the price's unit** (the default): the time in the price's unit, if it has one. *m × lună*, *m x month*, *cad × mese* are a length or a count times months; *buc/zi* calendar days; *buc/zi lucrătoare* working days; *oră* or *h* hours. A unit with no time is not multiplied, as before.
+- **No duration**: the unit's time left aside, a plain quantity.
+- **Months on site**: whole calendar months from the start, the rest as a part of its month (1 March to 31 May is 3 months).
+- **Working days on site**: the working days of the project's calendar (its weekdays, holidays and exceptions).
+- **Calendar days on site**: every day, both ends counted.
+- **Working hours on site**: the working days times the calendar's hours of a day.
+
+An element is on site from the start of the first task that takes it to the finish of the last one (tasks take elements by their rule or by hand, see [Planning](planning.md#the-models-elements-in-the-tasks)). It is worked out again every time the estimate is shown: move a task or change the calendar, and the quantity follows. A 20 m fence in a task of three months, priced *m × lună*, gives 60.
+
+The line shows the duration used after its description (**× 3 months**; the least and the most when its elements differ), in the estimate, its forms (XLSX, PDF), the HTML export and IFC. An element no task takes keeps its quantity, not multiplied, and the line says so (**1 element(s) in no task of the schedule**), so nothing is priced at zero without a word. Without a schedule the line says the project has none; in an edition without the Planning module, an article priced by its unit is priced as before, and one set to a duration says why it has none.
+
 ## The estimate
 
 ![The estimate: chapters, lines, the rates and the totals](shots/estimate.webp)
@@ -119,4 +134,4 @@ Monthly progress billing (*situații de lucrări*), earned value and several bas
 
 **File → Export → Export IFC, Fragments or BOS…** writes the estimate as an **IfcCostSchedule**: its chapters and lines as **IfcCostItem**s, each line's quantity and its unit prices as four **IfcCostValue**s (Material, Labour, Equipment, Transport), the elements each line measures assigned to it (**IfcRelAssignsToControl**), the currency as the project's **IfcMonetaryUnit**. Imported, an estimate keeps the lines as the file has them, with the same totals. Tick **Lines from the model** to add the lines your model gives.
 
-With a work schedule, each line is also assigned to the tasks it is done in (**IfcRelAssignsToControl** to their **IfcTask**s). Imported, the lines keep their tasks, so the S-curve comes back the same.
+With a work schedule, each line is also assigned to the tasks it is done in (**IfcRelAssignsToControl** to their **IfcTask**s). Imported, the lines keep their tasks, so the S-curve comes back the same. A line priced by the time on site carries its **Time** and **Duration** in **Lapin_CostItem**.

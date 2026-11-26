@@ -22,7 +22,7 @@ public sealed class CostIfc : IIfcControls
         var times = query.Model.OfClass(Costing.Class).Any() ? query.Services.Get<IWorkSchedules>()?.Times(query) : null;
         foreach (var e in query.Model.OfClass(Costing.Class))
         {
-            var r = Costing.Compute(query, e);
+            var r = Costing.Compute(query, e, times);
             var over = times != null ? CostOverTime.Of(r, times) : null;
             var s = r.Settings;
             var items = new List<IfcCostItemData>();
@@ -41,6 +41,9 @@ public sealed class CostIfc : IIfcControls
                     List<(string, string)> props = [("Unit", l.Unit), ("Basis", l.Basis)];
                     if (l.Hours is { } h) props.Add(("Hours", N(h)));
                     if (!l.Priced) props.Add(("Priced", "false"));
+                    // "× duration": the time the quantity was multiplied by and the duration used.
+                    if (l.Time is { } time) props.Add(("Time", time));
+                    if (l.Duration is { } dur) props.Add(("Duration", dur));
                     items.Add(new IfcCostItemData($"{e.Id}/line/{l.Key.Replace('\u001f', '/')}", l.Name, l.Code, chId, l.Qty, Units.KindOf(l.Basis), values,
                         l.Elements.ToList(), "Lapin_CostItem", props, over?.LineTasks.GetValueOrDefault(l.Key)));
                 }

@@ -7243,6 +7243,16 @@ export const ZH: Record<string, string> = {
   "Measure as": "计量为",
   "No measure": "不计量",
   "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "放置的零件将此参数作为该类数量，用于成本条目、明细表和 IFC",
+  // Cost articles priced by the time on site, "× duration" (R7).
+  "× Duration": "× 工期",
+  "No duration": "无工期",
+  "Months on site": "在场月数",
+  "Working days on site": "在场工作日",
+  "Calendar days on site": "在场日历天",
+  "Working hours on site": "在场工时",
+  "The quantity times how long the element is on site, from the tasks that take it in the schedule": "数量乘以构件在现场的时间，按进度计划中包含它的任务计算",
+  "The Planning module is not in this edition: the quantity is not multiplied by the duration.": "此版本不含计划模块：数量未乘以工期。",
+  "The project has no work schedule: the quantity is not multiplied by the duration.": "项目没有施工进度计划：数量未乘以工期。",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
@@ -8018,4 +8028,7 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^(.+) covers (.+): choose another profile for (it|them) first\.$/, (m) => `${m[1]} 覆盖 ${m[2]}：请先选择其他型材.`],
   // The issue with reference documents (stage R5).
   [/^(.+): (.+) is not held here \(larger than the project keeps, and not in the project folder\): it was left out of the issue\.$/, (m) => `${m[1]}：${m[2]} 不在此处（大于项目保留的上限，且不在项目文件夹中）：已从发布中略去。`],
+  // Cost articles priced by the time on site (R7): an estimate line's duration and its note.
+  [/^(\d+) element\(s\) in no task of the schedule: their quantity is not multiplied by the duration\.$/, (m) => `${m[1]} 个构件不在进度计划的任何任务中：其数量未乘以工期。`],
+  [/^× ([\d.]+(?:–[\d.]+)?) (months?|working days?|calendar days?|hours?)$/, (m) => `× ${m[1]} ${({ "month": "个月", "months": "个月", "working day": "个工作日", "working days": "个工作日", "calendar day": "个日历天", "calendar days": "个日历天", "hour": "小时", "hours": "小时" } as Record<string, string>)[m[2]]}`],
 ];

@@ -327,6 +327,8 @@ A task that is moved keeps its start as a levelling start. Its links can still p
 
 With an estimate (**Construction → Estimate…**), the Gantt gets a **Cost** column: each task's share of the estimate, from the lines that price its elements (a summary's is its tasks'). The toolbar shows the **budget** (the estimate's direct costs) and the cost **to date** (each task's cost times its % complete); Properties shows a task's cost and the part done. **Construction → Cost over time** draws the S-curve and the month table (see [Cost estimate](cost.md)).
 
+The schedule also gives the estimate the time each element is on site: from the start of the first task that takes it to the finish of the last. An article set to **× Duration** (or priced in a unit of time, *m × lună*, *buc/zi*, *oră*) multiplies its quantity by it, in months, working days, calendar days or working hours of the calendar below, worked out again whenever a task or the calendar changes. An element in no task keeps its quantity and its estimate line says so (see [Articles priced by the time on site](cost.md#articles-priced-by-the-time-on-site)).
+
 ## The calendar
 
 ![The work calendar](shots/planning-calendar.webp)
@@ -338,7 +340,7 @@ With an estimate (**Construction → Estimate…**), the Gantt gets a **Cost** c
 - the **winter break** for wet works, off by default: from 15 December to 1 March unless you set other days;
 - **exceptions**: days off for the project (a site closed), or days worked that would not be (a Saturday).
 
-Durations and lags count working days of this calendar.
+Durations and lags count working days of this calendar; so do the estimate's articles priced by working days or hours on site.
 
 ## Exchanging the schedule
 

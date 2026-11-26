@@ -89,7 +89,7 @@ public static partial class ArticleMapping
             var o = new JsonObject
             {
                 ["id"] = id, ["name"] = mat.Name, ["category"] = mat.Str("category"), ["count"] = count,
-                ["rule"] = rule == null ? null : new JsonObject { ["id"] = rule.Id, ["code"] = rule.Article.Code, ["basis"] = rule.Article.Basis, ["own"] = rule.Material == id, ["category"] = rule.Category },
+                ["rule"] = rule == null ? null : new JsonObject { ["id"] = rule.Id, ["code"] = rule.Article.Code, ["basis"] = rule.Article.Basis, ["time"] = rule.Article.Time, ["own"] = rule.Material == id, ["category"] = rule.Category },
             };
             if (Suggest(lists, mat.Name) is { } s) o["suggested"] = Article(s, null);
             matRows.Add((JsonNode)o);

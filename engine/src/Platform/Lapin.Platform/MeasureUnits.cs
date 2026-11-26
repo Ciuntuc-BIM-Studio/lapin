@@ -17,11 +17,57 @@ public static class MeasureUnits
             "100m2" or "100mp" or "100m²" => ("area", 0.01),
             "m" or "ml" or "lm" or "rm" => ("length", 1),
             "100m" or "100ml" => ("length", 0.01),
-            "buc" or "pcs" or "pc" or "nr" or "no" or "u" or "ea" or "each" or "stk" or "szt" or "un" or "pz" or "piece" or "pièce" or "set" => ("count", 1),
+            "buc" or "pcs" or "pc" or "nr" or "no" or "u" or "ea" or "each" or "stk" or "szt" or "un" or "pz" or "piece" or "pièce" or "set" or "cad" => ("count", 1),
             "kg" => ("weight", 1),
             "t" or "to" or "tonne" or "tona" or "tone" => ("weight", 0.001),
             _ => null,
         };
+    }
+
+    /// <summary>The time units an article's quantity may be multiplied by (docs/plan-4d5d.md, "× duration"): months, working days, calendar days, working hours.</summary>
+    public const string Months = "months", WorkingDays = "workingDays", Days = "days", Hours = "hours";
+
+    static readonly Dictionary<string, string> TimeWords = new()
+    {
+        ["month"] = Months, ["months"] = Months, ["mo"] = Months, ["mth"] = Months, ["mon"] = Months, ["luna"] = Months, ["lună"] = Months, ["luni"] = Months,
+        ["mese"] = Months, ["mesi"] = Months, ["mois"] = Months, ["mes"] = Months, ["meses"] = Months, ["monat"] = Months, ["monate"] = Months, ["miesiąc"] = Months, ["miesiac"] = Months,
+        ["workingday"] = WorkingDays, ["workingdays"] = WorkingDays, ["workday"] = WorkingDays, ["workdays"] = WorkingDays, ["wd"] = WorkingDays,
+        ["zilucratoare"] = WorkingDays, ["zilucrătoare"] = WorkingDays, ["zilucr"] = WorkingDays, ["giornilavorativi"] = WorkingDays, ["arbeitstag"] = WorkingDays, ["arbeitstage"] = WorkingDays,
+        ["day"] = Days, ["days"] = Days, ["d"] = Days, ["zi"] = Days, ["zile"] = Days, ["giorno"] = Days, ["giorni"] = Days, ["gg"] = Days, ["jour"] = Days, ["jours"] = Days,
+        ["día"] = Days, ["dia"] = Days, ["días"] = Days, ["dias"] = Days, ["tag"] = Days, ["tage"] = Days, ["dzień"] = Days, ["dzien"] = Days, ["dni"] = Days,
+        ["h"] = Hours, ["hr"] = Hours, ["hrs"] = Hours, ["hour"] = Hours, ["hours"] = Hours, ["ora"] = Hours, ["oră"] = Hours, ["ore"] = Hours, ["heure"] = Hours, ["heures"] = Hours,
+        ["hora"] = Hours, ["horas"] = Hours, ["std"] = Hours, ["stunde"] = Hours, ["stunden"] = Hours, ["godz"] = Hours,
+    };
+
+    static string Fold(string? unit) => (unit ?? "").Trim().ToLowerInvariant().Replace(" ", "").Replace(".", "");
+
+    /// <summary>
+    /// A unit split into its measure and its time (<c>m × month</c>: <c>m</c> and months; <c>buc/zi</c>: <c>buc</c> and
+    /// days; <c>month</c>: no measure and months). Time is null when the unit has none; the measure is then the unit as it is.
+    /// A unit of time with no measure before it prices a count of the element (cad × month).
+    /// </summary>
+    public static (string Measure, string? Time) SplitTime(string? unit)
+    {
+        var u = Fold(unit);
+        if (TimeWords.TryGetValue(u, out var alone)) return ("", alone);
+        var at = u.LastIndexOfAny(['×', 'x', '*', '/', '·', '-']);
+        if (at > 0 && TimeWords.TryGetValue(u[(at + 1)..], out var time))
+        {
+            var measure = u[..at];
+            if (BasisOf(measure) != null) return (measure, time);
+        }
+        return (unit ?? "", null);
+    }
+
+    /// <summary>The time a unit is priced by (months, workingDays, days, hours), null when it has none.</summary>
+    public static string? TimeOf(string? unit) => SplitTime(unit).Time;
+
+    /// <summary>A unit's measure and factor, its time left aside (<c>m × month</c> is a length; <c>month</c> alone a count); null when Lapin cannot measure it.</summary>
+    public static (string Basis, double Factor)? BasisWithTime(string? unit)
+    {
+        var (measure, time) = SplitTime(unit);
+        if (time == null) return BasisOf(unit);
+        return measure.Length == 0 ? ("count", 1) : BasisOf(measure);
     }
 
     /// <summary>The unit a measure is shown in.</summary>

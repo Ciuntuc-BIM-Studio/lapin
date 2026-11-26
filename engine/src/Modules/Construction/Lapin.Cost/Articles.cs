@@ -7,8 +7,11 @@ namespace Lapin.Cost;
 /// <summary>What a price list's unit measures and how the model's SI value turns into it.</summary>
 public static class Units
 {
-    /// <summary>A unit's measure and the factor the model's SI value is multiplied by to be in it (<see cref="MeasureUnits.BasisOf"/>, shared with planning).</summary>
-    public static (string Basis, double Factor)? BasisOf(string? unit) => MeasureUnits.BasisOf(unit);
+    /// <summary>
+    /// A unit's measure and the factor the model's SI value is multiplied by to be in it (<see cref="MeasureUnits.BasisOf"/>,
+    /// shared with planning), its time left aside: <c>m × month</c> is a length, <c>month</c> or <c>h</c> alone a count.
+    /// </summary>
+    public static (string Basis, double Factor)? BasisOf(string? unit) => MeasureUnits.BasisWithTime(unit);
 
     /// <summary>The unit a measure is shown in when the article's price has none.</summary>
     public static string UnitOf(string basis) => MeasureUnits.UnitOf(basis);
@@ -25,11 +28,16 @@ public static class Units
 /// finish, a formwork, a steel profile): the price list's code, the measure its quantity is read by (auto: by the price's
 /// unit; volume, gross volume, area, gross area, length, count, weight, or a quantity's own name), the part of the
 /// element it measures (all, the core, the finishes, a layer, a material, a category of material), a factor, the waste
-/// (%) and the chapter it goes under (null: the element's).
+/// (%), the chapter it goes under (null: the element's) and the time its quantity is multiplied by (docs/plan-4d5d.md,
+/// "× duration": auto, the price's unit's — <c>m × month</c>, <c>buc/zi</c>, <c>h</c> — else none; none; months, working
+/// days, calendar days or working hours the element is on site, from the schedule).
 /// </summary>
-public sealed record ArticleRef(string Code, string Basis = "auto", string? Part = null, double Factor = 1, double Waste = 0, string? Chapter = null)
+public sealed record ArticleRef(string Code, string Basis = "auto", string? Part = null, double Factor = 1, double Waste = 0, string? Chapter = null, string Time = "auto")
 {
     public static readonly string[] Bases = ["auto", "volume", "grossVolume", "area", "grossArea", "length", "count", "weight"];
+    public const string AutoTime = "auto", NoTime = "none";
+    /// <summary>The times an article may be multiplied by.</summary>
+    public static readonly string[] Times = [AutoTime, NoTime, MeasureUnits.Months, MeasureUnits.WorkingDays, MeasureUnits.Days, MeasureUnits.Hours];
 
     public JsonObject ToJson()
     {
@@ -39,6 +47,7 @@ public sealed record ArticleRef(string Code, string Basis = "auto", string? Part
         if (Factor != 1) o["factor"] = Factor;
         if (Waste != 0) o["waste"] = Waste;
         if (Chapter is { Length: > 0 }) o["chapter"] = Chapter;
+        if (Time != AutoTime) o["time"] = Time;
         return o;
     }
 
@@ -49,7 +58,8 @@ public sealed record ArticleRef(string Code, string Basis = "auto", string? Part
         var part = ((string?)o["part"])?.Trim() is { Length: > 0 } p && p != "all" ? p : null;
         var factor = Json.Number(o["factor"]) is { } f && double.IsFinite(f) ? f : 1;
         var waste = Json.Number(o["waste"]) is { } w && double.IsFinite(w) ? w : 0;
-        return new(code, basis, part, factor, waste, ((string?)o["chapter"])?.Trim() is { Length: > 0 } c ? c : null);
+        var time = ((string?)o["time"])?.Trim() is { Length: > 0 } t ? t : AutoTime;
+        return new(code, basis, part, factor, waste, ((string?)o["chapter"])?.Trim() is { Length: > 0 } c ? c : null, time);
     }
 
     /// <summary>A command's articles, checked.</summary>
@@ -64,6 +74,7 @@ public sealed record ArticleRef(string Code, string Basis = "auto", string? Part
             if (!Bases.Contains(r.Basis) && !char.IsUpper(r.Basis[0])) throw new CommandException($"„{r.Basis}” is not a measure: auto, volume, area, length, count, weight, or a quantity's name.");
             if (r.Factor <= 0) throw new CommandException("An article's factor is positive.");
             if (!(r.Waste >= 0 && r.Waste <= 100)) throw new CommandException("The waste is a percentage between 0 and 100.");
+            if (!Times.Contains(r.Time)) throw new CommandException($"„{r.Time}” is not a time: auto, none, months, workingDays, days or hours.");
             o.Add(r);
         }
         return o;
@@ -180,6 +191,32 @@ public static class Parts
 /// <summary>Reading an article's quantity off an element's sets.</summary>
 public static class Measures
 {
+    /// <summary>The time an article's quantity is multiplied by: its own, else (auto) its price's unit's, else none.</summary>
+    public static string? TimeFor(ArticleRef a, PriceRow? price) =>
+        a.Time == ArticleRef.NoTime ? null : a.Time != ArticleRef.AutoTime ? a.Time : MeasureUnits.TimeOf(price?.Unit);
+
+    /// <summary>A duration as the estimate shows it: „3 months”, „10 working days”, „9 calendar days”, „80 hours”.</summary>
+    public static string DurationText(double v, string time, bool ro = false)
+    {
+        var n = Math.Round(v, 2).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        if (ro) return time switch
+        {
+            MeasureUnits.Months => $"{n} {(v == 1 ? "lună" : "luni")}",
+            MeasureUnits.WorkingDays => $"{n} {(v == 1 ? "zi lucrătoare" : "zile lucrătoare")}",
+            MeasureUnits.Days => $"{n} {(v == 1 ? "zi calendaristică" : "zile calendaristice")}",
+            MeasureUnits.Hours => $"{n} {(v == 1 ? "oră" : "ore")}",
+            _ => n,
+        };
+        return time switch
+        {
+            MeasureUnits.Months => $"{n} {(v == 1 ? "month" : "months")}",
+            MeasureUnits.WorkingDays => $"{n} {(v == 1 ? "working day" : "working days")}",
+            MeasureUnits.Days => $"{n} {(v == 1 ? "calendar day" : "calendar days")}",
+            MeasureUnits.Hours => $"{n} {(v == 1 ? "hour" : "hours")}",
+            _ => n,
+        };
+    }
+
     /// <summary>The measure an article reads: its own, else (auto) the price's unit's, else a count.</summary>
     public static string BasisFor(ArticleRef a, PriceRow? price) =>
         a.Basis != "auto" ? a.Basis : Units.BasisOf(price?.Unit)?.Basis ?? "count";

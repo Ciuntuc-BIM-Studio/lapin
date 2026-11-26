@@ -13365,6 +13365,16 @@ export const EL: Record<string, string> = {
   "Measure as": "Μετριέται ως",
   "No measure": "Καμία μέτρηση",
   "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "Ένα τοποθετημένο εξάρτημα δίνει αυτή την παράμετρο ως ποσότητα αυτού του είδους, για άρθρα κόστους, πίνακες και IFC",
+  // Cost articles priced by the time on site, "× duration" (R7).
+  "× Duration": "× Διάρκεια",
+  "No duration": "Χωρίς διάρκεια",
+  "Months on site": "Μήνες στο εργοτάξιο",
+  "Working days on site": "Εργάσιμες ημέρες στο εργοτάξιο",
+  "Calendar days on site": "Ημερολογιακές ημέρες στο εργοτάξιο",
+  "Working hours on site": "Ώρες εργασίας στο εργοτάξιο",
+  "The quantity times how long the element is on site, from the tasks that take it in the schedule": "Η ποσότητα επί τον χρόνο που το στοιχείο είναι στο εργοτάξιο, από τις εργασίες που το περιλαμβάνουν στο χρονοδιάγραμμα",
+  "The Planning module is not in this edition: the quantity is not multiplied by the duration.": "Η ενότητα Προγραμματισμός δεν είναι σε αυτή την έκδοση: η ποσότητα δεν πολλαπλασιάζεται με τη διάρκεια.",
+  "The project has no work schedule: the quantity is not multiplied by the duration.": "Το έργο δεν έχει χρονοδιάγραμμα εργασιών: η ποσότητα δεν πολλαπλασιάζεται με τη διάρκεια.",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
@@ -14080,4 +14090,7 @@ export const EL_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(.+) covers (.+): choose another profile for (it|them) first\.$/, (m) => `Το ${m[1]} καλύπτει ${m[2]}: επιλέξτε πρώτα άλλο προφίλ.`],
   // The issue with reference documents (stage R5).
   [/^(.+): (.+) is not held here \(larger than the project keeps, and not in the project folder\): it was left out of the issue\.$/, (m) => `${m[1]}: το ${m[2]} δεν κρατείται εδώ (μεγαλύτερο από όσα κρατά το έργο και όχι στον φάκελο του έργου): παραλείφθηκε από την έκδοση.`],
+  // Cost articles priced by the time on site (R7): an estimate line's duration and its note.
+  [/^(\d+) element\(s\) in no task of the schedule: their quantity is not multiplied by the duration\.$/, (m) => `${m[1]} στοιχείο(α) σε καμία εργασία του χρονοδιαγράμματος: η ποσότητά τους δεν πολλαπλασιάζεται με τη διάρκεια.`],
+  [/^× ([\d.]+(?:–[\d.]+)?) (months?|working days?|calendar days?|hours?)$/, (m) => `× ${m[1]} ${({ "month": "μήνας", "months": "μήνες", "working day": "εργάσιμη ημέρα", "working days": "εργάσιμες ημέρες", "calendar day": "ημερολογιακή ημέρα", "calendar days": "ημερολογιακές ημέρες", "hour": "ώρα", "hours": "ώρες" } as Record<string, string>)[m[2]]}`],
 ];
