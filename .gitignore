@@ -24,6 +24,9 @@ desktop/src-tauri/tauri.product.json
 # Private release notes (signing, Apple accounts): never on GitHub
 docs/release-macos.md
 
+# Private business plan and cohort strategy
+docs/business-plan-cohorts.md
+
 # CodeGraph local index
 .codegraph/
 
@@ -37,9 +40,15 @@ deploy/feedback/.env
 deploy/feedback/feedback-screenshots/
 # The store (deploy/store): which server, local only.
 deploy/store/.env
+# Masterclass waitlist env & local test data
+deploy/masterclass/.env
+deploy/masterclass/admin-access.md
+data/waitlist/
 
 # Proposals sent to us (not ours to publish)
 lapin-litestep-proposal.pdf
+# A family of elements sent to us, published as an extension in lapin-extensions
+Famiglia_CSE_v2.1_Lapin.zip
 cubes_1m_fixed.ifc
 02767_0_IDP_EJE_ARQ+EST+MEP.ifc
 
