@@ -67,8 +67,9 @@ we credit it anyway. What came from where is listed in [docs/acknowledgements.md
 
 ## Run
 
-Requires .NET 10, Node 22 + pnpm, Rust (for the desktop shell); on Linux also git, cmake and a C++ compiler, for the
-engine's boolean library.
+Requires .NET 10, Node 22 + pnpm, Rust (for the desktop shell); on Linux also git, cmake, a C++ compiler and
+the static C++ runtime (`libstdc++.a`: on Fedora, RHEL, AlmaLinux and Rocky the `libstdc++-static` package, from the CRB
+repository on the RHEL family), for the engine's boolean library.
 
 ```sh
 pnpm setup        # packages, engine build
