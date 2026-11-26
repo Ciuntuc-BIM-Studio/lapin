@@ -24,11 +24,14 @@ namespace Lapin.Ifc;
 /// <summary><paramref name="Voids"/>: the openings also as solid voids (IfcBuildingElementProxy PROVISIONFORVOID, decision 289), of the kinds asked, their sides moved by the offset; off by default.</summary>
 public sealed record IfcExportOptions(string Schema = "IFC4", string Detail = "group", string? Phase = null, string Geometry = "brep", double Tolerance = 0, IReadOnlySet<string>? Exclude = null,
     bool Voids = false, IReadOnlySet<string>? VoidKinds = null, double VoidOffset = 0, bool BonsaiStyles = false, bool Structural = false, bool TypePropertiesOnOccurrences = false, bool SpaceBrep = false,
-    bool AdvancedBrep = false, bool DerivedLoadBearing = false, bool RoofSlopes = false)
+    bool AdvancedBrep = false, bool DerivedLoadBearing = false, bool RoofSlopes = false, bool FloorBody = false)
 {
     // RoofSlopes (issue #139): a sloped roof's covering (its deck, its layers) one IfcSlab ROOF per slope (each a part of the IfcRoof,
     // its GlobalId from the roof's and the slope's), for readers that fit one plane to a slab (CYPECAD MEP); a roof written over its
     // parts then even with one body each. Off: the covering one slab of all its slopes, as decisions 328 and 329 have it.
+    // FloorBody (#140): a floor written as a parent over its parts (a beam-and-block floor's joists, blocks and concrete; a timber or CLT
+    // floor's) also carries a plain body of its own, its outline extruded by its depth (IIfcEnvelopes), for readers that take a floor by its
+    // own body only (CYPECAD MEP). Off: the parent has no body, its parts have them, as before.
     // DerivedLoadBearing (docs/plan-structural-usage.md, the user's answer 4): Pset_…Common.LoadBearing also on the elements nothing
     // says it of, from the views' rule (StructuralUsage.ForViews: a wall unless a partition, floors, roofs, columns, beams); off by
     // default, on for a CDE issue and an IDS check. Off: written only where it is said (the Structural tick, a Pset value), and on
@@ -1002,6 +1005,7 @@ public static partial class IfcExport
                 partItems = [.. parts.Select(p => p.Unit != null && p.Instances is { Count: > 0 } ? null : Brep(p.Solid, StyleKey(p), fr))];
                 reps.Add(BodyOf(parts.Select((p, i) => partItems[i] ?? Brep(p.Solid, StyleKey(p), fr))));
             }
+            if (grouped && o.FloorBody && kind.Class == IfcClass.Slab && FloorBodyOf(e, fr, parts) is { } plain) reps.Add(plain);
             if (AxisOf(e) is { } ax) reps.Add(ax);
             if (ArcFootprint(e) is { } fp) reps.Add(fp);
             else if (ArcAxis(e) is { } aa) reps.Add(aa);
@@ -1031,6 +1035,33 @@ public static partial class IfcExport
             if (swept is { Parts.Count: > 0 }) SweptParts(e, swept, entity, spatial, place, fr, parts);
             Properties(e, kind, entity, type, hostedBy != null ? [("LapinHost", hostedBy.Id)] : null);
             Quantities(e, entity, grouped);
+        }
+
+        /// <summary>
+        /// A floor of parts' own plain body (#140, <see cref="IfcExportOptions.FloorBody"/>): its outline (its true curve when it has arcs,
+        /// its own holes as voids) extruded from its bottom by its depth, an IfcExtrudedAreaSolid (SweptSolid); a shaped floor's envelope as
+        /// a B-rep. Styled as its structure (a beam-and-block floor's concrete), else its first part.
+        /// </summary>
+        string? FloorBodyOf(Entity e, Frame fr, IReadOnlyList<GeometryPart> parts)
+        {
+            if (s.Catalog.All<IIfcEnvelopes>().Select(x => x.EnvelopeOf(m, e)).FirstOrDefault(x => x != null) is not { } env) return null;
+            var style = StyleKey(parts.FirstOrDefault(p => p.Key == "bb-concrete") ?? parts[0]) ?? "#a8a8a8";
+            var corners = e.Attrs["contour"] is JsonArray ? Args.StoredPoints(e.Attrs["contour"]) : [];
+            if (env.Bottom is not { } bottom || env.Depth is not { } depth || depth <= 0 || corners.Count < 3)
+                return BodyOf([Brep(env.Body, style, fr)]);
+            var rises = ArcOutline.Rises(e.Attrs[ArcOutline.Key], corners.Count);
+            var ellipses = EllipseEdge.Read(e.Attrs[EllipseEdge.Key], corners.Count);
+            string Loop(IReadOnlyList<Vec2> c, IReadOnlyList<double>? r, IReadOnlyList<EllipseEdge?>? el) =>
+                r == null && (el == null || el.All(x => x == null)) ? f.Add("IFCPOLYLINE", L(c.Append(c[0]).Select(P2))) : OutlineLoop(c, r, el);
+            var outer = Loop(corners, rises, ellipses);
+            var holes = OutlineHoles.Of(e);
+            var profile = holes.Count == 0
+                ? f.Add("IFCARBITRARYCLOSEDPROFILEDEF", E("AREA"), Null, outer)
+                : f.Add("IFCARBITRARYPROFILEDEFWITHVOIDS", E("AREA"), Null, outer, L(holes.Select(h => Loop(h.Corners, h.Rises, h.Ellipses))));
+            var origin = f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", L(new[] { R(0), R(0), R(fr.Local(new Vec3(0, 0, bottom)).Z) })), Null, Null);
+            var solid = f.Add("IFCEXTRUDEDAREASOLID", profile, origin, f.Add("IFCDIRECTION", "(0.,0.,1.)"), R(depth));
+            f.Add("IFCSTYLEDITEM", solid, L(new[] { Style(style) }), Null);
+            return f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S("SweptSolid"), L(new[] { solid }));
         }
 
         /// <summary>
