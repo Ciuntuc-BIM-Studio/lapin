@@ -20,7 +20,8 @@ import { engine, engineInBrowser, useSession } from '../engine/session';
 import { CATEGORY_ORDER, countByKind, filterCatalogue, sizeText, updatesOf, type InstalledExtension } from '../platform/extensions/install';
 import { compareVersions, compatibility, isNonCommercial, isPaid, isPermissive, KIND_INFO, PERMISSION_LABELS, PROVIDERS, runnable, type ExtensionKind, type Manifest } from '../platform/extensions/manifest';
 import { cleanKey, isRevoked, LICENCE_MESSAGES } from '../platform/extensions/licence';
-import { FULL_ACCESS, isModuleKind, moduleStatus, refreshEngineModules, restartNow, setModuleEnabled, useEngineModules, usePluginLeft } from '../platform/extensions/moduleKind';
+import { FULL_ACCESS, isModuleKind, moduleStatus, refreshEngineModules, restartNow, setModuleEnabled, useEngineModules } from '../platform/extensions/moduleKind';
+import { usePluginReport } from '../platform/extensions/plugins';
 import { saveProject } from '../engine/files';
 import { appFacts, contentInstallers, DEFAULT_INDEX, forgetLicence, install, loadCatalogue, setCatalogueAddress, uninstall, useExtensions } from '../platform/extensions/runtime';
 
@@ -201,7 +202,7 @@ async function letWorkGo(): Promise<boolean> {
 /** An extension module's line in Installed: its permission, what this start made of it, and its On switch. */
 function ModuleState({ x }: { x: InstalledExtension }) {
   const engineList = useEngineModules();
-  const left = usePluginLeft((s) => s.left.find((l) => l.id === x.id));
+  const left = usePluginReport((s) => s.left.find((l) => l.id === x.id));
   const e = engineList.installed.find((m) => m.id === x.id);
   const status = moduleStatus(e, left?.reason);
   const toggle = async (on: boolean) => {

@@ -56,12 +56,6 @@ export async function refreshEngineModules(): Promise<void> {
 }
 
 /**
- * The plug-ins the interface loader left out at boot, with why (S3's `usePluginReport().left`, shape
- * `{ loaded: string[], left: {id, reason}[] }`). Set by the loader; empty until it reports.
- */
-export const usePluginLeft = create<{ left: { id: string; reason: string }[] }>(() => ({ left: [] }));
-
-/**
  * What Installed says of an extension module beside its switch: why it was refused at this start, why its interface was left out
  * (`leftReason`), or what the next start will change; null when it simply runs. `detail` is the engine's or the loader's own
  * sentence, shown as it came.
