@@ -149,6 +149,38 @@ public static class RoomDividers
     }
 
     /// <summary>
+    /// Which edges of a room's loop lie on one of the storey's dividers (GitHub #142): edge <c>i</c> runs from
+    /// <c>loop[i]</c> to <c>loop[i + 1]</c> (the last one back to the first), and lies on a divider when both its ends are on
+    /// one piece's line, within the piece (and its reach past an open line's ends). Such an edge bounds the floor but has no
+    /// wall: the walls' finish and the skirting leave it out. All false when the storey has no divider.
+    /// </summary>
+    public static bool[] Edges(IModelView m, string? storeyId, IReadOnlyList<Vec2> loop)
+    {
+        var o = new bool[loop.Count];
+        if (storeyId == null || loop.Count < 2) return o;
+        var pieces = Pieces(m, storeyId);
+        if (pieces.Count == 0) return o;
+        const double Off = HalfWidth * 0.5, Past = Reach + 3 * HalfWidth;
+        bool On(Vec2 p, Vec2 a, Vec2 d, double len)
+        {
+            var t = Vec2.Dot(p - a, d);
+            return Math.Abs(Vec2.Cross(d, p - a)) <= Off && t >= -Past && t <= len + Past;
+        }
+        for (var i = 0; i < loop.Count; i++)
+        {
+            var (p, q) = (loop[i], loop[(i + 1) % loop.Count]);
+            if ((q - p).Length < 1e-9) continue;
+            foreach (var (a, b) in pieces)
+            {
+                var len = (b - a).Length;
+                var d = (b - a) * (1 / len);
+                if (On(p, a, d, len) && On(q, a, d, len)) { o[i] = true; break; }
+            }
+        }
+        return o;
+    }
+
+    /// <summary>
     /// A region found with the storey's dividers made exact: its corners on a divider's strip put back on the divider's line
     /// (where two pieces meet, on their meeting point; where the strip meets a wall, along the wall's face), so the rooms on
     /// either side meet on the line and their areas, perimeters and volumes add up to the room undivided; what the strip of a

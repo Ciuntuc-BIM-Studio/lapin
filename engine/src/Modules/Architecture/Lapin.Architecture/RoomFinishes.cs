@@ -579,7 +579,7 @@ public static class RoomFinishes
             switch (e.Str("part"))
             {
                 case "walls" when WallFace(spec) is var t && t > 0:
-                    net = Inset(o, t);
+                    net = Inset(o, t, Spatial.StoreyOf(m, room.Id)?.Id, m);
                     break;
                 case "ceiling" when spec.Ceiling is { Count: > 0 } c:
                     var level = Level(m, room);
@@ -593,13 +593,67 @@ public static class RoomFinishes
         return net == null && ceiling == null && floor == null ? null : new Finished(net ?? o, ceiling, floor);
     }
 
-    /// <summary>The outline taken in by <paramref name="t"/>, its islands out by it; as it was when nothing would be left.</summary>
-    static Rooms.Outline Inset(Rooms.Outline o, double t)
+    /// <summary>
+    /// The outline taken in by <paramref name="t"/>, its islands out by it; as it was when nothing would be left. An edge on a
+    /// room separation line (GitHub #142) has no finish and stays where it is.
+    /// </summary>
+    static Rooms.Outline Inset(Rooms.Outline o, double t, string? storeyId, IModelView m)
     {
-        var outer = Polygon2.Offset(Polygon2.EnsureCcw(o.Outer), [-t]);
+        var ccw = Polygon2.EnsureCcw(o.Outer);
+        var outer = Polygon2.Offset(ccw, Distances(ccw, RoomDividers.Edges(m, storeyId, ccw), -t));
         if (Polygon2.SignedArea(outer) <= 1e-9) return o;
-        return o with { Outer = outer, Islands = o.Islands.Select(i => (IReadOnlyList<Vec2>)Polygon2.Offset(Polygon2.EnsureCcw(i), [t])).ToList() };
+        return o with
+        {
+            Outer = outer,
+            Islands = o.Islands.Select(i => Polygon2.EnsureCcw(i) is var ci ? (IReadOnlyList<Vec2>)Polygon2.Offset(ci, Distances(ci, RoomDividers.Edges(m, storeyId, ci), t)) : i).ToList(),
+        };
     }
+
+    /// <summary>Each edge's offset: <paramref name="d"/>, 0 on a room separation line (a single distance when there is none, as before).</summary>
+    static double[] Distances(IReadOnlyList<Vec2> loop, bool[] skip, double d) =>
+        skip.Any(x => x) ? [.. Enumerable.Range(0, loop.Count).Select(i => skip[i] ? 0 : d)] : [d];
+
+    /// <summary>How far in from the walls' faces the room's walls finish is at the floor (<see cref="WallFace(RoomFinishSpec)"/>); 0 without one.</summary>
+    public static double WallFaceOf(IModelView m, Entity room) =>
+        m.OfClass(Class).Where(e => e.Str("roomId") == room.Id && e.Str("part") == "walls")
+            .Select(e => SpecOf(m, e) is { } spec ? WallFace(spec) : 0).DefaultIfEmpty(0).Max();
+
+    /// <summary>
+    /// The band between <paramref name="d0"/> and <paramref name="d1"/> off a loop anticlockwise (<paramref name="sign"/> −1:
+    /// inwards, an outline; +1: outwards, an island), as polygons anticlockwise: the whole ring (outer, hole) when no edge is
+    /// skipped, else one open band per run of edges between the skipped ones (the room separation lines, GitHub #142), its ends
+    /// on the skipped edges' lines.
+    /// </summary>
+    internal static List<(IReadOnlyList<Vec2> Outer, IReadOnlyList<IReadOnlyList<Vec2>> Holes)> Bands(IReadOnlyList<Vec2> ccw, bool[] skip, double d0, double d1, int sign)
+    {
+        var n = ccw.Count;
+        if (!skip.Any(x => x))
+            return sign < 0 ? [(Polygon2.Offset(ccw, [-d0]), [Polygon2.Offset(ccw, [-d1])])] : [(Polygon2.Offset(ccw, [d1]), [Polygon2.Offset(ccw, [d0])])];
+        if (skip.All(x => x)) return [];
+        var a = Polygon2.Offset(ccw, Distances(ccw, skip, sign * d0));
+        var b = Polygon2.Offset(ccw, Distances(ccw, skip, sign * d1));
+        var o = new List<(IReadOnlyList<Vec2>, IReadOnlyList<IReadOnlyList<Vec2>>)>();
+        var first = Array.IndexOf(skip, true);
+        var run = new List<int>();
+        for (var k = 1; k <= n; k++)
+        {
+            var e = (first + k) % n;
+            if (!skip[e]) { run.Add(e); continue; }
+            if (run.Count > 0)
+            {
+                // The run's corners: its first edge's start to its last edge's end, along the near line, back along the far one.
+                var corners = Enumerable.Range(0, run.Count + 1).Select(i => (run[0] + i) % n).ToList();
+                var band = corners.Select(i => a[i]).Concat(corners.AsEnumerable().Reverse().Select(i => b[i])).ToList();
+                if (Math.Abs(Polygon2.SignedArea(band)) > 1e-12) o.Add((Polygon2.EnsureCcw(band), []));
+            }
+            run.Clear();
+        }
+        return o;
+    }
+
+    /// <summary>The loops' length the walls' finish lines: every edge but those on a room separation line (GitHub #142).</summary>
+    static double FinishedPerimeter(IEnumerable<(IReadOnlyList<Vec2> Loop, bool[] Skip)> loops) =>
+        loops.Sum(x => Enumerable.Range(0, x.Loop.Count).Where(i => !x.Skip[i]).Sum(i => (x.Loop[(i + 1) % x.Loop.Count] - x.Loop[i]).Length));
 
     // ------------------------------------------------------------ in plans (decision 299)
 
@@ -775,13 +829,20 @@ public static class RoomFinishes
                 return Prism.ExtrudeFootprint(footprint, x.F.Base + x.P.Sill, x.P.Height, "opening");
             }).OfType<Solid>().ToList();
             if (cutters.Count > 0 && booleans == null) problems.Add("Openings need the boolean library (manifold), missing here: the walls' finish is drawn uncut.");
-            // A ring between d0 and d1 in from the outline, and out from each island.
+            // The edges on room separation lines (GitHub #142): they bound the floor but have no wall, so no finish runs along them.
+            var outerSkip = RoomDividers.Edges(m, storeyId, outer);
+            var islandSkips = islands.Select(i => RoomDividers.Edges(m, storeyId, i)).ToList();
+            var perimeter = outerSkip.Any(x => x) || islandSkips.Any(s => s.Any(x => x))
+                ? FinishedPerimeter([(outer, outerSkip), .. islands.Select((i, k) => (i, islandSkips[k]))]) : o.NetPerimeter;
+            // A ring between d0 and d1 in from the outline, and out from each island (open bands where a separation line is).
             List<Solid> Rings(double d0, double d1, double z0, double h)
             {
                 var o2 = new List<Solid>();
-                if (Slab(Polygon2.Offset(outer, [-d0]), [Polygon2.Offset(outer, [-d1])], z0, h, "walls") is { } s) o2.Add(s);
-                foreach (var isl in islands)
-                    if (Slab(Polygon2.Offset(isl, [d1]), [Polygon2.Offset(isl, [d0])], z0, h, "walls") is { } si) o2.Add(si);
+                foreach (var (bo, bh) in Bands(outer, outerSkip, d0, d1, -1))
+                    if (Slab(bo, bh, z0, h, "walls") is { } s) o2.Add(s);
+                for (var k = 0; k < islands.Count; k++)
+                    foreach (var (bo, bh) in Bands(islands[k], islandSkips[k], d0, d1, 1))
+                        if (Slab(bo, bh, z0, h, "walls") is { } si) o2.Add(si);
                 return o2;
             }
             var linings = along.Select(Lining).OfType<RevealLining>().ToList();
@@ -809,7 +870,7 @@ public static class RoomFinishes
                         }
                     if (p.Material.Length > 0 && top - at > 1e-9)
                     {
-                        gross.Add((i, p.Material, p.Thickness ?? l.Thickness, o.NetPerimeter * (top - at), 0));
+                        gross.Add((i, p.Material, p.Thickness ?? l.Thickness, perimeter * (top - at), 0));
                         // The reveals of the doors and windows lined too, from the room's face to the frame, this piece where it reaches.
                         foreach (var lining in thick ? linings : [])
                             foreach (var box in lining.Boxes(d, d + (p.Thickness ?? l.Thickness), at, top, top >= z1 - 1e-9))

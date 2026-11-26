@@ -152,6 +152,14 @@ export function SkirtingTypesDialog() {
   );
 }
 
+const START_TIP = 'Where the board starts: the storey\'s level, or the finished floor of the room it lies in (the room\'s base offset); its own base offset is added.';
+const FACE_TIP = 'What the board stands against: the walls\' faces, or the face of the room\'s wall finish (the plaster, the tiles).';
+
+/** Where a skirting starts (GitHub #144): the storey's level unless it says its room's finished floor. */
+export const skirtingStartOf = (node: Pick<NodeDto, 'props'>): 'storey' | 'finishedFloor' => (node.props.startAt === 'finishedFloor' ? 'finishedFloor' : 'storey');
+/** What a skirting stands against (GitHub #144): the walls' faces unless it says the walls' finish. */
+export const skirtingFaceOf = (node: Pick<NodeDto, 'props'>): 'wall' | 'finish' => (node.props.face === 'finish' ? 'finish' : 'wall');
+
 /** A skirting in the inspector: its type (with its profile), the side its board lies on, the gaps at the doors (its base offset is the class's own field). */
 export function SkirtingSection({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
@@ -175,6 +183,21 @@ export function SkirtingSection({ node }: { node: NodeDto }) {
       <dl className="fields">
         <dt>Doors</dt>
         <dd><label className="check"><input type="checkbox" checked={gaps} disabled={!node.editable} onChange={(e) => set({ gaps: e.target.checked })} /><span>Gaps at the doors</span></label></dd>
+        {/* GitHub #144: on the room's finished floor and in front of the walls' finish, the storey's level and the walls' faces by default. */}
+        <dt title={START_TIP}>Starts at</dt>
+        <dd>
+          <select data-field="skirting-start" value={skirtingStartOf(node)} disabled={!node.editable} title={START_TIP} onChange={(e) => set({ startAt: e.target.value })}>
+            <option value="storey">Storey level</option>
+            <option value="finishedFloor">Room&apos;s finished floor</option>
+          </select>
+        </dd>
+        <dt title={FACE_TIP}>Stands against</dt>
+        <dd>
+          <select data-field="skirting-face" value={skirtingFaceOf(node)} disabled={!node.editable} title={FACE_TIP} onChange={(e) => set({ face: e.target.value })}>
+            <option value="wall">The wall&apos;s face</option>
+            <option value="finish">The wall finish</option>
+          </select>
+        </dd>
       </dl>
       {node.props.roomId
         ? <p className="muted small">It follows its room’s outline.</p>

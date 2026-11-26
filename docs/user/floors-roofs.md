@@ -231,6 +231,8 @@ Its type, in **Interior → Skirting types**, sets the **Profile** — **Flush (
 
 A skirting's properties hold its type, its **Base offset** over the floor (under Dimensions) and **Gaps at the doors** (off, it runs on across them). **Skirting schedule** (or **Skirtings** in the project browser's list of new schedules) lists them by type with their pieces and length, the doors' gaps left out. The board is mitred at the corners; a plan draws its front edge, and a skirting goes to IFC as an IfcCovering of type SKIRTINGBOARD, of an IfcCoveringType of the same.
 
+Two more choices place the board: **Starts at** is the **Storey level** (as before) or the **Room's finished floor**, the level of the room it lies in (its **Base offset**, which the floor finish lies under), the skirting's own base offset added; **Stands against** is **The wall's face** (as before) or **The wall finish**, the face of the room's wall finish (the plaster, the tiles), so the board is not buried in the screed nor behind the plaster. A skirting drawn along a wall takes them from the room on the side its board lies on, so each side of a partition between two rooms of different floor build-ups gets its own.
+
 ![The skirting types: the profile drawn to scale, the library](shots/skirting-types.webp)
 
 ![A skirting's properties: its type, base offset and the gaps at the doors](shots/skirting-properties.webp)

@@ -1042,6 +1042,26 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             return null;
         });
 
+        // Whether a door's or window's hole goes down to the structure under the finished floor it stands on (GitHub #149): {id | ids
+        // (openings, or the doors and windows filling them), on}. Kept on the opening; it acts on one measured from the finished floor.
+        r.Command("setReachStructure", "Opening down to the structure", (ctx, a) =>
+        {
+            var ids = Ids(a).ToList();
+            if (ids.Count == 0) throw new CommandException("Select a door or a window.");
+            var on = a["on"] is not JsonValue v || !v.TryGetValue<bool>(out var b) || b;
+            foreach (var id in ids)
+            {
+                var e = ctx.Model.Get(id) ?? throw new CommandException("Select a door or a window.");
+                var opening = e.Class == IfcClass.OpeningElement ? e : Openings.OpeningOf(ctx.Model, id) ?? throw new CommandException($"„{e.Name}” fills no opening.");
+                if (Openings.FillOf(ctx.Model, opening.Id) == null) throw new CommandException("Only a door's or a window's opening goes down to the structure under it.");
+                if (opening.Bool(OpeningSills.ReachKey) == on) continue;
+                var attrs = opening.CloneAttrs();
+                if (on) attrs[OpeningSills.ReachKey] = true; else attrs.Remove(OpeningSills.ReachKey);
+                ctx.Replace(opening.With(attrs: attrs));
+            }
+            return null;
+        });
+
         // What a selected door's, window's or opening's temporary dimensions measure to along its wall (decision 511):
         // {id (the opening, or the door or window filling it) | wallId (one being placed)}.
         r.Query("openingReferences", (q, a) => OpeningReferences.Of(q, a));
