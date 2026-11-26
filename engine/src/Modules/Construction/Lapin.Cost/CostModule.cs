@@ -187,6 +187,8 @@ public sealed class CostModule : ILapinModule
         // The project's prices by article code, for a module showing what its own lines cost (the roof panels' Cost tab).
         r.Service<IArticlePrices>(new ArticlePricesOf());
         foreach (var (id, label) in CostForms.All) r.Service<IScheduleSource>(new CostSchedule(id, label));
+        // The cash flow as a schedule to place on sheets; not one of the estimate's forms (its workbook and PDF stay as they were).
+        r.Service<IScheduleSource>(new CostSchedule("cashflow", "Cash flow"));
         // Cost over time (stage 7): the tasks' costs for the Gantt, the S-curve on sheets, the estimates of two versions compared.
         r.Service<IScheduleCosts>(new ScheduleCostsOf());
         r.Service<ISheetContent>(new CostCurveSheet());
@@ -476,6 +478,41 @@ public sealed class CostModule : ILapinModule
             var (w, h, _) = new CostCurveSheet().Pages(ctx.Query, e, fw, fh)[0];
             var sheet = Sheets.AddSheet(ctx, $"S-curve · {e.Name}", paper, portrait, [(e.Id, Sheets.Margin + 4 + w / 2, Sheets.Margin + 4 + h / 2, 1)]);
             return new JsonObject { ["sheetId"] = sheet.Id };
+        });
+
+        // ---------------------------------------------------------------- cash flow (5D)
+
+        // The contract's terms the cash flow follows, on the estimate: the fields given set (null: back to the default), reset: all back.
+        r.Command("setCashFlow", "Cash-flow terms", (ctx, a) =>
+        {
+            var e = EstimateArg(ctx.Model, a);
+            var attrs = e.CloneAttrs();
+            var merged = a["reset"] is JsonValue rv && rv.TryGetValue<bool>(out var reset) && reset ? new JsonObject() : CashFlowSettings.Merge(attrs[CashFlowSettings.Attr] as JsonObject, a, ctx.Model);
+            if (merged.Count == 0) attrs.Remove(CashFlowSettings.Attr); else attrs[CashFlowSettings.Attr] = merged;
+            ctx.Replace(e.With(attrs: attrs));
+            return CashFlowSettings.Read(merged.Count == 0 ? null : merged).ToJson();
+        });
+
+        static string PeriodArg(JsonObject a) => (string?)a["period"] == "week" ? "week" : "month";
+
+        // The cash flow on the planned schedule: the periods (month or week), the certificates, the retention's releases, the peak funding need.
+        r.Query("cashFlow", (q, a) =>
+        {
+            var (o, why) = CashFlow.For(q, (string?)a["id"], PeriodArg(a));
+            return o?.ToJson(Costing.EstimateOf(q.Model, (string?)a["id"])!.Id) ?? new JsonObject { ["why"] = why };
+        });
+
+        r.Query("cashFlowXlsx", (q, a) =>
+        {
+            var e = EstimateArg(q.Model, a);
+            var (o, why) = CashFlow.For(q, e.Id, PeriodArg(a));
+            return Convert.ToBase64String((o ?? throw new CommandException(why!)).Xlsx(q, Costing.Compute(q, e)));
+        });
+
+        r.Query("cashFlowCsv", (q, a) =>
+        {
+            var (o, why) = CashFlow.For(q, (string?)a["id"], PeriodArg(a));
+            return (o ?? throw new CommandException(why!)).Csv();
         });
 
         r.Query("pdf", (q, a) =>

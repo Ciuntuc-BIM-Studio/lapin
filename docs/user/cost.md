@@ -16,6 +16,7 @@ The cost groups are on the **Construction** tab, after the work schedule's (the 
 - **Estimate…**: opens the estimate under the view (it is made the first time).
 - **Form on sheet**, **Estimate XLSX** and **Estimate PDF**: the estimate and its forms on a sheet, in a workbook or in a PDF (below).
 - **Cost over time**: the estimate laid on the work schedule, the S-curve and the month table (below).
+- **Cash flow**: the payments on your contract's terms, month by month, and the peak funding need (below).
 
 The estimate is worked out from the model every time it changes. A wall you draw now is in the estimate at once, with its quantities. Only the prices, the articles on the types, the rules and your own lines are stored.
 
@@ -136,8 +137,28 @@ A time-related item is spread over the working days of its task, or of the whole
 
 Monthly progress billing (*situații de lucrări*), earned value and several baselines are for the premium edition.
 
+## Cash flow
+
+The S-curve is the cost *incurred*. The cash flow is the money: what the client pays and when, what you pay out and when, and how much you have to find in between. **Construction → Cash flow** (or **Cash flow** in the S-curve's bar) opens it in the S-curve's place; **S-curve** goes back.
+
+It runs on the **planned** schedule, worked out from the estimate every time anything changes. Only your terms are stored, on the estimate:
+
+- **Contract**: the **value certified**: the **estimate without VAT** (direct costs, overheads and profit), its **direct costs**, or a **contract price** you type (the client's price; the certificates share it in proportion to the planned costs). **VAT** ticked: VAT at the estimate's rate is paid with each payment, in and out.
+- **Advance**: a percentage of the contract value, paid on a day you choose (a date, or the start of a task or milestone; by default the schedule's start). Each certificate recovers it pro rata (its value × advance ÷ contract value); the last recovers what is left.
+- **Retention**: the percentage held back from each certificate, released in two parts: a part at the **taking-over** (a date, or a task's finish; by default the schedule's finish), the rest after the **defects period** (months after the taking-over). Each release is paid with the payment term.
+- **Certificates and payment**: **monthly** (on a day of the month; 0 is its last day) or **weekly** (each Sunday). A certificate takes the work planned since the one before; it is paid its net (certified − retention − advance recovered) the **paid after** days later.
+- **Payments out**: tick **Show payments out** to see what you pay: the **direct costs**, or the **costs with overheads** (all but the profit), each paid the **suppliers paid after** days after it is incurred.
+
+With nothing set, Lapin's defaults are shown and marked **indicative**: Romanian practice as Lapin reads it (monthly statements of works at the month's end, paid in 30 days, 5 % retention released half at the taking-over and half after a 24-month defects period, no advance, suppliers paid in 30 days). Your contract decides: change any of them; **Lapin's defaults** puts them back. Each change is one undo step.
+
+The chart shows a bar a period for the **net cash flow** (green when more comes in, red when more goes out), the **cumulative** as a line and a red dot at the **peak funding need**: the lowest the cumulative goes, the money you have to finance, and the month it happens in (above the chart too). Under it, the table by month (or **by week**): cost incurred, certified, retention held, advance recovered, cash in, cash out, the net, the cumulative and the balances still held; then each certificate with its date, its deductions, its net and the day it is paid, and the retention's releases.
+
+**Table on sheet** places the table on a new sheet (the schedule **Cash flow**, by month). **XLSX** saves the periods and the certificates in a workbook, **CSV** the periods.
+
+With all the terms set to nothing (value certified: direct costs, no advance, no retention, paid after 0 days, suppliers after 0 days, direct costs out), the cash in is the cost of each month, as in the S-curve's table. Certificates of the work actually done (monthly progress billing) are for the premium edition; when it is there, its certificates take the place of the planned ones up to the last one made.
+
 ## IFC
 
 **File → Export → Export IFC, Fragments or BOS…** writes the estimate as an **IfcCostSchedule**: its chapters and lines as **IfcCostItem**s, each line's quantity and its unit prices as four **IfcCostValue**s (Material, Labour, Equipment, Transport), the elements each line measures assigned to it (**IfcRelAssignsToControl**), the currency as the project's **IfcMonetaryUnit**. A time-related item carries its rate's unit in `Lapin_CostItem` (*Per*) and its task as the line's task, so read back it keeps following the schedule. Imported, an estimate keeps the lines as the file has them, with the same totals. Tick **Lines from the model** to add the lines your model gives.
 
-With a work schedule, each line is also assigned to the tasks it is done in (**IfcRelAssignsToControl** to their **IfcTask**s). Imported, the lines keep their tasks, so the S-curve comes back the same. A line priced by the time on site carries its **Time** and **Duration** in **Lapin_CostItem**.
+With a work schedule, each line is also assigned to the tasks it is done in (**IfcRelAssignsToControl** to their **IfcTask**s). Imported, the lines keep their tasks, so the S-curve comes back the same. A line priced by the time on site carries its **Time** and **Duration** in **Lapin_CostItem**. The cash-flow terms you set are written in **Lapin_Estimate** (**CashFlow.Advance**, **CashFlow.Retention**, **CashFlow.PaymentDays**…) and read back; a task named for the advance or the taking-over is not, so its date falls back to the schedule's.

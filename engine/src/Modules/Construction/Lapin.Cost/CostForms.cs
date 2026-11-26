@@ -78,12 +78,13 @@ public static class CostForms
         "c8" => Resources(q, r, new Fmt(raw), "equipment"),
         "c9" => Resources(q, r, new Fmt(raw), "transport"),
         "monthly" => CostTimeOutputs.Monthly(q, r, raw),
+        "cashflow" => CashFlow.FormOf(q, r, raw),
         _ => Estimate(q, r, new Fmt(raw)),
     };
 
     /// <summary>A table saying there is no estimate yet, for a schedule placed before one was made.</summary>
     public static CostForm None(string form) =>
-        new(form, All.FirstOrDefault(f => f.Id == form).Label ?? "Estimate", "", ["Estimate"], [new FormRow(["No estimate yet: Cost → Estimate makes one."])], new HashSet<int>());
+        new(form, All.FirstOrDefault(f => f.Id == form).Label ?? (form == "cashflow" ? "Cash flow" : "Estimate"), "", ["Estimate"], [new FormRow(["No estimate yet: Cost → Estimate makes one."])], new HashSet<int>());
 
     static CostForm Estimate(IQueryContext q, EstimateResult r, Fmt f)
     {
