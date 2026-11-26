@@ -1304,7 +1304,11 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                     // `roofSlopes` (issue #139): a sloped roof's covering one IfcSlab ROOF per slope.
                     p["roofSlopes"] is JsonValue rsv && rsv.TryGetValue<bool>(out var roofSlopes) && roofSlopes,
                     // `floorBody` (#140): a floor of parts (beam and block, timber, CLT) also with a plain body of its own, its outline by its depth.
-                    p["floorBody"] is JsonValue fbv && fbv.TryGetValue<bool>(out var floorBody) && floorBody);
+                    p["floorBody"] is JsonValue fbv && fbv.TryGetValue<bool>(out var floorBody) && floorBody,
+                    // `mirroredSameType` (issue #141): a door or window flipped on one axis keeps its type, its hand in its own OperationType.
+                    p["mirroredSameType"] is JsonValue mtv && mtv.TryGetValue<bool>(out var sameType) && sameType,
+                    // `lintelBeams` (issue #150): lintels IfcBeam LINTEL of their own in either detail, with their quantities and a type.
+                    p["lintelBeams"] is JsonValue lbv && lbv.TryGetValue<bool>(out var lintelBeams) && lintelBeams);
                 if ((string?)p["path"] is { Length: > 0 } ifcPath) return (IfcExport.Write(session, RefuseOverRead(HostFiles.Check(ifcPath)), options).ToJson(), null);
                 // The file made once, of its size: a hall of 33 bays is 150 MB of IFC (report #156).
                 var (ifc, _) = IfcExport.Bytes(session, "project.ifc", options);

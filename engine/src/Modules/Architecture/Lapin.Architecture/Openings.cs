@@ -321,7 +321,10 @@ public static class Openings
         if (Joinery.Problem(spec) is { } problem) throw new CommandException(problem);
         if ((type.Class == IfcClass.DoorType) != spec.IsDoor) throw new CommandException("A door type stays a door type, a window type a window type.");
         BayWindows.EnsureMaterials(edit, spec);
-        edit.Replace(type.With(name: spec.Name, attrs: TypeAttrs(spec)));
+        // What the configurator does not set stays (issue #141): the type's parameters, classification and the rest of its attributes.
+        var attrs = type.CloneAttrs();
+        foreach (var (k, v) in TypeAttrs(spec).ToList()) attrs[k] = v?.DeepClone();
+        edit.Replace(type.With(name: spec.Name, attrs: attrs));
         foreach (var fill in edit.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).ToList())
             if (OpeningOf(edit.Model, fill.Id) is { } opening && WallOf(edit.Model, opening.Id) is { } wall)
             {

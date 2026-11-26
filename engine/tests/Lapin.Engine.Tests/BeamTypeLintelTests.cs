@@ -296,6 +296,25 @@ public class BeamTypeLintelTests : IDisposable
     }
 
     [Fact]
+    public void Lintels_as_their_own_beams_keep_their_beam_type_and_carry_their_quantities()
+    {
+        // Issue #150: asked, a lintel of a beam type is still typed by it (no generic type beside it), in either detail.
+        var (f, _, _, walls) = Doors();
+        foreach (var detail in new[] { "group", "simple" })
+        {
+            var path = Path.Combine(_dir, $"lintel-beams-{detail}.ifc");
+            IfcExport.Write(f.Session, path, new IfcExportOptions(Detail: detail, LintelBeams: true));
+            var file = StepFile.Read(path);
+            var type = Assert.Single(file.OfType("IFCBEAMTYPE"));
+            Assert.Equal("KP 7", (string?)type[2]);
+            var lintels = file.OfType("IFCBEAM").Where(b => Equals(b[8], new StepEnum("LINTEL"))).ToList();
+            Assert.Equal(2, lintels.Count);
+            foreach (var l in lintels)
+                Assert.Contains(file.OfType("IFCRELDEFINESBYPROPERTIES"), r => (r[4] as List<object?>)!.Contains(new StepRef(l.Id)) && file.Get(r[5]) is { Type: "IFCELEMENTQUANTITY" } q && (string?)q[2] == "Qto_BeamBaseQuantities");
+        }
+    }
+
+    [Fact]
     public void The_lintel_schedule_lists_them_by_their_type_and_mark_with_the_code_of_the_length()
     {
         var (f, typeId, _, _) = Doors();
