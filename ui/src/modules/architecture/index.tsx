@@ -205,15 +205,18 @@ function WallLineOption() {
 
 /** The old Curved wall: the Wall tool, in Arc. */
 const curvedWall: ToolDef = arcAlias({ id: 'architecture.curvedWall', label: 'Curved wall', icon: CurvedWallIcon, shortcut: 'WC' }, wall);
-/** A curtain wall: two points (chained), of the type picked in the configurator, else the project's first. */
-const curtainWall: ToolDef = {
+/** A curtain wall: two points (chained), or an arc (its start, its end, a point it passes through), of the type picked in the configurator, else the project's first. */
+const curtainWall: ToolDef = chainTool({
   id: 'architecture.curtainWall', label: 'Curtain wall', icon: CurtainWallIcon, shortcut: 'CW', properties: newElement('IfcCurtainWallType', 'curtainTypeId', 'curtainWalls'), typed: typedBy('IfcCurtainWallType', 'curtainTypeId', 'curtainWalls'),
-  gesture: { kind: 'twoPoints', repeat: true },
-  complete: async ({ points: [a, b] }, ctx) => {
+  line: async (a, b, ctx) => {
     const typeId = useUi.getState().curtainTypeId;
     await ctx.execute('architecture.addCurtainWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, ...(typeId ? { typeId } : {}) });
   },
-};
+  arc: async (a, b, p, ctx) => {
+    const typeId = useUi.getState().curtainTypeId;
+    await ctx.execute('architecture.addCurtainWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y, ...(typeId ? { typeId } : {}) });
+  },
+});
 const curtainTypes: ToolDef = { id: 'architecture.curtainTypes', label: 'Curtain walls', icon: Settings2, run: () => useUi.setState({ dialog: 'curtainWalls' }) };
 
 /** The selected walls. */
