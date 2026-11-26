@@ -32,6 +32,7 @@ import { typeToEdit } from '../../shell/typeToEdit';
 import { formatLengths, parseLengths } from './lintelFields';
 import { FACES, toggleFace, wrapsArg, wrapsOf, type Wrap } from './columnLayers';
 import { TypeMarkField } from '../core/MarkField';
+import { TypeParamsBlock, useNewTypeDraft } from '../../shell/TypeParamsBlock';
 import { TypeStructuralField } from '../core/StructuralSection';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { CONCRETE, defaultTypeMaterial, libraryMaterialName, typeMaterialName } from './typeMaterial';
@@ -79,6 +80,8 @@ export function StructureTypesDialog() {
   // The type's material by name; until one is chosen it follows the section (a library profile's own, concrete otherwise).
   const [material, setMaterial] = useState(CONCRETE);
   const [materialChosen, setMaterialChosen] = useState(false);
+  // A new type's mark and parameters (issues #146, #147), sent with it by Create type.
+  const draft = useNewTypeDraft();
   const [steps, setSteps] = useState<Step[]>([{ length: 1.8, width: 1.8, height: 0.5 }, { length: 1, width: 1, height: 0.4 }]);
   const list = kind === 'column' ? ofClass(model, 'IfcColumnType') : kind === 'beam' ? ofClass(model, 'IfcBeamType')
     : ofClass(model, 'IfcFootingType').filter((t) => t.props.kind === kind);
@@ -155,25 +158,31 @@ export function StructureTypesDialog() {
 
   const create = async () => {
     const section = sectionOf();
+    // The mark and parameters typed for the new type (issues #146, #147), with it in the same step.
+    const extra = draft.args();
+    let r: unknown = null;
     if ((kind === 'column' || kind === 'beam') && shape === 'library') {
       if (!lib.picked) return;
-      await execute(kind === 'column' ? 'structure.createColumnType' : 'structure.createBeamType', { name, profile: lib.picked.profile, library: lib.picked.library, material });
-    } else if (kind === 'column') await execute('structure.createColumnType', { name, section, material, ...(wrapsArg(wraps).length ? { finishLayers: wrapsArg(wraps) } : {}) });
-    else if (kind === 'beam') await execute('structure.createBeamType', { name, section, material });
+      r = await execute(kind === 'column' ? 'structure.createColumnType' : 'structure.createBeamType', { name, profile: lib.picked.profile, library: lib.picked.library, material, ...extra });
+    } else if (kind === 'column') r = await execute('structure.createColumnType', { name, section, material, ...(wrapsArg(wraps).length ? { finishLayers: wrapsArg(wraps) } : {}), ...extra });
+    else if (kind === 'beam') r = await execute('structure.createBeamType', { name, section, material, ...extra });
     else if (kind === 'strip' && stripShape === 'profile') {
       if (!profileId) return;
-      await execute('structure.createStripType', { name, bottom, profileId, material });
+      r = await execute('structure.createStripType', { name, bottom, profileId, material, ...extra });
     } else if (kind === 'strip') {
-      await execute('structure.createStripType', {
-        name, stemHeight: stem, footingWidth: fw, footingHeight: fh, bottom, material,
+      r = await execute('structure.createStripType', {
+        name, stemHeight: stem, footingWidth: fw, footingHeight: fh, bottom, material, ...extra,
         layers: [
           { material: 'Protection board', thickness: 0.02 }, { material: 'XPS insulation', thickness: 0.1 },
           { material: 'Waterproofing', thickness: 0.005 }, { material: 'Reinforced concrete', thickness: core, core: true },
         ],
       });
     } else {
-      await execute('structure.createPadType', { name, bottom, steps, material });
+      r = await execute('structure.createPadType', { name, bottom, steps, material, ...extra });
     }
+    // Made: the draft cleared, the new type open in the editor with its mark and parameters (its own sections now).
+    const id = (r as { id?: string } | null)?.id;
+    if (id) { draft.reset(); const t = useSession.getState().nodes.get(id); if (t) pick(t); }
   };
 
   // What the body is made of (forum topic 190): its colour, hatch, joins, quantities and the IFC follow it. A standard strip's stem keeps its layers.
@@ -215,7 +224,7 @@ export function StructureTypesDialog() {
             </div>
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its size)" onChange={(e) => setName(e.target.value)} /></label>
             {/* The type's mark (forum topic 177), as a door's or window's type has it. */}
-            <TypeMarkField typeId={editing} />
+            <TypeMarkField typeId={editing} draft={draft} />
             {/* The Structural tick on the type (docs/plan-structural-usage.md): its elements that say nothing take it. */}
             <TypeStructuralField typeId={editing} />
             {/* Duplicate, and the type's place in every list of its types (forum #71). */}
@@ -268,6 +277,7 @@ export function StructureTypesDialog() {
                 onCommit={(t) => { const s = parseSteps(t, units); if (!s?.length) return false; setSteps(s); }} /></label>}
             {(kind === 'strip' || kind === 'pad') && materialField}
             {(kind === 'strip' || kind === 'pad') && <Len label="Bottom" value={bottom} onChange={setBottom} />}
+            <TypeParamsBlock typeClass={kind === 'column' ? 'IfcColumnType' : kind === 'beam' ? 'IfcBeamType' : 'IfcFootingType'} typeId={editing} draft={draft} />
             <div className="row"><span className="grow" />{edited
               ? <button type="button" className="btn primary" title="Its elements follow the type" onClick={() => void save()}>Save type</button>
               : <button type="button" className="btn primary" onClick={() => void create()}>Create type</button>}</div>

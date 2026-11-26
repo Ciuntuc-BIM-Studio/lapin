@@ -28,9 +28,18 @@ function MarkInput({ value, placeholder, field, onCommit }: { value: string; pla
   );
 }
 
-/** A type's mark at the top of its editor; nothing while the type is not yet created. */
-export function TypeMarkField({ typeId }: { typeId: string | null }) {
+/**
+ * A type's mark at the top of its editor. While the type is not yet created: nothing, or, given a `draft` (issue #147), the mark
+ * typed for it, kept as typed and sent by Create type with the type; the one Mark field either way.
+ */
+export function TypeMarkField({ typeId, draft }: { typeId: string | null; draft?: { mark: string; setMark: (m: string) => void } }) {
   const type = useSession((s) => (typeId ? s.nodes.get(typeId) : undefined));
+  if ((!typeId || !type) && draft) return (
+    <label className="field-line" title="The type's mark, which tags ({mark}, {TypeMark}), schedules and IFC (its Reference) give; empty: the type's name">
+      <span className="eyebrow">Mark</span>
+      <input value={draft.mark} placeholder="(the type's name)" data-field="type-mark" maxLength={80} onChange={(e) => draft.setMark(e.target.value)} />
+    </label>
+  );
   if (!typeId || !type) return null;
   const mark = typeof type.props.mark === 'string' ? type.props.mark : '';
   return (

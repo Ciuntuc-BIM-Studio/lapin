@@ -82,7 +82,9 @@ public static class StairsModule
         r.Command("createStairType", "New stair type", (ctx, a) =>
         {
             var spec = StairSpec.From(a["spec"]) ?? throw new CommandException("The stair type's specification cannot be read.");
-            return new JsonObject { ["id"] = CreateType(ctx, spec).Id };
+            // `mark` and `params` (issues #146, #147): the new type's mark and parameters, in the same step.
+            var given = NewTypeArgs.Read(a, spec.TypeClass);
+            return NewTypeArgs.Made(ctx, CreateType(ctx, spec), given);
         });
 
         // A ready-made type (Entrance steps): the project's copy, made the first time it is asked for.

@@ -237,4 +237,85 @@ public sealed class MarkRulesTests : IDisposable
         var (again, _) = upgrade.Upgrade(up, relations);
         Assert.Same(up, again);
     }
+
+    // ─── {variant}: one number per size of a type (issue #148) ────────────────────
+
+    static void Size(Fixture f, string id, double w, double h) =>
+        f.Run("architecture.setJoinerySize", new JsonObject { ["id"] = id, ["width"] = w, ["height"] = h });
+
+    [Fact]
+    public void A_variant_numbers_each_size_of_a_type_in_the_order_the_sizes_first_appear()
+    {
+        var f = F();
+        var wall = f.Wall(0, 0, 20, 0, height: 3);
+        var (w1, w2, w3) = (Window(f, wall, 2), Window(f, wall, 6), Window(f, wall, 10));
+        Size(f, w1, 1.2, 1.2); Size(f, w2, 0.8, 1.2); Size(f, w3, 1.2, 1.2);
+        Rule(f, "window", new JsonObject { ["prefix"] = "V", ["pattern"] = "{prefix}{variant}" });
+        // The tester's example: 1200×1200, 800×1200, 1200×1200 → V1, V2, V1.
+        Assert.Equal(["V1", "V2", "V1"], new[] { w1, w2, w3 }.Select(id => Mark(f, id)));
+        // With the sizes beside it, as the tester's rule writes them.
+        Rule(f, "window", new JsonObject { ["prefix"] = "V", ["pattern"] = "{prefix}{variant}-{openingWidth}x{openingHeight}" });
+        Assert.Equal(["V1-1200x1200", "V2-800x1200", "V1-1200x1200"], new[] { w1, w2, w3 }.Select(id => Mark(f, id)));
+        Rule(f, "window", new JsonObject { ["prefix"] = "V", ["pattern"] = "{prefix}{variant}" });
+        // A size added later takes the next number; those there keep theirs.
+        var w4 = Window(f, wall, 14);
+        Size(f, w4, 0.6, 0.6);
+        Assert.Equal(["V1", "V2", "V1", "V3"], new[] { w1, w2, w3, w4 }.Select(id => Mark(f, id)));
+        // A window given an existing size takes that size's number.
+        Size(f, w4, 0.8, 1.2);
+        Assert.Equal("V2", Mark(f, w4));
+        // Nothing is kept on the windows: worked out on every ask.
+        Assert.All(new[] { w1, w2, w3, w4 }, id => Assert.Null(f.Model.Get(id)!.Attrs["variant"]));
+        // The tag and IFC's Tag write it too.
+        Assert.Contains(Ifc(f).Tags.Values, t => t == "V2");
+    }
+
+    [Fact]
+    public void Each_type_numbers_its_own_variants_and_a_rule_may_say_what_tells_them_apart()
+    {
+        var f = F();
+        var wall = f.Wall(0, 0, 20, 0, height: 3);
+        var (w1, w2, w3) = (Window(f, wall, 2), Window(f, wall, 6), Window(f, wall, 10));
+        var first = TypeOf(f, w1)!;
+        var other = (string)f.Run("types.duplicate", new JsonObject { ["id"] = first })!["id"]!;
+        f.Run("element.setMark", new JsonObject { ["ids"] = new JsonArray(first), ["mark"] = "A" });
+        f.Run("element.setMark", new JsonObject { ["ids"] = new JsonArray(other), ["mark"] = "B" });
+        f.Run("architecture.setJoineryType", new JsonObject { ["ids"] = new JsonArray(w3), ["typeId"] = other });
+        Size(f, w1, 1.2, 1.2); Size(f, w2, 1.2, 1.5); Size(f, w3, 1.2, 1.5);
+        Rule(f, "window", new JsonObject { ["pattern"] = "{type.mark}{variant}" });
+        // By width × height: two variants of A, B's one its first.
+        Assert.Equal(["A1", "A2", "B1"], new[] { w1, w2, w3 }.Select(id => Mark(f, id)));
+        // Told by the width alone: one variant of A.
+        Rule(f, "window", new JsonObject { ["pattern"] = "{type.mark}{variant}", ["variantBy"] = "{openingWidth}" });
+        Assert.Equal(["A1", "A1", "B1"], new[] { w1, w2, w3 }.Select(id => Mark(f, id)));
+        Assert.Equal("{openingWidth}", (string?)Spatial.Project(f.Model)!.Attrs[MarkRules.Key]!["window"]!["variantBy"]);
+        // A formula reads it too.
+        Rule(f, "window", new JsonObject { ["pattern"] = "{type.mark}{= variant | 00}" });
+        Assert.Equal(["A01", "A02", "B01"], new[] { w1, w2, w3 }.Select(id => Mark(f, id)));
+    }
+
+    [Fact]
+    public void A_rule_without_variant_is_written_as_before_and_a_variant_told_by_its_mark_is_refused()
+    {
+        var f = F();
+        Rule(f, "window", new JsonObject { ["prefix"] = "V", ["pattern"] = "{prefix}{n}" });
+        var kept = (JsonObject)Spatial.Project(f.Model)!.Attrs[MarkRules.Key]!["window"]!;
+        Assert.Equal(["prefix", "suffix", "pattern", "scope"], kept.Select(kv => kv.Key));
+        Assert.Throws<CommandException>(() => Rule(f, "window", new JsonObject { ["pattern"] = "{variant}", ["variantBy"] = "{mark}" }));
+        Assert.Throws<CommandException>(() => Rule(f, "window", new JsonObject { ["pattern"] = "{variant}", ["variantBy"] = "{width" }));
+        // A variantBy alone makes the rule the user's (not the built-in one).
+        Assert.False(MarkRule.From(new JsonObject { ["variantBy"] = "{width}" }).IsDefault);
+        Assert.True(MarkRule.From(new JsonObject()).IsDefault);
+    }
+
+    [Fact]
+    public void Other_categories_are_one_variant_of_their_type_until_the_rule_says_what_tells_them_apart()
+    {
+        var f = F();
+        var walls = new[] { f.Wall(0, -2, 4, -2, height: 3), f.Wall(0, -4, 6, -4, height: 3), f.Wall(0, -6, 4, -6, height: 2.5) };
+        Rule(f, "wall", new JsonObject { ["pattern"] = "W{variant}" });
+        Assert.Equal(["W1", "W1", "W1"], walls.Select(id => Mark(f, id)));
+        Rule(f, "wall", new JsonObject { ["pattern"] = "W{variant}", ["variantBy"] = "{height}" });
+        Assert.Equal(["W1", "W1", "W2"], walls.Select(id => Mark(f, id)));
+    }
 }
