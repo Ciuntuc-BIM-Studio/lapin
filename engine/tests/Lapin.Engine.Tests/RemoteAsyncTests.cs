@@ -21,6 +21,12 @@ public sealed class RemoteAsyncTests
         readonly HttpMessageInvoker _inner = new(inner);
         public int Calls;
 
+        /// <summary>
+        /// When set, the server answers only once the test lets it: after the yield the answer is made on another thread, and could end
+        /// the call before the caller looks at it (issue #122). Bounded: a call that held up its caller fails the test instead of hanging it.
+        /// </summary>
+        public TaskCompletionSource? Hold { get; init; }
+
         protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken) =>
             throw new PlatformNotSupportedException("No synchronous HTTP in the browser.");
 
@@ -28,6 +34,7 @@ public sealed class RemoteAsyncTests
         {
             Calls++;
             await Task.Yield();
+            if (Hold is { } hold) await hold.Task.WaitAsync(TimeSpan.FromSeconds(30), cancellationToken);
             return await _inner.SendAsync(request, cancellationToken);
         }
     }
@@ -89,7 +96,8 @@ public sealed class RemoteAsyncTests
     public async Task A_remote_call_is_awaited_by_the_dispatcher_and_its_tokens_come_back()
     {
         var server = new RemotePasswordTests.FakeAtrium { Access = "server-forgot-it" };
-        using var http = new HttpClient(new BrowserLike(server));
+        var answer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var http = new HttpClient(new BrowserLike(server) { Hold = answer });
         var d = new EngineDispatcher(new Fixture().Session, PackageFiles.Create()) { RemoteHttp = http };
         var call = d.HandleAsync(Message("remote.changePassword", new JsonObject
         {
@@ -97,6 +105,7 @@ public sealed class RemoteAsyncTests
         }));
         // The answer waits for the server: the call has not ended on the caller's stack.
         Assert.False(call.IsCompleted);
+        answer.SetResult();
         var r = Result((await call).Reply);
         Assert.True((bool)r["changed"]!);
         Assert.Equal("fresh-access", (string?)r["tokens"]!["accessToken"]);

@@ -126,6 +126,36 @@ public class MaterialStandardTests
         Assert.True(bad.Count == 0, $"{bad.Count} of {names.Count} differ: {string.Join("; ", bad.Take(10))}");
     }
 
+    /// <summary>
+    /// Issue #122: a rule's names are matched in time linear in the name, never cut short by a clock. Their limit of 50 ms was kept by
+    /// the clock, and on a loaded machine a match cut short was taken for no match (in full runs, now and then, a masonry drawn as
+    /// concrete). An expression that backtracks without end over a run of x, which ran into the limit on any machine, still finds the
+    /// z after it; one only the backtracking engine reads (a lookahead) reads as before, with the limit; a graphics set's name alike.
+    /// </summary>
+    [Fact]
+    public void A_rules_names_match_in_time_linear_in_the_name_never_cut_short_by_a_clock()
+    {
+        var name = new string('x', 40) + "z";
+        var std = MaterialStandard.Read(new JsonObject
+        {
+            ["id"] = "runaway", ["name"] = "Runaway",
+            ["rules"] = new JsonArray(
+                new JsonObject { ["match"] = new JsonObject { ["names"] = new JsonArray("(x+x+)+y", "z") }, ["section"] = new JsonObject { ["hatch"] = "CROSS" } },
+                new JsonObject { ["match"] = new JsonObject { ["names"] = new JsonArray("steel(?! sheet)") }, ["section"] = new JsonObject { ["hatch"] = "STEEL" } }),
+        });
+        Assert.Equal("CROSS", std.CutRule(name)?.Section?.Hatch);
+        Assert.Equal("STEEL", std.CutRule("Steel beam")?.Section?.Hatch);
+        Assert.Null(std.CutRule("Steel sheet"));
+        var set = MaterialGraphicsSets.Read(new JsonObject
+        {
+            ["id"] = "runaway", ["name"] = "Runaway",
+            ["entries"] = new JsonArray(new JsonObject { ["match"] = new JsonObject { ["materialName"] = "(x+x+)+y|z" }, ["section"] = new JsonObject { ["hatch"] = "CROSS" } }),
+        });
+        Assert.NotNull(set.For(null, name, null));
+        Assert.Equal(Regex.InfiniteMatchTimeout, MaterialStandard.NameExpression("brick|masonry").MatchTimeout);
+        Assert.Equal(TimeSpan.FromMilliseconds(50), MaterialStandard.NameExpression("steel(?! sheet)").MatchTimeout);
+    }
+
     [Fact]
     public void A_project_that_names_no_standard_draws_by_Lapins()
     {

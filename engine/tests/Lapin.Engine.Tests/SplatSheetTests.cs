@@ -19,12 +19,7 @@ namespace Lapin.Engine.Tests;
 /// </summary>
 public class SplatSheetTests
 {
-    static SplatSheetTests()
-    {
-        var dir = Path.Combine(Path.GetTempPath(), "lapin-pointcloud-tests");
-        Directory.CreateDirectory(dir);
-        Environment.SetEnvironmentVariable("LAPIN_POINTCLOUD_CACHE", dir);
-    }
+    static SplatSheetTests() => PointCloudSamples.UseOwnCache();
 
     /// <summary>Looking north (+y) from y = −10, x to the right, z up.</summary>
     static readonly SplatRaster.Projection North = new(new Vec3(0, -10, 0), new Vec3(1, 0, 0), new Vec3(0, 0, 1), new Vec3(0, 1, 0), true);
@@ -139,13 +134,7 @@ public class SplatSheetTests
         var placement = new JsonObject { ["mode"] = "origin", ["up"] = "z" };
         var r = (JsonObject)f.Run("pointcloud.link", new JsonObject { ["name"] = "wall.ply", ["data"] = Convert.ToBase64String(Capture()), ["placement"] = placement })!;
         var id = (string)r["id"]!;
-        for (var k = 0; k < 400; k++)
-        {
-            var st = (JsonObject)f.Session.Query("pointcloud.status", new JsonObject { ["id"] = id })!;
-            if ((string?)st["state"] == "ready") break;
-            Assert.NotEqual("failed", (string?)st["state"]);
-            Thread.Sleep(25);
-        }
+        PointCloudSamples.WaitIndexed(f, id);
         f.Session.TakeDeliveries();
         return id;
     }

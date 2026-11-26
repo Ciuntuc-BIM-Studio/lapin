@@ -134,6 +134,19 @@ public sealed class MaterialStandard
         return o;
     }
 
+    /// <summary>
+    /// A name expression as rules and material graphics sets match it (any case): in time linear in the name
+    /// (<see cref="RegexOptions.NonBacktracking"/>), so that no expression a user writes runs away and none needs a time limit. A limit
+    /// is kept by the clock: on a loaded machine a match cut short by 50 ms was taken for no match, and a masonry was drawn as concrete
+    /// (issue #122). An expression only the backtracking engine reads (a lookaround, a back-reference) keeps the 50 ms limit.
+    /// </summary>
+    public static Regex NameExpression(string pattern)
+    {
+        const RegexOptions options = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
+        try { return new Regex(pattern, options | RegexOptions.NonBacktracking); }
+        catch (NotSupportedException) { return new Regex(pattern, options, TimeSpan.FromMilliseconds(50)); }
+    }
+
     bool Matches(StandardRule r, string folded, string? category)
     {
         if (r.Match.Category is { } c && !string.Equals(c, category, StringComparison.OrdinalIgnoreCase)) return false;
@@ -267,7 +280,7 @@ public sealed class MaterialStandard
         {
             // One expression: any of its names (each folded as names are), as Lapin's first table wrote its alternatives.
             var alternatives = names.Values.SelectMany(w => w).Select(w => "(?:" + FoldText(w, fold) + ")");
-            try { re = new Regex(string.Join("|", alternatives), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(50)); }
+            try { re = NameExpression(string.Join("|", alternatives)); }
             catch (ArgumentException e) { throw new FormatException($"Rule {index}: a name is not a valid expression ({e.Message})."); }
         }
         var json = new JsonObject { ["match"] = mo };

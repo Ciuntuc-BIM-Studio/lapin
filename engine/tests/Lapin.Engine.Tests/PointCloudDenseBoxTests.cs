@@ -14,12 +14,7 @@ namespace Lapin.Engine.Tests;
 /// </summary>
 public class PointCloudDenseBoxTests
 {
-    static PointCloudDenseBoxTests()
-    {
-        var dir = Path.Combine(Path.GetTempPath(), "lapin-pointcloud-tests");
-        Directory.CreateDirectory(dir);
-        Environment.SetEnvironmentVariable("LAPIN_POINTCLOUD_CACHE", dir);
-    }
+    static PointCloudDenseBoxTests() => PointCloudSamples.UseOwnCache();
 
     static string TempDir() { var d = Path.Combine(Path.GetTempPath(), "lapin-pc-" + Guid.NewGuid().ToString("N")[..8]); Directory.CreateDirectory(d); return d; }
 
@@ -82,13 +77,7 @@ public class PointCloudDenseBoxTests
         var f = new Fixture(new ArchitectureModule());
         var r = (JsonObject)f.Run("pointcloud.link", new JsonObject { ["name"] = "floaters.las", ["data"] = Convert.ToBase64String(Las(Floaters())), ["placement"] = new JsonObject { ["mode"] = "origin" } })!;
         var id = (string)r["id"]!;
-        for (var k = 0; k < 400; k++)
-        {
-            var st = (JsonObject)f.Session.Query("pointcloud.status", new JsonObject { ["id"] = id })!;
-            if ((string?)st["state"] == "ready") break;
-            Assert.NotEqual("failed", (string?)st["state"]);
-            Thread.Sleep(25);
-        }
+        WaitIndexed(f, id);
         f.Session.TakeDeliveries();
         double[] Arr(JsonNode? n) => n!.AsArray().Select(v => (double)v!).ToArray();
         JsonObject H() => (JsonObject)f.Session.Query("pointcloud.hierarchy", new JsonObject { ["id"] = id })!;

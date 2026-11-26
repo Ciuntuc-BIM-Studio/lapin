@@ -1,12 +1,55 @@
 using System.Buffers.Binary;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
+using System.Text.Json.Nodes;
 
 namespace Lapin.Engine.Tests;
 
 /// <summary>Tiny point clouds written by the tests themselves, after the formats' specifications (never large files in the repo).</summary>
 static class PointCloudSamples
 {
+    /// <summary>
+    /// The folder this run's indexes are made in, its own, removed when the run ends. In one folder for every run, an index an earlier
+    /// run had left was found ready at once, so the tests' indexing in the background was tried only on a machine's first run, and
+    /// runs at the same time remade each other's indexes (issue #122).
+    /// </summary>
+    static readonly string Cache = NewCache();
+
+    static string NewCache()
+    {
+        var dir = Directory.CreateTempSubdirectory("lapin-pointcloud-tests-").FullName;
+        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+        {
+            try { Directory.Delete(dir, recursive: true); }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        };
+        return dir;
+    }
+
+    /// <summary>The indexes kept in this run's folder (<c>LAPIN_POINTCLOUD_CACHE</c> is the process's): a test class's static constructor calls it.</summary>
+    public static void UseOwnCache() => Environment.SetEnvironmentVariable("LAPIN_POINTCLOUD_CACHE", Cache);
+
+    /// <summary>How long a linked cloud's index is waited for: a few thousand points, made in milliseconds.</summary>
+    static readonly TimeSpan IndexLimit = TimeSpan.FromSeconds(10);
+
+    /// <summary>
+    /// A linked cloud waited for until its index, made in the background, is ready: one that is not fails the test here, saying the
+    /// cloud's state, not further on with what an index not yet made lacks (issue #122).
+    /// </summary>
+    public static void WaitIndexed(Fixture f, string id)
+    {
+        var clock = Stopwatch.StartNew();
+        while (true)
+        {
+            var st = (JsonObject)f.Session.Query("pointcloud.status", new JsonObject { ["id"] = id })!;
+            var state = (string?)st["state"];
+            if (state == "ready") return;
+            Assert.True(state == "indexing" && clock.Elapsed < IndexLimit, $"the cloud is {st.ToJsonString()} after {clock.Elapsed.TotalSeconds:0.0} s");
+            Thread.Sleep(25);
+        }
+    }
+
     public sealed record P(double X, double Y, double Z, ushort R = 0, ushort G = 0, ushort B = 0, ushort I = 0, byte C = 0);
 
     /// <summary>A grid of points over a box: a floor and two walls, coloured by position, intensity rising, classes 2 (ground) and 6 (building).</summary>

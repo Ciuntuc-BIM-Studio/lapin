@@ -82,7 +82,8 @@ public static class PointCloudLinks
         public volatile string Stage = "Starting";
         public double Done;
         public string? Error;
-        public bool Finished;
+        /// <summary>Set last, and volatile: whoever reads it set sees what the job did before, its error or its queued summary.</summary>
+        public volatile bool Finished;
     }
 
     public static bool Is(Entity e) => e.Class == Links.Class && e.Str("kind") == Kind;
@@ -133,18 +134,17 @@ public static class PointCloudLinks
     public static JsonObject Status(Entity link, IDeliveries? deliveries = null)
     {
         var key = link.Str("key") ?? "";
+        // A job still running is indexing even with its index made: the index is written and opened before the link's summary is queued,
+        // and a caller that read it ready there would take the session's deliveries without the summary (issue #122).
+        if (_jobs.TryGetValue(key, out var job) && !job.Finished) return new JsonObject { ["state"] = "indexing", ["stage"] = job.Stage, ["done"] = Math.Round(job.Done, 3) };
         if (StoreOf(link) is { } store) return new JsonObject { ["state"] = "ready", ["points"] = store.Points, ["nodes"] = store.Nodes.Count };
-        if (_jobs.TryGetValue(key, out var job))
-        {
-            if (job.Error != null) return new JsonObject { ["state"] = "failed", ["error"] = job.Error };
-            if (!job.Finished) return new JsonObject { ["state"] = "indexing", ["stage"] = job.Stage, ["done"] = Math.Round(job.Done, 3) };
-        }
+        if (job?.Error != null) return new JsonObject { ["state"] = "failed", ["error"] = job.Error };
         if (SourceOf(link) is { } source)
         {
             Start(link, source, key, deliveries);
             return _jobs.TryGetValue(key, out var j) && j.Error != null
                 ? new JsonObject { ["state"] = "failed", ["error"] = j.Error }
-                : StoreOf(link) != null ? new JsonObject { ["state"] = "ready" } : new JsonObject { ["state"] = "indexing", ["stage"] = "Starting", ["done"] = 0 };
+                : j is { Finished: true } && StoreOf(link) != null ? new JsonObject { ["state"] = "ready" } : new JsonObject { ["state"] = "indexing", ["stage"] = "Starting", ["done"] = 0 };
         }
         return new JsonObject { ["state"] = "missing", ["error"] = link.Str("path") is { } p ? $"The file is gone: {p}." : "The cloud was linked from a browser in another session: link it again." };
     }
@@ -169,7 +169,6 @@ public static class PointCloudLinks
                 var reader = PointReaders.Open(source);
                 var store = Indexer.Build(reader, DirOf(key), key, source.Length, (stage, done) => { job.Stage = stage; job.Done = done; });
                 Opened.Stores[key] = store;
-                job.Finished = true;
                 if (deliveries != null && stamp is { } st)
                     deliveries.Deliver("Index point cloud", st, ctx =>
                     {
@@ -178,6 +177,8 @@ public static class PointCloudLinks
                         attrs["cloud"] = Summary(store);
                         ctx.Replace(l.With(attrs: attrs));
                     }, [linkId]);
+                // Finished once the summary is queued: a status that reads the cloud ready finds it among the deliveries.
+                job.Finished = true;
             }
             // Whatever stops it, the job ends failed and says why: one left "indexing" for good would keep its key from being
             // indexed again in this session (forum topic 222). A failed one is tried again when the cloud is linked or reloaded.
@@ -185,12 +186,16 @@ public static class PointCloudLinks
             {
                 job.Error = e is PointCloudException ? e.Message : $"The cloud could not be indexed: {e.Message}";
                 job.Finished = true;
+                // Best effort: indexing has a thread of its own, where an exception out of here would end the process.
                 if (e is not (PointCloudException or IOException or InvalidDataException or UnauthorizedAccessException or EndOfStreamException))
-                    Console.Error.WriteLine($"[engine] Indexing {source.Name} failed: {e}");
+                    try { Console.Error.WriteLine($"[engine] Indexing {source.Name} failed: {e}"); }
+                    catch (IOException) { }
             }
         }
         if (OperatingSystem.IsBrowser()) Work();
-        else Task.Run(Work);
+        // A thread of its own, not the thread pool's: an index takes minutes on a large scan, and queued behind the pool's work (models
+        // rebuilt in parallel, the host's calls) it could wait many seconds to start while the interface polls its status (issue #122).
+        else new Thread(Work) { IsBackground = true, Name = "Point cloud index" }.Start();
     }
 
     /// <summary>What the link records of its index: points, box, where they are dense, what each point carries, the classes, intensity's range.</summary>
