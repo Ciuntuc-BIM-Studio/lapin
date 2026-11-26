@@ -405,7 +405,6 @@ function PlaceOnSheet({ d, onClose }: { d: ProfileData; onClose: () => void }) {
     }
     if (!views.length) { useProfile.setState({ message: useSession.getState().error }); return; }
     // Each drawing on a sheet of its own, unless a sheet was chosen: then they go on it, one under the other.
-    let sheetId = sheet;
     let first = sheet;
     for (const [i, v] of views.entries()) {
       if (sheet) { await execute('sheet.addViewport', { id: sheet, viewId: v, ...(i > 0 ? { y: 150 } : {}) }); continue; }
@@ -413,9 +412,8 @@ function PlaceOnSheet({ d, onClose }: { d: ProfileData; onClose: () => void }) {
       const r = await execute('sheet.create', { name: nm, ...paperForNew(useSession.getState().nodes), viewId: v }) as { id?: string } | null;
       if (!r?.id) { useProfile.setState({ message: useSession.getState().error }); return; }
       if (i === 0) first = r.id;
-      sheetId = r.id;
     }
-    sheetId = first;
+    const sheetId = first;
     useProfile.setState({ message: useSession.getState().error });
     onClose();
     useUi.setState({ view: 'sheet', sheetId, selection: sheetId, selected: [sheetId] });
