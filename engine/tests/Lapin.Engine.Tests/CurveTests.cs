@@ -69,8 +69,10 @@ public class CurveTests
         var f = new Fixture();
         var wall = (string)f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 8, ["y2"] = 0, ["arc"] = 4, ["height"] = 3 })!["id"]!;
         var before = Volume(f, wall);
-        // Clicked at the top of the arc: half way along it.
-        var door = (string)f.Run("architecture.addDoor", new JsonObject { ["wallId"] = wall, ["x"] = 4, ["y"] = 4.1 })!["id"]!;
+        // Clicked at the top of the arc: half way along it. Its reveal unlined, so the wall loses the hole only (the lining's own
+        // room round it, forum topic 288: CurvedRevealTests).
+        var unlined = (string)f.Run("architecture.createJoineryType", new JsonObject { ["spec"] = (JoinerySpec.DefaultDoor("Unlined") with { Details = new JoineryDetails(new JoineryReveal("none")) }).ToJson() })!["id"]!;
+        var door = (string)f.Run("architecture.addDoor", new JsonObject { ["wallId"] = wall, ["x"] = 4, ["y"] = 4.1, ["typeId"] = unlined })!["id"]!;
         var opening = Openings.OpeningOf(f.Model, door)!;
         Assert.Equal(Math.PI * 2, opening.Num("along"), 6);
         var spec = Openings.SpecOf(f.Model, door)!;

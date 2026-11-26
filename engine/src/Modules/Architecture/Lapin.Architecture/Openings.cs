@@ -511,6 +511,19 @@ public static class Openings
     public static Solid? ArcCutter(PathCurve c, double baseZ, double yMin, double yMax, Placed p) =>
         Prism.ExtrudeFootprint(c.Band(_ => p.Along - p.Width / 2, _ => p.Along + p.Width / 2, yMin - 0.05, yMax + 0.05), baseZ + p.Sill, p.Height, "opening");
 
+    /// <summary>
+    /// What an opening takes out of a curved wall (forum topic 288): its band (<see cref="ArcCutter"/>) and, for a door or window, the
+    /// room its details need, as <see cref="Cutters"/> gives a straight wall's: the reveal's finish beside the jambs and over the head,
+    /// the sills let into the wall, each with the opening's reach in height.
+    /// </summary>
+    public static IEnumerable<(Placed Reach, Solid Box)> ArcCutters(IModelView m, Entity wall, PathCurve c, double baseZ, double yMin, double yMax, Placed p)
+    {
+        if (ArcCutter(c, baseZ, yMin, yMax, p) is { } box) yield return (p, box);
+        if (p.Spec == null || p.Fill == null) yield break;
+        var d = new Dressing(m, wall, FrameOf(m, wall, p.Along), p, p.Spec, p.Fill.Bool("flipHand") ? -1 : 1, p.Fill.Bool("flipSide") ? -1 : 1, BayWindows.Projecting(p.Spec)).WithPlaced(p);
+        foreach (var x in d.Cutters()) yield return x;
+    }
+
     /// <summary>The body an opening takes out of its wall, straight or curved.</summary>
     public static Solid? CutterIn(IModelView m, Entity wall, Placed p)
     {
@@ -658,12 +671,14 @@ public static class Openings
 
         var parts = new List<GeometryPart>();
         var bay = BayWindows.Projecting(spec);
-        var dressing = PathCurve.Of(wall) is { IsArc: true } ? null : new Dressing(m, wall, f, p, spec, sx, sy, bay);
+        // A curved wall's too (forum topic 288): its reveal, sills, surround and threshold follow the arc.
+        var dressing = new Dressing(m, wall, f, p, spec, sx, sy, bay);
         if (bay) return BayGeometry(fill, m, spec, wall, f, p, sx, sy, dressing);
         var openMode = fill.Str("openMode") ?? "auto";
-        parts.AddRange(BodyParts(m, spec, Joinery.Boxes(spec, open: openMode == "open").Where(b => dressing?.Replaces(b) != true), Map));
-        if (dressing != null) parts.AddRange(dressing.Parts());
-        return new ElementGeometry(parts, Symbol(spec, f, p, sx, sy, dressing != null, Joinery.WindowSwing(m), openMode, CutOverSill(wall, p, PlanCut)), [f.At(p.Along, f.Centre, 0).Xy]);
+        parts.AddRange(BodyParts(m, spec, Joinery.Boxes(spec, open: openMode == "open").Where(b => !dressing.Replaces(b)), Map));
+        parts.AddRange(dressing.Parts());
+        // A curved wall's door or window has no facade dressings (shutters, a grille, a box, a canopy: flat pieces), so none in plan either.
+        return new ElementGeometry(parts, Symbol(spec, f, p, sx, sy, !dressing.Curved, Joinery.WindowSwing(m), openMode, CutOverSill(wall, p, PlanCut)), [f.At(p.Along, f.Centre, 0).Xy]);
     }
 
     /// <summary>A plan's cut (over the storey's level) over a door's or window's bottom, its wall's base offset counted.</summary>
@@ -683,7 +698,7 @@ public static class Openings
         var (sx, sy) = (fill.Bool("flipHand") ? -1 : 1, fill.Bool("flipSide") ? -1 : 1);
         var below = CutOverSill(wall, p, cut);
         if (BayWindows.Projecting(spec)) return BayPlan(spec, wall, f, p, sx, sy, below);
-        // No dressings (or a curved wall, which takes none): nothing of its symbol depends on the cut.
+        // No dressings (or a curved wall, which takes no facade dressings: forum topic 288): nothing of its symbol depends on the cut.
         if (PathCurve.Of(wall) is { IsArc: true } || !DressingPlan(spec, f.YMax - f.YMin, below).Any()) return null;
         return Symbol(spec, f, p, sx, sy, true, Joinery.WindowSwing(m), fill.Str("openMode") ?? "auto", below);
     }
@@ -795,10 +810,17 @@ public static class Openings
         readonly Func<double, double, double, Vec3> _map;
         readonly double _t, _yFE, _yFI;
         readonly (double Thickness, string? Material)[] _finish; // [0] the exterior side, [1] the interior
+        // A curved wall's (forum topic 288): its axis, and the opening's place on it; null in a straight wall.
+        readonly PathCurve? _arc;
+        readonly WallFrame _f;
+        readonly double _along, _z;
+        readonly int _sx, _sy;
 
         public Dressing(IModelView m, Entity wall, WallFrame f, Placed p, JoinerySpec spec, int sx, int sy, bool revealOnly = false)
         {
             _m = m;
+            _arc = PathCurve.Of(wall) is { IsArc: true } c ? c : null;
+            (_f, _along, _z, _sx, _sy) = (f, p.Along, f.Base + p.FillSill, sx, sy);
             // A bay, bow or box window (report #60) keeps only the reveal: its sills, seat and roof are its own.
             if (revealOnly) spec = spec with { Details = new JoineryDetails(Reveal: spec.Details?.Reveal) };
             _spec = spec;
@@ -837,9 +859,108 @@ public static class Openings
         string ColorOf(string? materialId, string? name, string fallback) =>
             materialId != null ? Materials.ColorOf(_m, materialId) : !string.IsNullOrWhiteSpace(name) ? Materials.DefaultColor(name) : fallback;
 
-        /// <summary>A box of the type's frame as a solid, or null when flat.</summary>
-        Solid? Box(double x0, double x1, double y0, double y1, double z0, double z1, string role) =>
-            x1 - x0 > 1e-6 && y1 - y0 > 1e-6 && z1 - z0 > 1e-6 ? Openings.Box(new JoineryBox(role, new Vec3(x0, y0, z0), new Vec3(x1, y1, z1)), _map) : null;
+        /// <summary>Whether its wall is curved (forum topic 288).</summary>
+        public bool Curved => _arc != null;
+
+        /// <summary>
+        /// A box of the type's frame as a solid, or null when flat. In a curved wall, bent with it: its ends on the lines across the
+        /// wall (radial) at its X, its sides following the arc at its Y, its chords by the one rule (<see cref="PathCurve.Stations"/>).
+        /// </summary>
+        Solid? Box(double x0, double x1, double y0, double y1, double z0, double z1, string role)
+        {
+            if (!(x1 - x0 > 1e-6 && y1 - y0 > 1e-6 && z1 - z0 > 1e-6)) return null;
+            if (_arc is not { } c) return Openings.Box(new JoineryBox(role, new Vec3(x0, y0, z0), new Vec3(x1, y1, z1)), _map);
+            var (sa, sb) = Ordered(S(x0), S(x1));
+            var (wa, wb) = Ordered(Wy(y0), Wy(y1));
+            return Foot(c.Band(_ => sa, _ => sb, wa, wb), z0, z1, role);
+        }
+
+        // ------------------------------------------------ a curved wall's (forum topic 288)
+        // The door or window stands flat, on the tangent at its middle (FrameOf); the wall's hole is cut radially (ArcCutter). So a
+        // detail runs from the frame's plane (straight in plan) to the wall's face (the arc), between the lines across the wall.
+
+        static (double, double) Ordered(double a, double b) => a <= b ? (a, b) : (b, a);
+
+        /// <summary>The distance along the wall's axis of the type's X.</summary>
+        double S(double x) => _along + _sx * x;
+
+        /// <summary>The wall's Y (to the left of its axis) of the type's Y.</summary>
+        double Wy(double y) => _f.Centre - _sy * y;
+
+        /// <summary>Where the line across the wall at <paramref name="s"/> meets the door's or window's plane at the type's Y <paramref name="y"/>: the wall's Y there.</summary>
+        double FlatWy(double s, double y)
+        {
+            var c = _arc!.Value;
+            var n = _f.Left;
+            return (Wy(y) - Vec2.Dot(c.PointAt(s) - c.PointAt(_along), n)) / Vec2.Dot(c.TangentAt(s).Perp, n);
+        }
+
+        /// <summary>A plan outline extruded from <paramref name="z0"/> to <paramref name="z1"/> over the door's or window's bottom.</summary>
+        Solid? Foot(IReadOnlyList<Vec2> footprint, double z0, double z1, string role) =>
+            footprint.Count >= 3 && z1 - z0 > 1e-6 && Math.Abs(Polygon2.SignedArea(footprint)) > 1e-12 ? Prism.ExtrudeFootprint(Polygon2.EnsureCcw(footprint), _z + z0, z1 - z0, role) : null;
+
+        /// <summary>The plan between the lines across the wall at x0 and x1, from the frame's plane at <paramref name="yFlat"/> to the arc at <paramref name="yArc"/>.</summary>
+        List<Vec2> BetweenPlan(double x0, double x1, double yFlat, double yArc)
+        {
+            var c = _arc!.Value;
+            var (sa, sb) = Ordered(S(x0), S(x1));
+            var o = new List<Vec2> { c.At(sa, FlatWy(sa, yFlat)), c.At(sb, FlatWy(sb, yFlat)) };
+            var arc = c.Line(sa, sb, Wy(yArc));
+            arc.Reverse();
+            o.AddRange(arc);
+            return o;
+        }
+
+        Solid? Between(double x0, double x1, double yFlat, double yArc, double z0, double z1, string role) =>
+            Math.Abs(x1 - x0) > 1e-6 ? Foot(BetweenPlan(x0, x1, yFlat, yArc), z0, z1, role) : null;
+
+        /// <summary>
+        /// A jamb's finish: its face on the line across the wall at <paramref name="xb"/> (the hole's side, radial), from the frame's
+        /// plane to the wall's face, <paramref name="t"/> thick square to that face, away from the opening (<paramref name="outward"/> ±1 in X).
+        /// </summary>
+        Solid? Jamb(double xb, int outward, double yFlat, double yArc, double t, double z0, double z1, string role)
+        {
+            var c = _arc!.Value;
+            var s = S(xb);
+            var (a, b) = (c.At(s, FlatWy(s, yFlat)), c.At(s, Wy(yArc)));
+            var d = c.TangentAt(s) * (_sx * outward * t);
+            return Foot([a, b, b + d, a + d], z0, z1, role);
+        }
+
+        /// <summary>A profile in the Y–Z plane swept along the arc from x0 to x1, given at each station the frame's plane's Y there (the sloped exterior sill).</summary>
+        Solid? SweptArc(double x0, double x1, Func<double, IReadOnlyList<(double Y, double Z)>> profileAt, string role)
+        {
+            var c = _arc!.Value;
+            var (sa, sb) = Ordered(S(x0), S(x1));
+            if (sb - sa < 1e-6) return null;
+            var rings = c.Stations(sa, sb).Select(s => (IReadOnlyList<Vec3>)profileAt(BackAt(s)).Select(q => c.At(s, Wy(q.Y)).At(_z + q.Z)).ToList()).ToList();
+            return Lofts.Rings(rings, role);
+        }
+
+        /// <summary>The type's Y of the frame's exterior face on the line across the wall at <paramref name="s"/>.</summary>
+        double BackAt(double s) => _sy * (_f.Centre - FlatWy(s, _yFE));
+
+        /// <summary>The reveal's finish on a curved wall's side: both jambs, then the head.</summary>
+        IEnumerable<Solid?> ArcReveal(double t, double yFlat, double yArc, string role) =>
+            [Jamb(-W / 2, -1, yFlat, yArc, t, 0, H + t, role), Jamb(W / 2, 1, yFlat, yArc, t, 0, H + t, role), Between(-W / 2, W / 2, yFlat, yArc, H, H + t, role)];
+
+        /// <summary>A curved wall's measures of the details (<see cref="DetailQuantities"/>): the reveal's finished area on a side.</summary>
+        public double RevealArea(bool outside)
+        {
+            var (flat, face) = outside ? (_yFE, YExt) : (_yFI, YInt);
+            double Depth(double x) { var s = S(x); return Math.Abs(FlatWy(s, flat) - Wy(face)); }
+            return H * (Depth(-W / 2) + Depth(W / 2)) + Math.Abs(Polygon2.SignedArea(BetweenPlan(-W / 2, W / 2, flat, face)));
+        }
+
+        /// <summary>A length along the opening (the type's X) measured on the arc at the type's Y <paramref name="y"/> (a curved wall's).</summary>
+        public double AlongArc(double length, double y)
+        {
+            var c = _arc!.Value;
+            return length * (c.At(_along, Wy(y)) - c.Centre).Length / c.Radius;
+        }
+
+        public double YExtFace => YExt;
+        public double YIntFace => YInt;
 
         /// <summary>A profile in the Y–Z plane at x0, swept to x1 (the sloped exterior sill).</summary>
         Solid? Swept(double x0, double x1, IReadOnlyList<(double Y, double Z)> profile, string role)
@@ -859,14 +980,16 @@ public static class Openings
             || ThresholdOn && b.Role == "frame" && b.Min.Z < 1e-9 && b.Max.Z <= _spec.Threshold + 1e-9 && b.Max.X - b.Min.X > W - _spec.Frame.Width * 2 - 1e-9;
 
         /// <summary>The exterior sill's section (Y, Z): from under the frame, out past the face, sloping down.</summary>
-        IReadOnlyList<(double, double)> OutsideSillProfile(JoinerySill sill, double past, bool cutter = false)
+        /// <remarks><paramref name="back"/>: the frame's face it starts from (a curved wall's, station by station; else the frame's own).</remarks>
+        IReadOnlyList<(double Y, double Z)> OutsideSillProfile(JoinerySill sill, double past, bool cutter = false, double? back = null)
         {
+            var yb = back ?? _yFE;
             var yOut = YExt + Math.Max(0, sill.Projection) + past;
-            var drop = (yOut - _yFE) * Math.Tan(Math.Clamp(sill.Slope, 0, 45) * Math.PI / 180);
+            var drop = (yOut - yb) * Math.Tan(Math.Clamp(sill.Slope, 0, 45) * Math.PI / 180);
             // What the wall gives up is the sill and the wedge over it, up to the opening's bottom: a sloped sill falls away from the
             // frame, and the wall above its top face (report #76) would stand proud of it.
-            if (cutter && drop > 1e-9) return [(_yFE, 0), (yOut, 0), (yOut, -drop - sill.Thickness), (_yFE, -sill.Thickness)];
-            return [(_yFE, 0), (yOut, -drop), (yOut, -drop - sill.Thickness), (_yFE, -sill.Thickness)];
+            if (cutter && drop > 1e-9) return [(yb, 0), (yOut, 0), (yOut, -drop - sill.Thickness), (yb, -sill.Thickness)];
+            return [(yb, 0), (yOut, -drop), (yOut, -drop - sill.Thickness), (yb, -sill.Thickness)];
         }
 
         public IEnumerable<GeometryPart> Parts()
@@ -875,21 +998,25 @@ public static class Openings
             foreach (var (side, (t, material), y0, y1) in new[] { ("outside", _finish[0], _yFE, YExt), ("inside", _finish[1], YInt, _yFI) })
             {
                 if (t <= 0 || y1 - y0 < 1e-3) continue;
-                var solids = new[] { Box(-W / 2 - t, -W / 2, y0, y1, 0, H + t, "reveal"), Box(W / 2, W / 2 + t, y0, y1, 0, H + t, "reveal"), Box(-W / 2, W / 2, y0, y1, H, H + t, "reveal") }.OfType<Solid>().ToList();
+                var solids = (_arc == null
+                    ? new[] { Box(-W / 2 - t, -W / 2, y0, y1, 0, H + t, "reveal"), Box(W / 2, W / 2 + t, y0, y1, 0, H + t, "reveal"), Box(-W / 2, W / 2, y0, y1, H, H + t, "reveal") }
+                    : ArcReveal(t, side == "outside" ? y0 : y1, side == "outside" ? y1 : y0, "reveal")).OfType<Solid>().ToList();
                 if (solids.Count > 0) yield return new GeometryPart($"Reveal ({side})", ColorOf(material, null, "#e8e2d6"), Combine(solids, "reveal"), material, "reveal:" + side);
             }
             if (SillInsideOn)
             {
                 var sill = _d.SillInside!;
                 var id = MaterialNamed(_m, sill.Material);
-                if (Box(-W / 2 - sill.Overhang, W / 2 + sill.Overhang, YInt - Math.Max(0, sill.Projection), _yFI, -sill.Thickness, 0, "sill") is { } b)
+                var (x0, x1, yIn) = (-W / 2 - sill.Overhang, W / 2 + sill.Overhang, YInt - Math.Max(0, sill.Projection));
+                if ((_arc == null ? Box(x0, x1, yIn, _yFI, -sill.Thickness, 0, "sill") : _yFI - yIn > 1e-6 ? Between(x0, x1, _yFI, yIn, -sill.Thickness, 0, "sill") : null) is { } b)
                     yield return new GeometryPart("Sill (inside)", ColorOf(id, sill.Material, "#dcdcdc"), b, id, "sill:inside");
             }
             if (SillOutsideOn)
             {
                 var sill = _d.SillOutside!;
                 var id = MaterialNamed(_m, sill.Material);
-                if (Swept(-W / 2 - sill.Overhang, W / 2 + sill.Overhang, OutsideSillProfile(sill, 0), "sill") is { } b)
+                var (x0, x1) = (-W / 2 - sill.Overhang, W / 2 + sill.Overhang);
+                if ((_arc == null ? Swept(x0, x1, OutsideSillProfile(sill, 0), "sill") : SweptArc(x0, x1, back => OutsideSillProfile(sill, 0, back: back), "sill")) is { } b)
                     yield return new GeometryPart("Sill (outside)", ColorOf(id, sill.Material, "#b8b8b8"), b, id, "sill:outside");
             }
             if (_d.Surround is { On: true } sur)
@@ -897,7 +1024,9 @@ public static class Openings
                 var (w, dpt) = (Math.Max(0.01, sur.Width), Math.Max(0.005, sur.Projection));
                 var id = MaterialNamed(_m, sur.Material);
                 var z0 = sur.Sill && !_spec.IsDoor ? -w : 0;
-                if (JoineryShapes.Shaped(_spec))
+                // A shaped one's outline stands flat on the facade: not on a curved wall's (forum topic 288).
+                if (JoineryShapes.Shaped(_spec) && _arc != null) { }
+                else if (JoineryShapes.Shaped(_spec))
                 {
                     var shaped = new List<Solid>();
                     if (Openings.Box(SurroundOutline(_spec, w, YExt, YExt + dpt), _map) is { } arch) shaped.Add(arch);
@@ -922,7 +1051,8 @@ public static class Openings
                 if (Box(-W / 2, W / 2, ty0, ty1, 0, Math.Max(0.005, th.Height), "threshold") is { } b)
                     yield return new GeometryPart("Threshold", ColorOf(id, th.Material, "#8a8a8a"), b, id, "threshold");
             }
-            // The dressings on the facade (shutters, a grille, a window box, a canopy), by the wall's faces here.
+            // The dressings on the facade (shutters, a grille, a window box, a canopy), by the wall's faces here; flat pieces, so none on a curved wall's (forum topic 288).
+            if (_arc == null)
             foreach (var piece in WindowDressings.Pieces(_spec, WindowDressings.Of(_spec, _t)))
             {
                 var id = MaterialNamed(_m, piece.Material);
@@ -938,20 +1068,31 @@ public static class Openings
             foreach (var ((t, _), y0, y1, past) in new[] { (_finish[0], _yFE, YExt, 0.05), (_finish[1], YInt, _yFI, -0.05) })
             {
                 if (t <= 0 || y1 - y0 < 1e-3) continue;
+                // A curved wall's: beside each jamb and over the head, out past the face (forum topic 288).
+                if (_arc != null)
+                {
+                    foreach (var piece in past > 0 ? ArcReveal(t, y0, y1 + past, "opening") : ArcReveal(t, y1, y0 + past, "opening"))
+                        if (piece != null) yield return (Reach(0, t), piece);
+                    continue;
+                }
                 var box = past > 0 ? Box(-W / 2 - t, W / 2 + t, y0, y1 + past, 0, H + t, "opening") : Box(-W / 2 - t, W / 2 + t, y0 + past, y1, 0, H + t, "opening");
                 if (box != null) yield return (Reach(0, t), box);
             }
             if (SillInsideOn)
             {
                 var sill = _d.SillInside!;
-                var box = Box(-W / 2 - sill.Overhang, W / 2 + sill.Overhang, YInt - Math.Max(0, sill.Projection) - 0.05, _yFI, -sill.Thickness, 0, "opening");
+                var (x0, x1, yIn) = (-W / 2 - sill.Overhang, W / 2 + sill.Overhang, YInt - Math.Max(0, sill.Projection) - 0.05);
+                var box = _arc == null ? Box(x0, x1, yIn, _yFI, -sill.Thickness, 0, "opening") : Between(x0, x1, _yFI, yIn, -sill.Thickness, 0, "opening");
                 if (box != null) yield return (Reach(sill.Thickness, 0), box);
             }
             if (SillOutsideOn)
             {
                 var sill = _d.SillOutside!;
-                var box = Swept(-W / 2 - sill.Overhang, W / 2 + sill.Overhang, OutsideSillProfile(sill, 0.05, true), "opening");
-                if (box != null) yield return (Reach(sill.Thickness + (YExt + sill.Projection + 0.05 - _yFE) * Math.Tan(Math.Clamp(sill.Slope, 0, 45) * Math.PI / 180), 0), box);
+                var (x0, x1) = (-W / 2 - sill.Overhang, W / 2 + sill.Overhang);
+                var box = _arc == null ? Swept(x0, x1, OutsideSillProfile(sill, 0.05, true), "opening") : SweptArc(x0, x1, back => OutsideSillProfile(sill, 0.05, true, back), "opening");
+                // On a curved wall the frame stands flat while the facade bends: its face is at another depth at each end, the deepest drop counted.
+                var back = _arc == null ? _yFE : Math.Min(_yFE, Math.Min(BackAt(S(x0)), BackAt(S(x1))));
+                if (box != null) yield return (Reach(sill.Thickness + (YExt + sill.Projection + 0.05 - back) * Math.Tan(Math.Clamp(sill.Slope, 0, 45) * Math.PI / 180), 0), box);
             }
 
             // Round the fill (its opening may be the file's, larger: Openings.HoleWidthKey).
@@ -979,24 +1120,33 @@ public static class Openings
         var f = FrameOf(m, wall, p.Along);
         // A bay, bow or box window's own measures (report #60).
         if (BayWindows.Projecting(spec)) foreach (var q in BayWindows.Quantities(spec, f.YMax - f.YMin)) yield return q;
+        // A curved wall's (forum topic 288): the reveal's faces as they stand, the lengths along the arc.
+        var arc = PathCurve.Of(wall).IsArc ? new Dressing(m, wall, f, p, spec, fill.Bool("flipHand") ? -1 : 1, fill.Bool("flipSide") ? -1 : 1, BayWindows.Projecting(spec)) : null;
         foreach (var part in (FillGeometry(fill, m)?.Parts ?? []).Where(x => x.Key != null && (x.Key.StartsWith("reveal", StringComparison.Ordinal) || x.Key.StartsWith("sill", StringComparison.Ordinal) || x.Key is "surround" or "threshold" or "shutters" or "grille" or "windowbox" or "canopy")))
         {
             var (w, h, t) = (spec.Width, spec.Height, f.YMax - f.YMin);
             var d = spec.Details ?? new JoineryDetails();
             switch (part.Key)
             {
-                case "reveal:outside": yield return ("RevealAreaOutside", (2 * h + w) * Math.Max(0, t / 2 - (spec.Frame.Offset + spec.Frame.Depth / 2)), "AREA"); break;
-                case "reveal:inside": yield return ("RevealAreaInside", (2 * h + w) * Math.Max(0, (spec.Frame.Offset - spec.Frame.Depth / 2) + t / 2), "AREA"); break;
-                case "sill:inside": yield return ("SillInsideLength", w + 2 * (d.SillInside?.Overhang ?? 0), "LENGTH"); break;
-                case "sill:outside": yield return ("SillOutsideLength", w + 2 * (d.SillOutside?.Overhang ?? 0), "LENGTH"); break;
+                case "reveal:outside": yield return ("RevealAreaOutside", arc?.RevealArea(true) ?? (2 * h + w) * Math.Max(0, t / 2 - (spec.Frame.Offset + spec.Frame.Depth / 2)), "AREA"); break;
+                case "reveal:inside": yield return ("RevealAreaInside", arc?.RevealArea(false) ?? (2 * h + w) * Math.Max(0, (spec.Frame.Offset - spec.Frame.Depth / 2) + t / 2), "AREA"); break;
+                // Along the face it is laid on.
+                case "sill:inside": { var l = w + 2 * (d.SillInside?.Overhang ?? 0); yield return ("SillInsideLength", arc?.AlongArc(l, arc.YIntFace) ?? l, "LENGTH"); break; }
+                case "sill:outside": { var l = w + 2 * (d.SillOutside?.Overhang ?? 0); yield return ("SillOutsideLength", arc?.AlongArc(l, arc.YExtFace) ?? l, "LENGTH"); break; }
                 case "surround":
                 {
                     var sw = d.Surround?.Width ?? 0;
                     var withSill = d.Surround?.Sill == true && !spec.IsDoor;
-                    yield return ("SurroundArea", (w + 2 * sw) * (h + sw + (withSill ? sw : 0)) - w * h, "AREA");
+                    var area = (w + 2 * sw) * (h + sw + (withSill ? sw : 0)) - w * h;
+                    yield return ("SurroundArea", arc?.AlongArc(area, arc.YExtFace) ?? area, "AREA");
                     break;
                 }
-                case "threshold": yield return ("ThresholdLength", w, "LENGTH"); break;
+                case "threshold":
+                {
+                    var (ty0, ty1) = d.Threshold is { } th ? th.Across(spec, t) : (0, 0);
+                    yield return ("ThresholdLength", arc?.AlongArc(w, (ty0 + ty1) / 2) ?? w, "LENGTH");
+                    break;
+                }
                 case "shutters": yield return ("ShutterArea", (w + 2 * (d.Shutters?.Overlap ?? 0)) * (d.Shutters?.Height ?? h), "AREA"); break;
                 case "grille":
                 {
