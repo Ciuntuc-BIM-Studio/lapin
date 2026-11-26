@@ -22,7 +22,7 @@ public static class ProjectRoofStyles
     [
         "shape", "pitch", "overhang", "gableOverhang", "ridgeDirection", "shedFlip", "upperPitch", "mansardInset",
         "covering", RoofCoverings.Key, RoofCoverings.DeckKey, "deckThickness", "layers", "gutterProfile", "gutterMaterial", "gutterColor", "snowGuards",
-        "structure", "rafterSection", "rafterSpacing", "purlins", "purlinSection", "ridgeSection", "plateSection", "collarSection", "webSection", "timberGrade", "collarHeight", "rafterTail", "rafterSeat",
+        "structure", "rafterSection", "rafterSpacing", "purlins", "purlinSection", "ridgeSection", "plateSection", "collarSection", "plateFlat", "ridgeFlat", "purlinFlat", "collarFlat", "webSection", "timberGrade", "collarHeight", "rafterTail", "rafterSeat",
     ];
 
     public static bool IsOwn(string? id) => id?.StartsWith(Prefix, StringComparison.Ordinal) == true;
