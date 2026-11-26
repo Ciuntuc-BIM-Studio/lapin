@@ -11,9 +11,14 @@ Un tavan fals atârnă sub placa de deasupra, la o înălțime pe care o stabile
 Uneltele sunt în **Interior → Tavan**:
 
 - **Tavan** (<kbd>CG</kbd>) desenează un tavan pe un contur: dai clic pe colțuri, apoi din nou pe primul sau apeși <kbd>Enter</kbd>.
-- **Tavan într-o cameră** umple camera pe care dai clic, după conturul ei dintre fețele pereților. Acolo trebuie să fie o încăpere ([Încăperi](rooms.md)); dacă nu e, Lapin spune asta.
+- **Tavan într-o cameră** umple camera pe care dai clic, după conturul ei dintre fețele pereților, așa cum e acum: o linie de separare a încăperilor o mărginește ca un perete, așa că un tavan pus într-una din două încăperi despărțite de o linie o acoperă doar pe ea. Acolo trebuie să fie o încăpere ([Încăperi](rooms.md)); dacă nu e, Lapin spune asta.
 
-Cât timp o unealtă e activă, panoul de proprietăți arată **Element nou** cu tipul de tavan pe care îl pune, de ales înainte de clic. Tavanul se așază pe nivelul activ și atârnă la **Înălțimea** lui peste el: 2700 mm, dacă nu o schimbi. Selectează tavanul și proprietățile lui arată **Tip de tavan** și **Înălțime**; le schimbi acolo, iar gripurile de pe colțuri îi modifică conturul.
+Cât timp o unealtă e activă, panoul de proprietăți arată **Element nou** cu tipul de tavan pe care îl pune, de ales înainte de clic. Tavanul se așază pe nivelul activ și atârnă cum îl pune tipul lui: implicit chiar sub placa de deasupra (cu **Adâncimea plenumului** tipului sub ea), sau la 2700 mm peste nivel unde nu e placă deasupra. Selectează tavanul și proprietățile lui arată **Tip de tavan** și **Înălțimea** peste nivel; le schimbi acolo, iar gripurile de pe colțuri îi modifică conturul.
+
+**Măsurat de la.** Un tavan pus într-o cameră poate fi măsurat de la pardoseala finită a camerei în loc de nivel: **pardoseala finită a camerei** în proprietățile lui. Înălțimea lui e atunci peste pardoseala camerei, ca **Înălțimea** pereților unui finisaj de încăpere, așa că la o cameră ridicată prin **Decalajul bazei** amândouă se citesc de la aceeași pardoseală.
+
+O cameră își poate lua tavanul fals drept tavan (înălțimea tavanului finit, volumul, finisajul pereților până la tavan): pune **Tavanul** camerei pe **tavanul fals** ([Încăperi](rooms.md#proprietățile-unei-încăperi)).
+
 
 Odată desenat, tavanul nu mai urmează nimic: dacă muți un perete, mută și colțurile tavanului.
 
@@ -30,6 +35,8 @@ Odată desenat, tavanul nu mai urmează nimic: dacă muți un perete, mută și 
   - **Structură**: **Lățimea vizibilă** (24 mm) și **Adâncimea** (38 mm) profilelor, **Rotirea (°)** întregii grile, **Materialul structurii** și **Culoarea structurii**. Profilele merg în ambele sensuri la fiecare linie de casetă, cu un cornier pe marginea tavanului.
   - **Tije de suspendare până la structură**, la **Distanța între tije** (1200 mm): tije de la profile până sus, la planșeul etajului.
 - **Gips-carton, continuu.** Implicit, **Plasterboard ceiling** e o singură placă cât conturul tavanului, groasă de 12,5 mm, fără grilă și fără tije. Lățimea și lungimea modulului fac totuși casetele pe care le folosesc corpurile.
+
+**Așezare** stabilește unde atârnă un tavan nou de tipul acesta când îl pui: **Sub placa de deasupra**, cu fața de sus la **Adâncimea plenumului** sub intradosul plăcii (0: chiar sub ea), altfel la **Înălțimea fără placă deasupra** (2700) peste nivel; sau **Peste pardoseala finită**, la **Înălțimea peste pardoseala finită**, măsurată de la pardoseala camerei în care e pus. Odată pus, tavanul își păstrează înălțimea: o schimbi în proprietățile lui.
 
 **În casete** alege culorile corpurilor de iluminat și ale anemostatelor.
 

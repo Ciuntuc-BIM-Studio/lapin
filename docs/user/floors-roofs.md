@@ -213,7 +213,7 @@ A floor or a roof, and its type, shows its **R** and **U** in **Thermal** in its
 
 ## False ceilings
 
-**Interior → Ceiling** (<kbd>CG</kbd>) draws a false ceiling over an outline you click; **Ceiling in a room** fills the room you click, following its outline. A ceiling hangs at its **Height** over the storey (2700 mm unless you change it in its properties).
+**Interior → Ceiling** (<kbd>CG</kbd>) draws a false ceiling over an outline you click; **Ceiling in a room** fills the room you click, following its outline. A ceiling hangs just under the slab above (its type's **Plenum depth** below it), or at its **Height** over the storey (2700 mm) where there is no slab above, or over the finished floor when its type says so; its properties change it ([False ceilings](ceilings.md)).
 
 Its type, in **Interior → Ceiling types**, sets the **System**: **Tiles on an exposed grid** (the tile's width, length and thickness, the grid's face width, depth and rotation, hangers up to the structure at their spacing) or **Plasterboard, continuous**. The grid is centred on the ceiling, so the cut tiles at the edges come out even.
 

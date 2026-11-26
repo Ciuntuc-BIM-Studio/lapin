@@ -11,14 +11,22 @@ namespace Lapin.Architecture;
 /// (lay-in tiles on an exposed T-grid, hung from the structure) or "plain" (a continuous board, plasterboard);
 /// the tile's size and thickness, the grid's face width and depth, the grid's rotation, the materials and
 /// colours, the hangers' spacing; and what goes in its cells: light panels and air diffusers, a cell each.
+/// Where a new ceiling of the type is hung when no height is given (issue #145): <see cref="Placement"/> „slab” (the default,
+/// null) just under the slab above, <see cref="Plenum"/> below it (none by default), else <see cref="Height"/> over the storey
+/// (2.70 m) where no slab is above; „floor” <see cref="Height"/> over the room's finished floor, the ceiling measured from it.
 /// </summary>
 public sealed record CeilingSpec(
     string Name, string System = "grid", double TileWidth = 0.6, double TileLength = 0.6, double Thickness = 0.015,
     double GridWidth = 0.024, double GridDepth = 0.038, double Rotation = 0, bool Hangers = true, double HangerSpacing = 1.2,
     string TileMaterial = "Mineral fibre tile", string GridMaterial = "Steel", string TileColor = "#f1f0ea", string GridColor = "#e4e4e4",
-    string LightColor = "#fffbe6", string DiffuserColor = "#d5d9de")
+    string LightColor = "#fffbe6", string DiffuserColor = "#d5d9de", string? Placement = null, double? Height = null, double? Plenum = null)
 {
     public static readonly string[] Systems = ["grid", "plain"];
+    public static readonly string[] Placements = ["slab", "floor"];
+    public const double DefaultHeight = 2.7;
+
+    /// <summary>How deep the ceiling is from its underside to its top: a board's thickness; a grid's tees or its tiles on them, the deeper.</summary>
+    public double Depth => System == "plain" ? Thickness : Math.Max(GridDepth, 0.003 + Thickness);
     public static CeilingSpec Default(string name = "Grid ceiling 600×600") => new(name);
     public static CeilingSpec Plain(string name = "Plasterboard ceiling") => new(name, "plain", 0.6, 0.6, 0.0125, TileMaterial: "Plasterboard", TileColor: "#f4f4f2");
 
@@ -36,6 +44,10 @@ public sealed record CeilingSpec(
                 TileWidth = Math.Clamp(s.TileWidth, 0.1, 3), TileLength = Math.Clamp(s.TileLength, 0.1, 3),
                 Thickness = Math.Clamp(s.Thickness, 0.005, 0.1), GridWidth = Math.Clamp(s.GridWidth, 0.005, 0.1), GridDepth = Math.Clamp(s.GridDepth, 0.01, 0.2),
                 HangerSpacing = Math.Clamp(s.HangerSpacing, 0.3, 3),
+                // The defaults kept as nothing, so a type reads as before.
+                Placement = s.Placement == "floor" ? "floor" : null,
+                Height = s.Height is { } h && Math.Abs(h - DefaultHeight) > 1e-9 ? Math.Clamp(h, 1.5, 20) : null,
+                Plenum = s.Plenum is { } pl && pl > 1e-9 ? Math.Clamp(pl, 0, 5) : null,
             };
         }
         catch (JsonException) { return null; }
@@ -97,17 +109,37 @@ public static class Ceilings
             Spatial.Require(ctx.Model, storeyId, IfcClass.BuildingStorey);
             IReadOnlyList<Vec2> outline;
             double[]? arcs = null;
+            Entity? inRoom = null;
+            Rooms.Outline? found = null;
             if (a["points"] is JsonArray) (outline, arcs) = Slabs.OutlineArg(a["arcs"], Points(a["points"]), null, "A ceiling");
             else
             {
                 var at = Args.Point(a, "x", "y");
-                var room = ctx.Model.OfClass(Rooms.Class).Where(x => Spatial.StoreyOf(ctx.Model, x.Id)?.Id == storeyId)
-                    .Select(x => Rooms.Of(x, ctx.Model, null)).FirstOrDefault(o => o != null && o.Holds(at))
-                    ?? throw new CommandException("No room there: click inside a room, or draw the ceiling's outline.");
-                outline = room.Outer;
+                // The room as it is now (issue #145): a room separation line drawn since it was placed bounds it, so the ceiling covers this room only.
+                (inRoom, found) = ctx.Model.OfClass(Rooms.Class).Where(x => Spatial.StoreyOf(ctx.Model, x.Id)?.Id == storeyId)
+                    .Select(x => (x, Rooms.Live(x, ctx.Model, ctx.Services))).FirstOrDefault(p => p.Item2 != null && p.Item2.Holds(at));
+                outline = found?.Outer ?? throw new CommandException("No room there: click inside a room, or draw the ceiling's outline.");
             }
             var type = (string?)a["typeId"] is { } tid ? Spatial.Require(ctx.Model, tid, TypeClass) : DefaultType(ctx);
-            var attrs = new JsonObject { ["contour"] = Slabs.ContourJson(outline), ["height"] = Json.Number(a["height"]) ?? 2.7, ["exportAs"] = "IfcCovering", ["fixtures"] = new JsonArray() };
+            var spec = CeilingSpec.From(type.Attrs["spec"]) ?? CeilingSpec.Default();
+            var attrs = new JsonObject { ["contour"] = Slabs.ContourJson(outline), ["exportAs"] = "IfcCovering", ["fixtures"] = new JsonArray() };
+            if (inRoom != null) attrs["roomId"] = inRoom.Id;
+            if (Json.Number(a["height"]) is { } given) attrs["height"] = given;
+            else
+            {
+                // Its height as its type places it (issue #145): over the room's finished floor; else just under the slab above, its plenum below it; else 2.70 m.
+                var storey = ctx.Model.Get(storeyId)!;
+                var elevation = storey.Num("elevation");
+                if (spec.Placement == "floor" && inRoom != null)
+                {
+                    attrs["height"] = spec.Height ?? CeilingSpec.DefaultHeight;
+                    attrs[HeightFromKey] = "floor";
+                }
+                else if (spec.Placement != "floor" && RoomFinishes.SoffitOver(ctx.Model, inRoom != null && found != null ? Rooms.StampPoint(inRoom, found) : Polygon2.Centroid(outline), inRoom != null ? Spatial.Base(ctx.Model, inRoom) : elevation) is { } soffit
+                         && soffit - (spec.Plenum ?? 0) - spec.Depth - elevation is var under && under >= 1.5)
+                    attrs["height"] = Math.Round(under, 6);
+                else attrs["height"] = spec.Height ?? CeilingSpec.DefaultHeight;
+            }
             ArcOutline.Write(attrs, arcs);
             if (a[EllipseEdge.Key] != null) Slabs.SetEllipses(attrs, a, null);
             if (a[OutlineHoles.Key] != null) OutlineHoles.Apply(attrs, a);
@@ -130,6 +162,16 @@ public static class Ceilings
             }
             if (a[OutlineHoles.Key] != null || a["points"] is JsonArray) OutlineHoles.Apply(attrs, a);
             if (Json.Number(a["height"]) is { } h) attrs["height"] = Math.Clamp(h, 1.5, 20);
+            // What its height is measured from (issue #145): „floor”, the finished floor of the room it was placed in; else (null) its storey's level.
+            if (a.ContainsKey(HeightFromKey))
+            {
+                if ((string?)a[HeightFromKey] == "floor")
+                {
+                    if (c.Str("roomId") is not { } rid || ctx.Model.Get(rid) is not { Class: Rooms.Class }) throw new CommandException("Only a ceiling placed in a room is measured from its finished floor.");
+                    attrs[HeightFromKey] = "floor";
+                }
+                else attrs.Remove(HeightFromKey);
+            }
             if (a.ContainsKey("origin")) { if (a["origin"] is JsonArray o && o.Count == 2) attrs["origin"] = o.DeepClone(); else attrs.Remove("origin"); }
             // The grid's own turn (degrees) on top of the type's rotation; null: the type's alone.
             if (a.ContainsKey(TurnKey)) { if (Json.Number(a[TurnKey]) is { } turn && Math.Abs(turn) > 1e-9) attrs[TurnKey] = turn; else attrs.Remove(TurnKey); }
@@ -181,6 +223,20 @@ public static class Ceilings
 
     static IReadOnlyList<Vec2> Points(JsonNode? node) =>
         (node as JsonArray ?? throw new CommandException("An outline needs its points.")).Select(p => p is JsonArray xy && xy.Count >= 2 && Json.Number(xy[0]) is { } x && Json.Number(xy[1]) is { } y ? new Vec2(x, y) : throw new CommandException("Each point is [x, y].")).ToList();
+
+    /// <summary>What a ceiling's height is measured from (issue #145): „floor”, its room's finished floor; absent, its storey's level.</summary>
+    public const string HeightFromKey = "heightFrom";
+
+    /// <summary>
+    /// A ceiling's underside: its height over its room's finished floor (the room's level, its base offset over the storey) when it is
+    /// measured from it (<see cref="HeightFromKey"/>), else over its storey's level, as it always was.
+    /// </summary>
+    public static double Underside(IModelView m, Entity c)
+    {
+        var h = c.Num("height", CeilingSpec.DefaultHeight);
+        if (c.Str(HeightFromKey) == "floor" && c.Str("roomId") is { } rid && m.Get(rid) is { Class: Rooms.Class } room) return Spatial.Base(m, room) + h;
+        return (Spatial.StoreyOf(m, c.Id)?.Num("elevation") ?? 0) + h;
+    }
 
     public static CeilingSpec SpecOf(IModelView m, Entity c) =>
         (m.RelatingOf(c.Id, IfcClass.RelDefinesByType) is { } t ? CeilingSpec.From(t.Attrs["spec"]) : null) ?? CeilingSpec.Default();
@@ -301,7 +357,7 @@ public static class Ceilings
         if (outline.Count < 3) return new ElementGeometry([], Diagnostics: ["The ceiling has no outline."]);
         var spec = SpecOf(m, c);
         var storey = Spatial.StoreyOf(m, c.Id);
-        var z = (storey?.Num("elevation") ?? 0) + c.Num("height", 2.7);
+        var z = Underside(m, c);
         var top = (storey?.Num("elevation") ?? 0) + WallTop.StoreyHeight(storey);
         var tileMat = Materials.Find(m, spec.TileMaterial)?.Id;
         var gridMat = Materials.Find(m, spec.GridMaterial)?.Id;

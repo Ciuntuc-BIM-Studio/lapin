@@ -211,7 +211,7 @@ Un planșeu sau un acoperiș, și tipul lui, arată **R** și **U** în **Termic
 
 ## Tavane false
 
-**Interior → Tavan** (<kbd>CG</kbd>) desenează un tavan fals pe un contur pe care îl dai prin clicuri; **Tavan într-o cameră** umple camera pe care dai clic, după conturul ei. Un tavan stă la **Înălțimea** lui peste etaj (2700 mm, dacă nu o schimbi în proprietăți).
+**Interior → Tavan** (<kbd>CG</kbd>) desenează un tavan fals pe un contur pe care îl dai prin clicuri; **Tavan într-o cameră** umple camera pe care dai clic, după conturul ei. Un tavan atârnă chiar sub placa de deasupra (cu **Adâncimea plenumului** tipului sub ea), sau la **Înălțimea** lui peste etaj (2700 mm) unde nu e placă deasupra, sau peste pardoseala finită când așa spune tipul lui; îl schimbi în proprietăți ([Tavane false](ceilings.md)).
 
 Tipul lui, din **Interior → Tipuri de tavan**, alege **Sistemul**: **Plăci pe structură aparentă** (lățimea, lungimea și grosimea plăcii, lățimea vizibilă, adâncimea și rotirea structurii, tijele de suspendare până la structură și distanța dintre ele) sau **Gips-carton, continuu**. Structura e centrată pe tavan, așa că plăcile tăiate de la margini ies egale.
 
