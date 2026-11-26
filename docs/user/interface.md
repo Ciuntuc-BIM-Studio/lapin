@@ -22,7 +22,7 @@ Show, hide or move a tab under **Tabs** in the same dialog and the choice become
 
 ## Three modes
 
-**View → Interface…** (<kbd>Ctrl</kbd> <kbd>.</kbd>) chooses how much stands around the view. Pick one of the three modes at the top of the dialog; the change shows at once.
+**View → Interface…** (<kbd>Ctrl</kbd> <kbd>.</kbd>) chooses how much stands around the view. Pick one of the three modes at the top of the dialog; the change shows at once. Lapin starts in the fourth, **Flow** ([below](#flow-and-its-extras)); the pictures in this guide show Comfortable.
 
 ![The Interface dialog: the three modes, and each part on its own](shots/interface-dialog.webp)
 
@@ -49,15 +49,13 @@ Below the modes, each part can be set on its own: the ribbon, the quick tools (o
 
 Below the parts, **Tabs**: untick the ribbon tabs you do without (an architect may hide Structure, Simple rebar and MEP, an engineer Architecture and Site). View always stays, since Interface… is there. The tools of a hidden tab are still in Commands… and in the keyboard shortcuts.
 
-Lapin keeps your choice on this computer, for you. The desktop app and the browser keep theirs apart. In the browser, Lapin starts in Compact when the window is less than 800 pixels tall, until you choose.
+Lapin keeps your choice on this computer, for you. The desktop app and the browser keep theirs apart.
 
 ## Flow and its extras
 
-The **Flow extras** below are on when Lapin starts for the first time. To go back to the classic interface, untick **Flow extras** on the start screen, under **Workspace**: one click turns them all off, and ticking it again turns them all back on. The pictures in this guide show the classic interface, with the extras off.
+Lapin starts in **Flow**: the view first, the ribbon dropping from its tabs, both side panels folded to rails and the quick tools <kbd>1</kbd>–<kbd>9</kbd> floating at the bottom of the view, with the **Flow extras** below turned on. To go back to the classic interface, untick **Flow** on the start screen, under **Workspace**: one click brings back Comfortable and turns the extras off, and ticking it again brings Flow back. The pictures in this guide show the classic interface.
 
-Each extra can be switched on or off by itself in **File → Preferences… → General → Flow extras** (**Turn all on** and **Turn all off** are there too). Lapin keeps your choice.
-
-**View → Interface…** also has a fourth mode, **Flow**: the view first, the ribbon dropping from its tabs, both side panels folded to rails and the quick tools <kbd>1</kbd>–<kbd>9</kbd> floating at the bottom of the view. Picking Flow turns the extras on too; choosing another mode afterwards leaves them as they are.
+Flow is also the fourth mode of **View → Interface…**: picking it turns the extras on too, and choosing another mode afterwards leaves them as they are. Each extra can be switched on or off by itself in **File → Preferences… → General → Flow extras** (**Turn all on** and **Turn all off** are there too). Lapin keeps your choice.
 
 - **ViewCube in the 3D view**: a small cube at the top right of the 3D view; click a face for Top, Bottom, the four sides, **ISO**, and **PERSP**/**ORTHO** to switch the projection. It stands left of the key plan, or of its button, so both stay within reach.
 - **Selection toolbar over the view**: with something selected and no tool on, a row at the bottom right with Move, Copy, Rotate, Pick & create similar, Isolate, Hide and Delete. Its tooltips show your own keys (Keyboard shortcuts…). Delete does what the <kbd>Delete</kbd> key does.

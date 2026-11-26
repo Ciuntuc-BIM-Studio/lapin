@@ -7061,7 +7061,7 @@ export const ZH: Record<string, string> = {
   'Mute tactile sounds': '静音触感音效',
   'Flow extras': 'Flow 附加功能',
   'On by default. The start screen\'s Flow extras switch turns them all off or on; each can be switched here.': '默认开启。开始屏幕上的 Flow 附加功能开关可一次全部关闭或开启；每一项都可在此切换。',
-  'The ViewCube, the selection toolbar, shortcut tips, the role cards and the other Flow helpers. Off: the classic interface. Preferences → General switches each.': 'ViewCube、选择工具栏、快捷键提示、角色卡片以及其他 Flow 辅助功能。关闭：经典界面。首选项 → 常规可逐项切换。',
+  'The Flow layout (the view first, the ribbon dropping from its tabs, the side panels folded) and its extras: the ViewCube, the selection toolbar, shortcut tips, the role cards and the other helpers. Off: the classic interface, Comfortable with no extras.': 'Flow 布局（视图优先，功能区从选项卡下拉，侧面板折叠）及其附加功能：ViewCube、选择工具栏、快捷键提示、角色卡片和其他辅助功能。关闭：经典界面，即舒适模式且无附加功能。',
   'On: untick for the classic interface': '开启：取消勾选即为经典界面',
   'Off: the classic interface': '关闭：经典界面',
   'Turn all on': '全部开启',

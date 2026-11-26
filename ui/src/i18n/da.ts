@@ -7059,7 +7059,7 @@ export const DA: Record<string, string> = {
   'Mute tactile sounds': 'Slå taktile lyde fra',
   'Flow extras': 'Flow-ekstra',
   'On by default. The start screen\'s Flow extras switch turns them all off or on; each can be switched here.': 'Slået til som standard. Startskærmens kontakt Flow-ekstra slår dem alle fra eller til; hver kan skiftes her.',
-  'The ViewCube, the selection toolbar, shortcut tips, the role cards and the other Flow helpers. Off: the classic interface. Preferences → General switches each.': 'ViewCube, markeringslinjen, genvejstips, rollekortene og de andre Flow-hjælpere. Fra: den klassiske brugerflade. Indstillinger → Generelt skifter hver for sig.',
+  'The Flow layout (the view first, the ribbon dropping from its tabs, the side panels folded) and its extras: the ViewCube, the selection toolbar, shortcut tips, the role cards and the other helpers. Off: the classic interface, Comfortable with no extras.': 'Flow-layoutet (visningen først, båndet der folder ned fra sine faner, sidepanelerne foldet sammen) og dets ekstra: ViewCube, markeringslinjen, genvejstips, rollekortene og de andre hjælpere. Fra: den klassiske brugerflade, Komfortabel uden ekstra.',
   'On: untick for the classic interface': 'Til: fjern fluebenet for den klassiske brugerflade',
   'Off: the classic interface': 'Fra: den klassiske brugerflade',
   'Turn all on': 'Slå alle til',

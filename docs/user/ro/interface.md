@@ -22,7 +22,7 @@ Arată, ascunde sau mută un tab la **Tabs**, în același dialog, și alegerea 
 
 ## Trei moduri
 
-**Vedere → Interfață…** (<kbd>Ctrl</kbd> <kbd>.</kbd>) alege cât de multe stau în jurul vederii. Alege unul dintre cele trei moduri din capul dialogului; schimbarea se vede imediat.
+**Vedere → Interfață…** (<kbd>Ctrl</kbd> <kbd>.</kbd>) alege cât de multe stau în jurul vederii. Alege unul dintre cele trei moduri din capul dialogului; schimbarea se vede imediat. Lapin pornește în al patrulea, **Flow** ([mai jos](#flow-si-extrasele-lui)); imaginile din acest ghid arată modul Confortabil.
 
 ![Dialogul Interfață: cele trei moduri și fiecare parte în parte](shots/interface-dialog.webp)
 
@@ -49,15 +49,13 @@ Sub moduri, fiecare parte se poate alege separat: ribbonul, uneltele rapide (sau
 
 Sub părți, **Taburi**: debifează taburile din ribbon de care nu ai nevoie (un arhitect poate ascunde Structure, Armare simplă și MEP, un inginer Architecture și Site). View rămâne mereu, pentru că acolo e Interfață…. Uneltele unui tab ascuns rămân în Comenzi… și în scurtăturile de la tastatură.
 
-Lapin îți păstrează alegerea pe acest calculator, pentru tine. Aplicația desktop și browserul o țin separat. În browser, Lapin pornește în Compact când fereastra are sub 800 de pixeli înălțime, până alegi tu.
+Lapin îți păstrează alegerea pe acest calculator, pentru tine. Aplicația desktop și browserul o țin separat.
 
 ## Flow și extrasele lui
 
-**Extra Flow** de mai jos sunt pornite când Lapin pornește prima dată. Ca să revii la interfața clasică, debifează **Extra Flow** pe ecranul de start, sub **Spațiu de lucru**: un clic le oprește pe toate, iar dacă bifezi din nou le pornești pe toate la loc. Imaginile din acest ghid arată interfața clasică, cu extrasele oprite.
+Lapin pornește în **Flow**: vederea pe primul loc, ribbonul care coboară din taburi, ambele panouri laterale pliate în bare și uneltele rapide <kbd>1</kbd>–<kbd>9</kbd> plutind jos, peste vedere, cu **Extra Flow** de mai jos pornite. Ca să revii la interfața clasică, debifează **Flow** pe ecranul de start, sub **Spațiu de lucru**: un clic readuce modul Confortabil și oprește extrasele, iar dacă bifezi din nou revine Flow. Imaginile din acest ghid arată interfața clasică.
 
-Fiecare extra se pornește sau se oprește separat din **File → Preferințe… → General → Extra Flow** (tot acolo sunt **Pornește-le pe toate** și **Oprește-le pe toate**). Lapin îți păstrează alegerea.
-
-**View → Interfață…** are și un al patrulea mod, **Flow**: vederea pe primul loc, ribbonul care coboară din taburi, ambele panouri laterale pliate în bare și uneltele rapide <kbd>1</kbd>–<kbd>9</kbd> plutind jos, peste vedere. Alegerea lui Flow pornește și extrasele; dacă alegi apoi alt mod, ele rămân cum erau.
+Flow este și al patrulea mod din **View → Interfață…**: alegerea lui pornește și extrasele, iar dacă alegi apoi alt mod, ele rămân cum erau. Fiecare extra se pornește sau se oprește separat din **File → Preferințe… → General → Extra Flow** (tot acolo sunt **Pornește-le pe toate** și **Oprește-le pe toate**). Lapin îți păstrează alegerea.
 
 - **ViewCube în vederea 3D**: un cub mic în dreapta sus a vederii 3D; clic pe o față pentru Sus, Jos, cele patru laturi, **ISO**, iar **PERSP**/**ORTHO** schimbă proiecția. Stă la stânga planului-cheie sau a butonului lui, ca amândouă să rămână la îndemână.
 - **Bară de selecție deasupra vederii**: când e ceva selectat și nicio unealtă pornită, un rând în dreapta jos cu Mută, Copiază, Rotește, Preia și creează similar, Izolează, Ascunde și Șterge. Indicațiile arată tastele tale (Scurtături de tastatură…). Șterge face ce face tasta <kbd>Delete</kbd>.

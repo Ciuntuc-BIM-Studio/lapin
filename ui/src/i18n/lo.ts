@@ -7118,7 +7118,7 @@ export const LO: Record<string, string> = {
   'Mute tactile sounds': 'ປິດສຽງສຳຜັດ',
   'Flow extras': 'ສ່ວນເສີມຂອງ Flow',
   'On by default. The start screen\'s Flow extras switch turns them all off or on; each can be switched here.': 'ເປີດເປັນຄ່າເລີ່ມຕົ້ນ. ສະວິດສ່ວນເສີມ Flow ຢູ່ໜ້າຈໍເລີ່ມຕົ້ນ ປິດ ຫຼື ເປີດທັງໝົດໃນຄັ້ງດຽວ; ແຕ່ລະອັນສະຫຼັບໄດ້ທີ່ນີ້.',
-  'The ViewCube, the selection toolbar, shortcut tips, the role cards and the other Flow helpers. Off: the classic interface. Preferences → General switches each.': 'ViewCube, ແຖບການເລືອກ, ຄຳແນະນຳທາງລັດ, ບັດບົດບາດ ແລະ ຕົວຊ່ວຍ Flow ອື່ນໆ. ປິດ: ສ່ວນຕິດຕໍ່ແບບຄລາສສິກ. ການຕັ້ງຄ່າ → ທົ່ວໄປ ສະຫຼັບໄດ້ແຕ່ລະອັນ.',
+  'The Flow layout (the view first, the ribbon dropping from its tabs, the side panels folded) and its extras: the ViewCube, the selection toolbar, shortcut tips, the role cards and the other helpers. Off: the classic interface, Comfortable with no extras.': 'ໂຄງຮ່າງ Flow (ມຸມມອງມາກ່ອນ, ຣິບບອນເລື່ອນລົງຈາກແຖບ, ແຜງຂ້າງພັບເກັບ) ແລະ ສ່ວນເສີມ: ViewCube, ແຖບການເລືອກ, ຄຳແນະນຳທາງລັດ, ບັດບົດບາດ ແລະ ຕົວຊ່ວຍອື່ນໆ. ປິດ: ສ່ວນຕິດຕໍ່ແບບຄລາສສິກ, ແບບສະດວກສະບາຍໂດຍບໍ່ມີສ່ວນເສີມ.',
   'On: untick for the classic interface': 'ເປີດ: ເອົາເຄື່ອງໝາຍອອກເພື່ອໃຊ້ສ່ວນຕິດຕໍ່ແບບຄລາສສິກ',
   'Off: the classic interface': 'ປິດ: ສ່ວນຕິດຕໍ່ແບບຄລາສສິກ',
   'Turn all on': 'ເປີດທັງໝົດ',

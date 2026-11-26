@@ -13183,7 +13183,7 @@ export const EL: Record<string, string> = {
   'Mute tactile sounds': 'Σίγαση απτικών ήχων',
   'Flow extras': 'Πρόσθετα Flow',
   'On by default. The start screen\'s Flow extras switch turns them all off or on; each can be switched here.': 'Ενεργά από προεπιλογή. Ο διακόπτης Πρόσθετα Flow στην αρχική οθόνη τα απενεργοποιεί ή τα ενεργοποιεί όλα· το καθένα αλλάζει εδώ.',
-  'The ViewCube, the selection toolbar, shortcut tips, the role cards and the other Flow helpers. Off: the classic interface. Preferences → General switches each.': 'Το ViewCube, η γραμμή επιλογής, οι συμβουλές συντομεύσεων, οι κάρτες ρόλων και τα άλλα βοηθήματα Flow. Ανενεργά: η κλασική διεπαφή. Προτιμήσεις → Γενικά αλλάζει το καθένα.',
+  'The Flow layout (the view first, the ribbon dropping from its tabs, the side panels folded) and its extras: the ViewCube, the selection toolbar, shortcut tips, the role cards and the other helpers. Off: the classic interface, Comfortable with no extras.': 'Η διάταξη Flow (πρώτα η προβολή, η κορδέλα που πέφτει από τις καρτέλες της, τα πλαϊνά πάνελ διπλωμένα) και τα πρόσθετά της: το ViewCube, η γραμμή επιλογής, οι συμβουλές συντομεύσεων, οι κάρτες ρόλων και τα άλλα βοηθήματα. Ανενεργό: η κλασική διεπαφή, Άνετη χωρίς πρόσθετα.',
   'On: untick for the classic interface': 'Ενεργά: αποεπιλέξτε για την κλασική διεπαφή',
   'Off: the classic interface': 'Ανενεργά: η κλασική διεπαφή',
   'Turn all on': 'Ενεργοποίηση όλων',

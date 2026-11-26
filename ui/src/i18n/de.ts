@@ -7022,7 +7022,7 @@ export const DE: Record<string, string> = {
   'Mute tactile sounds': 'Haptische Töne stummschalten',
   'Flow extras': 'Flow-Extras',
   'On by default. The start screen\'s Flow extras switch turns them all off or on; each can be switched here.': 'Standardmäßig an. Der Schalter Flow-Extras auf dem Startbildschirm schaltet alle aus oder ein; jedes lässt sich hier schalten.',
-  'The ViewCube, the selection toolbar, shortcut tips, the role cards and the other Flow helpers. Off: the classic interface. Preferences → General switches each.': 'Der ViewCube, die Auswahlleiste, Tastenkürzel-Tipps, die Rollenkarten und die anderen Flow-Helfer. Aus: die klassische Oberfläche. Einstellungen → Allgemein schaltet jedes einzeln.',
+  'The Flow layout (the view first, the ribbon dropping from its tabs, the side panels folded) and its extras: the ViewCube, the selection toolbar, shortcut tips, the role cards and the other helpers. Off: the classic interface, Comfortable with no extras.': 'Das Flow-Layout (die Ansicht zuerst, das Menüband klappt aus seinen Registern, die Seitenleisten eingeklappt) und seine Extras: der ViewCube, die Auswahlleiste, Tastenkürzel-Tipps, die Rollenkarten und die anderen Helfer. Aus: die klassische Oberfläche, Komfortabel ohne Extras.',
   'On: untick for the classic interface': 'An: Häkchen entfernen für die klassische Oberfläche',
   'Off: the classic interface': 'Aus: die klassische Oberfläche',
   'Turn all on': 'Alle einschalten',
