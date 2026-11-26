@@ -19,7 +19,7 @@
 // exporting the functions Lapin.Booleans imports (read from ManifoldBooleans.cs).
 import { execFileSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { homedir, tmpdir, platform, arch } from 'node:os';
+import { homedir, platform, arch } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -31,7 +31,7 @@ const win = platform() === 'win32';
 const lib = mac ? 'libmanifoldc.dylib' : win ? 'manifoldc.dll' : 'libmanifoldc.so';
 // manifold's source is kept in this user's own cache, never in a folder every account can write to such as /tmp, where
 // another account could leave a tree of its own for CMake to run; and only while that folder is this user's alone.
-const work = join(win ? (process.env.LOCALAPPDATA ?? tmpdir()) : (process.env.XDG_CACHE_HOME || join(homedir(), '.cache')), 'lapin', `manifold-${TAG}`);
+const work = join(win ? (process.env.LOCALAPPDATA || join(homedir(), 'AppData', 'Local')) : (process.env.XDG_CACHE_HOME || join(homedir(), '.cache')), 'lapin', `manifold-${TAG}`);
 mkdirSync(work, { recursive: true, mode: 0o700 });
 if (!win) { const s = statSync(work); if (s.uid !== process.getuid() || s.mode & 0o022) throw new Error(`build-manifold: ${work} belongs to another account or others can write to it: remove it and run again.`); }
 const sh = (cmd, args, cwd) => execFileSync(cmd, args, { cwd, stdio: 'inherit' });
@@ -45,7 +45,7 @@ if (process.argv.includes('--browser-wasm')) {
   // Linux has no Python pack: the workload uses the system's python3 there.
   const python = pack('Python', true);
   const sdk = pack('Sdk'), node = join(pack('Node'), 'bin', 'node'), py = python ? join(python, 'bin') : null, cached = pack('Cache', true);
-  const cache = cached ? join(cached, 'emscripten', 'cache') : join(tmpdir(), 'lapin-emscripten-cache');
+  const cache = cached ? join(cached, 'emscripten', 'cache') : join(work, 'emscripten-cache');
   const env = { ...process.env, EMSDK_PATH: sdk, DOTNET_EMSCRIPTEN_LLVM_ROOT: join(sdk, 'bin'), DOTNET_EMSCRIPTEN_BINARYEN_ROOT: sdk, DOTNET_EMSCRIPTEN_NODE_JS: node, EM_CACHE: cache,
     PATH: [join(sdk, 'emscripten'), join(sdk, 'bin'), py, process.env.PATH].filter(Boolean).join(process.platform === 'win32' ? ';' : ':') };
   const wasmWork = join(work, 'wasm');
