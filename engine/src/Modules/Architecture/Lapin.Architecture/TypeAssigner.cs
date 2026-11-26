@@ -10,7 +10,7 @@ namespace Lapin.Architecture;
 /// </summary>
 public sealed class TypeAssigner : ITypeAssigner
 {
-    public IReadOnlyCollection<string> TypeClasses { get; } = [IfcClass.WallType, IfcClass.SlabType, IfcClass.DoorType, IfcClass.WindowType];
+    public IReadOnlyCollection<string> TypeClasses { get; } = [IfcClass.WallType, IfcClass.SlabType, IfcClass.DoorType, IfcClass.WindowType, Roofs.RoofTypes.Class];
 
     public void Assign(IEdit edit, IServices services, Entity element, Entity type)
     {

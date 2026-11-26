@@ -880,6 +880,7 @@ const architecture: LapinModule = {
   setType: {
     IfcWall: (ids, typeId) => execute('architecture.setWallType', { ids, typeId }),
     IfcSlab: (ids, typeId) => execute('architecture.setSlabType', { ids, typeId }),
+    IfcRoof: (ids, typeId) => execute('architecture.setRoofType', { ids, typeId }),
     IfcDoor: (ids, typeId) => execute('architecture.setJoineryType', { ids, typeId }),
     IfcWindow: (ids, typeId) => execute('architecture.setJoineryType', { ids, typeId }),
     IfcCurtainWall: (ids, typeId) => execute('architecture.setCurtainWallType', { ids, typeId }),

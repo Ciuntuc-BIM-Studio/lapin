@@ -6,7 +6,10 @@
 
 import { useEffect, useState } from 'react';
 import { projectOf } from '../../shell/nodeIndex';
-import { Blocks, Settings2 } from 'lucide-react';
+import { Blocks, Plus, Save, Settings2 } from 'lucide-react';
+import { ofClass, typeOf } from '../../engine/model';
+import { ask, textField } from '../../shell/AskBox';
+import { sameKind } from '../../shell/params';
 import { notify, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
@@ -31,6 +34,17 @@ export function RoofSection({ node }: { node: NodeDto }) {
   const own = (project?.props.roofStyles as { id: string; label: string; shape: string; pitch: number }[] | undefined) ?? [];
   const [userTemplates, setUserTemplates] = useState<UserRoofTemplate[]>(() => libraryRoofTemplates());
   useEffect(() => subscribeRoofTemplates(() => setUserTemplates(libraryRoofTemplates())), []);
+  // Its type (issue #151): the type parameters and, made from a roof, the build-up its roofs share.
+  const nodes = useSession((s) => s.nodes);
+  const relations = useSession((s) => s.relations);
+  const model = { nodes, relations };
+  const type = typeOf(model, node.id);
+  const roofTypes = ofClass(model, 'IfcRoofType');
+  const newType = async () => {
+    const r = await ask('New roof type', [textField('name', 'Name', `${node.name} type`)]);
+    const name = r ? String(r.name).trim() : '';
+    if (name) void execute('architecture.createRoofType', { name, roofId: node.id });
+  };
   const contour = (node.props.contour as number[][] | undefined) ?? [];
   const arcs = (node.props.arcs as number[] | undefined) ?? [];
   const edges = (node.props.edges as Edge[] | undefined) ?? [];
@@ -45,6 +59,21 @@ export function RoofSection({ node }: { node: NodeDto }) {
   };
   return (
     <div className="layers">
+      <label className="type-pick" title="The roof's type: its type parameters (Pset_RoofCommon and your own sets) and, when made from a roof, the build-up every roof of the type shares (covering, deck, layers, framing, gutters); the shape stays each roof's own">
+        <span className="eyebrow">Type</span>
+        <span className="row">
+          <select data-testid="roof-type" value={type?.type === 'IfcRoofType' ? type.id : ''} disabled={!node.editable}
+            onChange={(e) => void execute('architecture.setRoofType', { ids: sameKind(node), typeId: e.target.value || null })}>
+            <option value="">No type</option>
+            {roofTypes.map((rt) => <option key={rt.id} value={rt.id}>{rt.name}</option>)}
+          </select>
+          <button type="button" className="icon" data-testid="roof-type-new" title="New roof type from this roof…" disabled={!node.editable} onClick={() => void newType()}><Plus size={14} /></button>
+          {type?.type === 'IfcRoofType' && (
+            <button type="button" className="icon" data-testid="roof-type-save" title="Save this roof's build-up to its type: every roof of the type takes it" disabled={!node.editable}
+              onClick={() => void execute('architecture.updateRoofType', { id: type.id, roofId: node.id })}><Save size={14} /></button>
+          )}
+        </span>
+      </label>
       <label className="type-pick">
         <span className="eyebrow">Style</span>
         <span className="row">
