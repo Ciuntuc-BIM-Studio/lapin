@@ -185,8 +185,10 @@ public static class PointCloudLinks
             {
                 job.Error = e is PointCloudException ? e.Message : $"The cloud could not be indexed: {e.Message}";
                 job.Finished = true;
+                // Best effort: indexing has a thread of its own, where an exception out of here would end the process.
                 if (e is not (PointCloudException or IOException or InvalidDataException or UnauthorizedAccessException or EndOfStreamException))
-                    Console.Error.WriteLine($"[engine] Indexing {source.Name} failed: {e}");
+                    try { Console.Error.WriteLine($"[engine] Indexing {source.Name} failed: {e}"); }
+                    catch (IOException) { }
             }
         }
         if (OperatingSystem.IsBrowser()) Work();
