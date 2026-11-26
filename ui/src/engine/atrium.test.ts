@@ -41,6 +41,19 @@ describe("Atrium's own API", () => {
     expect(remoteCall).toHaveBeenCalledWith('remote.atrium', { url: 'https://other.example.org', method: 'POST', path: 'atrium/1.0/admin/users', body: { email: 'x@y.z', name: 'X', isAdmin: false } }, 'https://other.example.org');
   });
 
+  it("lists and revokes the account's connected apps (R6b)", async () => {
+    const app = { id: 'g1', name: 'Claude', clientId: 'https://claude.ai/oauth/client.json', kind: 'metadata', verified: true, redirectHost: 'claude.ai',
+      scopes: ['cde.read', 'cde.write'], scope: 'read+write', created: '2026-11-26T09:00:00Z', firstUsed: null, lastUsed: null };
+    remoteCall.mockResolvedValueOnce({ status: 200, body: { apps: [app] }, etag: null });
+    expect(await atrium.connectedApps('https://other.example.org')).toEqual([app]);
+    expect(remoteCall).toHaveBeenLastCalledWith('remote.atrium', { url: 'https://other.example.org', method: 'GET', path: 'atrium/1.0/account/apps' }, 'https://other.example.org');
+    remoteCall.mockResolvedValueOnce({ status: 204, body: null, etag: null });
+    await atrium.revokeConnectedApp('https://other.example.org', 'g/1');
+    expect(remoteCall).toHaveBeenLastCalledWith('remote.atrium', { url: 'https://other.example.org', method: 'DELETE', path: 'atrium/1.0/account/apps/g%2F1' }, 'https://other.example.org');
+    remoteCall.mockResolvedValueOnce({ status: 404, body: { code: 'no_app', message: 'You have no connected app of that id.' }, etag: null });
+    await expect(atrium.revokeConnectedApp('https://other.example.org', 'gone')).rejects.toMatchObject({ status: 404, code: 'no_app' });
+  });
+
   it('a server without the endpoint says so', async () => {
     remoteCall.mockResolvedValue({ status: 404, body: null, etag: null });
     await expect(atrium.account('https://old.example.org')).rejects.toMatchObject({ code: 'not_offered' });

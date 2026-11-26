@@ -1,7 +1,7 @@
 ---
 title: Lucrul pe un server CDE
 order: 126
-summary: Te autentifici pe serverul CDE al biroului tău (Atrium Server, cum e cde.lapinbim.com), clonezi un proiect, salvezi lucrul pe server și îl iei pe al celorlalți, ții problemele la zi, conectezi un client AI cu un token de acces și, ca administrator, gestionezi conturile și proiectele.
+summary: Te autentifici pe serverul CDE al biroului tău (Atrium Server, cum e cde.lapinbim.com), clonezi un proiect, salvezi lucrul pe server și îl iei pe al celorlalți, ții problemele la zi, conectezi un client AI prin adresa serverului sau cu un token de acces și, ca administrator, gestionezi conturile și proiectele.
 ---
 
 Un server CDE ține proiectele biroului tău într-un singur loc: fiecare salvare cu autorul și nota ei, versiunile și etichetele de emitere, membrii fiecărui proiect și rolurile lor, și problemele (subiectele BCF) la care răspund toți. Lapin lucrează cu el din aplicația desktop și din browser. Serverul companiei e la **cde.lapinbim.com**; biroul tău își poate rula propriul server, Atrium Server, care e gratuit.
@@ -148,7 +148,7 @@ Verificările unei propuneri arată un grup **IDS** după documente: câte speci
 
 ## Tokenuri de acces și clienți AI
 
-Un client AI (Claude Code, Claude Desktop sau alt client al Model Context Protocol) poate lucra în proiectele serverului pentru tine: citește documentele de referință și textul fișierelor lor, registrul, containerele, propunerile și problemele, iar când îl lași să scrie, adaugă și completează documente de referință și comentează probleme. Se autentifică cu un **token de acces** pe care îl faci tu; are apoi rolul contului tău în fiecare proiect, nimic mai mult. Aprobarea și respingerea propunerilor, înlocuirea, retragerea sau ștergerea documentelor și schimbarea regulilor sau a membrilor rămân la oameni.
+Un client AI (Claude Code, Claude Desktop sau alt client al Model Context Protocol) poate lucra în proiectele serverului pentru tine: citește documentele de referință și textul fișierelor lor, registrul, containerele, propunerile și problemele, iar când îl lași să scrie, adaugă și completează documente de referință și comentează probleme. Se autentifică fie **prin adresa serverului**, printr-o pagină de autentificare a serverului în browserul tău (conectorii claude.ai și alți clienți care se autentifică singuri), fie cu un **token de acces** pe care îl faci tu (Claude Code, scripturi); are apoi rolul contului tău în fiecare proiect, nimic mai mult. Aprobarea și respingerea propunerilor, înlocuirea, retragerea sau ștergerea documentelor și schimbarea regulilor sau a membrilor rămân la oameni.
 
 **Tokenuri de acces…** (lângă **Schimbă parola…**, pe ecranul de start în browser, și în **Fișier → Colaborare → Colaborează…** pe desktop, autentificat la server) îți arată tokenurile: numele, accesul, când expiră și când au fost folosite ultima dată. Apare când serverul oferă tokenuri de acces.
 
@@ -164,9 +164,19 @@ Ca să conectezi un client:
 
 Butonul coș **revocă** un token: clienții care îl folosesc se opresc imediat. Schimbarea parolei sau dezactivarea contului de către un administrator îți revocă și toate tokenurile.
 
-Ce schimbă clientul apare în **Activitatea** proiectului ca orice altă schimbare, marcat ca făcut prin MCP, cu numele tokenului.
+### Conectarea unei aplicații prin adresa serverului
 
-Tot ce citește un client este trimis furnizorului modelului său: textul documentelor și persoanele numite în certificate, extrase de carte funciară și contracte. Folosește un client căruia biroul tău are voie să-i trimită asta, dă unui token **Doar citire** dacă nu trebuie să scrie și revocă-l când ai terminat. Pentru dezvoltatori, uneltele și un exemplu sunt în docs/mcp.md.
+Clienții care se autentifică singuri (conectorii personalizați din claude.ai, alți clienți MCP care urmează autentificarea lui) nu au nevoie de token: dă-le adresa MCP a serverului, `https://cde.lapinbim.com/mcp` (lista **Aplicații conectate** o arată, cu un buton de copiere). În claude.ai: Settings → Connectors → **Add custom connector**, lipește adresa și conectează.
+
+1. Clientul deschide **pagina de autentificare a serverului** în browser. Verifică în bara de adrese că e serverul tău (`cde.lapinbim.com`), apoi autentifică-te cu e-mailul și parola. Parola ajunge doar la server, niciodată la aplicație.
+2. **Pagina de consimțământ** arată numele aplicației, site-ul la care se întoarce browserul după aceea (`claude.ai` pentru claude.ai), contul tău și ce poate face aplicația: să **citească** documentele de referință, registrul, containerele, propunerile și problemele proiectelor și, dacă cere, să le **schimbe** (să adauge și să completeze documente de referință, să comenteze probleme). O aplicație care s-a înregistrat singură e marcată: numele ei e cel pe care și l-a dat singură, deci mergi mai departe doar dacă ai pornit asta dintr-o aplicație în care ai încredere. O aplicație care rulează pe acest calculator primește și ea un avertisment.
+3. Apasă **Allow** (permite), **Allow reading only** (doar citire: nu poate schimba nimic) sau **Deny** (refuză); pagina serverului e în engleză. Browserul se întoarce la aplicație, care e acum conectată.
+
+**Aplicații conectate** (în **Tokenuri de acces…**, când serverul o oferă) arată aplicațiile pe care le-ai conectat: numele, site-ul la care se întoarce, accesul, când ai conectat-o și când a fost folosită ultima dată. Butonul coș **revocă** o aplicație: se oprește imediat și funcționează din nou doar dacă o conectezi din nou. Schimbarea parolei sau dezactivarea contului de către un administrator îți revocă și toate aplicațiile. O aplicație nefolosită 30 de zile trebuie să se autentifice din nou.
+
+Ce schimbă clientul apare în **Activitatea** proiectului ca orice altă schimbare, marcat ca făcut prin MCP, cu numele tokenului sau al aplicației.
+
+Tot ce citește un client este trimis furnizorului modelului său: textul documentelor și persoanele numite în certificate, extrase de carte funciară și contracte. Folosește un client căruia biroul tău are voie să-i trimită asta, dă unui token **Doar citire** (unei aplicații **Allow reading only**) dacă nu trebuie să scrie și revocă-l când ai terminat. Pentru dezvoltatori, uneltele și un exemplu sunt în docs/mcp.md.
 
 ## Administrare
 

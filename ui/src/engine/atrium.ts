@@ -92,6 +92,24 @@ export const createAccessToken = (server: string, t: { name: string; scope: Acce
 /** Revokes a token at once. */
 export const revokeAccessToken = (server: string, id: string) => need<unknown>(server, 'DELETE', `atrium/1.0/account/tokens/${enc(id)}`);
 
+// ------------------------------------------------------------ apps connected over OAuth (plan-cde-references R6b)
+
+/**
+ * An app the account connected by signing in with the browser (an OAuth client of the server's MCP endpoint: claude.ai's connectors,
+ * other MCP clients that sign in by themselves). `verified`: its name is published at its own address (a client ID metadata document);
+ * otherwise the app registered itself and chose its name.
+ */
+export interface ConnectedApp {
+  id: string; name: string; clientId: string; kind: 'registered' | 'metadata'; verified: boolean; redirectHost: string;
+  scopes: string[]; scope: 'read' | 'read+write'; created: string; firstUsed: string | null; lastUsed: string | null;
+}
+
+/** The account's connected apps, the most recently used first (feature `account.apps`). */
+export const connectedApps = async (server: string) => (await need<{ apps: ConnectedApp[] }>(server, 'GET', 'atrium/1.0/account/apps')).apps;
+
+/** Revokes an app: its consent and every token it holds, at once. */
+export const revokeConnectedApp = (server: string, id: string) => need<unknown>(server, 'DELETE', `atrium/1.0/account/apps/${enc(id)}`);
+
 // ------------------------------------------------------------ administration (server administrators)
 
 export interface AdminUser { email: string; name: string; publicId: string; authorId: string; isAdmin: boolean; disabled: boolean; created: string | null; projects: { id: string; name: string; role: Role }[] }

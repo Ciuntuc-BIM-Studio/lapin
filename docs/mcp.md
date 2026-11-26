@@ -83,12 +83,24 @@ An agent can reach two things, each through its own MCP server, and a client can
 |---|---|---|
 | Server | `scripts/lapin-mcp.mjs`, on stdio, on this computer | Atrium Server's `/mcp` (Streamable HTTP), e.g. `https://cde.lapinbim.com/mcp` |
 | Reaches | The project open in Lapin: its model, views, documents (this page's tools) | A server project's reference documents (with their files' text), register, containers, publish queue and issues |
-| Signs in | Nothing: the engine listens on 127.0.0.1 only | A personal access token of the user's server account, with the account's project roles |
-| Changes | Engine commands, each one undo step the user sees | Through the server's own API, journaled as `via: "mcp"` with the token's name |
+| Signs in | Nothing: the engine listens on 127.0.0.1 only | The user's server account, with its project roles: by OAuth in the browser (the client needs only the address), or with a personal access token in the client's configuration |
+| Changes | Engine commands, each one undo step the user sees | Through the server's own API, journaled as `via: "mcp"` with the token's or the app's name |
 
 The open project's bridge gets nothing new for the CDE: the engine's `references.*` commands and queries (the project's own reference documents, docs/plan-cde-references.md §3.4) reach it through `lapin_query` and `lapin_execute`, with their arguments from the catalogue (`lapin_info`).
 
 ### Setting up the CDE's bridge
+
+There are two ways to sign in. A client that signs in by itself with OAuth (claude.ai's custom connectors, other hosted or desktop clients that follow MCP's authorization specification) needs only the server's address; a client that takes a header (Claude Code, the SDKs, scripts) takes a personal access token.
+
+**By the address (OAuth, stage R6b).** The server must offer `oauth` (its `GET /atrium/1.0/` features).
+
+1. **Add the server by its URL**, `https://cde.lapinbim.com/mcp`. In claude.ai: Settings → Connectors → **Add custom connector**, that URL, no client id or secret. Any other OAuth MCP client: its "add server" with the URL.
+2. **The client opens the server's sign-in page** in the browser (it found it from `/mcp`'s 401: the protected resource metadata, then the authorization server's metadata; it registers itself, or names itself by a client ID metadata document). Sign in with the server account's e-mail and password, on the server's own page (check the address bar: `cde.lapinbim.com`); the password never goes to the client.
+3. **The consent page** shows the app's name (marked as unverified when the app registered itself and chose it; with the host that publishes it when it names itself by a metadata document), the host the browser goes back to (`claude.ai` for claude.ai; a local address for a client on this computer, with a warning), the account, and what the app may do: **read** (`cde.read`) and, when it asks, **change** (`cde.write`: add and fill reference documents, comment on issues), always with your role in each project. **Allow**, **Allow reading only** or **Deny**.
+4. The client gets a token for `/mcp` only (an hour, renewed by a refresh token for 30 days while it is used); the REST APIs do not take it.
+5. **Revoke** an app in the same panel as the tokens: **Access tokens…** → **Connected apps** (the app, where it returns to, its access, when it was connected and last used) → the trash button. Its tokens stop at once. Changing the password, or an administrator disabling the account, revokes every app too.
+
+**With a personal access token** (Claude Code, the SDKs, any client that sends a header):
 
 1. **A token.** In the CDE web (signed in on the start screen) or on the desktop (File → Collaborate…, signed in to the server): **Access tokens…** → a name for the client, **Read only** or **Read and write**, an expiry (30 days to a year) → **Make a token**. The token is shown once; copy it then. It goes into the client's configuration and nowhere else, never into a chat, a document or a project: whoever has it works as you on the server until it expires or you revoke it (the same panel). The button shows when the server offers access tokens (its `GET /atrium/1.0/` lists `account.tokens`).
 2. **The client.** Claude Code:
@@ -97,10 +109,10 @@ The open project's bridge gets nothing new for the CDE: the engine's `references
    claude mcp add --transport http atrium https://cde.lapinbim.com/mcp --header "Authorization: Bearer <token>"
    ```
 
-   The panel shows this command with the token in it, right after making one. Any client that speaks MCP's Streamable HTTP transport and can send a header works the same way. Clients that sign in only by OAuth (claude.ai's connectors) cannot connect yet: that is stage R6b.
-3. **A check** from a terminal, in Atrium's repository: `ATRIUM_MCP_URL=https://cde.lapinbim.com/mcp ATRIUM_MCP_TOKEN=<token> node tools/atrium-mcp-check.mjs` (read-only: initialize, the tool list, `cde_projects`, `cde_project`).
+   The panel shows this command with the token in it, right after making one. Any client that speaks MCP's Streamable HTTP transport and can send a header works the same way. (Claude Code can also sign in by OAuth: `claude mcp add --transport http atrium https://cde.lapinbim.com/mcp` without the header, then `/mcp` in Claude Code to authenticate.)
+3. **A check** from a terminal, in Atrium's repository: `ATRIUM_MCP_URL=https://cde.lapinbim.com/mcp ATRIUM_MCP_TOKEN=<token> node tools/atrium-mcp-check.mjs` (read-only: initialize, the tool list, `cde_projects`, `cde_project`). The OAuth flow has its own check, `tools/atrium-oauth-check.mjs`, which signs in as a client would with the e-mail and password from the environment (`ATRIUM_URL`, `ATRIUM_EMAIL`, `ATRIUM_PASSWORD`, read with `read -s`).
 
-The contract (the endpoint, the protocol versions, the errors, the limits) is Atrium's `docs/atrium-server.md`, § MCP (R6).
+The contract (the endpoint, the protocol versions, the errors, the limits) is Atrium's `docs/atrium-server.md`, § MCP (R6), and for the sign-in § OAuth (R6b) (the endpoints, the flows, the lifetimes, the errors).
 
 ### The CDE's tools
 
@@ -152,4 +164,4 @@ lapin.lapin_document_export {id: "e57", format: "pdf", path: "/Users/me/Desktop/
 
 ### Privacy
 
-Whatever an MCP client reads is sent to that client's model provider, under the provider's terms: the documents' text, and with it the people certificates, land-book extracts and contracts name. Use a client and a provider the office may send that to, give a token only the scope it needs (`read` unless it must write), give it a short expiry, and revoke it when the work is done. The CDE never sends anything to an AI provider by itself: only a client the user configured, with the user's token, reads.
+Whatever an MCP client reads is sent to that client's model provider, under the provider's terms: the documents' text, and with it the people certificates, land-book extracts and contracts name. Use a client and a provider the office may send that to, give a token or an app only the scope it needs (`read`, **Allow reading only**, unless it must write), give a token a short expiry, and revoke it, or the app, when the work is done. The CDE never sends anything to an AI provider by itself: only a client the user configured, with the user's token, reads.

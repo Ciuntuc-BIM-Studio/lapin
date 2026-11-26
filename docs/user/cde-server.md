@@ -1,7 +1,7 @@
 ---
 title: Working on a CDE server
 order: 126
-summary: Sign in to your office's CDE server (Atrium Server, such as cde.lapinbim.com), clone a project, save your work to the server and get the others', keep the issues in step, connect an AI client with an access token, and, as an administrator, manage the accounts and projects.
+summary: Sign in to your office's CDE server (Atrium Server, such as cde.lapinbim.com), clone a project, save your work to the server and get the others', keep the issues in step, connect an AI client by the server's address or with an access token, and, as an administrator, manage the accounts and projects.
 ---
 
 A CDE server keeps your office's projects in one place: every save with its author and note, the versions and issue tags, the members of each project and their roles, and the issues (BCF topics) everyone answers. Lapin works on it from the desktop app and from the browser. The company's server is at **cde.lapinbim.com**; your office can run its own, Atrium Server, which is free.
@@ -148,7 +148,7 @@ Before submitting, **Manage → Issue… → On the CDE server → Check on the 
 
 ## Access tokens and AI clients
 
-An AI client (Claude Code, Claude Desktop, or another client of the Model Context Protocol) can work on the server's projects for you: read the reference documents and the text of their files, the register, the containers, the submissions and the issues, and, when you let it write, add and fill reference documents and comment on issues. It signs in with an **access token** you make; it then has your account's role in each project, no more. Approving and rejecting submissions, superseding, withdrawing or deleting documents, and changing rules or members stay with people.
+An AI client (Claude Code, Claude Desktop, or another client of the Model Context Protocol) can work on the server's projects for you: read the reference documents and the text of their files, the register, the containers, the submissions and the issues, and, when you let it write, add and fill reference documents and comment on issues. It signs in either **by the server's address**, through a sign-in page of the server in your browser (claude.ai's connectors and other clients that sign in by themselves), or with an **access token** you make (Claude Code, scripts); it then has your account's role in each project, no more. Approving and rejecting submissions, superseding, withdrawing or deleting documents, and changing rules or members stay with people.
 
 **Access tokens…** (beside **Change password…**, on the start screen in the browser, and in **File → Collaborate → Collaborate…** on the desktop, signed in to the server) lists your tokens: their name, their scope, when they expire and when they were last used. It shows when the server offers access tokens.
 
@@ -164,9 +164,19 @@ To connect a client:
 
 The trash button **revokes** a token: the clients using it stop at once. Changing your password, or an administrator disabling your account, revokes all your tokens too.
 
-What the client changes is in the project's **Activity** like any other change, marked as made through MCP with the token's name.
+### Connecting an app by the server's address
 
-Whatever a client reads is sent to its model provider: the documents' text, and the people that certificates, land-book extracts and contracts name. Use a client your office may send that to, give a token **Read only** unless it must write, and revoke it when the work is done. For developers, the tools and an example are in docs/mcp.md.
+Clients that sign in by themselves (claude.ai's custom connectors, other MCP clients that follow its sign-in) need no token: give them the server's MCP address, `https://cde.lapinbim.com/mcp` (the **Connected apps** list shows it with a copy button). In claude.ai: Settings → Connectors → **Add custom connector**, paste the address, and connect.
+
+1. The client opens the **server's sign-in page** in your browser. Check that the address bar shows your server (`cde.lapinbim.com`), then sign in with your e-mail and password. The password goes to the server only, never to the app.
+2. The **consent page** shows the app's name, the site your browser goes back to afterwards (`claude.ai` for claude.ai), your account, and what the app may do: **read** the projects' reference documents, register, containers, submissions and issues, and, if it asks, **change** them (add and fill reference documents, comment on issues). An app that registered itself is marked: its name is what it says it is, so go on only if you started this from an app you trust. An app that runs on this computer gets a warning too.
+3. Click **Allow**, **Allow reading only** (it then cannot change anything) or **Deny**. Your browser goes back to the app, which is now connected.
+
+**Connected apps** (in **Access tokens…**, when the server offers it) lists the apps you connected: the name, the site it returns to, its access, when you connected it and when it was last used. The trash button **revokes** an app: it stops at once and works again only if you connect it again. Changing your password, or an administrator disabling your account, revokes all your apps too. An app unused for 30 days has to sign in again.
+
+What the client changes is in the project's **Activity** like any other change, marked as made through MCP with the token's or the app's name.
+
+Whatever a client reads is sent to its model provider: the documents' text, and the people that certificates, land-book extracts and contracts name. Use a client your office may send that to, give a token **Read only** (an app **Allow reading only**) unless it must write, and revoke it when the work is done. For developers, the tools and an example are in docs/mcp.md.
 
 ## Administration
 
