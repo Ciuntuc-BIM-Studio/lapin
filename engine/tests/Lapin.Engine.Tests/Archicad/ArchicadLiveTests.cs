@@ -39,6 +39,38 @@ public sealed class ArchicadLiveTests(ITestOutputHelper output)
         output.WriteLine($"again {sw.ElapsedMilliseconds} ms: {again.ToJsonString()}");
         Assert.Equal((int)result["elements"]!, (int)again["unchanged"]!);
 
+        // Get latest (A2): nothing changed in Archicad since the receive, so the cheap status counts none and the update reads nothing.
+        sw.Restart();
+        var status = f.Session.Query("archicad.status", new JsonObject { ["port"] = port })!;
+        output.WriteLine($"status {sw.ElapsedMilliseconds} ms: {status.ToJsonString()}");
+        sw.Restart();
+        var latest = f.Run("archicad.update", new JsonObject { ["port"] = port })!;
+        output.WriteLine($"update {sw.ElapsedMilliseconds} ms: {latest.ToJsonString()}");
+        Assert.Equal("incremental", (string?)latest["mode"]);
+
+        // LAPIN_ARCHICAD_WAIT=<seconds>: change the model in Archicad meanwhile; the status is asked every 2 s, and once it counts a
+        // change, Get latest reads only what changed.
+        if (Environment.GetEnvironmentVariable("LAPIN_ARCHICAD_WAIT") is { Length: > 0 } waitText && int.TryParse(waitText, out var wait))
+        {
+            var until = DateTime.UtcNow.AddSeconds(wait);
+            JsonNode? changed = null;
+            while (DateTime.UtcNow < until)
+            {
+                var s = f.Session.Query("archicad.status", new JsonObject { ["port"] = port })!;
+                if (s["changed"] is JsonValue cv && cv.TryGetValue<bool>(out var c) && c) { changed = s; break; }
+                Thread.Sleep(2000);
+            }
+            output.WriteLine($"status after waiting: {changed?.ToJsonString() ?? "no change seen"}");
+            if (changed != null)
+            {
+                Thread.Sleep(5000); // the rest of the user's edit
+                sw.Restart();
+                var after = f.Run("archicad.update", new JsonObject { ["port"] = port })!;
+                output.WriteLine($"update after the change {sw.ElapsedMilliseconds} ms: {after.ToJsonString()}");
+                Assert.Equal("incremental", (string?)after["mode"]);
+            }
+        }
+
         // Send to Atrium's first step: Archicad saves an IFC to a temporary file (a demo Archicad may refuse: the message says so).
         var translators = (JsonArray)f.Session.Query("archicad.translators", new JsonObject { ["port"] = port })!;
         output.WriteLine($"translators: {translators.ToJsonString()}");
