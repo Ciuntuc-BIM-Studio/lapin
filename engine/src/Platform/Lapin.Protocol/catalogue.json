@@ -165,6 +165,7 @@
     {"name":"architecture.setLayerExtent","module":"architecture","label":"Layer extent","args":[{"name":"id","type":"str"},{"name":"layer","type":"float"},{"name":"edge","type":"str"},{"name":"inherit","type":"bool"},{"name":"offset","type":"float"},{"name":"index","type":"float"},{"name":"cuts","type":"str"},{"name":"ids","type":"list"}]},
     {"name":"architecture.setOpeningDefaults","module":"architecture","label":"Door and window defaults","args":[{"name":"sillFrom","type":"str"}]},
     {"name":"architecture.setRailingArc","module":"architecture","label":"Railing arc","args":[{"name":"id","type":"str"},{"name":"index","type":"float"},{"name":"rise","type":"float"}]},
+    {"name":"architecture.setReachStructure","module":"architecture","label":"Opening down to the structure","args":[{"name":"on","type":"bool"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"architecture.setRoofType","module":"architecture","label":"Change type","args":[{"name":"typeId","type":"str"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
     {"name":"architecture.setRoomOpenings","module":"architecture","label":"Room's doors and windows","args":[{"name":"id","type":"str"},{"name":"on","type":"bool"},{"name":"items","type":"list"}]},
     {"name":"architecture.setSlabType","module":"architecture","label":"Change type","args":[{"name":"typeId","type":"str"},{"name":"ids","type":"list"},{"name":"id","type":"str"}]},
