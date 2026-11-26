@@ -368,9 +368,11 @@ public class AttachColumnTests
             var first = watch.Elapsed.TotalMilliseconds;
             Assert.All(ids, id => Assert.Equal(2.78, f.Bounds(id).Max.Z, 9));
             // Once for the revision; columns built at once on several threads may each work it out before the first is kept: at most once
-            // for each building thread, the pool's and this one, which are more than the cores once the parallel tests have grown the pool.
-            var builders = Math.Max(Environment.ProcessorCount, ThreadPool.ThreadCount + 1);
+            // for each building thread (each keeps what it worked out), the pool's and this one, which are more than the cores once the
+            // parallel tests have grown the pool. Counted after each build: the pool may grow during one, and its idle threads stay.
+            static int Builders() => Math.Max(Environment.ProcessorCount, ThreadPool.ThreadCount + 1);
             var once = BodySampler.Reads(slab) - reads;
+            var builders = Builders();
             Assert.InRange(once, 1, builders);
             // The slab lowered 0.10: every column follows, the slab's triangles worked out again, once for the revision.
             reads = BodySampler.Reads(slab);
@@ -380,8 +382,9 @@ public class AttachColumnTests
             var again = watch.Elapsed.TotalMilliseconds;
             Assert.All(ids, id => Assert.Equal(2.68, f.Bounds(id).Max.Z, 9));
             var twice = BodySampler.Reads(slab) - reads;
-            Assert.InRange(twice, 1, builders);
-            output.WriteLine($"400 columns under one slab: placed and built {setup:0} ms; attached and built {first:0} ms (slab read {once}x); slab moved, rebuilt {again:0} ms (read {twice}x); {builders} building threads at most");
+            var rebuilders = Builders();
+            Assert.InRange(twice, 1, rebuilders);
+            output.WriteLine($"400 columns under one slab: placed and built {setup:0} ms; attached and built {first:0} ms (slab read {once}x of {builders} building threads at most); slab moved, rebuilt {again:0} ms (read {twice}x of {rebuilders})");
             Assert.True(first < LIMIT, $"attached and built in {first:0} ms");
             Assert.True(again < LIMIT, $"rebuilt in {again:0} ms");
         }
