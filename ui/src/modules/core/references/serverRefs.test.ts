@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { base64OfBytes, bytesOfBase64, mergeFiles, normalizeDoc, normalizeTree, serverPerms, sha256Hex } from './serverRefs';
 import type { RefDoc, RefFile } from './references';
 
@@ -38,5 +38,34 @@ describe('the server adapter\'s pure parts', () => {
     expect(t.folders[0].count).toBe(0);
     expect(t.roleFolders.A).toBe('issued');
     expect(t.keepLimit).toBe(0);
+  });
+});
+
+describe('the server adapter\'s calls', () => {
+  it('asks the server for suggestions, says when it has none to give, and puts the checklist offered with the types', async () => {
+    const calls: { path: string; init?: RequestInit }[] = [];
+    let answer: Response = new Response('{}');
+    vi.doMock('../../../engine/cdeServer', () => ({ api: async (path: string, init?: RequestInit) => { calls.push({ path, init }); return answer.clone(); } }));
+    vi.resetModules();
+    const { serverAdapter } = await import('./serverRefs');
+    const a = serverAdapter('p1', 'en');
+    const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+
+    answer = json({ number: '123', date: '2026-03-12', evidence: { number: 'Nr. 123 din 12.03.2026' } });
+    expect(await a.suggest!('2fQ0vD7r1Eb9Kc3xY8mN$w', 'cu 1.pdf')).toMatchObject({ number: '123', date: '2026-03-12' });
+    expect(calls.at(-1)!.path).toBe('/atrium/1.0/projects/p1/references/2fQ0vD7r1Eb9Kc3xY8mN%24w/suggest?name=cu%201.pdf');
+
+    answer = new Response('', { status: 404 });
+    expect((await a.suggest!('x'))?.warning).toMatch(/newer Atrium Server/);
+
+    answer = json({ types: [], checklist: [] });
+    await a.setChecklist([{ key: 'water', label: { en: 'Water supply' } }]);
+    expect(calls.at(-1)!.path).toBe('/atrium/1.0/projects/p1/references/types');
+    expect(calls.at(-1)!.init?.method).toBe('PUT');
+    expect(JSON.parse(String(calls.at(-1)!.init?.body))).toEqual({ checklist: [{ key: 'water', label: { en: 'Water supply' } }] });
+    const before = calls.length;
+    expect(await a.setChecklist(null)).toBeNull();
+    expect(calls.length).toBe(before);
+    vi.doUnmock('../../../engine/cdeServer');
   });
 });
