@@ -45,6 +45,14 @@ describe('containers', () => {
     expect(containerRows(c, 'wip')[0]).toMatchObject({ title: 'ana-popescu/2026-11-23-1000', revision: null, by: 'Ana', commit: 'w' });
     expect(containerRows(c, 'shared')[0]).toMatchObject({ title: '#2 P02', revision: 'P02', by: 'Mihai', files: 1, fromSubmission: true });
     expect(containerRows(null, 'published')).toEqual([]);
+    expect(containerRows(c, 'shared')[0]).toMatchObject({ filesOnly: false, ifcFile: null });
+  });
+  it('marks an issue of files from disk, its IFC one of its files rather than main\'s model', () => {
+    const files = { ...tag(4, 'P01', '2026-11-24T10:00:00Z'), filesOnly: true, files: [{ name: 'S-0101.pdf', sha256: 'p', size: 1 }, { name: 'Structure.IFC', sha256: 'i', size: 2 }] };
+    const pdfOnly = { ...files, name: 'refs/tags/issue/5-P01', files: [{ name: 'S-0101.pdf', sha256: 'p', size: 1 }] };
+    const rows = containerRows({ ...c, shared: [files, pdfOnly] }, 'shared');
+    expect(rows[0]).toMatchObject({ filesOnly: true, ifcFile: { name: 'Structure.IFC', sha256: 'i' } });
+    expect(rows[1]).toMatchObject({ filesOnly: true, ifcFile: null });
   });
   it('offers the issued revisions oldest first, the last two proposed for the diff', () => {
     const list = comparable(c);

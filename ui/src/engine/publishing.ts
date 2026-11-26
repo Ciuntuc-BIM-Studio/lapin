@@ -4,7 +4,7 @@
  * the server (saved there first, then submitted for approval or tagged directly). The screens are modules/core/CdePublish.tsx.
  */
 
-import type { Containers, IssueTagItem, Rules, Submission, WipItem } from './atrium';
+import type { Containers, IssueTagItem, Rules, ServerFile, Submission, WipItem } from './atrium';
 import type { Role } from './cdeServer';
 
 const rank: Record<Role, number> = { viewer: 0, editor: 1, owner: 2 };
@@ -43,13 +43,16 @@ export const CONTAINERS: { id: ContainerId; label: string }[] = [
 ];
 
 /** One row of the containers view: what it is, its revision, when and by whom, the commit it opens. */
-export interface ContainerRow { key: string; title: string; revision: string | null; suitability: string | null; at: string; by: string; commit: string; tag: IssueTagItem | null; note: string | null; files: number; supersededBy: string | null; fromSubmission: boolean }
+export interface ContainerRow { key: string; title: string; revision: string | null; suitability: string | null; at: string; by: string; commit: string; tag: IssueTagItem | null; note: string | null; files: number; supersededBy: string | null; fromSubmission: boolean;
+  /** An issue of files from disk: no model of its own (its commit is main's at the time), so its IFC is one of its files, if any. */
+  filesOnly: boolean; ifcFile: ServerFile | null }
 
 export function containerRows(c: Containers | null, id: ContainerId): ContainerRow[] {
   if (!c) return [];
   return (c[id] ?? []).map((x: WipItem | IssueTagItem): ContainerRow => x.kind === 'branch'
-    ? { key: x.name, title: x.name.replace(/^refs\/heads\/wip\//, ''), revision: null, suitability: null, at: x.updatedAt, by: x.updatedBy?.name ?? '', commit: x.commit, tag: null, note: null, files: 0, supersededBy: null, fromSubmission: false }
-    : { key: x.name, title: issueLabel(x.issue, x.revision), revision: x.revision, suitability: x.suitability, at: x.issuedAt || x.at, by: x.issuedBy?.name || x.author?.name || '', commit: x.commit, tag: x, note: x.note, files: x.files?.length ?? 0, supersededBy: x.supersededBy, fromSubmission: Boolean(x.submission) });
+    ? { key: x.name, title: x.name.replace(/^refs\/heads\/wip\//, ''), revision: null, suitability: null, at: x.updatedAt, by: x.updatedBy?.name ?? '', commit: x.commit, tag: null, note: null, files: 0, supersededBy: null, fromSubmission: false, filesOnly: false, ifcFile: null }
+    : { key: x.name, title: issueLabel(x.issue, x.revision), revision: x.revision, suitability: x.suitability, at: x.issuedAt || x.at, by: x.issuedBy?.name || x.author?.name || '', commit: x.commit, tag: x, note: x.note, files: x.files?.length ?? 0, supersededBy: x.supersededBy, fromSubmission: Boolean(x.submission),
+      filesOnly: x.filesOnly === true, ifcFile: x.filesOnly ? (x.files ?? []).find((f) => /\.ifc(zip)?$/i.test(f.name)) ?? null : null });
 }
 
 /** The issue tags a handover diff can compare: the Shared, Published and Archived revisions, oldest first. */
