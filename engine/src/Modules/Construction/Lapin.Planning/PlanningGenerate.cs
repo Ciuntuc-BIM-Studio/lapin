@@ -51,6 +51,8 @@ public sealed partial class PlanningModule
                 ["tasks"] = m.OfClass(Plan.TaskClass).Count(),
                 ["styles"] = new JsonArray(Generator.OwnStyles(m).Select(s => (JsonNode)s.DeepClone()).ToArray()),
                 ["norms"] = NormsJson(norms),
+                // What the configurator's Procurement switches on: Lapin's chain, indicative.
+                ["procurementDefault"] = Procurement.Default.ToJson(),
             };
         });
 
@@ -133,6 +135,7 @@ public sealed partial class PlanningModule
                 ["critical"] = tm.Critical, ["count"] = links.Under(t.Id).Count,
             };
             if (e.Str("durationFrom") is { } src) x["source"] = src;
+            if (e.Str("phase") is { } phase) x["phase"] = phase;
             if (e.NumOrNull("quantity") is { } qv) { x["quantity"] = qv; x["unit"] = e.Str("unit"); }
             if (e.Str("norm") is { } norm) x["norm"] = norm;
             if (e.NumOrNull("crew") is { } crew) x["crew"] = (int)Math.Round(crew);
@@ -168,7 +171,10 @@ public sealed partial class PlanningModule
                 ["demolished"] = links.Candidates.Count(f => f.Demolished != null),
                 ["kept"] = o.Tasks.Count(t => t.Bool("own") || t.Str("gen") == null),
                 ["removed"] = o.Removed.Count,
+                ["procurement"] = leaves.Count(x => x.Source == "procurement" && !x.Gen.StartsWith("proc:", StringComparison.Ordinal)),
+                ["procurementIndicative"] = o.Spec.Procurement is { On: true, Indicative: true } && leaves.Any(x => x.Source == "procurement"),
             },
+            ["notes"] = new JsonArray(o.Notes.Select(x => (JsonNode)x).ToArray()),
         };
     }
 }

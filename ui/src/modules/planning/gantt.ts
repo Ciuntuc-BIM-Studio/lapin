@@ -16,6 +16,8 @@ export interface TaskDto {
   constraint?: Constraint; constraintDate?: string; wet?: boolean; kind?: string; notes?: string;
   /** A level of effort task (a hammock): its dates and duration derived from the task it starts with and the one it finishes with (or its SS / FF predecessors); its own duration is used only without a finish. */
   effort?: 'loe'; effortFrom?: string; effortTo?: string; ownDuration?: number;
+  /** False: left out of location-based charts (procurement, management); the phase of the works it belongs to (procurement). */
+  chart?: boolean; phase?: string;
   /** Its elements (stage 2): how many, which (a summary's: its tasks' too), the rule they are found by, the part taken, the exceptions. */
   count: number; elements?: string[]; rule?: TaskRule; part?: string; added?: number; removed?: number;
   /** Made by the generator (stage 3): its step (and storey), edited by hand since (kept as it is), and where its duration came from. */

@@ -100,6 +100,15 @@ public sealed class Plan
     /// <summary>The project's schedule: the first IfcWorkSchedule (one per project in stage 1).</summary>
     public static Entity? ScheduleOf(IModelView m) => m.OfClass(ScheduleClass).FirstOrDefault();
 
+    /// <summary>
+    /// A task's attribute saying whether it shows in charts that draw the works by location (a location-based chart):
+    /// <c>false</c> leaves it out (procurement, management); missing or <c>true</c>, it shows. The Gantt shows every task.
+    /// </summary>
+    public const string ChartKey = "chart";
+
+    /// <summary>Whether a task shows in location-based charts (<see cref="ChartKey"/>).</summary>
+    public static bool InCharts(Entity e) => e.Attrs[ChartKey] is not JsonValue v || !v.TryGetValue<bool>(out var b) || b;
+
     /// <summary>The Monday after a day (the day itself when it is a Monday): where a new schedule starts.</summary>
     public static DateOnly NextMonday(DateOnly d)
     {

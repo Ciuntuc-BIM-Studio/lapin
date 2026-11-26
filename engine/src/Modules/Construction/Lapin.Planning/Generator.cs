@@ -92,7 +92,8 @@ public sealed record GenStep(string Key, string Name, IReadOnlyList<string> Clas
 }
 
 /// <summary>What the generator makes: the template it started from, its steps, whether storeys split them, demolitions first, and the temporaries tied to their hosts' tasks.</summary>
-public sealed record GenSpec(string Template, IReadOnlyList<GenStep> Steps, bool ByStorey = true, bool Demolition = true, bool Formwork = true, bool Scaffolding = true, DateOnly? Start = null)
+public sealed record GenSpec(string Template, IReadOnlyList<GenStep> Steps, bool ByStorey = true, bool Demolition = true, bool Formwork = true, bool Scaffolding = true, DateOnly? Start = null,
+    Procurement? Procurement = null)
 {
     public JsonObject ToJson(bool withStart = true)
     {
@@ -102,6 +103,8 @@ public sealed record GenSpec(string Template, IReadOnlyList<GenStep> Steps, bool
             ["byStorey"] = ByStorey, ["demolition"] = Demolition, ["formwork"] = Formwork, ["scaffolding"] = Scaffolding,
         };
         if (withStart && Start is { } d) o["start"] = WorkCalendar.Date(d);
+        // Only when the user set it: a spec without it is written as before.
+        if (Procurement != null) o["procurement"] = Procurement.ToJson();
         return o;
     }
 
@@ -111,6 +114,7 @@ public sealed record GenSpec(string Template, IReadOnlyList<GenStep> Steps, bool
     public static void Check(JsonObject o)
     {
         if (o["steps"] is JsonArray a) foreach (var step in a) GenStep.Check(step);
+        Planning.Procurement.Check(o["procurement"]);
     }
 
     /// <summary>A spec as stored or given; what it does not say is taken from <paramref name="fallback"/>.</summary>
@@ -127,7 +131,8 @@ public sealed record GenSpec(string Template, IReadOnlyList<GenStep> Steps, bool
         }
         return new(((string?)o["template"])?.Trim() is { Length: > 0 } t ? t : fallback.Template, steps,
             Flag(o["byStorey"], fallback.ByStorey), Flag(o["demolition"], fallback.Demolition), Flag(o["formwork"], fallback.Formwork), Flag(o["scaffolding"], fallback.Scaffolding),
-            o.ContainsKey("start") ? WorkCalendar.ParseDate((string?)o["start"]) : fallback.Start);
+            o.ContainsKey("start") ? WorkCalendar.ParseDate((string?)o["start"]) : fallback.Start,
+            o.ContainsKey("procurement") ? Planning.Procurement.Read(o["procurement"]) : fallback.Procurement);
     }
 }
 
@@ -369,15 +374,15 @@ public static class Generator
         var quantities = new Dictionary<string, IReadOnlyList<QuantitySet>>();
         IReadOnlyList<QuantitySet> SetsOf(string id) => quantities.TryGetValue(id, out var s) ? s : quantities[id] = q.Quantities(id);
 
-        Entity Task(string gen, string name, string? parent, int ord, JsonObject extra, string? kind)
+        Entity Task(string gen, string name, string? parent, double ord, JsonObject extra, string? kind)
         {
             var old = byGen.GetValueOrDefault(gen);
             var id = old?.Id ?? newId();
             var attrs = new JsonObject { ["schedule"] = scheduleId, ["order"] = ord, ["gen"] = gen };
             if (parent != null) attrs["parent"] = parent;
             foreach (var (k, v) in extra) attrs[k] = v?.DeepClone();
-            // A generated task's exceptions and notes are the user's: they stay.
-            foreach (var k in new[] { "add", "remove", "notes" }) if (old?.Attrs[k] is { } v) attrs[k] = v.DeepClone();
+            // A generated task's exceptions and notes are the user's: they stay, and so does whether it shows in charts when set by hand.
+            foreach (var k in new[] { "add", "remove", "notes", Plan.ChartKey }) if (old?.Attrs[k] is { } v) attrs[k] = v.DeepClone();
             return new Entity(id, Plan.TaskClass, name, attrs, kind);
         }
 
@@ -543,6 +548,55 @@ public static class Generator
             }
         }
 
+        // ---- procurement (docs/plan-4d5d.md): a chain a package, after the drawings' milestone, before its step's first task
+        var procLinks = new List<(string From, string To, string Type, int Lag)>();
+        if (spec.Procurement is { On: true } proc && proc.Chain.Count > 0 && proc.Packages.Any(x => x.On))
+        {
+            JsonObject Tagged(JsonObject o) { o["phase"] = Procurement.Phase; o[Plan.ChartKey] = false; return o; }
+            // The milestone: the user's own of that name when one stays, else made at the project's start.
+            var given = keep ? oldTasks.FirstOrDefault(t => t.Str("gen") == null && (t.Bool("milestone") || t.Num("duration", 1) == 0)
+                && string.Equals(t.Name.Trim(), proc.Milestone, StringComparison.OrdinalIgnoreCase)) : null;
+            string milestone;
+            if (given != null) milestone = given.Id;
+            else
+            {
+                var ms = Task("proc:drawings", proc.Milestone, null, 0, Tagged(new JsonObject { ["duration"] = 0, ["milestone"] = true }), null);
+                tasks.Add(ms);
+                made.Add(new(ms.Id, "proc:drawings", new GenStep("proc:drawings", proc.Milestone, [], null, "once", 0, null, 0), null, false, "procurement", null, null, 0));
+                milestone = ms.Id;
+            }
+            var top = Task("proc/", proc.Title, null, 0.5, Tagged(new JsonObject { ["duration"] = 1 }), null);
+            tasks.Add(top);
+            made.Add(new(top.Id, "proc/", new GenStep("proc", proc.Title, [], null, "once", 1, null, 0), null, true, "summary", null, null, 0));
+            var k = 0;
+            foreach (var pkg in proc.Packages.Where(x => x.On))
+            {
+                var target = stepTasks.FirstOrDefault(x => x.Step.Key == pkg.Before);
+                var name = pkg.Name.Length > 0 ? pkg.Name : spec.Steps.FirstOrDefault(x => x.Key == pkg.Before)?.Name ?? pkg.Key;
+                var gen = $"proc/{pkg.Key}/";
+                var summary = Task(gen, name, top.Id, ++k, Tagged(new JsonObject { ["duration"] = 1 }), null);
+                tasks.Add(summary);
+                var pseudo = new GenStep("proc:" + pkg.Key, name, [], null, "once", 1, null, 0);
+                made.Add(new(summary.Id, gen, pseudo, null, true, "summary", null, null, 0));
+                string prev = milestone;
+                var j = 0;
+                foreach (var cs in proc.Chain)
+                {
+                    var days = pkg.DaysFor(cs);
+                    var extra = Tagged(new JsonObject { ["duration"] = days, ["durationFrom"] = "procurement" });
+                    if (days == 0) extra["milestone"] = true;
+                    var leaf = Task($"{gen}{cs.Key}", $"{cs.Name} · {name}", summary.Id, ++j, extra, cs.Kind);
+                    tasks.Add(leaf);
+                    made.Add(new(leaf.Id, $"{gen}{cs.Key}", pseudo with { Days = days }, null, false, "procurement", null, null, 0));
+                    procLinks.Add((prev, leaf.Id, "FS", 0));
+                    prev = leaf.Id;
+                }
+                // Before the first task of its step: the one done once, or the lowest storey's.
+                if (target.ByStorey != null && FirstOf(target, storeys) is { } install) procLinks.Add((prev, install, "FS", pkg.Lag));
+                else notes.Add($"Procurement „{name}” precedes no task: its step made none.");
+            }
+        }
+
         // ---- what is kept: tasks edited by hand (own) in place of their generated selves, and the tasks made by hand
         var madeIds = tasks.Select(t => t.Id).ToHashSet();
         var final = new List<Entity>();
@@ -645,6 +699,8 @@ public static class Generator
             }
         }
 
+        foreach (var (from, to, type, lag) in procLinks) if (finalIds.Contains(from) && finalIds.Contains(to)) Link(from, to, type, lag);
+
         // ---- the schedule: its start, and the spec it was made with (the configurator opens on it again)
         var sAttrs = schedule?.CloneAttrs() ?? new JsonObject();
         if (spec.Start is { } start) sAttrs["start"] = WorkCalendar.Date(start);
@@ -663,6 +719,14 @@ public static class Generator
         if (!st.PerStorey) { if (st.ByStorey.TryGetValue("", out var t)) yield return t; yield break; }
         for (var i = storeys.Count - 1; i >= 0; i--)
             if (st.ByStorey.TryGetValue(storeys[i].Id, out var t)) { yield return t; yield break; }
+    }
+
+    /// <summary>The task a step starts with: its task, or its lowest storey's.</summary>
+    static string? FirstOf((GenStep Step, bool PerStorey, Dictionary<string, string> ByStorey) st, List<Entity> storeys)
+    {
+        if (!st.PerStorey) return st.ByStorey.GetValueOrDefault("");
+        foreach (var s in storeys) if (st.ByStorey.TryGetValue(s.Id, out var t)) return t;
+        return null;
     }
 
     static PlanTask Probe(JsonObject rule, string? part) =>

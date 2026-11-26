@@ -65,6 +65,17 @@ Normele sunt ale tale. Lapin nu livrează niciun indicator de norme. **Importă 
 
 Sub norme, fiecare pas își alege **Norma**, **Echipa** (0: a normei) și **Zilele**, folosite când nicio normă nu-i dă durata. Fila Calendar arată calendarul în care se numără duratele; orele lui pe zi împart orele-om.
 
+### Fila Aprovizionare
+
+Ce se cumpără pentru lucrare (structura metalică, ferestrele, bucătăriile, un lift) se proiectează, se aprobă, se fabrică și se aduce pe șantier înainte să fie montat. Bifează **Lanțuri de aprovizionare** și fiecare pachet primește lanțul lui de sarcini înaintea montajului:
+
+- **lanțul** e o listă de pași cu zilele lor: implicit **Proiectare și detalii de execuție**, **Aprobarea beneficiarului**, **Fabricație** și **Transport pe șantier**, câte 5 zile lucrătoare fiecare. Sunt valorile orientative ale lui Lapin, iar fila o spune: redenumește pașii, schimbă-le zilele, adaugă sau scoate pași ca lanțul să fie al tău. **Transport** marchează un pas ca sarcină de logistică în IFC. Lanțul se salvează cu specificația, deci **Salvează ca stil…** îl păstrează în stilurile de program ale proiectului;
+- **Jalonul de la început** dă numele jalonului din care pornesc lanțurile (**Planșe primite**). Dacă programul tău are deja un jalon cu numele acesta, lanțurile pornesc din al tău;
+- la **Pachetele pașilor**, apasă un pas ca să-i dai un pachet al lui, cu numele pasului. **Pachet…** adaugă un pachet numit de tine (bucătăriile, obiectele sanitare, echipamentele unei zone speciale), iar **Înainte de** alege pasul înaintea căruia vine;
+- în tabelul pachetelor, fiecare pachet poate schimba doar pentru el zilele oricărui pas din lanț (o fabricație de fațadă de 30 de zile), se poate opri și poate avea un **Decalaj** între livrare și montaj. **Total** e lanțul întreg.
+
+Sarcinile stau sub un rezumat **Aprovizionare**, un rezumat pe pachet. Fiecare pas vine după cel dinainte (FS), primul după jalon, iar ultimul înaintea primei sarcini a pasului pachetului (cea de la etajul cel mai de jos, pentru un pas împărțit pe etaje). Un lanț lung pe drumul critic mută finalul cu lungimea lui: previzualizarea o arată înainte să aplici. Sarcinile acestea sunt lăsate afară din diagramele pe locații (vezi *O sarcină în Proprietăți*). Generată din nou, o sarcină din lanț pe care ai editat-o își păstrează zilele, ca orice sarcină editată. Oprit, generatorul face exact ce făcea înainte. Niciun șablon nu pornește aprovizionarea, nici hala metalică: tu alegi pachetele.
+
 ### Generat din nou
 
 Deschide din nou generatorul și apasă **Aplică**: programul e refăcut peste aceleași sarcini, deci id-urile lor rămân. Ce ai schimbat de mână rămâne:
@@ -131,6 +142,7 @@ Selectezi o sarcină și Proprietățile o arată: numele, felul ei în IFC, dur
 - **Lucrări umede**: betoane, șape, tencuieli. O sarcină umedă nu lucrează în pauza de iarnă a calendarului, când pauza e pornită.
 - **Rezervă totală** și **Rezervă liberă**: câte zile lucrătoare poate întârzia sarcina fără să mute finalul, respectiv fără să mute ce urmează după ea. **Început târziu** și **Sfârșit târziu** sunt cele mai târzii date care păstrează finalul.
 - **Predecesori**: fiecare legătură care intră, cu tipul și decalajul de schimbat, sau de scos. **Succesori** arată ce urmează după sarcină.
+- **Arată în diagramele pe locații**: debifează ca sarcina să fie lăsată afară din diagramele care desenează lucrările pe locații (aprovizionare, management). Gantt-ul arată în continuare toate sarcinile. Sarcinile de aprovizionare ale generatorului vin debifate. Setarea merge în IFC (în `Lapin_Task`) și în MS Project (câmpul de tip flag Flag1, numit *Lapin not in charts*) și se întoarce la citire.
 
 ## Sarcini de nivel de efort
 

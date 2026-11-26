@@ -29,6 +29,8 @@ public static class MsProject
     /// sees a task of the days it spans starting no earlier than its start; Lapin reads it back as a level of effort task.
     /// </summary>
     const string EffortField = "188743734", EffortAlias = "Lapin effort";
+    /// <summary>MS Project's custom field Flag1 (its field id), Yes on a task left out of location-based charts, named <see cref="ChartAlias"/>.</summary>
+    const string ChartField = "188743752", ChartAlias = "Lapin not in charts";
 
     static string Dt(DateOnly d, string time) => $"{WorkCalendar.Date(d)}T{time}:00";
 
@@ -41,7 +43,7 @@ public static class MsProject
         return $"PT{minutes / 60}H{minutes % 60}M0S";
     }
 
-    public static string Write(Plan p, CpmResult r)
+    public static string Write(Plan p, CpmResult r, IModelView? model = null)
     {
         var cal = p.Calendar;
         var dayStart = TimeOnly.ParseExact(cal.DayStart, "HH:mm", CultureInfo.InvariantCulture);
@@ -72,7 +74,9 @@ public static class MsProject
         // The tasks' elements (their rule, part and exceptions) in the custom field Text1, named so (stage 2).
         var withLinks = p.Rows.Any(t => TaskLinkData.Of(t) != null);
         var withEffort = p.Rows.Any(t => Cpm.IsLoe(p, t.Id));
-        if (withLinks || withEffort)
+        // The tasks left out of location-based charts, in the flag Flag1 (only when there are some: a file as before otherwise).
+        var hidden = model == null ? [] : p.Rows.Where(t => model.Get(t.Id) is { } e && !Plan.InCharts(e)).Select(t => t.Id).ToHashSet();
+        if (withLinks || withEffort || hidden.Count > 0)
         {
             w.WriteStartElement("ExtendedAttributes", Ns);
             if (withLinks)
@@ -89,6 +93,14 @@ public static class MsProject
                 E("FieldID", EffortField);
                 E("FieldName", "Text2");
                 E("Alias", EffortAlias);
+                w.WriteEndElement();
+            }
+            if (hidden.Count > 0)
+            {
+                w.WriteStartElement("ExtendedAttribute", Ns);
+                E("FieldID", ChartField);
+                E("FieldName", "Flag1");
+                E("Alias", ChartAlias);
                 w.WriteEndElement();
             }
             w.WriteEndElement();
@@ -254,6 +266,13 @@ public static class MsProject
                 E("Value", links.ToJsonString());
                 w.WriteEndElement();
             }
+            if (hidden.Contains(t.Id))
+            {
+                w.WriteStartElement("ExtendedAttribute", Ns);
+                E("FieldID", ChartField);
+                E("Value", "1");
+                w.WriteEndElement();
+            }
             if (t.Baseline is { } bl)
             {
                 w.WriteStartElement("Baseline", Ns);
@@ -347,6 +366,7 @@ public static class MsProject
         var fields = Els(El(project, "ExtendedAttributes"), "ExtendedAttribute").ToList();
         var linksField = fields.FirstOrDefault(x => Val(x, "Alias") == LinksAlias) is { } fa ? Val(fa, "FieldID") : fields.Count == 0 ? LinksField : null;
         var effortField = fields.FirstOrDefault(x => Val(x, "Alias") == EffortAlias) is { } fe ? Val(fe, "FieldID") : null;
+        var chartField = fields.FirstOrDefault(x => Val(x, "Alias") == ChartAlias) is { } fc ? Val(fc, "FieldID") : null;
         var stack = new List<(int Level, string Key)>();
         var summaryKeys = new HashSet<string>();
         foreach (var t in rows)
@@ -387,7 +407,7 @@ public static class MsProject
             tasks.Add(new ImportedTask(key, id, Val(t, "Name") ?? "", parent, duration, milestone && duration == 0, constraint, constraintDate,
                 When(Val(t, "Start")) is { } s ? DateOnly.FromDateTime(s) : null, Notes: Val(t, "Notes"), Links: elementLinks,
                 ActualStart: actualStart, ActualFinish: actualFinish, Complete: pc, Baseline: baseline,
-                Loe: loe, EffortFromKey: loe ? Part("from") : null, EffortToKey: loe ? Part("to") : null));
+                Loe: loe, EffortFromKey: loe ? Part("from") : null, EffortToKey: loe ? Part("to") : null, Chart: chartField != null && Els(t, "ExtendedAttribute").Any(x => Val(x, "FieldID") == chartField && Val(x, "Value") is "1" or "Yes" or "true") ? false : null));
         }
         var links = new List<ImportedLink>();
         foreach (var t in rows)

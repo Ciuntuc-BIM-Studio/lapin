@@ -65,6 +65,17 @@ The norms are yours. Lapin does not ship any norm book. **Import norms…** read
 
 Under the norms, each step picks its **Norm**, its **Crew** (0: the norm's own) and its **Days**, used when no norm times it. The Calendar tab shows the calendar the durations count in; its hours a day divide the man-hours.
 
+### The Procurement tab
+
+What is bought for the works (the steel structure, the windows, the kitchens, a lift) is drawn, approved, made and brought to site before it is installed. Tick **Procurement chains** and each package gets its chain of tasks before its installation:
+
+- the **chain** is a list of steps with their days: by default **Design and shop drawings**, **Client approval**, **Manufacturing** and **Transport to site**, 5 working days each. These are Lapin's indicative values, and the tab says so: rename the steps, change their days, add or remove steps to make the chain your own. **Transport** marks a step as IFC's logistic task. The chain is saved with the spec, so **Save as style…** keeps it in the project's schedule styles;
+- **Milestone at the start** names the milestone the chains start from (**Drawings received**). If your schedule already has a milestone of that name, the chains start from yours;
+- under **Packages of the steps**, click a step to give it a package of its own, named after the step. **Package…** adds a package you name (the kitchens, the sanitary fixtures, a special zone's equipment) and **Before** picks the step it comes before;
+- in the packages' table each package can change the days of any chain step for itself alone (a façade's manufacturing of 30 days), switch off, and take a **Lag** between the delivery and the installation. **Total** is the whole chain.
+
+The tasks go under a **Procurement** summary, one summary a package. Each step follows the one before (FS), the first follows the milestone, and the last comes before the first task of the package's step (the lowest storey's, for a step split by storey). A long chain on the critical path moves the finish by its length: the preview shows it before you apply. These tasks are left out of location-based charts (see *A task in Properties*). Generated again, a chain task you edited keeps its days like any other edited task. Switched off, the generator makes exactly what it made before. None of the templates switches procurement on, not even the steel hall: you choose the packages.
+
 ### Generated again
 
 Open the generator again and **Apply**: the schedule is made again over the same tasks, so their ids stay. What you changed by hand stays:
@@ -131,6 +142,7 @@ Select a task and Properties shows it: its name, its IFC kind, its duration, whe
 - **Wet works**: concrete, screeds, plaster. A wet task does not work in the calendar's winter break, when the break is on.
 - **Total float** and **Free float**: how many working days the task can slip without moving the finish, or without moving what follows it. **Late start** and **Late finish** are the latest dates that keep the finish.
 - **Predecessors**: each link in, with its type and lag to change, or removed. **Successors** lists what follows the task.
+- **Show in location charts**: untick it to leave the task out of charts that draw the works by location (procurement, management). The Gantt still shows every task. The generator's procurement tasks come unticked. The setting goes to IFC (in `Lapin_Task`) and to MS Project (the flag field Flag1, named *Lapin not in charts*), and it comes back when read.
 
 ## Level of effort tasks
 
