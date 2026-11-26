@@ -7476,6 +7476,18 @@ const S5D_TAILS: Record<string, string> = {
   "Someone changed this document at the same time: it was read again. Make your change again.": "ມີຄົນແກ້ໄຂເອກະສານນີ້ພ້ອມກັນ: ອ່ານໃໝ່ແລ້ວ. ກະລຸນາແກ້ໄຂອີກຄັ້ງ.",
   "Reading the files…": "ກຳລັງອ່ານໄຟລ໌…",
   "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "ແບບຈຳລອງ: ບັນທຶກສຳເນົາ ແລ້ວເປີດໃນ Lapin ເປັນລິ້ງ (ໄຟລ໌ → ລິ້ງ IFC…).",
+  // The generator and the issue with reference documents (docs/plan-cde-references.md, stage R5).
+  "A starting point: check its content against the authority's current requirements": "ຈຸດເລີ່ມຕົ້ນ: ກວດເນື້ອໃນຕາມຂໍ້ກຳນົດປັດຈຸບັນຂອງເຈົ້າໜ້າທີ່",
+  "Every type": "ທຸກປະເພດ",
+  "Every folder": "ທຸກໂຟນເດີ",
+  "Not superseded or withdrawn": "ບໍ່ຖືກແທນທີ່ ຫຼື ຖອນ",
+  "Include reference documents": "ລວມເອກະສານອ້າງອີງ",
+  "The documents the project received, as copies of their files under their own names. A folder ticks its documents and its subfolders'.": "ເອກະສານທີ່ໂຄງການໄດ້ຮັບ ເປັນສຳເນົາຂອງໄຟລ໌ພາຍໃຕ້ຊື່ຂອງມັນເອງ. ໂຟນເດີໜຶ່ງໝາຍເອົາເອກະສານຂອງມັນ ແລະ ຂອງໂຟນເດີຍ່ອຍ.",
+  "The project has no reference documents yet (Manage → Reference documents…).": "ໂຄງການຍັງບໍ່ມີເອກະສານອ້າງອີງ (ຈັດການ → ເອກະສານອ້າງອີງ…).",
+  "Requested: it has no file yet": "ຮ້ອງຂໍແລ້ວ: ຍັງບໍ່ມີໄຟລ໌",
+  "reference documents go with the issue": "ເອກະສານອ້າງອີງໄປພ້ອມກັບການອອກ",
+  "Some files are larger than the project keeps: they are fetched from the project's server, or left out when it has none.": "ບາງໄຟລ໌ໃຫຍ່ກວ່າທີ່ໂຄງການເກັບ: ຖືກດຶງມາຈາກເຊີບເວີຂອງໂຄງການ ຫຼື ຖືກປະໄວ້ເມື່ອບໍ່ມີເຊີບເວີ.",
+  "Choose at least one sheet, a document, a reference document, or the model.": "ເລືອກຢ່າງໜ້ອຍໜຶ່ງແຜ່ນ, ເອກະສານ, ເອກະສານອ້າງອີງ ຫຼື ແບບຈຳລອງ.",
 };
 export const LO_PATTERNS: Language['patterns'] = [
   // Publish sets (forum topic 225)
@@ -8005,4 +8017,6 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^Roof plane (A\d+) has an exception but the roof has no such plane any more: it is left aside\.$/, (m) => `ດ້ານຫຼັງຄາ ${m[1]} ມີຂໍ້ຍົກເວັ້ນ ແຕ່ຫຼັງຄາບໍ່ມີດ້ານນີ້ອີກແລ້ວ: ຂ້າມໄປ.`],
   [/^Roof plane (A\d+): the fixed phase of (\d+) mm leaves a strip of eave narrower than 22 cm\.$/, (m) => `ດ້ານຫຼັງຄາ ${m[1]}: ເຟດຄົງທີ່ ${m[2]} mm ເຮັດໃຫ້ເຫຼືອແຖບຊາຍຄາແຄບກວ່າ 22 cm.`],
   [/^(.+) covers (.+): choose another profile for (it|them) first\.$/, (m) => `${m[1]} ປົກຄຸມ ${m[2]}: ເລືອກໂປຣໄຟລ໌ອື່ນກ່ອນ.`],
+  // The issue with reference documents (stage R5).
+  [/^(.+): (.+) is not held here \(larger than the project keeps, and not in the project folder\): it was left out of the issue\.$/, (m) => `${m[1]}: ${m[2]} ບໍ່ໄດ້ເກັບໄວ້ທີ່ນີ້ (ໃຫຍ່ກວ່າທີ່ໂຄງການເກັບ ແລະ ບໍ່ຢູ່ໃນໂຟນເດີໂຄງການ): ຖືກປະໄວ້ນອກການອອກ.`],
 ];

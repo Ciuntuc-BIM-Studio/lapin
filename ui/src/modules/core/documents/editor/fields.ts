@@ -20,7 +20,7 @@ export const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').to
 
 /** The names the project's groups of fields are shown under, by their key's first part. */
 const GROUP_TITLES: Record<string, string> = {
-  project: 'Project', document: 'Document', site: 'Site', date: 'Date', cde: 'Issue', areas: 'Areas', counts: 'Counts', height: 'Heights', levels: 'Storeys', param: 'Parameters',
+  project: 'Project', document: 'Document', site: 'Site', date: 'Date', cde: 'Issue', areas: 'Areas', counts: 'Counts', height: 'Heights', levels: 'Storeys', param: 'Parameters', ref: 'Reference documents',
 };
 
 /** A field's label, else its key's last part. */

@@ -9,7 +9,7 @@ import type { DocInput, DocTemplate } from './docModel';
 
 /** A template whole, as `document.templateJson` gives it and `document.create` / `document.importTemplate` take it. */
 export interface TemplateJson {
-  id: string; title: string; description?: string; lang?: string; isoType?: string;
+  id: string; title: string; description?: string; lang?: string; isoType?: string; indicative?: boolean;
   page?: Record<string, unknown> & { style?: DocStyle }; inputs?: DocInput[]; blocks: unknown[];
   /** When it was kept in the library (YYYY-MM-DD). */
   added?: string;
@@ -92,6 +92,7 @@ export function freeId(title: string, taken: Iterable<string>): string {
 /** A library template as the dialogs list it. */
 export const summaryOf = (t: TemplateJson): DocTemplate => ({
   id: t.id, title: t.title || t.id, description: t.description ?? '', lang: t.lang ?? 'ro', isoType: t.isoType ?? 'RP', inputs: t.inputs ?? [], origin: 'library',
+  ...(t.indicative ? { indicative: true } : {}),
 });
 
 /** The templates a document starts from: the engine's (built-in, then the project's), then the library's the project has not. */

@@ -138,12 +138,18 @@ export interface IssueRequest {
   bytes?: boolean;
   /** A new revision of this earlier issue (its id or GlobalId): its number kept, ISO 19650's P01 → P02. */
   of?: string;
+  /** Reference documents sent with the issue (stage R5): their files as copies under their own names, in the transmittal and the manifest. */
+  references?: string[];
+  /** Their files the project does not hold, as fetched from the server: {sha256: base64}, checked by the engine against the hash. */
+  referenceData?: Record<string, string>;
 }
 export interface IssueResult extends Issue {
   /** The container's folder the files were also written into; null when they are in the project file alone. */
   path: string | null; warnings: Finding[];
   /** Whether the project was saved as a version in the same call (it is clean after). */
   saved?: boolean; versionError?: string; folderProblem?: string;
+  /** The reference documents' files found nowhere (not held here, not fetched): left out of the issue, each said. */
+  skipped?: string[];
   /** The project's file, when the engine handed it back (the browser). */
   file?: { name: string; data: string };
 }

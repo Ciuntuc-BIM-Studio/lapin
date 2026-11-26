@@ -7421,6 +7421,18 @@ const S5D_TAILS: Record<string, string> = {
   "Someone changed this document at the same time: it was read again. Make your change again.": "Alguém alterou este documento ao mesmo tempo: foi lido novamente. Faça a sua alteração outra vez.",
   "Reading the files…": "A ler os ficheiros…",
   "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "Um modelo: guarde uma cópia e abra-a no Lapin como ligação (Ficheiro → Ligar IFC…).",
+  // The generator and the issue with reference documents (docs/plan-cde-references.md, stage R5).
+  "A starting point: check its content against the authority's current requirements": "Um ponto de partida: verifique o conteúdo com os requisitos atuais da autoridade",
+  "Every type": "Qualquer tipo",
+  "Every folder": "Qualquer pasta",
+  "Not superseded or withdrawn": "Não substituídos nem retirados",
+  "Include reference documents": "Incluir documentos de referência",
+  "The documents the project received, as copies of their files under their own names. A folder ticks its documents and its subfolders'.": "Os documentos que o projeto recebeu, como cópias dos seus arquivos com os seus próprios nomes. Uma pasta marca os seus documentos e os das subpastas.",
+  "The project has no reference documents yet (Manage → Reference documents…).": "O projeto ainda não tem documentos de referência (Gerenciar → Documentos de referência…).",
+  "Requested: it has no file yet": "Solicitado: ainda não tem arquivo",
+  "reference documents go with the issue": "documentos de referência vão com a emissão",
+  "Some files are larger than the project keeps: they are fetched from the project's server, or left out when it has none.": "Alguns arquivos são maiores do que o projeto guarda: são buscados no servidor do projeto, ou deixados de fora quando não há um.",
+  "Choose at least one sheet, a document, a reference document, or the model.": "Escolha pelo menos uma folha, um documento, um documento de referência ou o modelo.",
 };
 export const PT_PATTERNS: Language['patterns'] = [
   // Publish sets (forum topic 225)
@@ -7950,4 +7962,6 @@ export const PT_PATTERNS: Language['patterns'] = [
   [/^Roof plane (A\d+) has an exception but the roof has no such plane any more: it is left aside\.$/, (m) => `A água ${m[1]} tem uma exceção, mas a cobertura não tem mais essa água: ela é deixada de lado.`],
   [/^Roof plane (A\d+): the fixed phase of (\d+) mm leaves a strip of eave narrower than 22 cm\.$/, (m) => `Água ${m[1]}: a fase fixa de ${m[2]} mm deixa uma faixa de beiral mais estreita que 22 cm.`],
   [/^(.+) covers (.+): choose another profile for (it|them) first\.$/, (m) => `${m[1]} cobre ${m[2]}: escolha antes outro perfil.`],
+  // The issue with reference documents (stage R5).
+  [/^(.+): (.+) is not held here \(larger than the project keeps, and not in the project folder\): it was left out of the issue\.$/, (m) => `${m[1]}: ${m[2]} não é guardado aqui (maior do que o projeto guarda e fora da pasta do projeto): foi deixado fora da emissão.`],
 ];

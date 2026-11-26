@@ -15,6 +15,9 @@ import { searchFields } from './fields';
 import { chainAt } from './nodeViews';
 import { useViews } from './DocumentEditor';
 import type { Block } from './convert';
+import { readReferenceFilter, REFERENCE_LIST, tableBase, withReferenceFilter, type ReferenceFilter } from './referenceTable';
+import { flattenFolders, folderLanguage, folderTree, nameIn, typeList, type RefFolder, type RefType } from '../../references/references';
+import { useLang } from '../../../../i18n';
 
 /** A text kept as typed and given on leaving it, on Enter, or a moment after the typing stops. */
 function Text({ value, onCommit, field, multiline = false, placeholder }: { value: string; onCommit: (v: string) => void; field: string; multiline?: boolean; placeholder?: string }) {
@@ -56,9 +59,51 @@ function withKey(b: Record<string, unknown>, key: string, v: unknown): Record<st
   return o;
 }
 
+/** The filter of the reference documents' table: by type, folder (with its subfolders) and status. */
+function ReferenceFilterSettings({ source, onChange }: { source: string; onChange: (source: string) => void }) {
+  const [types, setTypes] = useState<RefType[]>([]);
+  const [folders, setFolders] = useState<RefFolder[]>([]);
+  useEffect(() => {
+    let live = true;
+    void typeList().then((r) => { if (live && r) setTypes(r.types); });
+    void folderTree().then((r) => { if (live && r) setFolders(r.folders); });
+    return () => { live = false; };
+  }, []);
+  const lang = folderLanguage(useLang((s) => s.lang));
+  const f = readReferenceFilter(source);
+  const change = (patch: Partial<ReferenceFilter>) => onChange(withReferenceFilter(REFERENCE_LIST, { ...f, ...patch }));
+  return (
+    <>
+      <Row label="Type">
+        <select value={f.type} data-field="doc-set-ref-type" onChange={(e) => change({ type: e.target.value })}>
+          <option value="">Every type</option>
+          {f.type && !types.some((x) => x.id === f.type) && <option value={f.type} data-no-i18n="">{f.type}</option>}
+          {types.map((x) => <option key={x.id} value={x.id} data-no-i18n="">{nameIn(x.name, lang)}</option>)}
+        </select>
+      </Row>
+      <Row label="Folder">
+        <select value={f.folder} data-field="doc-set-ref-folder" onChange={(e) => change({ folder: e.target.value })}>
+          <option value="">Every folder</option>
+          {flattenFolders(folders).map((x) => <option key={x.id} value={x.id} data-no-i18n="">{`${'\u00a0\u00a0'.repeat(x.depth)}${x.text}`}</option>)}
+        </select>
+      </Row>
+      <Row label="Status">
+        <select value={f.status} data-field="doc-set-ref-status" onChange={(e) => change({ status: e.target.value })}>
+          <option value="">Not superseded or withdrawn</option>
+          <option value="received">Received</option>
+          <option value="requested">Requested</option>
+          <option value="expired">Expired</option>
+          <option value="all">All</option>
+        </select>
+      </Row>
+    </>
+  );
+}
+
 function TableSettings({ b, set }: { b: Block; set: (b: Block) => void }) {
   const info = useDocEditor((s) => s.info);
   const source = String(b.source ?? '');
+  const base = tableBase(source);
   // The table's columns: those of its source, every one.
   const all = useFilled({ kind: 'table', source }, []);
   const header = (all?.blocks[0] as { header?: string[] } | undefined)?.header ?? [];
@@ -71,11 +116,12 @@ function TableSettings({ b, set }: { b: Block; set: (b: Block) => void }) {
   return (
     <>
       <Row label="Source">
-        <select value={source} data-field="doc-set-source" onChange={(e) => set({ ...b, source: e.target.value })}>
-          {!info?.tables.some((x) => x.source === source) && <option value={source}>{source}</option>}
+        <select value={base} data-field="doc-set-source" onChange={(e) => set({ ...b, source: e.target.value })}>
+          {!info?.tables.some((x) => x.source === base) && <option value={base}>{base}</option>}
           {info?.tables.map((x) => <option key={x.source} value={x.source}>{x.label}</option>)}
         </select>
       </Row>
+      {base === REFERENCE_LIST && <ReferenceFilterSettings source={source} onChange={(next) => set({ ...b, source: next })} />}
       <Row label="Title"><Text value={typeof b.title === 'string' ? b.title : ''} field="doc-set-title" placeholder="The table's own" onCommit={(v) => set(withKey(b, 'title', v) as Block)} /></Row>
       <div className="doc-input">
         <span className="small" data-i18n-ctx="table">Columns</span>

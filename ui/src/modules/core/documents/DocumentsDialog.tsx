@@ -213,6 +213,7 @@ export function DocumentsDialog() {
                   <button type="button" data-field={`doc-template-${tp.id}`} title="A new document from this template, filled from the project" onClick={() => void make(tp.id)}>
                     <span className="doc-docs-name" data-no-i18n="">{tp.title}</span>
                     <span className="muted small" data-no-i18n="">{tp.description}</span>
+                    {tp.indicative && <span className="tag small" title="A starting point: check its content against the authority's current requirements">Indicative</span>}
                     {tp.origin === 'project' ? <span className="tag small">This project</span> : tp.origin === 'library' ? <span className="tag small">This computer</span> : null}
                   </button>
                 </li>

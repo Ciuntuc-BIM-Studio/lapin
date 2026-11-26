@@ -13510,6 +13510,18 @@ const S5D_TAILS_EL: Record<string, string> = {
   "Someone changed this document at the same time: it was read again. Make your change again.": "Κάποιος άλλαξε αυτό το έγγραφο ταυτόχρονα: διαβάστηκε ξανά. Κάντε ξανά την αλλαγή σας.",
   "Reading the files…": "Ανάγνωση των αρχείων…",
   "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "Ένα μοντέλο: αποθηκεύστε ένα αντίγραφο και ανοίξτε το στο Lapin ως σύνδεσμο (Αρχείο → Σύνδεση IFC…).",
+  // The generator and the issue with reference documents (docs/plan-cde-references.md, stage R5).
+  "A starting point: check its content against the authority's current requirements": "Ένα σημείο εκκίνησης: έλεγξε το περιεχόμενο με τις τρέχουσες απαιτήσεις της αρχής",
+  "Every type": "Κάθε τύπος",
+  "Every folder": "Κάθε φάκελος",
+  "Not superseded or withdrawn": "Όχι αντικατεστημένα ή ανακληθέντα",
+  "Include reference documents": "Συμπερίληψη εγγράφων αναφοράς",
+  "The documents the project received, as copies of their files under their own names. A folder ticks its documents and its subfolders'.": "Τα έγγραφα που έλαβε το έργο, ως αντίγραφα των αρχείων τους με τα δικά τους ονόματα. Ένας φάκελος επιλέγει τα έγγραφά του και των υποφακέλων του.",
+  "The project has no reference documents yet (Manage → Reference documents…).": "Το έργο δεν έχει ακόμη έγγραφα αναφοράς (Διαχείριση → Έγγραφα αναφοράς…).",
+  "Requested: it has no file yet": "Ζητήθηκε: δεν έχει ακόμη αρχείο",
+  "reference documents go with the issue": "έγγραφα αναφοράς πηγαίνουν με την έκδοση",
+  "Some files are larger than the project keeps: they are fetched from the project's server, or left out when it has none.": "Κάποια αρχεία είναι μεγαλύτερα από όσα κρατά το έργο: φέρνονται από τον διακομιστή του έργου ή παραλείπονται όταν δεν έχει.",
+  "Choose at least one sheet, a document, a reference document, or the model.": "Επίλεξε τουλάχιστον ένα φύλλο, ένα έγγραφο, ένα έγγραφο αναφοράς ή το μοντέλο.",
 };
 
 export const EL_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
@@ -14009,4 +14021,6 @@ export const EL_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^Roof plane (A\d+) has an exception but the roof has no such plane any more: it is left aside\.$/, (m) => `Η κλίση ${m[1]} έχει εξαίρεση, αλλά η στέγη δεν έχει πια τέτοια κλίση: αφήνεται στην άκρη.`],
   [/^Roof plane (A\d+): the fixed phase of (\d+) mm leaves a strip of eave narrower than 22 cm\.$/, (m) => `Κλίση ${m[1]}: η σταθερή φάση των ${m[2]} mm αφήνει λωρίδα υδρορροής στενότερη από 22 cm.`],
   [/^(.+) covers (.+): choose another profile for (it|them) first\.$/, (m) => `Το ${m[1]} καλύπτει ${m[2]}: επιλέξτε πρώτα άλλο προφίλ.`],
+  // The issue with reference documents (stage R5).
+  [/^(.+): (.+) is not held here \(larger than the project keeps, and not in the project folder\): it was left out of the issue\.$/, (m) => `${m[1]}: το ${m[2]} δεν κρατείται εδώ (μεγαλύτερο από όσα κρατά το έργο και όχι στον φάκελο του έργου): παραλείφθηκε από την έκδοση.`],
 ];

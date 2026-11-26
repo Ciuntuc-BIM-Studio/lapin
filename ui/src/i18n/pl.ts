@@ -7430,6 +7430,18 @@ const S5D_TAILS: Record<string, string> = {
   "Someone changed this document at the same time: it was read again. Make your change again.": "Ktoś zmienił ten dokument w tym samym czasie: odczytano go ponownie. Wprowadź zmianę jeszcze raz.",
   "Reading the files…": "Odczyt plików…",
   "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "Model: zapisz kopię i otwórz ją w Lapin jako łącze (Plik → Połącz IFC…).",
+  // The generator and the issue with reference documents (docs/plan-cde-references.md, stage R5).
+  "A starting point: check its content against the authority's current requirements": "Punkt wyjścia: sprawdź treść z aktualnymi wymaganiami urzędu",
+  "Every type": "Każdy typ",
+  "Every folder": "Każdy folder",
+  "Not superseded or withdrawn": "Niezastąpione i niewycofane",
+  "Include reference documents": "Dołącz dokumenty referencyjne",
+  "The documents the project received, as copies of their files under their own names. A folder ticks its documents and its subfolders'.": "Dokumenty otrzymane przez projekt, jako kopie ich plików pod ich własnymi nazwami. Folder zaznacza swoje dokumenty i dokumenty podfolderów.",
+  "The project has no reference documents yet (Manage → Reference documents…).": "Projekt nie ma jeszcze dokumentów referencyjnych (Zarządzaj → Dokumenty referencyjne…).",
+  "Requested: it has no file yet": "Zamówiony: nie ma jeszcze pliku",
+  "reference documents go with the issue": "dokumentów referencyjnych idzie z wydaniem",
+  "Some files are larger than the project keeps: they are fetched from the project's server, or left out when it has none.": "Niektóre pliki są większe, niż projekt przechowuje: są pobierane z serwera projektu albo pomijane, gdy go nie ma.",
+  "Choose at least one sheet, a document, a reference document, or the model.": "Wybierz co najmniej jeden arkusz, dokument, dokument referencyjny lub model.",
 };
 export const PL_PATTERNS: Language['patterns'] = [
   // Publish sets (forum topic 225)
@@ -7959,4 +7971,6 @@ export const PL_PATTERNS: Language['patterns'] = [
   [/^Roof plane (A\d+) has an exception but the roof has no such plane any more: it is left aside\.$/, (m) => `Połać ${m[1]} ma wyjątek, ale dach nie ma już takiej połaci: zostaje pominięta.`],
   [/^Roof plane (A\d+): the fixed phase of (\d+) mm leaves a strip of eave narrower than 22 cm\.$/, (m) => `Połać ${m[1]}: ustalona faza ${m[2]} mm zostawia pas okapu węższy niż 22 cm.`],
   [/^(.+) covers (.+): choose another profile for (it|them) first\.$/, (m) => `${m[1]} pokrywa ${m[2]}: najpierw wybierz inny profil.`],
+  // The issue with reference documents (stage R5).
+  [/^(.+): (.+) is not held here \(larger than the project keeps, and not in the project folder\): it was left out of the issue\.$/, (m) => `${m[1]}: ${m[2]} nie jest przechowywany tutaj (większy, niż projekt przechowuje, i nie ma go w folderze projektu): pominięto go w wydaniu.`],
 ];

@@ -17,6 +17,7 @@ import { Block as PreviewBlock } from '../DocumentPreview';
 import { scopeKey, scopeOf, type Block, type DocScopeArg } from './convert';
 import { useDocEditor, useFilled } from './editorStore';
 import { labelOf, type DocFieldsInfo, type ScopeInfo } from './fields';
+import { tableBase } from './referenceTable';
 import type { DocNodeViews } from './extensions';
 
 /** The repeats a position stands in (their main zones), outer first: their scopes, and the prefixes their items are read by. */
@@ -118,7 +119,7 @@ function AtomView({ node, editor, getPos, selected }: NodeViewProps) {
   } else if (!filled) body = <p className="muted small">{t('Reading…')}</p>;
   else body = filled.blocks.map((b, i) => <PreviewBlock key={i} b={b} k={k} width={width} page={1} pages={1} toc={[]} />);
   const def = kind === 'input' ? defs.find((d) => d.key === block.key) : null;
-  const tag = kind === 'table' && info ? info.tables.find((x) => x.source === block.source)?.label : kind === 'input' ? def?.label ?? String(block.key ?? '') : null;
+  const tag = kind === 'table' && info ? info.tables.find((x) => x.source === tableBase(String(block.source ?? '')))?.label : kind === 'input' ? def?.label ?? String(block.key ?? '') : null;
   return (
     <NodeViewWrapper className={`doc-atom doc-atom-${kind}${selected ? ' selected' : ''}`} data-atom={kind} contentEditable={false} onClick={select}>
       {kind !== 'pageBreak' && (

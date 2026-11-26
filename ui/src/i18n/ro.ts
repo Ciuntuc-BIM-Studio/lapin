@@ -7376,6 +7376,18 @@ const S5D_TAILS: Record<string, string> = {
   "Someone changed this document at the same time: it was read again. Make your change again.": "Altcineva a modificat acest document în același timp: a fost citit din nou. Fă modificarea încă o dată.",
   "Reading the files…": "Se citesc fișierele…",
   "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "Un model: salvează o copie și deschide-l în Lapin ca legătură (Fișier → Leagă IFC…).",
+  // The generator and the issue with reference documents (docs/plan-cde-references.md, stage R5).
+  "A starting point: check its content against the authority's current requirements": "Un punct de pornire: verifică-i conținutul după cerințele actuale ale autorității",
+  "Every type": "Orice tip",
+  "Every folder": "Orice folder",
+  "Not superseded or withdrawn": "Neînlocuite și neretrase",
+  "Include reference documents": "Include documentele de referință",
+  "The documents the project received, as copies of their files under their own names. A folder ticks its documents and its subfolders'.": "Documentele primite de proiect, copii ale fișierelor lor sub numele lor. Un folder bifează documentele lui și pe ale subfolderelor.",
+  "The project has no reference documents yet (Manage → Reference documents…).": "Proiectul nu are încă documente de referință (Gestionare → Documente de referință…).",
+  "Requested: it has no file yet": "Solicitat: nu are încă un fișier",
+  "reference documents go with the issue": "documente de referință pleacă odată cu emiterea",
+  "Some files are larger than the project keeps: they are fetched from the project's server, or left out when it has none.": "Unele fișiere sunt mai mari decât păstrează proiectul: sunt aduse de pe serverul proiectului sau lăsate deoparte când nu are unul.",
+  "Choose at least one sheet, a document, a reference document, or the model.": "Alege cel puțin o planșă, un document, un document de referință sau modelul.",
 };
 export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   // Publish sets (forum topic 225)
@@ -7905,4 +7917,6 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^Roof plane (A\d+) has an exception but the roof has no such plane any more: it is left aside\.$/, (m) => `Apa ${m[1]} are o excepție, dar acoperișul nu mai are o astfel de apă: este lăsată deoparte.`],
   [/^Roof plane (A\d+): the fixed phase of (\d+) mm leaves a strip of eave narrower than 22 cm\.$/, (m) => `Apa ${m[1]}: faza fixată de ${m[2]} mm lasă o fâșie de streașină mai îngustă de 22 cm.`],
   [/^(.+) covers (.+): choose another profile for (it|them) first\.$/, (m) => `${m[1]} acoperă ${m[2]}: alege întâi alt profil.`],
+  // The issue with reference documents (stage R5).
+  [/^(.+): (.+) is not held here \(larger than the project keeps, and not in the project folder\): it was left out of the issue\.$/, (m) => `${m[1]}: ${m[2]} nu este păstrat aici (e mai mare decât păstrează proiectul și nu e în folderul proiectului): a fost lăsat în afara emiterii.`],
 ];

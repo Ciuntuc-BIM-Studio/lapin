@@ -13539,6 +13539,18 @@ const S5D_TAILS: Record<string, string> = {
   "Someone changed this document at the same time: it was read again. Make your change again.": "Någon ändrade det här dokumentet samtidigt: det lästes in igen. Gör din ändring igen.",
   "Reading the files…": "Läser filerna…",
   "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "En modell: spara en kopia och öppna den i Lapin som en länk (Arkiv → Länka IFC…).",
+  // The generator and the issue with reference documents (docs/plan-cde-references.md, stage R5).
+  "A starting point: check its content against the authority's current requirements": "En utgångspunkt: kontrollera innehållet mot myndighetens aktuella krav",
+  "Every type": "Alla typer",
+  "Every folder": "Alla mappar",
+  "Not superseded or withdrawn": "Inte ersatta eller återkallade",
+  "Include reference documents": "Ta med referensdokument",
+  "The documents the project received, as copies of their files under their own names. A folder ticks its documents and its subfolders'.": "Dokumenten som projektet har tagit emot, som kopior av sina filer under sina egna namn. En mapp markerar sina dokument och undermapparnas.",
+  "The project has no reference documents yet (Manage → Reference documents…).": "Projektet har inga referensdokument än (Hantera → Referensdokument…).",
+  "Requested: it has no file yet": "Begärt: har ingen fil än",
+  "reference documents go with the issue": "referensdokument följer med utgåvan",
+  "Some files are larger than the project keeps: they are fetched from the project's server, or left out when it has none.": "Vissa filer är större än projektet behåller: de hämtas från projektets server, eller utelämnas när det inte har någon.",
+  "Choose at least one sheet, a document, a reference document, or the model.": "Välj minst ett ritningsblad, ett dokument, ett referensdokument eller modellen.",
 };
 export const SV_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   // Publish sets (forum topic 225)
@@ -14067,4 +14079,6 @@ export const SV_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^Roof plane (A\d+) has an exception but the roof has no such plane any more: it is left aside\.$/, (m) => `Takplan ${m[1]} har ett undantag, men taket har inte längre något sådant plan: det lämnas åt sidan.`],
   [/^Roof plane (A\d+): the fixed phase of (\d+) mm leaves a strip of eave narrower than 22 cm\.$/, (m) => `Takplan ${m[1]}: den fixerade fasen på ${m[2]} mm lämnar en takfotsremsa smalare än 22 cm.`],
   [/^(.+) covers (.+): choose another profile for (it|them) first\.$/, (m) => `${m[1]} täcker ${m[2]}: välj först en annan profil.`],
+  // The issue with reference documents (stage R5).
+  [/^(.+): (.+) is not held here \(larger than the project keeps, and not in the project folder\): it was left out of the issue\.$/, (m) => `${m[1]}: ${m[2]} finns inte här (större än projektet behåller, och inte i projektmappen): den utelämnades ur utgåvan.`],
 ];

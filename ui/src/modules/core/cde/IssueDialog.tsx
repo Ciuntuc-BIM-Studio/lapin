@@ -13,6 +13,9 @@
  * made directly where the rules allow.
  * The same documents issued again are a new revision of their issue (ISO 19650: issue 1 at P01, then P02, C01…): its number and
  * GlobalId kept, the revision after its last; "New issue" stays a choice, and any earlier issue can be picked.
+ * Include reference documents (stage R5, docs/plan-cde-references.md §6): the project's received documents, picked one by one or by
+ * folder, go with the issue as copies of their files; a file the project does not hold is fetched from its server first, else
+ * the engine leaves it out and says so.
  */
 
 import { backdropClose } from '../../../shell/Dialog';
@@ -31,6 +34,8 @@ import { documentPictures } from '../documents/documents';
 import { IssueOnServer } from '../CdePublish';
 import { t } from '../../../i18n';
 import { publishSets, type PublishSet } from '../publish/publish';
+import { fileOf, flattenFolders, folderIds, folderTree, listRefs, type RefDoc, type RefFolder } from '../references/references';
+import { canSend, chosenRefs, folderState, notHeld, toggleFolder } from './issueReferences';
 
 export function IssueDialog() {
   const nodes = useSession((s) => s.nodes);
@@ -61,6 +66,11 @@ export function IssueDialog() {
   // Publish sets (forum topic 225): one picked ticks its sheets; its views stay out (an issue sends sheets).
   const [publish, setPublish] = useState<PublishSet[]>([]);
   const [fromSet, setFromSet] = useState('');
+  // The reference documents that go with it (stage R5): off until asked, then the project's register to pick from.
+  const [withRefs, setWithRefs] = useState(false);
+  const [refDocs, setRefDocs] = useState<RefDoc[]>([]);
+  const [refTree, setRefTree] = useState<RefFolder[]>([]);
+  const [chosenRefIds, setChosenRefIds] = useState<Set<string>>(new Set());
   const [phase, dispatch] = useReducer(issuePhase, { kind: 'form' });
   const done = phase.kind === 'done' ? phase.result : null;
   const busy = phase.kind === 'issuing';
@@ -89,6 +99,19 @@ export function IssueDialog() {
   // The written documents go too, all ticked at first (docs/plan-documents.md).
   useEffect(() => { setChosenDocs((c) => c ?? (docs.length ? new Set(docs.map((x) => x.id)) : null)); }, [docs]);
   const docIds = useMemo(() => docs.filter((x) => chosenDocs?.has(x.id)).map((x) => x.id), [docs, chosenDocs]);
+  useEffect(() => {
+    if (!withRefs) return;
+    let live = true;
+    void Promise.all([listRefs(), folderTree()]).then(([list, tree]) => {
+      if (!live) return;
+      setRefDocs(list);
+      setRefTree(tree?.folders ?? []);
+    });
+    return () => { live = false; };
+  }, [withRefs, nodes]);
+  const sendRefs = useMemo(() => (withRefs ? chosenRefs(refDocs, chosenRefIds) : []), [withRefs, refDocs, chosenRefIds]);
+  const refsNotHeld = useMemo(() => notHeld(sendRefs), [sendRefs]);
+  const toggleRef = (id: string) => setChosenRefIds((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   // The checks and the names follow what is chosen (not while the issue made is shown), a moment after the typing stops;
   // each answer is kept with what it was asked for, so an issue goes only on the checks of what is chosen now.
@@ -136,7 +159,7 @@ export function IssueDialog() {
   const folderHere = canUseFolder() && Boolean(s?.folder);
   const blocked = (current?.blocking ?? 0) > 0;
   const warned = (current?.warnings ?? 0) > 0;
-  const ready = canIssue() && current != null && chosen && (ids.length > 0 || model || docIds.length > 0) && revisionFits(revision, targetSeries) && !blocked && (!warned || anyway) && !busy && !done;
+  const ready = canIssue() && current != null && chosen && (ids.length > 0 || model || docIds.length > 0 || sendRefs.length > 0) && revisionFits(revision, targetSeries) && !blocked && (!warned || anyway) && !busy && !done;
 
   const go = async () => {
     if (!ready) return;
@@ -150,15 +173,23 @@ export function IssueDialog() {
       // A DOCX carries its pictures as the interface draws them (an SVG and a PNG each), as File → Export makes them.
       const withDocx = docIds.length > 0 && docx;
       const documentImages = withDocx ? Object.fromEntries(await Promise.all(docIds.map(async (id) => [id, await documentPictures(id)] as const))) : undefined;
+      // The reference documents' files above the project's keep limit, fetched from its server when it has one (the engine checks their hashes).
+      const referenceData: Record<string, string> = {};
+      for (const f of refsNotHeld) {
+        const got = await fileOf(f.id, f.name);
+        if (got?.data) referenceData[f.sha256] = got.data;
+      }
       const r = await issue({
         name: name.trim(), revision, status, container, sheets: ids, model, keepModel: model && keepModel, dxf, set, note: note.trim(), documents: docIds, documentsDocx: withDocx,
         ...(documentImages ? { documentImages } : {}),
         toFolder: folderHere && toFolder, ...(engineInBrowser ? { bytes: true } : {}), ...(target ? { of: target } : {}),
+        ...(sendRefs.length ? { references: sendRefs.map((d) => d.id) } : {}), ...(Object.keys(referenceData).length ? { referenceData } : {}),
       });
       if (r.file) await keepProjectFile(r.file);
       dispatch({ type: 'issued', result: r });
       if (r.folderProblem) notify(r.folderProblem);
       if (r.versionError) notify(r.versionError);
+      for (const why of r.skipped ?? []) notify(why);
       notify(`Issued ${r.name}: ${r.files.length} files${r.path ? ` in ${r.container}` : ' in the project file'}.`);
     } catch (e) {
       dispatch({ type: 'failed' });
@@ -197,6 +228,7 @@ export function IssueDialog() {
                 </li>
               ))}
             </ul>
+            {(done.skipped ?? []).length > 0 && <ul className="cde-warn small" data-field="issue-skipped">{done.skipped!.map((x) => <li key={x} data-no-i18n="">{x}</li>)}</ul>}
             {done.path && canUseFolder() && <button type="button" className="link" onClick={() => void openFolder(done.path!)}><FolderOpen size={12} /> Open folder</button>}
             <IssueOnServer issue={done} />
           </div>
@@ -269,6 +301,38 @@ export function IssueDialog() {
                     );
                   })}
                   {docIds.length > 0 && <label className="row small indent"><input type="checkbox" data-field="issue-documents-docx" checked={docx} onChange={(e) => setDocx(e.target.checked)} /> <span>Also as DOCX</span></label>}
+                </div>
+              )}
+              <label className="row small"><input type="checkbox" data-field="issue-references" checked={withRefs} onChange={(e) => setWithRefs(e.target.checked)} /> <span>Include reference documents</span></label>
+              {withRefs && (
+                <div className="cde-documents indent" data-field="issue-references-list">
+                  <p className="muted small">The documents the project received, as copies of their files under their own names. A folder ticks its documents and its subfolders'.</p>
+                  {refDocs.length === 0 && <p className="muted small">The project has no reference documents yet (Manage → Reference documents…).</p>}
+                  {refDocs.length > 0 && flattenFolders(refTree).map((fo) => {
+                    const state = folderState(chosenRefIds, refDocs, refTree, fo.id);
+                    const own = refDocs.filter((d) => d.folder === fo.id);
+                    // A folder with nothing in it or below it is left out of the list.
+                    if (own.length === 0 && !refDocs.some((d) => folderIds(refTree, fo.id).has(d.folder ?? ''))) return null;
+                    return (
+                      <div key={fo.id} style={{ paddingLeft: fo.depth * 14 }}>
+                        <label className="row small">
+                          <input type="checkbox" data-field={`issue-ref-folder-${fo.id}`} checked={state === 'on'} ref={(el) => { if (el) el.indeterminate = state === 'mixed'; }}
+                            onChange={(e) => setChosenRefIds((c) => toggleFolder(c, refDocs, refTree, fo.id, e.target.checked))} />
+                          <b data-no-i18n="">{fo.text}</b>
+                        </label>
+                        {own.map((d) => (
+                          <label key={d.id} className="row small indent" title={canSend(d) ? undefined : t('Requested: it has no file yet')}>
+                            <input type="checkbox" data-field={`issue-ref-${d.id}`} disabled={!canSend(d)} checked={chosenRefIds.has(d.id) && canSend(d)} onChange={() => toggleRef(d.id)} />
+                            <span data-no-i18n="">{d.title}{d.number ? ` · ${d.number}` : ''}</span>
+                            <code className="muted" data-no-i18n="">{d.files.map((f) => f.name).join(', ')}</code>
+                            {d.status !== 'received' && <span className="muted">{d.status === 'expired' ? 'Expired' : d.status === 'requested' ? 'Requested' : d.status === 'superseded' ? 'Superseded' : d.status === 'withdrawn' ? 'Withdrawn' : ''}</span>}
+                          </label>
+                        ))}
+                      </div>
+                    );
+                  })}
+                  {sendRefs.length > 0 && <p className="muted small"><span data-no-i18n="">{sendRefs.length}</span> <span>reference documents go with the issue</span></p>}
+                  {refsNotHeld.length > 0 && <p className="cde-warn small">Some files are larger than the project keeps: they are fetched from the project's server, or left out when it has none.</p>}
                 </div>
               )}
               {names && <p className="muted small">With the transmittal (PDF and CSV) and the manifest: <code>{names.transmittal}</code></p>}

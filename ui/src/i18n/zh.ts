@@ -7418,6 +7418,18 @@ const S5D_TAILS: Record<string, string> = {
   "Someone changed this document at the same time: it was read again. Make your change again.": "有人同时修改了此文件：已重新读取。请再次进行你的修改。",
   "Reading the files…": "正在读取文件…",
   "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "模型：保存一份副本，然后在 Lapin 中作为链接打开（文件 → 链接 IFC…）。",
+  // The generator and the issue with reference documents (docs/plan-cde-references.md, stage R5).
+  "A starting point: check its content against the authority's current requirements": "一个起点：请按主管机关当前的要求核对其内容",
+  "Every type": "任何类型",
+  "Every folder": "任何文件夹",
+  "Not superseded or withdrawn": "未被取代或撤回",
+  "Include reference documents": "包括参考文件",
+  "The documents the project received, as copies of their files under their own names. A folder ticks its documents and its subfolders'.": "项目收到的文件，以其文件的副本、用其自己的名称发出。勾选一个文件夹即勾选其中及其子文件夹中的文件。",
+  "The project has no reference documents yet (Manage → Reference documents…).": "项目还没有参考文件（管理 → 参考文件…）。",
+  "Requested: it has no file yet": "已申请：还没有文件",
+  "reference documents go with the issue": "份参考文件随发布一起发出",
+  "Some files are larger than the project keeps: they are fetched from the project's server, or left out when it has none.": "有些文件大于项目保留的上限：会从项目的服务器取回，没有服务器时则被略去。",
+  "Choose at least one sheet, a document, a reference document, or the model.": "请至少选择一张图纸、一个文档、一份参考文件或模型。",
 };
 export const ZH_PATTERNS: Language['patterns'] = [
   // Publish sets (forum topic 225)
@@ -7947,4 +7959,6 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^Roof plane (A\d+) has an exception but the roof has no such plane any more: it is left aside\.$/, (m) => `坡面 ${m[1]} 有例外设置，但屋顶已没有该坡面：已搁置.`],
   [/^Roof plane (A\d+): the fixed phase of (\d+) mm leaves a strip of eave narrower than 22 cm\.$/, (m) => `坡面 ${m[1]}：固定相位 ${m[2]} mm 使檐口留下窄于 22 cm 的条带.`],
   [/^(.+) covers (.+): choose another profile for (it|them) first\.$/, (m) => `${m[1]} 覆盖 ${m[2]}：请先选择其他型材.`],
+  // The issue with reference documents (stage R5).
+  [/^(.+): (.+) is not held here \(larger than the project keeps, and not in the project folder\): it was left out of the issue\.$/, (m) => `${m[1]}：${m[2]} 不在此处（大于项目保留的上限，且不在项目文件夹中）：已从发布中略去。`],
 ];

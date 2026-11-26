@@ -7419,6 +7419,18 @@ const S5D_TAILS: Record<string, string> = {
   "Someone changed this document at the same time: it was read again. Make your change again.": "En anden ændrede dette dokument samtidig: det blev læst igen. Foretag din ændring igen.",
   "Reading the files…": "Læser filerne…",
   "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "En model: gem en kopi og åbn den i Lapin som et link (Filer → Link IFC…).",
+  // The generator and the issue with reference documents (docs/plan-cde-references.md, stage R5).
+  "A starting point: check its content against the authority's current requirements": "Et udgangspunkt: kontrollér indholdet mod myndighedens gældende krav",
+  "Every type": "Alle typer",
+  "Every folder": "Alle mapper",
+  "Not superseded or withdrawn": "Ikke erstattet eller trukket tilbage",
+  "Include reference documents": "Medtag referencedokumenter",
+  "The documents the project received, as copies of their files under their own names. A folder ticks its documents and its subfolders'.": "De dokumenter projektet har modtaget, som kopier af deres filer under deres egne navne. En mappe markerer sine dokumenter og undermappernes.",
+  "The project has no reference documents yet (Manage → Reference documents…).": "Projektet har endnu ingen referencedokumenter (Administrer → Referencedokumenter…).",
+  "Requested: it has no file yet": "Anmodet: den har endnu ingen fil",
+  "reference documents go with the issue": "referencedokumenter følger med udsendelsen",
+  "Some files are larger than the project keeps: they are fetched from the project's server, or left out when it has none.": "Nogle filer er større end projektet gemmer: de hentes fra projektets server, eller udelades når det ikke har en.",
+  "Choose at least one sheet, a document, a reference document, or the model.": "Vælg mindst ét ark, et dokument, et referencedokument eller modellen.",
 };
 export const DA_PATTERNS: Language['patterns'] = [
   // Publish sets (forum topic 225)
@@ -7948,4 +7960,6 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^Roof plane (A\d+) has an exception but the roof has no such plane any more: it is left aside\.$/, (m) => `Tagflade ${m[1]} har en undtagelse, men taget har ikke længere en sådan flade: den lades ligge.`],
   [/^Roof plane (A\d+): the fixed phase of (\d+) mm leaves a strip of eave narrower than 22 cm\.$/, (m) => `Tagflade ${m[1]}: den faste fase på ${m[2]} mm efterlader en tagfodsstrimmel smallere end 22 cm.`],
   [/^(.+) covers (.+): choose another profile for (it|them) first\.$/, (m) => `${m[1]} dækker ${m[2]}: vælg først en anden profil.`],
+  // The issue with reference documents (stage R5).
+  [/^(.+): (.+) is not held here \(larger than the project keeps, and not in the project folder\): it was left out of the issue\.$/, (m) => `${m[1]}: ${m[2]} gemmes ikke her (større end projektet gemmer, og ikke i projektmappen): den blev udeladt af udsendelsen.`],
 ];

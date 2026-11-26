@@ -13539,6 +13539,18 @@ const S5D_TAILS: Record<string, string> = {
   "Someone changed this document at the same time: it was read again. Make your change again.": "มีคนแก้ไขเอกสารนี้พร้อมกัน: อ่านใหม่แล้ว โปรดแก้ไขอีกครั้ง",
   "Reading the files…": "กำลังอ่านไฟล์…",
   "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "โมเดล: บันทึกสำเนาแล้วเปิดใน Lapin เป็นลิงก์ (ไฟล์ → ลิงก์ IFC…)",
+  // The generator and the issue with reference documents (docs/plan-cde-references.md, stage R5).
+  "A starting point: check its content against the authority's current requirements": "จุดเริ่มต้น: ตรวจเนื้อหาให้ตรงตามข้อกำหนดปัจจุบันของหน่วยงาน",
+  "Every type": "ทุกประเภท",
+  "Every folder": "ทุกโฟลเดอร์",
+  "Not superseded or withdrawn": "ไม่ถูกแทนที่หรือเพิกถอน",
+  "Include reference documents": "รวมเอกสารอ้างอิง",
+  "The documents the project received, as copies of their files under their own names. A folder ticks its documents and its subfolders'.": "เอกสารที่โครงการได้รับ เป็นสำเนาไฟล์ภายใต้ชื่อของมันเอง โฟลเดอร์หนึ่งเลือกเอกสารของมันและของโฟลเดอร์ย่อย.",
+  "The project has no reference documents yet (Manage → Reference documents…).": "โครงการยังไม่มีเอกสารอ้างอิง (จัดการ → เอกสารอ้างอิง…).",
+  "Requested: it has no file yet": "ขอแล้ว: ยังไม่มีไฟล์",
+  "reference documents go with the issue": "เอกสารอ้างอิงไปพร้อมกับการออก",
+  "Some files are larger than the project keeps: they are fetched from the project's server, or left out when it has none.": "บางไฟล์ใหญ่กว่าที่โครงการเก็บ: ดึงมาจากเซิร์ฟเวอร์ของโครงการ หรือเว้นไว้เมื่อไม่มีเซิร์ฟเวอร์.",
+  "Choose at least one sheet, a document, a reference document, or the model.": "เลือกอย่างน้อยหนึ่งแผ่น เอกสาร เอกสารอ้างอิง หรือแบบจำลอง.",
 };
 export const TH_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   // Publish sets (forum topic 225)
@@ -14067,4 +14079,6 @@ export const TH_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^Roof plane (A\d+) has an exception but the roof has no such plane any more: it is left aside\.$/, (m) => `ระนาบหลังคา ${m[1]} มีข้อยกเว้น แต่หลังคาไม่มีระนาบนี้อีกแล้ว: ข้ามไป`],
   [/^Roof plane (A\d+): the fixed phase of (\d+) mm leaves a strip of eave narrower than 22 cm\.$/, (m) => `ระนาบหลังคา ${m[1]}: เฟสคงที่ ${m[2]} mm ทำให้เหลือแถบชายคาแคบกว่า 22 cm`],
   [/^(.+) covers (.+): choose another profile for (it|them) first\.$/, (m) => `${m[1]} ครอบคลุม ${m[2]}: เลือกโปรไฟล์อื่นก่อน`],
+  // The issue with reference documents (stage R5).
+  [/^(.+): (.+) is not held here \(larger than the project keeps, and not in the project folder\): it was left out of the issue\.$/, (m) => `${m[1]}: ${m[2]} ไม่ได้เก็บไว้ที่นี่ (ใหญ่กว่าที่โครงการเก็บ และไม่อยู่ในโฟลเดอร์โครงการ): ถูกเว้นไว้นอกการออก.`],
 ];
