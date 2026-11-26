@@ -137,6 +137,8 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .start-workspace { display: flex; align-items: center; gap: 10px; margin-top: 22px; }
 .start-workspace > span { font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); }
 .start-workspace select { flex: 1; min-width: 0; }
+.start-flow { display: flex; align-items: center; gap: 8px; margin-top: 10px; cursor: pointer; }
+.start-flow > span:first-of-type { font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); }
 .start-lang { display: inline-flex; align-items: center; gap: 6px; }
 .start-lang select { padding: 2px 4px; }
 .recent-body { flex: 1; display: flex; flex-direction: column; gap: 2px; }

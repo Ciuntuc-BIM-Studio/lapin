@@ -15,7 +15,7 @@ import { useUi } from '../app/store';
 import { NAV_STYLES, NAV_STYLE_IDS, type NavStyleId } from '../app/navStyle';
 import { NUDGE_STEPS } from '../app/nudge';
 import { MaterialStandardChoice } from './MaterialStandardChoice';
-import { FLOW_EXTRAS, POLAR_STEPS, SNAP_MODES, resolveTheme, setPrefs, turnOnFlowExtras, usePrefs, type CoordSystem, type FlowExtra, type ThemeChoice, type ViewportTheme } from '../app/prefs';
+import { FLOW_EXTRAS, POLAR_STEPS, SNAP_MODES, resolveTheme, setPrefs, turnOffFlowExtras, turnOnFlowExtras, usePrefs, type CoordSystem, type FlowExtra, type ThemeChoice, type ViewportTheme } from '../app/prefs';
 import { setDisplay, useDisplay, type Display } from '../app/display';
 import { themeAccent3D, setHighlight, useHighlight } from '../app/highlight';
 import { ColourField, PaletteManager } from './ColourField';
@@ -57,17 +57,17 @@ const FLOW_EXTRA_LABELS: Record<FlowExtra, string> = {
   precisionTools: 'Precision tools: 3D cursor pill, equal-spacing magnets, animated tool tips, right-click + WASD flight',
 };
 
-/** Preferences → General → Flow extras: each off until chosen here or by the Flow preset; tactile sounds and the role's quick tools on their own. */
+/** Preferences → General → Flow extras: each on by default, switched here or all at once on the start screen; tactile sounds and the role's quick tools on their own. */
 function FlowExtras() {
   const p = usePrefs();
   return <>
     <h4>Flow extras</h4>
-    <p className="muted small">Off by default. The Flow preset (View → Interface…) turns these on; each can be switched here.</p>
+    <p className="muted small">On by default. The start screen's Flow extras switch turns them all off or on; each can be switched here.</p>
     {FLOW_EXTRAS.map((k) => (
       <label className="row small" key={k}><input type="checkbox" data-field={`prefs-${k}`} checked={p[k]} onChange={(e) => setPrefs({ [k]: e.target.checked })} /> {FLOW_EXTRA_LABELS[k]}</label>
     ))}
     <p className="row small"><button type="button" className="btn" data-field="prefs-flow-all" onClick={turnOnFlowExtras}>Turn all on</button>
-      <button type="button" className="btn" onClick={() => setPrefs(Object.fromEntries(FLOW_EXTRAS.map((k) => [k, false])))}>Turn all off</button></p>
+      <button type="button" className="btn" onClick={turnOffFlowExtras}>Turn all off</button></p>
     <label className="row small"><input type="checkbox" data-field="prefs-roleHotbars" checked={p.roleHotbars} onChange={(e) => setPrefs({ roleHotbars: e.target.checked })} /> Quick tools chosen for the workspace</label>
     <p className="muted small">The 1–9 quick tools a workspace starts with (Architecture, Structure, MEP, Site, Drafting); on when a role card is picked. Off: the quick tools as before. Tools you put in the slots stay.</p>
     <label className="row small"><input type="checkbox" data-field="prefs-tactile-sounds" checked={p.tactileSounds} onChange={(e) => setPrefs({ tactileSounds: e.target.checked })} /> Tactile feedback sounds (snap, place, undo)</label>
