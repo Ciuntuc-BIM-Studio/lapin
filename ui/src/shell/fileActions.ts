@@ -65,6 +65,8 @@ export function baseFileActions(): FileAction[] {
     { id: 'file.speckleReceive', label: 'Speckle: Receive…', menu: 'speckle-receive', shown: () => hasModule('speckle') && !engineInBrowser, run: dialog('speckleReceive') },
     // Archicad (docs/plan-archicad.md, A1): the model of a running Archicad (Tapir) received, and its IFC sent to the project's Atrium server.
     { id: 'file.archicadReceive', label: 'Archicad: Receive…', menu: 'archicad-receive', shown: () => hasModule('archicad') && !engineInBrowser, run: dialog('archicadReceive') },
+    // A2: only what changed in Archicad since the last receive, in place (the module's "dialog" runs it and closes: no window of its own).
+    { id: 'file.archicadUpdate', label: 'Get latest from Archicad', menu: 'archicad-update', shown: () => hasModule('archicad') && !engineInBrowser, run: dialog('archicadUpdate') },
     { id: 'file.archicadSend', label: 'Archicad: Send to Atrium…', menu: 'archicad-send', shown: () => hasModule('archicad') && !engineInBrowser, run: dialog('archicadSend') },
     // Lapin Extensions (docs/plan-extensions.md): content packs from the catalogue, into Lapin's own libraries.
     { id: 'file.extensions', label: 'Extensions…', menu: 'extensions', run: dialog('extensions') },
@@ -95,7 +97,7 @@ export const HOST_SECTIONS: FileSection[] = [
     ids: [
       { sub: 'Import', ids: ['file.importProjectTypes', 'file.importIfc', 'file.importFragments', 'file.importBos', 'file.importSdnf', 'file.linkIfc', 'file.linkLapin', 'file.linkPointCloud', 'file.importDxf', 'file.importTrace', 'file.importMesh'] },
       { sub: 'Export', ids: ['file.exportExchange', 'file.exportJg', 'file.exportMesh', 'file.exportHtml', 'file.publish'] },
-      { sub: 'Collaborate', ids: ['file.speckleSend', 'file.speckleReceive', 'file.archicadReceive', 'file.archicadSend', 'file.cdeProjects', 'file.collaborate', 'file.saveServer', 'file.getLatest', 'file.openServer', 'file.share', 'file.join'] },
+      { sub: 'Collaborate', ids: ['file.speckleSend', 'file.speckleReceive', 'file.archicadReceive', 'file.archicadUpdate', 'file.archicadSend', 'file.cdeProjects', 'file.collaborate', 'file.saveServer', 'file.getLatest', 'file.openServer', 'file.share', 'file.join'] },
     ],
   },
   { ids: ['file.optimizeIfc', 'file.extensions'] },

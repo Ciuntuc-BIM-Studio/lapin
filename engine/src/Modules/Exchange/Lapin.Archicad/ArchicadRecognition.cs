@@ -254,7 +254,7 @@ public static class ArchicadRecognition
             // Its openings: tagged with their wall's model, so a later receive that removes the wall finds them too.
             foreach (var op in m.RelatedOf(id, IfcClass.RelVoidsElement).ToList()) Tag(edit, op.Id, mo);
         }
-        return new ArchicadRecognitionReport(recognized, offeredCount, byClass, kept, report);
+        return new ArchicadRecognitionReport(recognized, offeredCount, byClass, kept, report) { CreatedTypes = new HashSet<string>(ctx.CreatedTypes) };
     }
 
     static void Restore(IEdit edit, Saved s)

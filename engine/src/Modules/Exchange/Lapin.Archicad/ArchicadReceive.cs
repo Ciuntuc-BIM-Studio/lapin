@@ -10,10 +10,15 @@ namespace Lapin.Archicad;
 /// <summary>
 /// How a receive goes (docs/plan-archicad.md §3): the missing storeys made (<c>storeys: "create"</c>, the default) or only the
 /// project's used; recognition on (the default: Archicad gives parameters, not meshes); the coordinates from Archicad's project
-/// origin (the default) or its survey point; as a copy with ids of its own.
+/// origin (the default) or its survey point; as a copy with ids of its own; the project georeferenced from Archicad's location when it
+/// has none (A2, <see cref="ArchicadGeo"/>; on by default).
 /// </summary>
-public sealed record ArchicadReceiveOptions(int? Port = null, bool CreateStoreys = true, bool Recognize = true, string Origin = "project", bool AsCopy = false, FidelityOptions? Fidelity = null)
+public sealed record ArchicadReceiveOptions(int? Port = null, bool CreateStoreys = true, bool Recognize = true, string Origin = "project", bool AsCopy = false, FidelityOptions? Fidelity = null,
+    bool Georeference = true)
 {
+    /// <summary>The model's key when it is not the one its project's name gives (an update of a model received under its earlier name, A2).</summary>
+    public string? Key { get; init; }
+
     public static ArchicadReceiveOptions From(JsonObject a)
     {
         var origin = (string?)a["origin"] ?? "project";
@@ -21,8 +26,23 @@ public sealed record ArchicadReceiveOptions(int? Port = null, bool CreateStoreys
         var storeys = (string?)a["storeys"] ?? "create";
         if (storeys is not ("create" or "existing")) throw new CommandException($"„{storeys}” is not create or existing.");
         bool Flag(string k, bool fallback) => a[k] is JsonValue v && v.TryGetValue<bool>(out var b) ? b : fallback;
-        return new(Json.Number(a["port"]) is { } p ? (int)p : null, storeys == "create", Flag("recognize", true), origin, Flag("asCopy", false));
+        return new(Json.Number(a["port"]) is { } p ? (int)p : null, storeys == "create", Flag("recognize", true), origin, Flag("asCopy", false), null, Flag("georeference", true));
     }
+
+    /// <summary>The options as an update keeps them with the model's link (and gives them back to <see cref="From"/>).</summary>
+    public JsonObject ToJson() => new()
+    {
+        ["storeys"] = CreateStoreys ? "create" : "existing", ["recognize"] = Recognize, ["origin"] = Origin, ["asCopy"] = AsCopy, ["georeference"] = Georeference,
+    };
+}
+
+/// <summary>
+/// What an update (docs/plan-archicad.md A2) tells a receive beside its partial read (<see cref="ArchicadModel.Scope"/>): the elements
+/// Archicad deleted since (removed), and those to bring in again whatever their hash (their composite changed).
+/// </summary>
+public sealed record ArchicadScope(IReadOnlySet<string> Deleted, IReadOnlySet<string> Force)
+{
+    public static readonly ArchicadScope None = new(new HashSet<string>(), new HashSet<string>());
 }
 
 /// <summary>What recognition made of a receive: how many elements became native (by class), how many were offered, why the rest stayed references, and the gate's report.</summary>
@@ -42,6 +62,9 @@ public sealed record ArchicadRecognitionReport(int Recognized, int Offered, IRea
             ["fidelity"] = Fidelity?.ToJson(),
         };
     }
+
+    /// <summary>The types the recognisers made in this receive (not found in the project): those a receive may tag as its composites' (A2).</summary>
+    public IReadOnlySet<string> CreatedTypes { get; init; } = new HashSet<string>();
 }
 
 public sealed record ArchicadReceiveResult(int Added, int Updated, int Unchanged, int Removed, int Native, int References, IReadOnlyDictionary<string, int> Storeys,
@@ -62,8 +85,16 @@ public sealed record ArchicadReceiveResult(int Added, int Updated, int Unchanged
             ["recognized"] = Recognition?.Recognized ?? 0, ["recognition"] = Recognition?.ToJson(), ["levels"] = Levels?.ToJson(), ["groupId"] = GroupId,
             ["notes"] = new JsonArray([.. Notes.Select(n => (JsonNode)n)]),
             ["projectInfo"] = ProjectInfo?.ToJson(ArchicadProjectInfo.Source),
+            ["georeference"] = Georeference?.DeepClone(),
+            ["types"] = Types?.DeepClone(),
         };
     }
+
+    /// <summary>What Archicad's location did to the project's georeference (A2, <see cref="ArchicadGeo"/>); null when it was not read.</summary>
+    public JsonObject? Georeference { get; init; }
+
+    /// <summary>The types and materials matched by their Archicad attribute's GUID and updated in place (A2, <see cref="ArchicadTypes"/>).</summary>
+    public JsonObject? Types { get; init; }
 
     /// <summary>What Archicad's Project Info did (A1b): the empty fields it filled, those that differ (left as they are), what was kept apart; null when it was not read.</summary>
     public Lapin.Platform.Documents.ProjectInfo.SourceReport? ProjectInfo { get; init; }
@@ -90,6 +121,8 @@ public static class ArchicadReceive
     public const string Key = "archicad";
 
     public static string ModelKey(ArchicadSource s, bool asCopy) => $"archicad|{s.Project ?? "untitled"}{(asCopy ? "|copy" : "")}";
+
+    static string KeyOf(ArchicadModel a, ArchicadReceiveOptions o) => o.Key ?? ModelKey(a.Source, o.AsCopy);
 
     public static List<Entity> Existing(IModelView m, string key) =>
         [.. m.Entities.Where(e => (string?)(e.Attrs[Key] as JsonObject)?["key"] == key && e.Class != IfcClass.BuildingStorey)];
@@ -132,7 +165,7 @@ public static class ArchicadReceive
     {
         if (o.Origin != "survey" || m.ProjectToSurvey is not { } t) return Vec3.Zero;
         if (Math.Abs(t[0] - 1) > 1e-9 || Math.Abs(t[5] - 1) > 1e-9 || Math.Abs(t[10] - 1) > 1e-9 || Math.Abs(t[1]) > 1e-9 || Math.Abs(t[4]) > 1e-9)
-            throw new CommandException("Archicad's survey point is turned against its project origin: receive from the project origin (a turned survey point comes in a later stage).");
+            throw new CommandException("Archicad's survey point is turned against its project origin: receive from the project origin. The project is then georeferenced with the turn as its angle to true north (Manage → Location), so its map coordinates are Archicad's.");
         return new Vec3(t[3], t[7], t[11]);
     }
 
@@ -147,7 +180,7 @@ public static class ArchicadReceive
     /// <summary>What a receive would do, before it is done.</summary>
     public static JsonObject Survey(IModelView m, ArchicadModel a, ArchicadReceiveOptions o)
     {
-        var key = ModelKey(a.Source, o.AsCopy);
+        var key = KeyOf(a, o);
         var (taken, skipped) = Taken(a);
         var existing = Existing(m, key);
         var guids = existing.Select(e => (string?)(e.Attrs[Key] as JsonObject)?["guid"]).OfType<string>().ToHashSet();
@@ -171,6 +204,7 @@ public static class ArchicadReceive
             ["existing"] = existing.Count, ["updates"] = updates, ["adds"] = taken.Count - updates, ["removes"] = Math.Max(0, existing.Select(e => (string?)(e.Attrs[Key] as JsonObject)?["guid"]).OfType<string>().Distinct().Count(g => !taken.Any(t => t.Guid == g))),
             ["fromThisProject"] = nativeHere > 0, ["ms"] = Math.Round(a.Milliseconds), ["notes"] = new JsonArray([.. a.Notes.Select(n => (JsonNode)n)]),
             ["projectInfo"] = a.ProjectInfoFields is { } info ? ArchicadProjectInfo.Compare(m, info).ToJson(ArchicadProjectInfo.Source) : null,
+            ["georeference"] = ArchicadGeo.Survey(m, a, o),
         };
     }
 
@@ -193,10 +227,15 @@ public static class ArchicadReceive
         };
     }
 
-    public static ArchicadReceiveResult Apply(IEdit edit, ArchicadModel a, ArchicadReceiveOptions o, IServices? services = null, Action<string, int, int>? progress = null, CancellationToken ct = default)
+    /// <summary>
+    /// The model into the project, in the caller's undo step. A partial read (<see cref="ArchicadModel.Scope"/>, an update's) changes only
+    /// the elements it read and those <paramref name="scope"/> says Archicad deleted; every other element received before is left as it is.
+    /// </summary>
+    public static ArchicadReceiveResult Apply(IEdit edit, ArchicadModel a, ArchicadReceiveOptions o, IServices? services = null, Action<string, int, int>? progress = null,
+        CancellationToken ct = default, ArchicadScope? scope = null)
     {
         var m = edit.Model;
-        var key = ModelKey(a.Source, o.AsCopy);
+        var key = KeyOf(a, o);
         var shift = Shift(a, o);
         var (taken, skipped) = Taken(a);
         var nativeHere = Native(m, taken, key);
@@ -205,21 +244,35 @@ public static class ArchicadReceive
         var notes = new List<string>(a.Notes);
         var at = $"{Math.Round(shift.X, 4)},{Math.Round(shift.Y, 4)},{Math.Round(shift.Z, 4)}";
         var hashes = Hashes(taken);
+        scope ??= ArchicadScope.None;
+        var partial = a.Scope;
+        bool InScope(string g) => partial == null || partial.Contains(g) || scope.Deleted.Contains(g);
 
         // What earlier receives of this model made, by Archicad guid (a native wall's openings and fills are its own entities).
         var existing = Existing(m, key);
-        var byGuid = new Dictionary<string, List<Entity>>();
+        var byGuid = new Dictionary<string, List<Entity>>(StringComparer.OrdinalIgnoreCase);
         foreach (var e in existing)
             if ((string?)(e.Attrs[Key] as JsonObject)?["guid"] is { } g) (byGuid.TryGetValue(g, out var l) ? l : byGuid[g] = []).Add(e);
         var group = existing.Select(e => Groups.Of(m, e.Id)).FirstOrDefault(g => g != null);
 
-        bool Same(Entity e, ArchicadElement el) => e.Attrs[Key] is JsonObject meta && (string?)meta["hash"] == hashes[el.Guid] && (string?)meta["at"] == at;
-        var takenGuids = taken.Select(t => t.Guid).ToHashSet();
-        // Gone from Archicad, or changed: removed first (a native wall takes its openings with it).
+        // Building materials and composites matched by their attribute GUIDs (A2): renamed, and a changed composite's type rewritten in
+        // place; the elements made of it come in again, so they are rebuilt on it and measured again.
+        var materialReport = ArchicadTypes.PrepareMaterials(edit, a);
+        var changedComposites = ArchicadTypes.Prepare(edit, a);
+        var force = new HashSet<string>(scope.Force, StringComparer.OrdinalIgnoreCase);
+        foreach (var el in taken) if (ArchicadTypes.CompositeOf(el) is { } cg && changedComposites.ContainsKey(cg)) force.Add(el.Guid);
+        // A wall brought in again brings its doors and windows with it (they are made in it).
+        foreach (var el in taken) if (IsFill(el) && HostOf(el) is { } host && force.Contains(host)) force.Add(el.Guid);
+
+        bool Same(Entity e, ArchicadElement el) => !force.Contains(el.Guid) && e.Attrs[Key] is JsonObject meta && (string?)meta["hash"] == hashes[el.Guid] && (string?)meta["at"] == at;
+        var takenByGuid = taken.GroupBy(t => t.Guid, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+        // Gone from Archicad, or changed: removed first (a native wall takes its openings with it). Not read: left as it is.
         var removed = 0;
+        var untouched = 0;
         foreach (var (g, list) in byGuid)
         {
-            var el = taken.FirstOrDefault(t => t.Guid == g);
+            if (!InScope(g)) { untouched++; continue; }
+            var el = takenByGuid.GetValueOrDefault(g);
             if (el != null && list.All(e => Same(e, el))) continue;
             foreach (var e in list)
                 if (m.Get(e.Id) != null)
@@ -318,13 +371,17 @@ public static class ArchicadReceive
         }
         if (groupId != null) Groups.DropEmpty(edit, [groupId]);
         storeys.Finish(edit);
+        // The types the native walls and slabs took, and the materials, tagged with their Archicad attributes' GUIDs for the next receive.
+        var types = ArchicadTypes.Tag(edit, a, offered, recognition?.CreatedTypes ?? new HashSet<string>(), changedComposites, materialReport);
         var now = Existing(m, key).Where(e => (string?)(e.Attrs[Key] as JsonObject)?["role"] is null or "element").ToList();
         var nativeNow = now.Count(e => !StoredBodies.Has(e));
         // Archicad's Project Info: the project's empty fields filled in this same undo step; one set already is left as it is (A1b).
         var info = a.ProjectInfoFields is { } fields ? ArchicadProjectInfo.Apply(edit, fields) : null;
-        return new ArchicadReceiveResult(added, updated, unchanged, removed, nativeNow, now.Count - nativeNow, perStorey, skipped, recognition, storeys.Report, groupId, notes)
+        // Archicad's location: the project georeferenced by it when it has no georeference and Archicad's is not its untouched default (A2).
+        var geo = o.Georeference && a.GeoLocation != null ? ArchicadGeo.Apply(edit, a, o, shift, notes) : null;
+        return new ArchicadReceiveResult(added, updated, unchanged + untouched, removed, nativeNow, now.Count - nativeNow, perStorey, skipped, recognition, storeys.Report, groupId, notes)
         {
-            ProjectInfo = info,
+            ProjectInfo = info, Georeference = geo, Types = types,
         };
     }
 
@@ -346,10 +403,17 @@ public static class ArchicadReceive
         },
     };
 
+    /// <summary>
+    /// What an element received keeps of where it came from: its model's key, its guid, type, hash and shift, its layer and project; a
+    /// door's or window's wall (<c>host</c>) and an element's composite (<c>composite</c>), so an update reads a wall with its openings
+    /// and the elements of a changed composite again (A2).
+    /// </summary>
     internal static JsonObject Meta(string key, ArchicadElement el, string hash, string at, ArchicadSource s, string role = "element") => new()
     {
         ["key"] = key, ["guid"] = el.Guid, ["type"] = el.Type, ["hash"] = hash, ["at"] = at, ["layer"] = el.Layer, ["project"] = s.Project,
         ["role"] = role == "element" ? null : role,
+        ["host"] = IsFill(el) ? HostOf(el) : null,
+        ["composite"] = ArchicadTypes.CompositeOf(el),
     };
 
     /// <summary>

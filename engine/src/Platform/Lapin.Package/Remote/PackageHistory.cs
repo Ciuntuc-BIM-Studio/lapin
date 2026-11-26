@@ -65,6 +65,12 @@ public sealed class PackageHistory
     /// </summary>
     public Dictionary<string, JsonObject> ProjectInfo { get; private init; } = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// The connectors' links (Lapin.Platform's <c>ICopyState</c>, docs/plan-archicad.md A2: the Archicad state captured after a receive),
+    /// by key. Kept in <c>remotes.json</c> (member <c>connectors</c>), never in a commit: they are this copy's.
+    /// </summary>
+    public Dictionary<string, JsonObject> Connectors { get; private init; } = new(StringComparer.Ordinal);
+
     /// <summary>Commits and tags, by id: their canonical bytes.</summary>
     readonly Dictionary<string, byte[]> _commits = new(StringComparer.Ordinal);
     /// <summary>Trees, by id.</summary>
@@ -85,7 +91,7 @@ public sealed class PackageHistory
     public List<string> Problems { get; } = [];
 
     /// <summary>Whether there is anything to write: a project that never had a history writes no <c>history/</c>.</summary>
-    public bool Any => Refs.Count > 0 || Remotes.Count > 0 || _commits.Count > 0 || Seen.Count > 0;
+    public bool Any => Refs.Count > 0 || Remotes.Count > 0 || _commits.Count > 0 || Seen.Count > 0 || Connectors.Count > 0;
 
     public static PackageHistory Empty() => new();
 
@@ -97,7 +103,8 @@ public sealed class PackageHistory
             Head = Head, Refs = new(Refs, StringComparer.Ordinal), Seen = Seen.ToDictionary(kv => kv.Key, kv => kv.Value.Clone(), StringComparer.Ordinal),
             Log = [.. Log], Remotes = [.. Remotes], Issues = Issues.ToDictionary(kv => kv.Key, kv => (JsonObject)kv.Value.DeepClone(), StringComparer.Ordinal),
             References = References.ToDictionary(kv => kv.Key, kv => (JsonObject)kv.Value.DeepClone(), StringComparer.Ordinal),
-            ProjectInfo = ProjectInfo.ToDictionary(kv => kv.Key, kv => (JsonObject)kv.Value.DeepClone(), StringComparer.Ordinal), _refsExtra = (JsonObject)_refsExtra.DeepClone(), _remotesExtra = (JsonObject)_remotesExtra.DeepClone(),
+            ProjectInfo = ProjectInfo.ToDictionary(kv => kv.Key, kv => (JsonObject)kv.Value.DeepClone(), StringComparer.Ordinal),
+            Connectors = Connectors.ToDictionary(kv => kv.Key, kv => (JsonObject)kv.Value.DeepClone(), StringComparer.Ordinal), _refsExtra = (JsonObject)_refsExtra.DeepClone(), _remotesExtra = (JsonObject)_remotesExtra.DeepClone(),
             _source = _source, Unreadable = Unreadable,
         };
         foreach (var (k, v) in _commits) c._commits[k] = v;
@@ -192,6 +199,11 @@ public sealed class PackageHistory
                 {
                     foreach (var (rn, state) in projectInfo)
                         if (state is JsonObject so) ProjectInfo[rn] = (JsonObject)so.DeepClone();
+                }
+                else if (k == "connectors" && val is JsonObject connectors)
+                {
+                    foreach (var (ck, state) in connectors)
+                        if (state is JsonObject so) Connectors[ck] = (JsonObject)so.DeepClone();
                 }
                 else if (k is not ("format" or "v")) _remotesExtra[k] = val?.DeepClone();
         }
@@ -616,6 +628,8 @@ public sealed class PackageHistory
             o["references"] = new JsonObject(References.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value.DeepClone())));
         if (ProjectInfo.Count > 0)
             o["projectInfo"] = new JsonObject(ProjectInfo.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value.DeepClone())));
+        if (Connectors.Count > 0)
+            o["connectors"] = new JsonObject(Connectors.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value.DeepClone())));
         foreach (var (k, v) in _remotesExtra) o[k] = v?.DeepClone();
         return o;
     }

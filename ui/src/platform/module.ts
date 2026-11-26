@@ -492,6 +492,8 @@ export interface LapinModule {
   dialogs?: Record<string, ComponentType>;
   /** Mounted (invisible) while the workspace is open: what keeps a module's state in step with the model. */
   background?: ComponentType;
+  /** Drawn in the status bar, after the project's own items (Archicad's "model changed"): each draws nothing when it has nothing to say. */
+  statusItems?: ComponentType[];
   /** The grips of a selected entity, by IFC class (with what the view drew of it, when it draws it itself). */
   grips?: Record<string, (node: NodeDto, view?: GripView) => Grip[]>;
   /** The grips of a selected entity in 3D only (heights, faces; Grip3D), by IFC class. */

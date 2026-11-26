@@ -33,15 +33,15 @@ sealed class ArchicadAnswers
 
     public ReplayTransport Transport() => new(Answers.ToDictionary(kv => kv.Key, kv => (IReadOnlyList<JsonObject>)kv.Value.Select(x => (JsonObject)x.DeepClone()).ToList()));
 
-    JsonArray List(string command, string key) => (JsonArray)Answers[command][0]["result"]!["addOnCommandResponse"]![key]!;
+    internal JsonArray List(string command, string key) => (JsonArray)Answers[command][0]["result"]!["addOnCommandResponse"]![key]!;
 
-    JsonArray All => List("GetAllElements", "elements");
-    JsonArray Details => List("GetDetailsOfElements", "detailsOfElements");
+    internal JsonArray All => List("GetAllElements", "elements");
+    internal JsonArray Details => List("GetDetailsOfElements", "detailsOfElements");
 
-    int AllIndex(string guid) => All.Select((e, i) => ((string?)e!["elementId"]!["guid"], i)).First(x => x.Item1 == guid).i;
+    internal int AllIndex(string guid) => All.Select((e, i) => ((string?)e!["elementId"]!["guid"], i)).First(x => x.Item1 == guid).i;
 
     /// <summary>The index among the elements a receive asks the geometry and IFC data of (no subelements).</summary>
-    int KeepIndex(string guid)
+    internal int KeepIndex(string guid)
     {
         var k = 0;
         for (var i = 0; i < All.Count; i++)
@@ -52,7 +52,7 @@ sealed class ArchicadAnswers
         throw new InvalidOperationException(guid);
     }
 
-    static readonly (string Command, string Key)[] KeepLists =
+    internal static readonly (string Command, string Key)[] KeepLists =
     [
         ("Get3DGeometryOfElements", "geometries3D"), ("GetIFCIdsOfElements", "elementIFCIds"), ("GetIFCTypeOfElements", "elementIFCTypes"),
         ("GetIFCPropertiesOfElements", "elementIFCProperties"), ("GetClassificationsOfElements", "elementClassifications"), ("GetPropertyValuesOfElements", "propertyValuesForElements"),
@@ -420,7 +420,7 @@ public sealed class ArchicadTests
         answers.Move(Column1Guid, 1, 0);
         answers.Remove(Wall3Guid);
         module.Transport = answers.Transport();
-        var status = (JsonObject)f.Session.Query("archicad.status", new JsonObject { ["port"] = 19723 })!;
+        var status = (JsonObject)f.Session.Query("archicad.status", new JsonObject { ["port"] = 19723, ["full"] = true })!;
         Assert.True((bool)status["changed"]!);
         Assert.Equal(1, (int)status["updated"]!);
         Assert.Equal(1, (int)status["removed"]!);

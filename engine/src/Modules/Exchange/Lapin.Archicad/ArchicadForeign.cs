@@ -55,14 +55,20 @@ public static class ArchicadForeign
         if (structure == "Composite")
         {
             if ((string?)d["compositeId"]?["guid"] is not { } cg || !m.Composites.TryGetValue(cg, out var comp)) return null;
-            var skins = (comp["skins"] as JsonArray ?? []).OfType<JsonObject>().Select(s => new ArchicadSkin(N(s, "thickness"),
-                (string?)s["buildingMaterialId"]?["attributeId"]?["guid"] is { } bm && m.BuildingMaterials.TryGetValue(bm, out var name) ? name : "Building material",
-                S(s, "type") == "Core")).Where(s => s.Thickness > 0).ToList();
-            return skins.Count > 0 ? skins : null;
+            return CompositeSkins(m, comp);
         }
         if (structure == "Basic")
             return [new(basicThickness, (string?)d["buildingMaterialId"]?["guid"] is { } g && m.BuildingMaterials.TryGetValue(g, out var mat) ? mat : "Building material", true)];
         return null;
+    }
+
+    /// <summary>A composite's skins with their thickness, outside (or top) first, their building materials' names; null when it has none.</summary>
+    public static List<ArchicadSkin>? CompositeSkins(ArchicadModel m, JsonObject comp)
+    {
+        var skins = (comp["skins"] as JsonArray ?? []).OfType<JsonObject>().Select(s => new ArchicadSkin(N(s, "thickness"),
+            (string?)s["buildingMaterialId"]?["attributeId"]?["guid"] is { } bm && m.BuildingMaterials.TryGetValue(bm, out var name) ? name : "Building material",
+            S(s, "type") == "Core")).Where(s => s.Thickness > 0).ToList();
+        return skins.Count > 0 ? skins : null;
     }
 
     /// <summary>The composite's (or basic material's) name, for the type Lapin makes of it.</summary>

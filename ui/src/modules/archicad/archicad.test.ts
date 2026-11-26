@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   countRows, defaultFileName, defaultTitle, instanceLabel, keptRows, newGlobalId, pickInstance, pickTranslator, receiveArgs, referenceBody, reportRows,
-  sendProblems, DEFAULT_OPTIONS, type ArchicadInstance, type ArchicadReceived,
+  sendProblems, statusText, updatedSummary, DEFAULT_OPTIONS, type ArchicadInstance, type ArchicadReceived,
 } from './archicad';
 
 const inst = (o: Partial<ArchicadInstance>): ArchicadInstance => ({ port: 19723, archicad: '29', build: 3000, tapir: '2.0.1', project: 'House', untitled: false, teamwork: false, ok: true, problem: null, ...o });
@@ -26,6 +26,7 @@ describe('the Archicad connector', () => {
   it('asks the engine for what the dialog chose, the copy only when asked', () => {
     expect(receiveArgs(19723, DEFAULT_OPTIONS)).toEqual({ port: 19723, storeys: 'create', recognize: true, origin: 'project' });
     expect(receiveArgs(1, { storeys: 'existing', origin: 'survey', recognize: false, asCopy: true })).toEqual({ port: 1, storeys: 'existing', recognize: false, origin: 'survey', asCopy: true });
+    expect(receiveArgs(1, { ...DEFAULT_OPTIONS, georeference: false }).georeference).toBe(false);
   });
 
   it('lists a report\'s rows, the optional ones only when they are not zero, and why elements stayed references', () => {
@@ -64,5 +65,24 @@ describe('the Archicad connector', () => {
       id: 'g', title: 'M', type: 'model', folder: '04', status: 'received', files: [{ name: 'M.ifc', sha256: 'ab', size: 5, mime: 'application/x-step' }],
     });
     expect(referenceBody('g', { title: 'M', folder: '04', discipline: ' A ' }, { name: 'M.ifc', sha256: 'ab', size: 5 }).discipline).toBe('A');
+  });
+
+  it('says in the status bar that Archicad changed only while linked, reachable and not busy, with the count when known', () => {
+    expect(statusText(null)).toBeNull();
+    expect(statusText({ linked: false })).toBeNull();
+    expect(statusText({ linked: true, changed: false, count: 0 })).toBeNull();
+    expect(statusText({ linked: true, changed: true, busy: true })).toBeNull();
+    expect(statusText({ linked: true, changed: true, reachable: false })).toBeNull();
+    expect(statusText({ linked: true, changed: true, count: 3, reachable: true })).toEqual({ label: 'Archicad model changed', count: 3 });
+    expect(statusText({ linked: true, changed: true, lost: true, count: null })).toEqual({ label: 'Archicad model changed', count: null });
+  });
+
+  it('sums an update up in a line', () => {
+    const base: ArchicadReceived = {
+      elements: 10, added: 0, updated: 0, unchanged: 10, removed: 0, native: 7, references: 3, storeys: {}, levels: null, recognition: null, skipped: {}, notes: [], groupId: null,
+    };
+    expect(updatedSummary({ ...base, nothing: true })).toBe('Nothing changed in Archicad since the last receive.');
+    expect(updatedSummary({ ...base, updated: 2, mode: 'incremental' })).toBe('Got the latest from Archicad.');
+    expect(updatedSummary({ ...base, added: 1, mode: 'full' })).toBe('Got the latest from Archicad (the whole model read again).');
   });
 });

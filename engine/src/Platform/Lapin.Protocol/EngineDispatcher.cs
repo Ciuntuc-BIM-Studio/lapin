@@ -563,6 +563,9 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     /// <summary>The session's reference documents keep their bytes in the project's file, through <paramref name="files"/> (docs/plan-cde-references.md §3.5).</summary>
     readonly Lapin.Platform.Cde.References.IReferenceFiles _referenceFiles = session.ReferenceFiles = files.ReferenceFilesOf(session);
 
+    /// <summary>The session's copy state (a connector's link, docs/plan-archicad.md A2) kept with the project's history, through <paramref name="files"/>.</summary>
+    readonly Lapin.Platform.ICopyState _copyState = session.CopyState = files.CopyStateOf(session);
+
     /// <summary>Frames written by the generated contracts alone, as a trimmed engine writes them (for tests).</summary>
     public bool ContractsOnly { get; init; }
 

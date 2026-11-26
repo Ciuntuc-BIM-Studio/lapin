@@ -38,7 +38,7 @@ import { SectionIcon } from './icons';
 import { unitLabel, useStandards } from './engine/unitsStore';
 import { openStandards } from './modules/core/standardsTab';
 import { isDesktop, projectTitle } from './engine/files';
-import { activate, backgrounds, dialog, findTool, moduleView, modules, overlays, productInfo } from './platform/modules';
+import { activate, backgrounds, dialog, findTool, moduleView, modules, overlays, productInfo, statusItems } from './platform/modules';
 import { ProjectBrowser } from './shell/ProjectBrowser';
 import { PropertiesPanel } from './shell/PropertiesPanel';
 import { ToolPropertiesPanel } from './shell/ToolPropertiesPanel';
@@ -147,6 +147,7 @@ function StatusBar() {
       <span className="status-file" title={`${projectTitle(doc?.path)}${doc?.dirty ? ' · unsaved' : ''}`}>{projectTitle(doc?.path)}{doc?.dirty ? ' · unsaved' : ''}</span>
       <CdeServerStatus />
       <ReferencesStatus />
+      {statusItems().map((S, i) => <S key={i} />)}
       <span>{elements} elements</span>
       <button type="button" className="status-link" title="The project's units: change them in Drafting standards → Project" onClick={() => openStandards('project')}>Units: {unitLabel(units) || units}</button>
       {!merged && <><span className="grow" /><span className="mods" title={`${productInfo.name} · ${modules.map((m) => m.id).join(' · ')}`}>{productInfo.name} · {modules.map((m) => m.id).join(' · ')}</span></>}

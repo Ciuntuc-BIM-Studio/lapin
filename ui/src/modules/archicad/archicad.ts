@@ -22,6 +22,15 @@ export interface ArchicadSurvey {
   elements: number; byType: Record<string, number>; native: Record<string, number>; references: number; skipped: Record<string, number>;
   existing: number; updates: number; adds: number; removes: number; fromThisProject: boolean; ms: number; notes: string[];
   projectInfo?: ArchicadProjectInfo | null;
+  georeference?: ArchicadGeoreference | null;
+}
+/**
+ * What Archicad's location does to the project's georeference (A2): `state` none (not read), default (Archicad's untouched Budapest
+ * default), place (a latitude and longitude only) or survey (a survey point with map coordinates); `taken` and why not.
+ */
+export interface ArchicadGeoreference {
+  state: 'default' | 'place' | 'survey'; taken: boolean; why: string | null; applied?: boolean;
+  latitude: number; longitude: number; eastings: number | null; northings: number | null; crs: string | null; northAngle: number | null;
 }
 export interface ArchicadRecognition { recognized: number; offered: number; byClass: Record<string, number>; kept: Record<string, number>; reverted: number }
 export interface ArchicadLevels { matched: number; made: number; renamed: number; moved: number; removed: number; kept: number }
@@ -40,6 +49,17 @@ export interface ArchicadReceived {
   elements: number; added: number; updated: number; unchanged: number; removed: number; native: number; references: number;
   storeys: Record<string, number>; levels: ArchicadLevels | null; recognition: ArchicadRecognition | null;
   skipped: Record<string, number>; notes: string[]; groupId: string | null; projectInfo?: ArchicadProjectInfo | null;
+  georeference?: ArchicadGeoreference | null;
+  /** Get latest (A2): read only what changed (incremental), or the whole model compared (full, and why); nothing to do. */
+  mode?: 'incremental' | 'full'; why?: string | null; nothing?: boolean; linked?: boolean;
+}
+/**
+ * Whether Archicad's model changed since the project received it (A2, `archicad.status`, cheap: Archicad's changes counted): not
+ * linked (nothing to poll), Archicad unreachable or busy with a dialog, the state lost (Archicad restarted: count unknown), or the counts.
+ */
+export interface ArchicadStatus {
+  linked: boolean; port?: number; project?: string | null; reachable?: boolean; busy?: boolean; lost?: boolean; local?: boolean;
+  changed?: boolean; count?: number | null; added?: number; updated?: number; removed?: number; problem?: string;
 }
 /** Archicad's Project Info for Send to Atrium's proposal: Tapir's answer as it is, the project file's name, and what it would do here. */
 export interface ArchicadProjectInfoRead extends ArchicadProjectInfo { raw: unknown[]; file: string | null }
@@ -48,8 +68,8 @@ export interface ArchicadIfc { name: string; size: number; sha256: string; data:
 
 export type ReceiveStoreys = 'create' | 'existing';
 export type ReceiveOrigin = 'project' | 'survey';
-export interface ReceiveOptions { storeys: ReceiveStoreys; origin: ReceiveOrigin; recognize: boolean; asCopy: boolean }
-export const DEFAULT_OPTIONS: ReceiveOptions = { storeys: 'create', origin: 'project', recognize: true, asCopy: false };
+export interface ReceiveOptions { storeys: ReceiveStoreys; origin: ReceiveOrigin; recognize: boolean; asCopy: boolean; georeference?: boolean }
+export const DEFAULT_OPTIONS: ReceiveOptions = { storeys: 'create', origin: 'project', recognize: true, asCopy: false, georeference: true };
 
 const KEY_PORT = 'lapin.archicad.port';
 const read = (k: string): string | null => { try { return localStorage.getItem(k); } catch { return null; } };
@@ -98,7 +118,20 @@ export const keptRows = (r: ArchicadReceived): [string, number][] => countRows(r
 export function receiveArgs(port: number, o: ReceiveOptions): Record<string, unknown> {
   const a: Record<string, unknown> = { port, storeys: o.storeys, recognize: o.recognize, origin: o.origin };
   if (o.asCopy) a.asCopy = true;
+  if (o.georeference === false) a.georeference = false;
   return a;
+}
+
+/** The status bar's word on Archicad's model (A2): null when there is nothing to say (not linked, unchanged, unreachable, busy). */
+export function statusText(s: ArchicadStatus | null): { label: string; count: number | null } | null {
+  if (!s?.linked || !s.changed || s.busy || s.reachable === false) return null;
+  return { label: 'Archicad model changed', count: s.count ?? null };
+}
+
+/** An update's report in a line (the notice). */
+export function updatedSummary(r: ArchicadReceived): string {
+  if (r.nothing || r.added + r.updated + r.removed === 0) return 'Nothing changed in Archicad since the last receive.';
+  return r.mode === 'full' ? 'Got the latest from Archicad (the whole model read again).' : 'Got the latest from Archicad.';
 }
 
 export const defaultTitle = (project: string | null | undefined) => project?.trim() || 'Archicad model';
@@ -165,12 +198,29 @@ export function takenFields(info: ArchicadProjectInfo, keys: Iterable<string>): 
   return Object.fromEntries(info.differs.filter((d) => want.has(d.key)).map((d) => [d.key, d.archicad]));
 }
 
+// While a receive or an update runs, the status bar does not ask (the engine answers one call at a time); told when one ends.
+let running = 0;
+const listeners = new Set<() => void>();
+export const archicadRunning = () => running > 0;
+export const onArchicadDone = (f: () => void) => { listeners.add(f); return () => { listeners.delete(f); }; };
+async function exclusive<T>(f: () => Promise<T>): Promise<T> {
+  running++;
+  try { return await f(); } finally { running--; for (const l of listeners) l(); }
+}
+
 /** The model into the project: one undo step; its diff arrives as an event. */
 export async function receive(port: number, o: ReceiveOptions): Promise<ArchicadReceived> {
-  const r = await engine.call<ArchicadReceived>('doc.execute', { command: 'archicad.receive', args: receiveArgs(port, o) }, { timeoutMs: LONG_TIMEOUT_MS });
+  const r = await exclusive(() => engine.call<ArchicadReceived>('doc.execute', { command: 'archicad.receive', args: receiveArgs(port, o) }, { timeoutMs: LONG_TIMEOUT_MS }));
   rememberPort(port);
   return r;
 }
+
+/** Whether Archicad's model changed since it was received (cheap: no element read). */
+export const status = () => ask<ArchicadStatus>('archicad.status');
+
+/** Get latest from Archicad: only what changed since the last receive, in place; one undo step. */
+export const update = (port?: number | null) =>
+  exclusive(() => engine.call<ArchicadReceived>('doc.execute', { command: 'archicad.update', args: port ? { port } : {} }, { timeoutMs: LONG_TIMEOUT_MS }));
 
 /** The server's reference document for an IFC: its bytes in the project's store first, then the record. */
 export async function createReference(server: string, project: string, body: Record<string, unknown>): Promise<void> {

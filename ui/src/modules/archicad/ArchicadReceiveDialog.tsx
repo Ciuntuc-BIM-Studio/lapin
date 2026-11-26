@@ -16,8 +16,15 @@ import { setProjectInfo } from '../core/documents/documents';
 import { changeLabel } from '../core/projectInfo/serverInfo';
 import {
   countRows, DEFAULT_OPTIONS, GUIDE_URL, instanceLabel, instances, keptRows, lastPort, pickInstance, receive, receivedSummary, reportRows, survey, takenFields,
-  type ArchicadInstance, type ArchicadProjectInfo, type ArchicadReceived, type ArchicadSurvey, type ReceiveOptions,
+  type ArchicadGeoreference, type ArchicadInstance, type ArchicadProjectInfo, type ArchicadReceived, type ArchicadSurvey, type ReceiveOptions,
 } from './archicad';
+
+/** What a receive does with Archicad's location (the survey's word): taken, or why not. */
+function geoNote(g: ArchicadGeoreference): string {
+  if (g.taken) return g.state === 'survey' ? 'Archicad\'s survey point ties the project to the map.' : 'The project takes Archicad\'s latitude and longitude.';
+  if (g.state === 'default') return 'Archicad\'s location is its untouched default: not taken.';
+  return 'The project is georeferenced already: it keeps its own.';
+}
 
 const messageOf = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -156,10 +163,14 @@ export function ArchicadReceiveDialog() {
                 </select></dd>
                 <dt>Recognition</dt>
                 <dd><label><input type="checkbox" className="archicad-recognize" checked={options.recognize} onChange={(e) => set('recognize', e.target.checked)} /> <span>Recognise elements</span></label></dd>
+                <dt title="Only when the project has no georeference yet, and never from Archicad's untouched default location">Location</dt>
+                <dd><label><input type="checkbox" className="archicad-georeference" checked={options.georeference !== false} onChange={(e) => set('georeference', e.target.checked)} /> <span>Georeference the project from Archicad's location</span></label>
+                  {looked?.georeference && options.georeference !== false && <span className="muted small archicad-geo"> <span>{geoNote(looked.georeference)}</span></span>}</dd>
                 {looked?.fromThisProject && <><dt>Copy</dt><dd><label><input type="checkbox" className="archicad-copy" checked={options.asCopy} onChange={(e) => set('asCopy', e.target.checked)} /> <span>Receive as a copy</span></label></dd></>}
               </dl>
               {options.recognize && <p className="muted small">Walls, slabs, columns, beams, openings and zones become native Lapin elements where they match Archicad's own 3D body within 1 mm or 0.5 %; the rest come in as references.</p>}
               <p className="muted small">Receiving again updates the elements in place, keeping their GlobalIds, and removes what is gone from Archicad. One undo step.</p>
+              <p className="muted small">Afterwards, File → Collaborate → Get latest from Archicad brings only what changed in Archicad since; the status bar says when it changed.</p>
               <p className="muted small">To keep the received model on the server: receive it, then File → Collaborate → Save to server.</p>
               {received && (
                 <div className="archicad-received" data-testid="archicad-received">

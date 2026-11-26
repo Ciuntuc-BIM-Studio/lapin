@@ -56,7 +56,27 @@ public sealed record ArchicadModel(ArchicadSource Source, IReadOnlyList<Archicad
 
     /// <summary>Archicad's Project Info as Tapir's <c>GetProjectInfoFields</c> gives it (<c>[{projectInfoId, projectInfoName, projectInfoValue}]</c>); null when it was not read.</summary>
     public JsonArray? ProjectInfoFields { get; init; }
+
+    /// <summary>Archicad's location as Tapir's <c>GetGeoLocation</c> gives it (<c>{projectLocation, surveyPoint}</c>, A2); null when it was not read.</summary>
+    public JsonObject? GeoLocation { get; init; }
+
+    /// <summary>
+    /// The elements this read asked about when it was not the whole model (an update's new and modified ones, with their walls' doors
+    /// and windows and their doors' and windows' walls: <see cref="ArchicadReadScope"/>); null for a whole read. An element not in it
+    /// was not read: a receive leaves it as it is.
+    /// </summary>
+    public IReadOnlySet<string>? Scope { get; init; }
+
+    /// <summary>The stories' IFC ids, sorted: what tells this Archicad project from another when its name does not (an untitled one).</summary>
+    public IReadOnlyList<string> StoryIds => [.. Stories.Select(s => s.IfcId).OfType<string>().Order(StringComparer.Ordinal)];
 }
+
+/// <summary>
+/// A read of some elements only (docs/plan-archicad.md A2: an update's new and modified ones): their guids, and the doors and windows
+/// the project knows in a wall (<paramref name="FillsOf"/>, by the wall's guid), read with it so the wall is rebuilt with its openings;
+/// a door's or window's wall is read with it too (its <c>ownerElementId</c>).
+/// </summary>
+public sealed record ArchicadReadScope(IReadOnlyCollection<string> Guids, Func<string, IEnumerable<string>>? FillsOf = null);
 
 /// <summary>
 /// Reading a running Archicad's model through Tapir (docs/plan-archicad.md §2–§3), read only: the elements and their details, the
@@ -74,7 +94,7 @@ public static class ArchicadRead
         || type.StartsWith("CurtainWall", StringComparison.Ordinal) && type != "CurtainWall"
         || type.StartsWith("Railing", StringComparison.Ordinal) && type != "Railing";
 
-    public static ArchicadModel Read(ArchicadClient c, Action<string, int, int>? progress = null, CancellationToken ct = default)
+    public static ArchicadModel Read(ArchicadClient c, Action<string, int, int>? progress = null, CancellationToken ct = default, ArchicadReadScope? scope = null)
     {
         var sw = System.Diagnostics.Stopwatch.StartNew();
         var me = c.Describe(ct);
@@ -94,8 +114,35 @@ public static class ArchicadRead
         }
 
         progress?.Invoke("Reading Archicad's elements", 0, 0);
-        var all = (c.Tapir("GetAllElements", null, ct)?["elements"] as JsonArray ?? []).OfType<JsonObject>().Select(e => (string?)e["elementId"]?["guid"]).OfType<string>().ToList();
-        var details = c.Each("GetDetailsOfElements", all, "detailsOfElements", b => new JsonObject { ["elements"] = b }, c.Batch, ct);
+        List<string> all;
+        List<JsonNode?> details;
+        if (scope == null)
+        {
+            all = (c.Tapir("GetAllElements", null, ct)?["elements"] as JsonArray ?? []).OfType<JsonObject>().Select(e => (string?)e["elementId"]?["guid"]).OfType<string>().ToList();
+            details = c.Each("GetDetailsOfElements", all, "detailsOfElements", b => new JsonObject { ["elements"] = b }, c.Batch, ct);
+        }
+        else
+        {
+            // The elements asked, then their walls' doors and windows and their doors' and windows' walls, until nothing is missing.
+            all = [.. scope.Guids.Distinct(StringComparer.OrdinalIgnoreCase)];
+            details = all.Count == 0 ? [] : c.Each("GetDetailsOfElements", all, "detailsOfElements", b => new JsonObject { ["elements"] = b }, c.Batch, ct);
+            for (var round = 0; round < 4; round++)
+            {
+                var have = all.ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var more = new List<string>();
+                void Want(string? g) { if (g is { Length: > 0 } && have.Add(g)) more.Add(g); }
+                for (var i = 0; i < all.Count; i++)
+                {
+                    if (details[i] is not JsonObject d) continue;
+                    var type = (string?)d["type"];
+                    if (type is "Door" or "Window") Want((string?)d["details"]?["ownerElementId"]?["guid"]);
+                    else if (type == "Wall" && scope.FillsOf != null) foreach (var f in scope.FillsOf(all[i])) Want(f);
+                }
+                if (more.Count == 0) break;
+                all.AddRange(more);
+                details.AddRange(c.Each("GetDetailsOfElements", more, "detailsOfElements", b => new JsonObject { ["elements"] = b }, c.Batch, ct));
+            }
+        }
         // The elements received: not a subelement (its owner brings its 3D), with details.
         var keep = new List<(string Guid, JsonObject Detail)>();
         for (var i = 0; i < all.Count; i++)
@@ -188,6 +235,11 @@ public static class ArchicadRead
         var (infoFields, infoProblem) = ProjectInfoFields(c, ct);
         if (infoProblem != null) notes.Add(infoProblem);
 
+        // Its location (A2): the project's georeference when the project has none (ArchicadGeo).
+        JsonObject? geo = null;
+        try { geo = c.Tapir("GetGeoLocation", null, ct) is { } g && g["projectLocation"] is JsonObject ? (JsonObject)g.DeepClone() : null; }
+        catch (CommandException) { }
+
         var elements = new List<ArchicadElement>();
         for (var i = 0; i < keep.Count; i++)
         {
@@ -207,7 +259,7 @@ public static class ArchicadRead
         }
         return new ArchicadModel(source, stories, elements, composites, materials, surfaces, profiles, layers, zoneBoundaries, systems, toSurvey, skipped, notes, sw.Elapsed.TotalMilliseconds)
         {
-            ProjectInfoFields = infoFields,
+            ProjectInfoFields = infoFields, GeoLocation = geo, Scope = scope == null ? null : all.ToHashSet(StringComparer.OrdinalIgnoreCase),
         };
     }
 

@@ -15,6 +15,25 @@ public sealed partial class ProjectFiles
     /// <summary>The open project's history: the file's, or an empty one (a project never committed). Never changed in place: <see cref="PackageHistory.Clone"/> first.</summary>
     public PackageHistory History(Session session) => Foreign(session).History;
 
+    /// <summary>
+    /// The open project's copy state (Lapin.Platform's <see cref="Lapin.Platform.ICopyState"/>: a connector's link) as the history's
+    /// <c>connectors</c>: read from the history, written by keeping a changed one (saved with the file, never committed).
+    /// </summary>
+    public Lapin.Platform.ICopyState CopyStateOf(Session session) => new HistoryCopyState(this, session);
+
+    sealed class HistoryCopyState(ProjectFiles files, Session session) : Lapin.Platform.ICopyState
+    {
+        public JsonObject? Get(string key) => files.History(session).Connectors.TryGetValue(key, out var v) ? (JsonObject)v.DeepClone() : null;
+
+        public void Set(string key, JsonObject? value)
+        {
+            var h = files.History(session).Clone();
+            if (value == null) { if (!h.Connectors.Remove(key)) return; }
+            else h.Connectors[key] = (JsonObject)value.DeepClone();
+            files.KeepHistory(session, h);
+        }
+    }
+
     /// <summary>A history kept for the open project, in memory until the next save (a fetch's objects, a remote added).</summary>
     public void KeepHistory(Session session, PackageHistory history)
     {

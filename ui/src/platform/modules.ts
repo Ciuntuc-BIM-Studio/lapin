@@ -64,6 +64,8 @@ export function subSelectionTag(node: NodeDto, partKey: string): string | null {
   return null;
 }
 export const propertySections = (ifcClass: string) => modules.flatMap((m) => m.propertySections ?? []).filter((s) => s.classes.includes(ifcClass) || s.classes.includes('*'));
+/** The modules' status bar items, in the modules' order. */
+export const statusItems = (): ComponentType[] => modules.flatMap((m) => m.statusItems ?? []);
 export const backgrounds = (): ComponentType[] => modules.map((m) => m.background).filter((b): b is ComponentType => Boolean(b));
 /** The dialog the store's `dialog` names: a module's, else the shell's (`shell`), as a module may replace it; null when none. */
 export const dialog = (id: string, shell?: Record<string, ComponentType>): ComponentType | null =>

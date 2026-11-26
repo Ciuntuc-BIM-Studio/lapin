@@ -8,7 +8,8 @@ namespace Lapin.Archicad;
 /// The Archicad connector (docs/plan-archicad.md, decision 882), stage A1: a running Archicad's model received through its JSON API
 /// and the Tapir add-on. Queries: the Archicads running (<c>archicad.instances</c>), what a receive would do (<c>archicad.survey</c>),
 /// whether Archicad's model changed since (<c>archicad.status</c>), its Project Info (<c>archicad.projectInfo</c>, A1b), its IFC translators and an IFC saved by it to a temporary file
-/// for Send to Atrium (<c>archicad.translators</c>, <c>archicad.saveIfc</c>). The command <c>archicad.receive</c>, one undo step.
+/// for Send to Atrium (<c>archicad.translators</c>, <c>archicad.saveIfc</c>). The commands <c>archicad.receive</c> and <c>archicad.update</c>
+/// (Get latest from Archicad, A2: only what changed since the state captured at the last receive), each one undo step.
 /// None is a guest's to make (EngineDispatcher.HostOnlyQueries and HostOnlyCommands: Archicad runs on the host's computer).
 /// Desktop only (module.json).
 /// </summary>
@@ -46,6 +47,16 @@ public sealed class ArchicadModule : ILapinModule
         };
     }
 
+    /// <summary>The Archicad an update asks: the port given, else the most recent link's when it answers there, else the one running.</summary>
+    ArchicadClient UpdateClient(JsonObject a, ICopyState? copy, CancellationToken ct)
+    {
+        if (Json.Number(a["port"]) is not null) return Client(a, ct);
+        foreach (var l in ArchicadLink.All(copy).Values.OrderByDescending(l => l.At, StringComparer.Ordinal))
+            if (_transport.Post(l.Port, new JsonObject { ["command"] = "API.IsAlive" }, TimeSpan.FromSeconds(2), ct)?["result"]?["isAlive"] is JsonValue v && v.TryGetValue<bool>(out var alive) && alive)
+                return new ArchicadClient(_transport, l.Port);
+        return Client(a, ct);
+    }
+
     static ArchicadModel ReadModel(ArchicadClient c, Action<string, int, int>? progress, CancellationToken ct)
     {
         try { return ArchicadRead.Read(c, progress, ct); }
@@ -58,22 +69,36 @@ public sealed class ArchicadModule : ILapinModule
 
         r.Query("archicad.survey", (q, a) => ArchicadReceive.Survey(q.Model, ReadModel(Client(a, q.Cancellation), q.Progress, q.Cancellation), ArchicadReceiveOptions.From(a)));
 
-        r.Query("archicad.status", (q, a) => ArchicadReceive.Status(q.Model, ReadModel(Client(a, q.Cancellation), null, q.Cancellation), ArchicadReceiveOptions.From(a).AsCopy));
+        // Cheap (A2): Archicad's changes since the link's state counted, no element read; {full: true}: the whole model read and compared by hash.
+        r.Query("archicad.status", (q, a) => a["full"] is JsonValue fv && fv.TryGetValue<bool>(out var full) && full
+            ? ArchicadReceive.Status(q.Model, ReadModel(Client(a, q.Cancellation), null, q.Cancellation), ArchicadReceiveOptions.From(a).AsCopy)
+            : ArchicadUpdate.Status(_transport, q.CopyState, q.Model, Json.Number(a["port"]) is { } sp ? (int)sp : null, q.Cancellation));
 
-        // {port?, storeys: "create" | "existing", recognize: true, origin: "project" | "survey", asCopy?}: one undo step.
+        // {port?, storeys: "create" | "existing", recognize: true, origin: "project" | "survey", asCopy?, georeference: true}: one undo step.
+        // Archicad's state is captured before the read and kept as the model's link (A2), so Get latest asks only what changed since.
         r.Command("receive", "Receive from Archicad", (ctx, a) =>
         {
             var options = ArchicadReceiveOptions.From(a);
-            var model = ReadModel(Client(a, ctx.Query.Cancellation), ctx.Query.Progress, ctx.Query.Cancellation);
+            var c = Client(a, ctx.Query.Cancellation);
+            var notes = new List<string>();
+            var state = ArchicadUpdate.Capture(c, ctx.Query.Cancellation, notes);
             try
             {
+                var model = ReadModel(c, ctx.Query.Progress, ctx.Query.Cancellation);
                 var result = ArchicadReceive.Apply(ctx, model, options, ctx.Services, ctx.Query.Progress, ctx.Query.Cancellation).ToJson();
                 result["project"] = model.Source.Label;
                 result["readMs"] = Math.Round(model.Milliseconds);
+                if (notes.Count > 0 && result["notes"] is JsonArray n) foreach (var x in notes) n.Add((JsonNode)x);
+                ArchicadUpdate.Linked(ctx, c, model, options, state);
+                result["linked"] = state != null && ctx.Query.CopyState != null;
                 return result;
             }
-            catch (OperationCanceledException) { throw new CommandException("Stopped: nothing was received."); }
+            catch (OperationCanceledException) { ArchicadUpdate.Release(c, state); throw new CommandException("Stopped: nothing was received."); }
+            catch { ArchicadUpdate.Release(c, state); throw; }
         });
+
+        // Get latest from Archicad (A2): {port?, asCopy?}: only what changed since the link's state, else the whole model compared; one undo step.
+        r.Command("update", "Get latest from Archicad", (ctx, a) => ArchicadUpdate.Run(ctx, UpdateClient(a, ctx.Query.CopyState, ctx.Query.Cancellation), a));
 
         // Archicad's Project Info as Tapir gives it (raw, for Send to Atrium's proposal) and what taking it would do here (A1b).
         r.Query("archicad.projectInfo", (q, a) => ArchicadProjectInfo.Read(Client(a, q.Cancellation), q.Model, q.Cancellation));

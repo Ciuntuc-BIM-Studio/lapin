@@ -155,6 +155,8 @@ public sealed class ArchicadClient(IArchicadTransport transport, int port)
         {
             ct.ThrowIfCancellationRequested();
             var alive = transport.Post(p, new JsonObject { ["command"] = "API.IsAlive" }, TimeSpan.FromSeconds(2), ct);
+            // A dialog open in Archicad: even API.IsAlive answers 4001 (measured on Archicad 29): it is there, busy.
+            if ((string?)alive?["error"]?["message"] is { } refused && Busy(refused)) { o.Add(new(p, null, null, null, null, false, false, BusyText(refused))); continue; }
             if (alive?["result"]?["isAlive"] is not JsonValue v || !v.TryGetValue<bool>(out var yes) || !yes) continue;
             o.Add(new ArchicadClient(transport, p).Describe(ct));
         }
@@ -172,6 +174,7 @@ public sealed class ArchicadClient(IArchicadTransport transport, int port)
         }
         string? tapir = null;
         try { tapir = (string?)Tapir("GetAddOnVersion", null, ct)?["version"]; }
+        catch (CommandException ex) when (Busy(ex.Message)) { return new(port, archicad, build, null, null, false, false, BusyText(ex.Message)); }
         catch (CommandException) { tapir = null; }
         if (tapir == null)
             return new(port, archicad, build, null, null, false, false,
@@ -246,6 +249,17 @@ public sealed class ArchicadClient(IArchicadTransport transport, int port)
     /// <summary>Elements as Archicad lists them: [{elementId: {guid}}].</summary>
     public static JsonArray Elements(IEnumerable<string> guids) =>
         new([.. guids.Select(g => (JsonNode)new JsonObject { ["elementId"] = new JsonObject { ["guid"] = g } })]);
+
+    /// <summary>Whether Archicad refused because it is busy with a dialog (its JSON API answers 4001 "Invalid program status (there is an open modal dialog: …)").</summary>
+    public static bool Busy(string message) => message.Contains("modal dialog", StringComparison.OrdinalIgnoreCase) || message.Contains("Invalid program status", StringComparison.OrdinalIgnoreCase)
+        || message.StartsWith("Archicad is busy", StringComparison.Ordinal);
+
+    /// <summary>What to tell the user when Archicad is busy with a dialog: which one, when it says.</summary>
+    public static string BusyText(string message)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(message, @"modal dialog:\s*([^)]+)\)");
+        return $"Archicad is busy: a dialog is open in it{(m.Success ? $" ({m.Groups[1].Value.Trim()})" : "")}. Close it in Archicad, then try again.";
+    }
 
     static string ErrorText(JsonObject a) =>
         (string?)a["error"]?["message"] ?? (string?)a["result"]?["addOnCommandResponse"]?["error"]?["message"] ?? a["error"]?.ToJsonString() ?? "no reason given";

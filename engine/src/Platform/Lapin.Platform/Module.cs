@@ -362,6 +362,8 @@ public interface IQueryContext
     IDeliveries? Deliveries => null;
     /// <summary>The bytes of the project's reference documents (docs/plan-cde-references.md): the project's file's, through the host; null where there is no session.</summary>
     Cde.References.IReferenceFiles? ReferenceFiles => null;
+    /// <summary>What this copy keeps apart from the model and its commits (a connector's link: <see cref="ICopyState"/>); null where there is no session.</summary>
+    ICopyState? CopyState => null;
     /// <summary>Something that went wrong beside a call that still went through (a module that could not draw on a sheet), for the reply to tell (<see cref="Session.TakeWarnings"/>).</summary>
     void Warn(string message) { }
 }

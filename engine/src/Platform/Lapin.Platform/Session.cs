@@ -399,6 +399,9 @@ public sealed partial class Session
     /// </summary>
     public Cde.References.IReferenceFiles ReferenceFiles { get; set; } = new Cde.References.MemoryReferenceFiles();
 
+    /// <summary>What this copy keeps apart from the model and its commits (<see cref="ICopyState"/>): in memory on its own, with the project's history when a host's dispatcher holds the session (it sets this).</summary>
+    public ICopyState CopyState { get; set; } = new MemoryCopyState();
+
     /// <summary>A command made by <paramref name="author"/> (a guest of a shared session: their participant id).</summary>
     public Diff Execute(string command, JsonObject args, string author, out JsonNode? result)
     {
@@ -1470,6 +1473,7 @@ public sealed partial class Session
         public ClassDescriptor? Describe(string ifcClass) => s._catalog.Class(ifcClass);
         public IDeliveries Deliveries => s.Deliveries;
         public Cde.References.IReferenceFiles ReferenceFiles => s.ReferenceFiles;
+        public ICopyState CopyState => s.CopyState;
         public Action<string, int, int>? Progress => s.Progress;
         public CancellationToken Cancellation => s.Cancellation;
         public void Warn(string message) => s.Warn(message);
