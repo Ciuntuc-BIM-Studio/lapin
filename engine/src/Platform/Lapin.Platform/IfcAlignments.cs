@@ -75,6 +75,23 @@ public interface IIfcElementSets
     IEnumerable<IfcStandardSet> Sets(IModelView model, Entity element);
 }
 
+/// <summary>
+/// A module's element (or type) whose layers are worked out from its own spec rather than held as a layer set in the model
+/// (a room finish's covering, issue #143): IFC writes them as an IfcMaterialLayerSet, the element's through an
+/// IfcMaterialLayerSetUsage, the type's associated directly. Null: the element (type) has none of its own, written as before.
+/// </summary>
+public interface IIfcLayerSets
+{
+    IfcLayerSet? ElementLayers(IModelView model, Entity element);
+    IfcLayerSet? TypeLayers(IModelView model, Entity type) => null;
+}
+
+/// <summary>A layer: its material's id, its thickness (0: measured by its area), its name, a note (IfcMaterialLayer.Description) and its category.</summary>
+public sealed record IfcLayer(string Material, double Thickness, string? Name = null, string? Note = null, string? Category = null);
+
+/// <summary>A layer set: its name and layers, the direction they are laid in (AXIS2 across, AXIS3 up) and the way, from the reference (the offset).</summary>
+public sealed record IfcLayerSet(string Name, IReadOnlyList<IfcLayer> Layers, string Direction = "AXIS3", bool Negative = false, double Offset = 0);
+
 /// <summary>One standard property: its name, its IFC measure type (IFCLABEL, IFCBOOLEAN, IFCLENGTHMEASURE…) and its value (a string, a bool or a number in SI units); its description, when it has one.</summary>
 public sealed record IfcStandardProperty(string Name, string Measure, object Value, string? Description = null);
 

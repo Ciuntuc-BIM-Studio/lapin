@@ -718,6 +718,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new("hatchColor", "Hatch colour", "color"),
             // Whether plans hatch the room's floor finish (decision 299): absent, yes.
             new("finishHatch", "Show floor finish hatch", "bool"),
+            // What the room's ceiling is (issue #145): absent, the slab above (as before); „falseCeiling”, the false ceiling over it when it has one.
+            new(RoomFinishes.CeilingFromKey, "Ceiling", "choice", Choices: ["slab", RoomFinishes.FalseCeilingValue]),
         ], Rooms.Color));
         r.Geometry(Rooms.Class, Rooms.Geometry);
         r.Quantities(Rooms.Class, Rooms.Quantities);

@@ -1596,6 +1596,9 @@ public static partial class IfcExport
                     f.Add("IFCRELASSOCIATESMATERIAL", Gid(type.Id, "material"), Null, Null, Null, L(new[] { r }), LayerSet(set));
                 else if (type.Str("material") is { } mat && m.Get(mat) is { Class: IfcClass.Material })
                     UseMaterial(mat, r);
+                // A module's type whose layers it works out (a room finish's part type, issue #143): its layer set.
+                else if (ModuleLayers(x => x.TypeLayers(m, type)) is { } ownLayers)
+                    f.Add("IFCRELASSOCIATESMATERIAL", Gid(type.Id, "material"), Null, Null, Null, L(new[] { r }), ModuleLayerSet(ownLayers));
             }
             t.Occurrences.Add(entity);
         }
@@ -1742,6 +1745,27 @@ public static partial class IfcExport
             return set;
         }
 
+        /// <summary>The first layer set a module works out for an element or a type (none of a material the project lacks).</summary>
+        IfcLayerSet? ModuleLayers(Func<IIfcLayerSets, IfcLayerSet?> ask)
+        {
+            foreach (var src in s.Catalog.All<IIfcLayerSets>())
+                if (ask(src) is { } set)
+                {
+                    var layers = set.Layers.Where(l => m.Get(l.Material) is { Class: IfcClass.Material }).ToList();
+                    if (layers.Count > 0) return set with { Layers = layers };
+                }
+            return null;
+        }
+
+        /// <summary>A module's layer set, written once for every element and type that has the same (by name and layers).</summary>
+        string ModuleLayerSet(IfcLayerSet set)
+        {
+            var key = "module|" + set.Name + "|" + string.Join("|", set.Layers.Select(l => $"{l.Material}={l.Thickness.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}={l.Name}={l.Note}={l.Category}"));
+            if (layerSets.TryGetValue(key, out var known)) return known;
+            var layers = set.Layers.Select(l => f.Add("IFCMATERIALLAYER", Material(l.Material), R(l.Thickness), Null, S(l.Name ?? m.Get(l.Material)?.Name), S(l.Note), S(l.Category), Null)).ToArray();
+            return layerSets[key] = f.Add("IFCMATERIALLAYERSET", L(layers), S(set.Name), Null);
+        }
+
         void Associate(string set, string entity) => constituentSets.Values.First(x => x.Ref == set).Users.Add(entity);
 
         void UseMaterial(string materialId, string entity) => (materialUses.TryGetValue(materialId, out var l) ? l : materialUses[materialId] = []).Add(entity);
@@ -1761,6 +1785,13 @@ public static partial class IfcExport
             {
                 Associate(columnSet, entity);
                 if (type is var (ckey, ctypeRef) && constituentTypes.Add(ckey)) Associate(columnSet, ctypeRef);
+                return;
+            }
+            // A module's element whose layers it works out (a room finish's covering, issue #143): its usage of that layer set.
+            if (!grouped && LayerSets.UsageOf(m, e.Id) == null && ModuleLayers(x => x.ElementLayers(m, e)) is { } own)
+            {
+                var ownUsage = f.Add("IFCMATERIALLAYERSETUSAGE", ModuleLayerSet(own), E(own.Direction), E(own.Negative ? "NEGATIVE" : "POSITIVE"), R(own.Offset), Null);
+                f.Add("IFCRELASSOCIATESMATERIAL", Gid(e.Id, "material"), Null, Null, Null, L(new[] { entity }), ownUsage);
                 return;
             }
             if (LayerSets.UsageOf(m, e.Id) is { } u && Layers.ReadUsage(u) is { } usage && m.Get(usage.ForLayerSet) is { } set)

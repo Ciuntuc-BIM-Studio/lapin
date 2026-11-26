@@ -166,7 +166,7 @@ A file written by this version says at the top who wrote it: *Written by Lapin 0
 
 ### Save to library at a type configurator
 
-The dialogs that make types (wall, floor, door and window, stair, curtain wall, column and beam, steel and furniture types) have **Save to library**: the chosen type is written as a `.lapintypes` with its layers, materials, profiles and parameters, to **This computer** or a writable firm folder. It then appears in the Catalog, ready to add to another project in one click.
+The dialogs that make types (wall, floor, door and window, stair, curtain wall, column and beam, steel and furniture types, room finishes) have **Save to library**: the chosen type is written as a `.lapintypes` with its layers, materials, profiles and parameters, to **This computer** or a writable firm folder. It then appears in the Catalog, ready to add to another project in one click.
 
 ![Save to library in the wall types](shots/save-type-library.webp)
 
