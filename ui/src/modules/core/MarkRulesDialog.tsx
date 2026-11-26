@@ -2,7 +2,8 @@
  * Manage → Mark rules… (decision 737): the marks the user builds, one rule per category (walls, doors, windows, their types,
  * floors, columns, beams, footings, stairs). A rule is a prefix, a suffix and a pattern of live text, `{prefix}{mark}{suffix}`
  * by default, where `{mark}` is the mark Lapin gives by itself, `{n}` the element's number (kept on it), `{= n | 00}` a formula
- * and any field a tag reads (`{storey.code}`, `{type.mark}`, a parameter). Apply sets every changed rule in one step;
+ * and any field a tag reads (`{storey.code}`, `{type.mark}`, a parameter), `{variant}` one number per size of a type (issue #148,
+ * told by the rule's Variant by, else the category's own fields). Apply sets every changed rule in one step;
  * Renumber numbers a category again from 1, by where its elements stand, in one step. An element's own mark still wins.
  */
 
@@ -13,18 +14,23 @@ import { execute, query } from '../../engine/session';
 import { backdropClose } from '../../shell/Dialog';
 import { FieldPicker } from '../../shell/FieldPicker';
 
-export interface MarkRuleDto { prefix: string; suffix: string; pattern: string; scope: 'project' | 'storey' }
+/** A rule as the dialog edits it; `variantBy` (issue #148): the fields that tell one variant of a type from another, empty: the category's own. */
+export interface MarkRuleDto { prefix: string; suffix: string; pattern: string; scope: 'project' | 'storey'; variantBy?: string }
 interface Sample { id: string; name: string; mark: string; own: boolean }
-interface CategoryDto extends MarkRuleDto { id: string; label: string; isType: boolean; count: number; isDefault: boolean; samples: Sample[] }
+interface CategoryDto extends MarkRuleDto { id: string; label: string; isType: boolean; count: number; isDefault: boolean; samples: Sample[]; defaultVariantBy?: string }
 
 export const DEFAULT_MARK_PATTERN = '{prefix}{mark}{suffix}';
 
 /** Whether a rule is the built-in one: today's marks, nothing before or after them. */
-export const isDefaultRule = (r: MarkRuleDto): boolean => !r.prefix && !r.suffix && (r.pattern.trim() || DEFAULT_MARK_PATTERN) === DEFAULT_MARK_PATTERN && r.scope === 'project';
+export const isDefaultRule = (r: MarkRuleDto): boolean => !r.prefix && !r.suffix && (r.pattern.trim() || DEFAULT_MARK_PATTERN) === DEFAULT_MARK_PATTERN && r.scope === 'project' && !r.variantBy?.trim();
 
 /** Whether two rules are the same as the engine keeps them. */
 export const sameRule = (a: MarkRuleDto, b: MarkRuleDto): boolean =>
-  a.prefix === b.prefix && a.suffix === b.suffix && (a.pattern.trim() || DEFAULT_MARK_PATTERN) === (b.pattern.trim() || DEFAULT_MARK_PATTERN) && a.scope === b.scope;
+  a.prefix === b.prefix && a.suffix === b.suffix && (a.pattern.trim() || DEFAULT_MARK_PATTERN) === (b.pattern.trim() || DEFAULT_MARK_PATTERN) && a.scope === b.scope
+  && (a.variantBy?.trim() ?? '') === (b.variantBy?.trim() ?? '');
+
+/** Whether a pattern reads the variant ({variant}, or variant in a formula): its Variant by is then shown. */
+export const usesVariant = (p: string): boolean => p.includes('{variant}') || /\{=[^{}]*(?<![\w.])variant(?![\w.(])[^{}]*\}/.test(p);
 
 /** A pattern's braces each closed: what the engine accepts. */
 export const patternOk = (p: string): boolean => {
@@ -43,13 +49,14 @@ const QUICK: [string, string][] = [
   ['{mark}', "The mark Lapin gives by itself: its type's mark, else its type's name"],
   ['{storey.code}', "Its storey's code (a parameter of the storey)"],
   ['{type.mark}', "Its type's mark"],
+  ['{variant}', 'Its variant: one number per size of its type (1, 2…), the same size the same number'],
 ];
 
 /** What the dialog is for, one phrase for the translations. */
 const INTRO = "Build each category's mark: a prefix, a pattern and a suffix. The pattern is live text: {mark} is the mark Lapin gives by itself, {n} the element's number (kept on it, new elements take the next), {= n | 00} a formula, and any field a tag reads. Tags, schedules and IFC write the result; a mark typed on an element still wins.";
 const CLOSE_FIELDS = 'Close each {field} you open.';
 
-const rulePart = (c: MarkRuleDto): MarkRuleDto => ({ prefix: c.prefix, suffix: c.suffix, pattern: c.pattern, scope: c.scope });
+const rulePart = (c: MarkRuleDto): MarkRuleDto => ({ prefix: c.prefix, suffix: c.suffix, pattern: c.pattern, scope: c.scope, variantBy: c.variantBy ?? '' });
 
 export function MarkRulesDialog() {
   const [cats, setCats] = useState<CategoryDto[]>([]);
@@ -71,7 +78,7 @@ export function MarkRulesDialog() {
   // The marks a changed rule would give, asked a moment after the typing stops.
   const preview = (id: string, rule: MarkRuleDto) => {
     clearTimeout(timers.current[id]);
-    if (!patternOk(rule.pattern)) return;
+    if (!patternOk(rule.pattern) || !patternOk(rule.variantBy ?? '')) return;
     timers.current[id] = setTimeout(() => {
       void query<{ samples: Sample[] }>('markRules.preview', { category: id, rule }).then((r) => { if (r) setSamples((s) => ({ ...s, [id]: r.samples })); });
     }, 250);
@@ -82,7 +89,7 @@ export function MarkRulesDialog() {
     preview(id, next);
   };
   const changed = cats.filter((c) => rows[c.id] && !sameRule(rows[c.id], rulePart(c)));
-  const ok = cats.every((c) => !rows[c.id] || patternOk(rows[c.id].pattern));
+  const ok = cats.every((c) => !rows[c.id] || (patternOk(rows[c.id].pattern) && patternOk(rows[c.id].variantBy ?? '')));
   const apply = async () => {
     const rules = Object.fromEntries(changed.map((c) => [c.id, isDefaultRule(rows[c.id]) ? null : rows[c.id]]));
     if (changed.length === 0 || await execute('markRules.set', { rules }) !== null) close();
@@ -103,7 +110,7 @@ export function MarkRulesDialog() {
               {cats.map((c) => {
                 const r = rows[c.id];
                 if (!r) return null;
-                const bad = !patternOk(r.pattern);
+                const bad = !patternOk(r.pattern) || !patternOk(r.variantBy ?? '');
                 return (
                   <tr key={c.id} data-mark-category={c.id} className={bad ? 'bad' : undefined}>
                     <td><span>{c.label}</span> <span className="muted small" data-no-i18n>{c.count}</span></td>
@@ -115,6 +122,13 @@ export function MarkRulesDialog() {
                         <FieldPicker value="" placeholder="+ Field…" testId={`mark-field-${c.id}`} extra={[{ id: 'mark', label: 'Mark', fields: QUICK.map(([token, label]) => ({ token, label, kind: 'text' as const, count: 0, examples: [], description: label })) }]}
                           onPick={(t) => set(c.id, { pattern: `${r.pattern.trim() || DEFAULT_MARK_PATTERN}${t.startsWith('{') ? t : `{${t}}`}` })} />
                       </div>
+                      {!c.isType && usesVariant(r.pattern) && (
+                        <label className="row tight small" title="What tells one variant of its type from another: fields as a tag reads them ({openingWidth}x{openingHeight}, {height}, a parameter); empty: a door's or window's opening, else one variant per type. Numbered in the order the sizes first appear, in the whole project">
+                          <span className="muted">Variant by</span>
+                          <input className="cell" value={r.variantBy ?? ''} maxLength={120} aria-label="Variant by" placeholder={c.defaultVariantBy ?? ''} data-field={`mark-variant-${c.id}`} data-no-i18n
+                            onChange={(e) => set(c.id, { variantBy: e.target.value })} />
+                        </label>
+                      )}
                     </td>
                     <td><input className="cell" value={r.suffix} maxLength={16} aria-label="Suffix" data-field={`mark-suffix-${c.id}`} onChange={(e) => set(c.id, { suffix: e.target.value })} /></td>
                     <td>{c.isType ? <span className="muted small">In the project</span> : (
@@ -128,7 +142,7 @@ export function MarkRulesDialog() {
                         : (samples[c.id] ?? []).map((s) => <span key={s.id} className={`chip${s.own ? ' muted' : ''}`} style={{ textTransform: 'none' }} title={s.own ? 'Its own mark' : undefined} data-no-i18n>{s.mark}</span>)}
                     </td>
                     <td className="row-tools">
-                      <button type="button" className="icon mini" title="Back to the built-in rule" disabled={isDefaultRule(r)} onClick={() => set(c.id, { prefix: '', suffix: '', pattern: DEFAULT_MARK_PATTERN, scope: 'project' })}><RotateCcw size={12} /></button>
+                      <button type="button" className="icon mini" title="Back to the built-in rule" disabled={isDefaultRule(r)} onClick={() => set(c.id, { prefix: '', suffix: '', pattern: DEFAULT_MARK_PATTERN, scope: 'project', variantBy: '' })}><RotateCcw size={12} /></button>
                       <button type="button" className="icon mini" title="Renumber from 1 (one undo step)" data-field={`mark-renumber-${c.id}`} disabled={c.count === 0} onClick={() => void renumber(c)}><ListOrdered size={12} /></button>
                     </td>
                   </tr>
