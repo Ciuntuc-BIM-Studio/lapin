@@ -62,6 +62,18 @@ model ──► antemăsurătoare (cantități pe element, strat, material)
    └─► sarcina elementului (din regula ei) ◄──────────────────┘ costul pe sarcină, curba S
 ```
 
+### Produs × loc (ABS / PBS / GBS)
+
+Ideea unui consultant de planificare: o sarcină e o **activitate** (ABS: „montaj uși”) pe un **produs** (PBS: „uși”, „pereți despărțitori tip A”) într-un **loc** (GBS: „etajul 1”, o zonă); dacă sarcina spune activitate = montaj, produs = uși, loc = etajul 1, elementele sunt ușile etajului 1 și numărul lor e cunoscut. În Lapin:
+
+- **Activitatea** e sarcina însăși (numele și felul ei, `PredefinedType`).
+- **PBS-ul** nu e un sistem nou: e una dintre clasificările proiectului (`LapinClassification`, `Classifications.cs`, docs/plan-user-extensibility.md §7.3: cod, titlu, părinte; importată din tabel, exportată CSV, scrisă în IFC ca `IfcClassificationReference` + `IfcRelAssociatesClassification` și citită înapoi). Proiectul o alege prin atributul `pbs` pe `IfcProject` (`planning.setPbs`); fără alegere, cea numită „PBS”, altfel singura. `planning.pbsStarter` face un PBS mic al lui Lapin (coduri proprii pe meserii, „Lapin (indicative)”), de schimbat. Tipurile și elementele sunt etichetate cu `classification.assign` (Proprietăți → Clasificare, pe toată selecția); codul tipului e al elementelor lui, al elementului are întâietate (`Breakdowns.CodeOf`).
+- **GBS-ul** e structura spațială: clădirea, etajele, încăperile. O încăpere ține ce are mijlocul în plan în conturul ei sau la cel mult 0,30 m de el (ușa dintre două încăperi e în amândouă). Zonele (un grup de încăperi, un sector) nu au încă o entitate în Lapin: între timp, grupurile și condițiile pe câmpuri ale regulii (`Pset_Firma.Sector`).
+- **Regula** (`TaskRule`) primește două chei noi, alături de cele vechi, care rămân cum erau: `products` (coduri ale PBS-ului, ca text, sau `{system, code}` pentru alt sistem; un nod ia tot ce e sub el) și `locations` (clădiri, etaje, încăperi, după id sau nume; oricare). O regulă fără ele ia exact ce lua (test de regresie). Contorul (`planning.rulePreview`) dă numărul și, cu norma sarcinii, cantitatea în unitatea ei, prin aceeași măsură ca generatorul (`Generator.MeasureOf`).
+- **Produsul cartezian**: `planning.tasksFromBreakdown` (activitate, produs, locuri — implicit toate etajele —, normă, legare) face un rezumat cu o sarcină pe loc, legate FS în ordinea locurilor, ca pașii pe etaje ai generatorului, cu durata din cantitate × normă.
+- **Elementele fără sarcină**: `planning.unlinked` le numără pe produse (`byProduct`), iar regula CDE „Elements with a task” spune produsul fiecăruia.
+- **MS Project**: regula rămâne în Text1 („Lapin elements”); codurile produselor merg și în Text2 („Lapin PBS”), ca să se poată grupa după ele în MS Project (doar scris, citirea ia regula din Text1).
+
 ## UX: drumul utilizatorului
 
 Principiile: **nimic nu e obligatoriu** (un proiect fără program e un proiect ca azi); **un clic dă un rezultat complet** (generatorul face un program cu toate elementele legate, apoi îl ajustezi); **orice legătură automată se vede și se poate schimba**; fiecare operație e un pas de undo; **aceeași dată** e în Gantt, în 3D, în planuri și pe planșe; selecția e sincronizată în ambele sensuri (sarcină → elemente, elemente → sarcini).

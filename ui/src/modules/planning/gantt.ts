@@ -37,7 +37,11 @@ export type TaskStatus = 'planned' | 'started' | 'done';
 export type ProgressFrom = 'none' | 'manual' | 'elements' | 'actual' | 'children';
 export interface ElementMark { started?: string; done?: string }
 /** A task's rule: every condition given must hold (ids, classes by their IFC name). */
-export interface TaskRule { classes?: string[]; types?: string[]; storeys?: string[]; materials?: string[]; groups?: string[]; phases?: string[]; demolished?: string[]; conditions?: Condition[] }
+export interface TaskRule {
+  classes?: string[]; types?: string[]; storeys?: string[]; materials?: string[]; groups?: string[]; phases?: string[]; demolished?: string[]; conditions?: Condition[];
+  /** Product × Location: codes of the project's PBS (or {system, code}), each the node and what is under it; the building, storeys and rooms, any of which holds the element. */
+  products?: (string | { system: string; code: string })[]; locations?: string[];
+}
 /** A formwork's or a scaffold's time on site, from its hosts' tasks (stage 3). */
 export interface TemporaryDto { id: string; kind: 'formwork' | 'scaffold'; from: string; to: string; tasks: string[] }
 export interface LinkDto { id: string; from: string; to: string; type: LinkType; lag: number; critical: boolean }

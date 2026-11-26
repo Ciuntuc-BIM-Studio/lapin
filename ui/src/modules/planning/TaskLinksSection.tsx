@@ -1,6 +1,7 @@
 /**
  * A task's elements in Properties (docs/plan-4d5d.md, stage 2): how many it takes, the rule they are found by — the kinds,
  * storeys, types, materials, groups and phases, picked as a schedule's filter is, each with how many elements have it —
+ * the product (PBS) and locations (GBS) they are of, with the count and quantity the pair takes,
  * the part of them it takes (the whole, the core, the finishes, a material, a category), and the exceptions added and
  * taken out by hand. The count follows every change; each change is one step to undo. And on an element, the tasks it is in.
  */
@@ -13,10 +14,11 @@ import { select, useUi } from '../../app/store';
 import { DraftConditions } from '../../shell/ConditionsEditor';
 import { markOf, showDate, type TaskDto, type TaskRule } from './gantt';
 import { tasksOf, toggleRule, type RuleKey } from './links';
+import { BreakdownPickers, type BreakdownOptions } from './BreakdownPickers';
 import { assignTo, markSelection, selectedElements, showTaskElements, taskOf, usePlanning, useSchedule } from './schedule';
 
 interface Option { id: string; name: string; count: number; class?: string; category?: string | null; kind?: string }
-type Options = Record<RuleKey, Option[]> & { categories: string[] };
+type Options = Record<RuleKey, Option[]> & { categories: string[] } & BreakdownOptions;
 
 /** The rule's options, asked again when the model changes. */
 function useRuleOptions(): Options | null {
@@ -88,6 +90,7 @@ export function TaskLinksSection({ node }: { node: NodeDto }) {
 function RuleEditor({ task, rule, options, onChange }: { task: TaskDto; rule: TaskRule; options: Options; onChange: (r: TaskRule) => void }) {
   return (
     <div className="rule-editor" data-testid="rule-editor">
+      <BreakdownPickers task={task} rule={rule} options={options} onChange={onChange} />
       {ORDER.filter((k) => (options[k]?.length ?? 0) > (k === 'phases' ? 1 : 0) || (rule[k]?.length ?? 0) > 0).map((k) => (
         <div key={k} className="rule-condition">
           <span className="eyebrow">{HEADINGS[k]}</span>

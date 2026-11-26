@@ -549,6 +549,7 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
         });
 
         RegisterGenerator(r);
+        RegisterBreakdowns(r);
         RegisterSimulation(r);
         RegisterProgress(r);
         RegisterResources(r);
@@ -573,11 +574,21 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
         {
             var links = TaskElements.Resolve(q);
             var (none, partial) = links.Unlinked();
-            return new JsonObject
+            var o = new JsonObject
             {
                 ["none"] = new JsonArray(none.Select(f => (JsonNode)f.Element.Id).ToArray()),
                 ["partial"] = new JsonArray(partial.Select(x => (JsonNode)x.Element.Element.Id).ToArray()),
             };
+            // By product (the PBS's code of each, its own or its type's; "" none), so "12 doors have no task" reads at a glance.
+            if (Breakdowns.Pbs(q.Model) is { } pbs)
+                o["byProduct"] = new JsonArray(none.Concat(partial.Select(x => x.Element))
+                    .GroupBy(f => Breakdowns.CodeOf(q.Model, f.Element, pbs.Id) ?? "").OrderBy(g => g.Key, StringComparer.Ordinal)
+                    .Select(g => (JsonNode)new JsonObject
+                    {
+                        ["code"] = g.Key, ["title"] = g.Key.Length == 0 ? "" : Classifications.Items(pbs).FirstOrDefault(i => i.Code == g.Key)?.Title ?? "",
+                        ["count"] = g.Count(), ["ids"] = new JsonArray(g.Select(f => (JsonNode)f.Element.Id).ToArray()),
+                    }).ToArray());
+            return o;
         });
 
         // A year's legal holidays (the calendar dialog lists them).
@@ -702,6 +713,10 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
             ["demolished"] = new JsonArray(ph.Phases.Select(p => (p, n: links.Candidates.Count(f => f.Demolished == p.Id))).Where(x => x.n > 0)
                 .Select(x => (JsonNode)new JsonObject { ["id"] = x.p.Id, ["name"] = x.p.Name, ["kind"] = x.p.Kind, ["count"] = x.n }).ToArray()),
             ["categories"] = new JsonArray(Platform.Materials.Categories.Select(c => (JsonNode)c).ToArray()),
+            // The GBS (the building, its storeys and their rooms) and the PBS's items, counted (Product × Location).
+            ["locations"] = Breakdowns.Locations(m, links.Candidates),
+            ["products"] = Breakdowns.Pbs(m) is { } pbs ? Breakdowns.Counted(m, pbs, links.Candidates).Items : new JsonArray(),
+            ["pbs"] = Breakdowns.Pbs(m) is { } ps ? new JsonObject { ["id"] = ps.Id, ["name"] = ps.Name } : null,
         };
     }
 

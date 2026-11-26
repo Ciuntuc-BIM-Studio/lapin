@@ -23,6 +23,11 @@ public static class MsProject
     /// <summary>MS Project's custom field Text1 (its field id), which carries a task's elements under the name <see cref="LinksAlias"/>.</summary>
     const string LinksField = "188743731", LinksAlias = "Lapin elements";
 
+    /// <summary>MS Project's Text2, which shows a task's products (the PBS codes its rule names, „40.20”) under <see cref="PbsAlias"/>: for reading and grouping in MS Project only, Text1 carries the rule.</summary>
+    const string PbsField = "188743734", PbsAlias = "Lapin PBS";
+
+    static string? PbsText(PlanTask t) => t.Rule is { Products.Count: > 0 } r ? string.Join(", ", r.Products.Select(p => p.Code)) : null;
+
     static string Dt(DateOnly d, string time) => $"{WorkCalendar.Date(d)}T{time}:00";
 
     static string Time(TimeOnly t) => t.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
@@ -72,6 +77,15 @@ public static class MsProject
             E("FieldName", "Text1");
             E("Alias", LinksAlias);
             w.WriteEndElement();
+            // The tasks' products (Product × Location) in Text2, when any task's rule names one.
+            if (p.Rows.Any(t => PbsText(t) != null))
+            {
+                w.WriteStartElement("ExtendedAttribute", Ns);
+                E("FieldID", PbsField);
+                E("FieldName", "Text2");
+                E("Alias", PbsAlias);
+                w.WriteEndElement();
+            }
             w.WriteEndElement();
         }
 
@@ -216,6 +230,13 @@ public static class MsProject
                 w.WriteStartElement("ExtendedAttribute", Ns);
                 E("FieldID", LinksField);
                 E("Value", links.ToJsonString());
+                w.WriteEndElement();
+            }
+            if (PbsText(t) is { } pbsText)
+            {
+                w.WriteStartElement("ExtendedAttribute", Ns);
+                E("FieldID", PbsField);
+                E("Value", pbsText);
                 w.WriteEndElement();
             }
             if (t.Baseline is { } bl)

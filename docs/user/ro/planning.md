@@ -174,6 +174,16 @@ O sarcină ia elemente ale modelului, deci programul știe ce se construiește �
 
 La **Elemente** în Proprietăți, bifează **Găsește-le după o regulă** și alege ce ia sarcina, ca la filtrul unui extras: **Feluri**, **Etaje**, **Tipuri**, **Materiale**, **Grupuri** și **Faze**, fiecare valoare cu câte elemente o au. Fiecare condiție pusă trebuie îndeplinită; una lăsată goală lasă totul să treacă. Se păstrează regula, nu elementele: un perete desenat mâine la parter intră singur în sarcina „Zidărie parter”. **Regulă din selecție** face o regulă din felurile și etajele elementelor selectate.
 
+### Produs × loc
+
+Un planificator citește o sarcină ca trei lucruri: **activitatea** (ce se face: „Montaj uși”), **produsul** (ce construiește: uși, pereți despărțitori de tip A) și **locul** (unde: etajul 1, o încăpere). În Lapin activitatea e sarcina însăși; produsul e un cod al **defalcării pe produse (PBS)** a proiectului; locul e un loc al clădirii. Deasupra celorlalte condiții, regula are perechea **Product (PBS) × Location (GBS)**: alege un produs (un nod ia tot ce e sub el, deci *40 Interior* ia ușile și pereții despărțitori) și unul sau mai multe locuri (clădirea, un etaj, o încăpere; oricare dintre ele), iar sarcina ia elementele etichetate cu acel produs care stau acolo. Rândul de sub pereche le numără și le dă cantitatea în unitatea normei sarcinii, dacă are una. „Montaj uși” × „Parter” ia ușile parterului, iar o ușă desenată mâine acolo intră singură în ea.
+
+PBS-ul e una dintre clasificările proiectului (**Gestionare → Clasificări…**): codurile și denumirile tale, importate dintr-un tabel CSV sau Excel (cod, denumire, părinte) sau adăugate pe măsură ce etichetezi elemente, ori **PBS-ul de pornire** al lui Lapin (câteva produse pe meserii, cu codurile lui, marcat orientativ), de schimbat sau înlocuit. **Tasks from product × location…** alege care clasificare e PBS-ul; fără o alegere, cea numită *PBS*, altfel singura a proiectului. Etichetează **tipurile** (fiecare ușă a unui tip e atunci o ușă) sau elemente anume în **Proprietăți → Clasificare**, pentru toată selecția deodată; codul propriu al unui element are întâietate față de al tipului. Codurile merg în IFC ca IfcClassificationReference și revin când fișierul e citit.
+
+O încăpere ține ce stă în ea, și ușile și pereții de pe marginea ei (până la 30 cm de contur): o ușă între două încăperi e în amândouă.
+
+**Execuție → Tasks from product × location…** face deodată sarcinile unei activități: alege produsul, numește activitatea („Install doors” e propusă din produs), bifează locurile (la început toate etajele) și, dacă vrei, o normă. Face un rezumat cu câte o sarcină pe loc („Montaj uși · Parter”, „Montaj uși · Etaj 1”), fiecare cu regula ei, legate terminare-început în ordinea locurilor, cum leagă generatorul etajele unui pas; cu o normă, durata fiecărei sarcini e cantitatea elementelor ei × orele normei ÷ (echipă × ore pe zi). Un singur pas de undo.
+
 ### O parte a elementelor
 
 **Parte** spune ce ia sarcina din fiecare element: **elementele întregi**, **miezul** lor (stratul structural), **finisajele** (toate straturile în afară de miez), straturile unui material sau ale unei categorii de material (Finisaj, Izolație…). Așa, un perete stratificat e zidit într-o sarcină Zidărie (miezul) și tencuit într-o sarcină Tencuieli (finisajele). Un element fără straturi e propriul lui miez și nu are finisaje.
@@ -192,11 +202,11 @@ Ce adaugi sau scoți de mână sunt **excepțiile** sarcinii: regula rămâne cu
 
 ### Elemente fără sarcină
 
-Odată ce o sarcină ia elemente, bara Gantt-ului spune câte elemente n-au sarcină sau au straturi pe care nu le ia nicio sarcină; un clic le selectează, gata de tras pe o sarcină. **Execuție → Elemente fără sarcină** face la fel. **Gestionare → Verificare** le listează și ea, la *Elements with a task*: câte un avertisment pentru fiecare, un clic îl selectează. Elementele existente care rămân nu au nevoie de sarcină.
+Odată ce o sarcină ia elemente, bara Gantt-ului spune câte elemente n-au sarcină sau au straturi pe care nu le ia nicio sarcină; un clic le selectează, gata de tras pe o sarcină. **Execuție → Elemente fără sarcină** face la fel și, cu un PBS, spune câte au rămas din fiecare produs („40.20 Doors 3, no code 2”). **Gestionare → Verificare** le listează și ea, la *Elements with a task*: câte un avertisment pentru fiecare, cu produsul lui când are unul, un clic îl selectează. Elementele existente care rămân nu au nevoie de sarcină.
 
 ### În IFC și MS Project
 
-Exportul IFC scrie ce construiește fiecare sarcină ca IfcRelAssignsToProduct (elementul, cu sarcinile care îl construiesc), iar ce face o sarcină de demolare, îndepărtare sau dezmembrare ca IfcRelAssignsToProcess. Regula, partea și excepțiile merg în `Lapin_Task`, deci Lapin citește regula înapoi; un fișier din alt program dă sarcini cu elementele pe care le atribuie lor. MS Project XML le duce în câmpul Text1, numit *Lapin elements*. Registrul XLSX are coloanele **Elements** și **Rule**.
+Exportul IFC scrie ce construiește fiecare sarcină ca IfcRelAssignsToProduct (elementul, cu sarcinile care îl construiesc), iar ce face o sarcină de demolare, îndepărtare sau dezmembrare ca IfcRelAssignsToProcess. Regula, partea și excepțiile merg în `Lapin_Task`, deci Lapin citește regula înapoi; un fișier din alt program dă sarcini cu elementele pe care le atribuie lor. MS Project XML le duce în câmpul Text1, numit *Lapin elements*, iar produsele unei sarcini în Text2, numit *Lapin PBS*, după care se poate grupa sau filtra în MS Project. Registrul XLSX are coloanele **Elements** și **Rule**.
 
 ## Simularea 4D
 
