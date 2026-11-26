@@ -75,6 +75,10 @@ Catalogul are și **scripturi Python**. În aplicația desktop poți instala unu
 
 ![Detaliile unui script: ce cere și că nu se poate rula încă](shots/extensions-script.webp)
 
+## Module de extensie
+
+Un **modul de extensie** adaugă unelte în Lapin însuși: file și butoane în panglică, vederi, dialoguri, cu codul din spatele lor. Rulează doar în aplicația desktop, niciodată în browser. Interfața lui se încarcă la pornirea Lapin, din fișierele verificate de motor (semnătura magazinului și amprenta fiecărui fișier), așa că o schimbare a extensiilor instalate se vede la următoarea pornire. Dacă unul nu poate rula în această versiune de Lapin (cere una mai nouă) sau se oprește cu o eroare la încărcare, Lapin pornește fără el și spune **Unele extensii au fost lăsate deoparte:** cu numele lor.
+
 ## Extensii plătite
 
 Unele extensii sunt **vândute de autorii lor**, prin propriul magazin (azi Gumroad). Sunt marcate **Plătită** în listă, cu prețul lor; prețul e *orientativ*: contează cel al vânzătorului, din pagina de plată. Lapin Extensions nu ia comision și nu e parte la vânzare: vânzătorul încasează plata, emite factura și se ocupă de rambursări, după termenii pe care îi deschide **Termenii vânzătorului**.

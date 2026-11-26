@@ -1,0 +1,4 @@
+{
+  "phrases": { "Hello from an extension": "Salut de la o extensie", "Say hello": "Salută", "Greetings": "Salutări" },
+  "patterns": [["^(\\d+) hellos$", "{1} saluturi"]]
+}

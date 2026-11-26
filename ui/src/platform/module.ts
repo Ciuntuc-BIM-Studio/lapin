@@ -547,4 +547,11 @@ export interface LapinModule {
   placementCheck?: (req: PlacementRequest) => Promise<PlacementVerdict | null> | PlacementVerdict | null;
   /** What it replaces of the other modules' and the shell's (an edition of its own; docs/overrides.md). */
   replaces?: Replaces;
+  /**
+   * What this module offers extensions' interface plug-ins, read through `@lapin/sdk`'s `module(id)`
+   * (docs/plan-extension-modules.md §6.3): helpers a plug-in would otherwise import by path, which it cannot.
+   */
+  exports?: Record<string, unknown>;
+  /** The version of `exports`, raised when something in it changes or goes away (as `"api"` in the engine's module.json). */
+  api?: number;
 }

@@ -1,0 +1,14 @@
+{
+  "name": "@lapin/extension-kit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Builds the interface half of a Lapin extension module (ui/plugin.js, ui/plugin.css, ui/i18n) against @lapin/sdk v1.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": { "types": "./index.d.ts", "default": "./vite.mjs" },
+    "./shared": "./shared.mjs",
+    "./sdk": { "types": "./sdk.d.ts" }
+  },
+  "peerDependencies": { "vite": ">=5" }
+}
