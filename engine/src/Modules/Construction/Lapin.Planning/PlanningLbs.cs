@@ -172,15 +172,16 @@ public sealed class LbsSheet : ISheetContent
                 if (x.Critical) critical.Segments.Add((new Vec2(x0, ya), new Vec2(x1, yb)));
             }
             var lab = s.Labels.GetValueOrDefault(x.Id);
-            var at = new Vec2((x0 + x1) / 2 + (lab?.Dx ?? 0) * 0.25, (ya + yb) / 2 - 0.8 + (lab?.Dy ?? 0) * 0.25);
-            var angle = lab?.Angle ?? (x.Rep == "line" && x1 > x0 ? Math.Atan2(ya - yb, x1 - x0) * 180 / Math.PI : 0);
+            // A label moved in the pane keeps its offset in days and metres, so it lands on the sheet where it was put.
+            var at = new Vec2((x0 + x1) / 2 + (lab?.Dx ?? 0) * k, (ya + yb) / 2 - 0.8 - (lab?.Dy ?? 0) * bodyH / axisH);
+            var angle = lab != null ? lab.Angle : x.Rep == "line" && x1 > x0 ? Math.Atan2(ya - yb, x1 - x0) * 180 / Math.PI : 0;
             text.Texts.Add(new PenText(at, x.Group, Text * 0.8, Angle: angle));
         }
         if (p.DataDate is { } dd && X(dd.AddDays(1)) is var xd && xd > AxisW && xd < width) status.Segments.Add((new Vec2(xd, bodyTop), new Vec2(xd, bottom)));
         // The notes, at their date and location.
         foreach (var n in s.Notes)
             if (c.Locations.FirstOrDefault(l => l.Id == n.Location) is { } nl)
-                text.Texts.Add(new PenText(new Vec2(X(n.Date), Y(nl.At + nl.Extent / 2)), n.Text, Text, Anchor: "start", Italic: true));
+                text.Texts.Add(new PenText(new Vec2(X(n.Date) + n.Dx * k, Y(nl.At + nl.Extent / 2) - n.Dy * bodyH / axisH), n.Text, Text, Anchor: "start", Italic: true));
         // The legend: a swatch and a name a group.
         var lx = 0.0;
         foreach (var g in c.Groups)

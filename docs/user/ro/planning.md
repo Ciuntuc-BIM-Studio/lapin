@@ -158,6 +158,17 @@ La **Elements** în Proprietăți, sub **Găsește-le după o regulă**, **Condi
 
 **Resetează** scoate afișarea; **Nume de câmpuri…** deschide numele biroului. Gantt-ul pe planșă desenează ce arată fereastra.
 
+## Programul pe locații
+
+**Execuție → Program pe locații** deschide sub vedere, ca Gantt-ul, o diagramă timp–locație (linii de flux, „line of balance”). Timpul curge pe orizontală, pe zile, săptămâni sau luni; locațiile modelului urcă pe verticală, la cotele lor. Fiecare sarcină are câte un segment pentru fiecare locație în care sunt elementele ei. O sarcină pe un nivel e o linie care urcă peste banda nivelului, de la început la sfârșit. O sarcină pe mai multe niveluri vecine e un bloc peste ele. Sarcinile ale căror nume diferă doar prin numele locației („Zidărie · Parter”, „Zidărie · Etaj 1”) sunt aceeași lucrare, cu o singură culoare în legendă. Când Gantt-ul își colorează barele după un câmp, diagrama folosește aceleași culori. Segmentele critice sunt roșii; ziua de azi și data de stare sunt desenate ca linii. Sarcinile fără elemente într-o locație sunt numărate în bară, nu desenate.
+
+- **Locații** alege nivelul: **Clădiri**, **Niveluri** (implicit) sau **Zone**. La Zone, **Zone după** alege un câmp sau o formulă a elementelor (o proprietate „Zonă”, un parametru, un alias), iar valorile lui împart fiecare nivel. Săgeata de lângă o clădire sau un nivel strânge locațiile de sub el într-un singur rând.
+- **Un clic** pe un segment îi selectează sarcina. Trage mânerul de jos ca să-i muți începutul: sarcina începe atunci nu mai devreme de ziua aceea, ca la tragerea unei bare în Gantt. Trage mânerul de sus ca să-i schimbi sfârșitul, adică durata. **Încă un clic** pe același segment selectează lucrarea în toate locațiile ei. O bară sub legendă schimbă atunci, într-un singur pas, durata sau constrângerea tuturor acestor sarcini. Selecția e aceeași cu cea din Gantt și din 3D.
+- **Etichetele** se trag cu mouse-ul; Alt+tragere le rotește, iar un dublu clic le aduce înapoi. **Notă** fixează o notă la o dată și o locație: dai clic unde trebuie pusă. Un dublu clic pe o notă o schimbă; o notă goală e ștearsă. Etichetele și notele se păstrează în vedere.
+- **Ctrl+rotiță** mărește timpul, **Shift+rotiță** mărește locațiile, iar un dublu clic pe fundal arată toată diagrama. **Pe planșă** (sau **Program pe locații pe planșă**, în grupul Simulare 4D) pune diagrama pe o planșă A3 nouă. O desenează motorul, așa că PDF-ul tipărește ce arată fereastra.
+
+Datele vin din drumul critic, așa că o sarcină premergătoare care întârzie mută toate segmentele de după ea.
+
 ## Drumul critic
 
 Lapin calculează programul după fiecare schimbare. O trecere înainte găsește datele cele mai devreme, una înapoi pe cele mai târzii. Sarcinile fără rezervă fac drumul critic: întârzierea oricăreia mută finalul. O legătură spre un rezumat ține toate sarcinile de sub el. O legătură dintr-un rezumat pornește de la începutul primei lui sarcini și se termină la sfârșitul ultimei. Lapin refuză o legătură care ar face o buclă.

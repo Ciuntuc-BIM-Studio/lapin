@@ -158,6 +158,17 @@ In **Generate schedule…**, the pencil of a step opens **Only the elements with
 
 **Reset** takes the display off; **Field names…** opens your office's names. The Gantt on a sheet draws what the window shows.
 
+## The location-based schedule
+
+**Construction → Location-based schedule** opens a time–location chart (a flow-line or line-of-balance chart) under the view, like the Gantt. Time runs across, with days, weeks or months; the model's locations run up, at their elevations. Each task gets a segment for every location its elements are in. A task on one storey is a line rising across that storey's band, from its start to its finish. A task over neighbouring storeys is a block over them. Tasks whose names differ only by the location's name ("Masonry · Ground floor", "Masonry · First floor") are one trade, with one colour in the legend. When the Gantt colours its bars by a field, the chart uses those colours. Critical segments are red; today and the status date are drawn as lines. Tasks with no elements in a location are counted in the toolbar, not drawn.
+
+- **Locations** chooses the level: **Buildings**, **Storeys** (the default) or **Zones**. With Zones, **Zones by** picks a field or formula of the elements (a property "Zone", a parameter, an alias), and its values divide each storey. The arrow next to a building or storey folds the locations under it into one row.
+- **Click** a segment to select its task. Drag its bottom handle to move its start: the task then starts no earlier than that day, as when a Gantt bar is dragged. Drag its top handle to change its finish, which sets its duration. **Click it again** to select the trade across all its locations. A bar under the legend then sets the duration or the constraint of every one of those tasks in one step. The selection is shared with the Gantt and the 3D.
+- **Labels** can be dragged; Alt+drag turns them, and a double-click puts one back. **Note** pins a note to a date and a location: click where it goes. Double-click a note to change it; an empty note is deleted. Labels and notes are saved in the view.
+- **Ctrl+wheel** zooms the time, **Shift+wheel** zooms the locations, and a double-click on the background fits the whole chart. **On sheet** (or **Location-based schedule on sheet** in the 4D simulation group) puts the chart on a new A3 sheet. The engine draws it, so the PDF prints what the pane shows.
+
+The dates come from the critical path, so a predecessor that slips moves every segment after it.
+
 ## The critical path
 
 Lapin works out the schedule after every change. A forward pass finds the earliest dates and a backward pass the latest. The tasks with no float make the critical path, and a delay to any of them moves the finish. A link to a summary holds every task under it. A link from a summary starts at its first task's start and ends at its last task's finish. Lapin refuses a link that would make a loop.
