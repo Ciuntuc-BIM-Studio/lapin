@@ -243,6 +243,10 @@ public class CurvedRevealTests(ITestOutputHelper output)
         Assert.Equal(StraightPrint, print);
     }
 
-    /// <summary>Taken from the build before the curved walls' details (forum topic 288).</summary>
-    const string StraightPrint = "C79A93E4E967EAE91425EBF3CAFFEE0EFBEF6880DD9EB1A5B9B94B3939970558";
+    /// <summary>
+    /// Taken from the build before the curved walls' details (forum topic 288); retaken for GitHub issue #153, whose only change
+    /// here is the window's plan: its detailed sills drawn under the cut in place of the plain boards' rectangles they replace
+    /// (the parts and the quantities as before).
+    /// </summary>
+    const string StraightPrint = "3298AD4574A984A33209236CD24FDD1510A9C0E840EC0890B49DE1E16FA86840";
 }
