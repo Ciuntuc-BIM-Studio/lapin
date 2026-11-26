@@ -64,10 +64,23 @@ export function guessLook(name: string | undefined | null): Look {
   return PLAIN;
 }
 
+/**
+ * A bare metal guessed from a name, in a colour darker than any bare metal is (a roof's Metal sheet in anthracite, #3c4247):
+ * a painted sheet, as roofs and cladding are, so the painted look (MaterialLook.PaintedMetal). Drawn fully metallic, its
+ * reflectance is its dark colour and it reads black in 3D. A metal the user made metallic (its own metalness), a polished one
+ * and a light one keep their look.
+ */
+export function paintedMetal(g: Look, color: unknown): Look {
+  if (g.metalness < 0.9 || g.roughness < 0.2 || typeof color !== 'string' || !/^#[0-9a-f]{6}$/i.test(color)) return g;
+  const c = (i: number) => parseInt(color.slice(1 + 2 * i, 3 + 2 * i), 16) / 255;
+  const luminance = 0.2126 * c(0) + 0.7152 * c(1) + 0.0722 * c(2);
+  return luminance < 0.3 ? { ...g, roughness: 0.45, metalness: 0.1 } : g;
+}
+
 /** A material's look: its own values, the rest from its name (MaterialLook.Of). */
 export function lookOf(material: NodeDto | undefined): Look {
   if (!material) return PLAIN;
-  const g = guessLook(material.name);
+  const g = paintedMetal(guessLook(material.name), material.props.color);
   const p = material.props;
   const num = (k: keyof typeof LOOK_RANGES): number => (typeof p[k] === 'number' && Number.isFinite(p[k]) ? (p[k] as number) : g[k]);
   const emissive = 'emissive' in p ? (typeof p.emissive === 'string' && /^#[0-9a-f]{6}$/i.test(p.emissive) ? p.emissive : null) : g.emissive;

@@ -779,7 +779,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     public const int MaxQuantityIds = 5000;
 
     /// <summary>The library files a firm's folder may hold (docs/plan-user-extensibility.md §4.2), by extension.</summary>
-    public static readonly string[] LibraryKinds = ["lapinsymbols", "lapintypes", "lapinstandards", "lapinrules", "lapinbarshapes", "lapinparams", "lapinmapping", "lapinfamily", "lapinpart", "lapinlib", "lapintitleblock", "lapinprofiles", "lapinprices", "lapinschedule", "lapinaliases", "pat", "lin"];
+    public static readonly string[] LibraryKinds = ["lapinsymbols", "lapintypes", "lapinstandards", "lapinrules", "lapinbarshapes", "lapinparams", "lapinmapping", "lapinfamily", "lapinpart", "lapinlib", "lapintitleblock", "lapinprofiles", "lapinprices", "lapinschedule", "lapinaliases", "lapinpanels", "pat", "lin"];
 
     /// <summary>
     /// Bytes written into a folder of their own in the temporary folder, to be opened from there (a version in another

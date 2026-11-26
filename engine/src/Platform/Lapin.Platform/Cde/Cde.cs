@@ -117,7 +117,7 @@ public static class Cde
         PdfRemarks.CdeRemarks.Register(r);
         // The project's IDS files (docs/ids.md): kept here; read and checked by the dispatcher's IDS calls.
         IdsFiles.Register(r);
-        // The documents the project receives (docs/plan-cde-references.md, decision 874): certificates, permits, studies, models.
+        // The documents the project receives (docs/plan-cde-references.md, decision 878): certificates, permits, studies, models.
         References.References.Register(r);
 
         // The project folder: a path on this computer (or a share, or a synced cloud folder); empty clears it. Kept in the project, so it travels with the file.

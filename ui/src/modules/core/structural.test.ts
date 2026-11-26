@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { byRule, isStructuralClass, setArgs, sourceText } from './structural';
+import { byRule, isStructuralClass, setArgs, sourceText, typeTick, typeTickNext } from './structural';
 import { withStructural } from '../architecture/structuralTools';
 import { fieldLabel } from '../../shell/conditionGroup';
 
@@ -22,6 +22,18 @@ describe('the Structural tick (docs/plan-structural-usage.md)', () => {
     expect(setArgs(['a', 'b'], true)).toEqual({ ids: ['a', 'b'], value: true });
     expect(setArgs(['a'], null)).toEqual({ ids: ['a'], value: null });
     expect(setArgs(['a'], false, true)).toEqual({ ids: ['a'], value: false, onType: true });
+  });
+
+  it('a type dialog\'s tick: by rule until said, then structural or not; a click goes yes, then no', () => {
+    expect(typeTick(undefined)).toBe('rule');
+    expect(typeTick('yes')).toBe('rule');
+    expect(typeTick(true)).toBe('yes');
+    expect(typeTick(false)).toBe('no');
+    expect(typeTickNext('rule')).toBe(true);
+    expect(typeTickNext('no')).toBe(true);
+    expect(typeTickNext('yes')).toBe(false);
+    // Sent on the type itself.
+    expect(setArgs(['wt'], typeTickNext('rule'), true)).toEqual({ ids: ['wt'], value: true, onType: true });
   });
 
   it('the Structure tab draws walls and floors ticked, nothing else, and not when unticked', () => {

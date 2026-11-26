@@ -1621,8 +1621,9 @@ public static partial class IfcExport
         {
             if (materials.TryGetValue(id, out var r)) return r;
             var mat = m.Get(id);
-            // Its description (docs/plan-buildup-tags.md) as IfcMaterial.Description.
-            r = f.Add("IFCMATERIAL", S(mat?.Name ?? id), S(mat?.Str("description") is { Length: > 0 } d ? d : null), S(mat?.Str("category")));
+            // Its description (docs/plan-buildup-tags.md) as IfcMaterial.Description; its category, else the one its file gave (ifcCategory).
+            r = f.Add("IFCMATERIAL", S(mat?.Name ?? id), S(mat?.Str("description") is { Length: > 0 } d ? d : null),
+                S(mat?.Str("category") is { Length: > 0 } c ? c : mat?.Str("ifcCategory")));
             materials[id] = r;
             // Its Lapin id and attributes, so an import gives the material the same id and what refers to it (a column type, a zone) still finds it.
             if (mat != null) f.Add("IFCMATERIALPROPERTIES", S(IntentSetName), Null, L(IntentProperties(mat, null, [("LapinId", mat.Id)])), r);
@@ -1785,6 +1786,7 @@ public static partial class IfcExport
             // A roof's trusses: each an element assembly of its members (keys "truss:<n>:<role>:<i>"), under the roof.
             var trusses = new Dictionary<string, List<string>>();
             var panels = new Dictionary<string, List<string>>();
+            var groups = new Dictionary<string, (PartGroup Group, List<string> Members)>();
             var zones = (m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Attrs["zones"] as JsonArray)?.OfType<JsonObject>().ToList() ?? [];
             for (var i = 0; i < parts.Count; i++)
             {
@@ -1800,8 +1802,18 @@ public static partial class IfcExport
                 // A part made of a type (a lintel of a beam type, report #135): typed by it, IfcBeamType LINTEL.
                 if (p.TypeId != null && m.Get(p.TypeId) is { } partType) TypeOf(partType, pk, r);
                 StandardSets(e, p, r, $"{e.Id}/{key}");
-                if (p.Properties is { Count: > 0 } own)
-                    Define(r, f.Add("IFCPROPERTYSET", Gid(e.Id, key + "/pset"), Null, S(p.PropertySet ?? "Lapin_Part"), Null, L(own.Select(x => Single(x.Name, Typed("IFCLABEL", S(x.Value)))).ToArray())), Gid(e.Id, key + "/pset-rel"));
+                if ((p.Properties?.Count ?? 0) + (p.Measures?.Count ?? 0) > 0)
+                    Define(r, f.Add("IFCPROPERTYSET", Gid(e.Id, key + "/pset"), Null, S(p.PropertySet ?? "Lapin_Part"), Null, L(PartProperties(p.Properties, p.Measures))), Gid(e.Id, key + "/pset-rel"));
+                // The part's own quantities (a roof panel's Qto_CoveringBaseQuantities), on its element only.
+                foreach (var set in p.Quantities ?? [])
+                    if (QuantityItems(set) is { Count: > 0 } q)
+                        Define(r, f.Add("IFCELEMENTQUANTITY", Gid(e.Id, key + "/qto/" + set.Name), Null, S(set.Name), Null, Null, L(q)), Gid(e.Id, key + "/qto-rel/" + set.Name));
+                // The group it is assigned to (a roof panel's plane): an IfcGroup per key, made once, its members in the parts' order.
+                if (p.Group is { } pg)
+                {
+                    if (!groups.TryGetValue(pg.Key, out var g)) groups[pg.Key] = g = (pg, []);
+                    g.Members.Add(r);
+                }
                 partRefs[(e.Id, key)] = r;
                 if (kind.Class == IfcClass.Roof && key.Split(':') is ["truss", var n, ..]) { if (!trusses.TryGetValue(n, out var members)) trusses[n] = members = []; members.Add(r); }
                 // A prefabricated timber-frame wall's members and boards (decision 245), by the panel they belong to.
@@ -1822,6 +1834,47 @@ public static partial class IfcExport
                 refs.Add(panel);
             }
             f.Add("IFCRELAGGREGATES", Gid(e.Id, "parts"), Null, Null, Null, parent, L(refs));
+            foreach (var (gkey, (pg, members)) in groups)
+            {
+                var group = f.Add("IFCGROUP", Gid(e.Id, "group:" + gkey), Null, S(pg.Name), S(pg.Description), S(pg.ObjectType));
+                f.Add("IFCRELASSIGNSTOGROUP", Gid(e.Id, "group-members:" + gkey), Null, Null, Null, L(members), Null, group);
+                if ((pg.Properties?.Count ?? 0) + (pg.Measures?.Count ?? 0) > 0)
+                    Define(group, f.Add("IFCPROPERTYSET", Gid(e.Id, "group:" + gkey + "/pset"), Null, S(pg.PropertySet ?? "Lapin_Group"), Null, L(PartProperties(pg.Properties, pg.Measures))), Gid(e.Id, "group:" + gkey + "/pset-rel"));
+            }
+        }
+
+        /// <summary>A part's (or a part group's) own properties: its texts as labels, its numbers as the measures they are (an angle in the file's radians).</summary>
+        string[] PartProperties(IReadOnlyList<(string Name, string Value)>? texts, IReadOnlyList<PartMeasure>? measures) =>
+        [
+            .. (texts ?? []).Select(x => Single(x.Name, Typed("IFCLABEL", S(x.Value)))),
+            .. (measures ?? []).Where(x => double.IsFinite(x.Value)).Select(x => Single(x.Name, x.Kind switch
+            {
+                "LENGTH" => Typed("IFCLENGTHMEASURE", R(x.Value)),
+                "AREA" => Typed("IFCAREAMEASURE", R(x.Value)),
+                "ANGLE" => Typed("IFCPLANEANGLEMEASURE", R(x.Value * Math.PI / 180)),
+                "COUNT" => Typed("IFCINTEGER", I((int)Math.Round(x.Value))),
+                _ => Typed("IFCREAL", R(x.Value)),
+            })),
+        ];
+
+        /// <summary>A quantity set's quantities as IFC's (a name met again numbered, as <see cref="Quantities"/> writes them).</summary>
+        List<string> QuantityItems(QuantitySet set)
+        {
+            var seen = new Dictionary<string, int>();
+            var q = new List<string>();
+            foreach (var x in set.Quantities.Where(x => double.IsFinite(x.Value)))
+            {
+                var n = seen[x.Name] = seen.GetValueOrDefault(x.Name) + 1;
+                var name = S(n == 1 ? x.Name : $"{x.Name} ({n})");
+                var cls = x.Kind switch
+                {
+                    "LENGTH" => "IFCQUANTITYLENGTH", "AREA" => "IFCQUANTITYAREA", "VOLUME" => "IFCQUANTITYVOLUME",
+                    "WEIGHT" => "IFCQUANTITYWEIGHT", "COUNT" => "IFCQUANTITYCOUNT", _ => null,
+                };
+                if (cls == null) continue;
+                q.Add(f.Add(cls, name, S(x.Label), Null, cls == "IFCQUANTITYCOUNT" ? I((int)Math.Round(x.Value)) : R(x.Value), Null));
+            }
+            return q;
         }
 
         /// <summary>What a part is in IFC: a lintel or ring beam a beam, a roof plane a roof slab, the timber members, the sole of a strip footing a footing; else a building element part named as Lapin names it.</summary>
@@ -1860,6 +1913,8 @@ public static partial class IfcExport
                 // A roof without framing: its deck (decision 329) and its covering, each an IfcSlab ROOF of its material.
                 (IfcClass.Roof, "covering") or (IfcClass.Roof, "deck") or (IfcClass.Roof, "dormer-roofs") => new(IfcClass.Slab, "ROOF", null),
                 (IfcClass.Roof, "roof-windows") => new(IfcClass.Window, "SKYLIGHT", null),
+                // A roof's panels (the roofpanels module, docs/plan-roof-panels.md §2.6): each a covering of the roof, in place of its covering slab.
+                (IfcClass.Roof, "panel") => new("IfcCovering", "ROOFING", null),
                 (IfcClass.Roof, "glass") => new("IfcPlate", "SHEET", null),
                 (IfcClass.Roof, "dormer-walls") => new(IfcClass.Wall, "NOTDEFINED", null),
                 (IfcClass.Roof, "timber" or "truss") => TimberKind(rest),
@@ -2388,20 +2443,7 @@ public static partial class IfcExport
             {
                 if (carried.Contains(set.Name)) continue;
                 var target = set.Part != null && grouped && partRefs.TryGetValue((e.Id, set.Part), out var pr) ? pr : entity;
-                var seen = new Dictionary<string, int>();
-                var q = new List<string>();
-                foreach (var x in set.Quantities.Where(x => double.IsFinite(x.Value)))
-                {
-                    var n = seen[x.Name] = seen.GetValueOrDefault(x.Name) + 1;
-                    var name = S(n == 1 ? x.Name : $"{x.Name} ({n})");
-                    var cls = x.Kind switch
-                    {
-                        "LENGTH" => "IFCQUANTITYLENGTH", "AREA" => "IFCQUANTITYAREA", "VOLUME" => "IFCQUANTITYVOLUME",
-                        "WEIGHT" => "IFCQUANTITYWEIGHT", "COUNT" => "IFCQUANTITYCOUNT", _ => null,
-                    };
-                    if (cls == null) continue;
-                    q.Add(f.Add(cls, name, S(x.Label), Null, cls == "IFCQUANTITYCOUNT" ? I((int)Math.Round(x.Value)) : R(x.Value), Null));
-                }
+                var q = QuantityItems(set);
                 if (q.Count == 0) continue;
                 var key = set.Part != null ? $"{set.Name}/{set.Part}" : set.Name;
                 var description = target == entity && set.Part != null ? set.PartName ?? set.Part : null;

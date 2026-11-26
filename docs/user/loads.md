@@ -49,7 +49,7 @@ Select a room: its properties have an **Imposed load** section. Its **Category**
 
 ## The imposed loads table
 
-The **Imposed loads** tab lists each category with its use and its **qk** in kN/m², as EN 1991-1-1 recommends. Type your national annex's value in the field; **Overridden** goes back to the default.
+The **Imposed loads** tab lists each category with its use and its **qk** in kN/m², as EN 1991-1-1 recommends. Type your national annex's value in the field; **Overridden** goes back to the default, which is the value of the rule pack in use (Lapin's: EN 1991-1-1's; a pack's own in its Loads tab, see [Rules](rules.md)).
 
 ![The Imposed loads tab](shots/loads-imposed.webp)
 
@@ -61,6 +61,10 @@ The **Snow and wind** tab holds the site's climate. Lapin does not ship the nati
 
 - **Snow**: the **ground snow load s0,k** (kN/m²), the **exposure Ce** (full 0.8, partial 1.0, sheltered 1.2), the **thermal coefficient Ct** (1.0 unless the roof is glazed and loses heat) and the **importance factor γIs** (1.0 for ordinary buildings). **Apply the snow**.
 - **Wind**: the **reference wind pressure qb** (kN/m²), the **terrain category** (0 to IV, from the sea to a town centre) and the **importance factor γIw**. **Apply the wind**.
+
+When the rule pack in use lists regions (Manage → Rules → Climate, for Sweden the kommuns), **Pick from the pack's list** is shown above: type or choose the region and **Use the region**. Lapin fills the site's s0,k from the region's sk and qb from its vb,0 (qb = ½ · 1.25 kg/m³ · vb,0²), keeps the exposure, the thermal coefficient, the terrain and the importance factors, and makes the cases, in one step of undo. The tab then says the site's values are the region's; type a value over them and the region is no longer named. The regions' values are the pack's, indicative: check them against the edition in force.
+
+![Picking the site's region](shots/loads-climate-region.webp)
 
 Applying them makes the cases their loads go in:
 
@@ -92,7 +96,8 @@ The **Combinations** tab lists the combinations of the cases, as the standard wr
 
 The **Factors** section at the top sets the partial factors γ and the combination factors ψ the combinations use. They are yours to check: the sets Lapin ships are indicative.
 
-- **Set of factors.** A new project takes **CR 0-2012 (Romania)**; a project made before this setting keeps **EN 1990 Annex A1, recommended**, so its combinations do not change. The two differ in ψ: CR 0-2012 takes snow at 0.7, 0.5, 0.4, wind at 0.7, 0.2, 0 and roofs (category H) at ψ0 0.7, where EN has 0.5, 0.2, 0 for snow, 0.6, 0.2, 0 for wind and 0 for roofs.
+- **Set of factors.** A new project takes **CR 0-2012 (Romania)**; a project made before this setting keeps **EN 1990 Annex A1, recommended**, so its combinations do not change. The two differ in ψ: CR 0-2012 takes snow at 0.7, 0.5, 0.4, wind at 0.7, 0.2, 0 and roofs (category H) at ψ0 0.7, where EN has 0.5, 0.2, 0 for snow, 0.6, 0.2, 0 for wind and 0 for roofs. The list also offers the sets of the rule pack in use (Manage → Rules…, its Loads tab): a set of your country's, with its own γ, ψ, expression and ξ. A pack may change Lapin's two as well; with Lapin's pack, or a copy left as it is, they give exactly the combinations they always gave. A project naming a set the pack in use lacks takes EN's, and the notes say so.
+- **Safety class.** Shown when the set gives γd by safety class: choose the project's class, and its γd multiplies the unfavourable actions of the ultimate combinations (the permanent actions with γG,sup, the variable ones with γQ, in 6.10 or 6.10a and 6.10b); the favourable permanent actions of the wind's uplift keep γG,inf and the serviceability combinations do not change. **None (γd 1)** leaves the factors as they are. When the set gives ψ of snow by s0,k, the site's s0,k (Snow and wind) picks it, and the notes say which.
 - **γG,sup, γG,inf, γQ.** Each field shows the value in force. Type your own and it is marked with **Reset**, which goes back to the set's value.
 - **Expression.** **6.10** (the default) or **6.10a and 6.10b**: two expressions, the second with ξ (0.85 recommended, 0.5 to 1) on the permanent actions. CR 0-2012 has only its expression 6.9 (EN's 6.10), so 6.10a and 6.10b stay your choice.
 - **ψ by category.** Open the table to give ψ0, ψ1 and ψ2 of a category (the imposed-load categories, snow, wind); an empty row takes the set's values. A case's own ψ (in the Cases tab) goes before the category's.

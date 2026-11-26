@@ -317,6 +317,18 @@ public static class Terrains
 
     public static IReadOnlyList<Vec2> Spots(Entity e) => Contour(e, "spots");
 
+    /// <summary>
+    /// The spot levels with the datum each says of its own (decision 867's leftover): <c>[x, y]</c>, or <c>[x, y, datum]</c>
+    /// (relative, absolute or both) over the view's; null when it says none. The malformed left out, as <see cref="Spots"/>.
+    /// </summary>
+    public static IReadOnlyList<(Vec2 At, string? Datum)> SpotLevels(Entity e) =>
+        [.. ((e.Attrs["spots"] as JsonArray)?.OfType<JsonArray>() ?? [])
+            .Select(a => (At: Args.TryPoint(a), Datum: a.Count > 2 && a[2] is JsonValue v && v.TryGetValue<string>(out var d) ? LevelDatum.ModeOf(d) : null))
+            .Where(x => x.At.HasValue).Select(x => (x.At!.Value, x.Datum))];
+
+    /// <summary>A spot level as stored: <c>[x, y]</c>, its datum third when it says one.</summary>
+    public static JsonArray SpotJson(Vec2 at, string? datum) => LevelDatum.ModeOf(datum) is { } d ? new JsonArray(at.X, at.Y, d) : new JsonArray(at.X, at.Y);
+
     /// <summary>A terrain's breaklines: polylines of surveyed points [[x, y, z], …].</summary>
     public static List<IReadOnlyList<Vec3>> Breaklines(Entity e) =>
         (e.Attrs["breaklines"] as JsonArray)?.OfType<JsonArray>()

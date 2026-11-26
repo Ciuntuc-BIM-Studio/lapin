@@ -419,12 +419,13 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             }
             // Spot levels: a cross and the designed ground's height beside it.
             var r = 1.2 * c.Mm;
-            foreach (var p in Terrains.Spots(e))
+            foreach (var (p, own) in Terrains.SpotLevels(e))
             {
                 if (designed.At(p) is not { } z) continue;
                 mk.Line(p - new Vec2(r, 0), p + new Vec2(r, 0), "LEVELS", Pens.Default.Seen, "#000000");
                 mk.Line(p - new Vec2(0, r), p + new Vec2(0, r), "LEVELS", Pens.Default.Seen, "#000000");
-                mk.Text(new PenText(p + new Vec2(r * 1.2, r * 0.3), LevelDatum.Text(c, z), text.Height * 0.8, 0, "start", "bottom", false, text.Font), "#000000");
+                // As the view's datum writes it, or the spot's own over it (relative, absolute, both).
+                mk.Text(new PenText(p + new Vec2(r * 1.2, r * 0.3), LevelDatum.Text(c, z, own: own), text.Height * 0.8, 0, "start", "bottom", false, text.Font), "#000000");
                 mk.Snaps.Add(p);
             }
             // Slope tags: point gradient arrow or two-point grade line.

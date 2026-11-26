@@ -46,6 +46,10 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
         ], "#c2410c", Kind: "resource"));
         UserLoads.Register(r);
         r.Service<INewProject>(new CombinationSettings.NewProject());
+        // The loads of a rule pack (docs/plan-national-packs.md N1): the factor sets and the imposed loads as data.
+        r.Service<IRuleSection>(LoadRuleSection.Instance);
+        // The climate's regions (N2): sk and vb,0 by region, picked in Loads → Snow and wind.
+        r.Service<IRuleSection>(ClimateRuleSection.Instance);
         r.Service<IElementUpdate>(this);
         r.Service<IDeletion>(this);
         r.Service<IViewAnnotations>(this);
@@ -130,21 +134,48 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
             return null;
         });
 
-        // {snow?: {s0k, ce?, ct?, importance?} | null, wind?: {qb, terrain?, importance?} | null}: the site's climate (CR 1-1-3,
-        // CR 1-1-4), the values the user reads for the site; null takes one off, absent leaves it. The cases its loads go in
-        // made when missing (the snow's arrangements, the wind's directions), in the same undo step.
+        // {snow?: {s0k, ce?, ct?, importance?} | null, wind?: {qb, terrain?, importance?} | null, region?: name | null}: the site's
+        // climate (CR 1-1-3, CR 1-1-4), the values the user reads for the site; null takes one off, absent leaves it. A region of
+        // the rule pack's climate list (docs/plan-national-packs.md N2) fills s0,k and qb from its sk and vb,0 (or qb), the other
+        // values kept; snow or wind given beside it win. A region picked stays named while the values are still its own. The
+        // cases its loads go in made when missing (the snow's arrangements, the wind's directions), in the same undo step.
         r.Command("setClimate", "Snow and wind", (ctx, a) =>
         {
-            if (!a.ContainsKey("snow") && !a.ContainsKey("wind")) throw new CommandException("Say the snow, the wind or both.");
+            if (!a.ContainsKey("snow") && !a.ContainsKey("wind") && !a.ContainsKey("region")) throw new CommandException("Say the snow, the wind, a region or both.");
             var project = Spatial.Project(ctx.Model) ?? throw new CommandException("The model has no project.");
             var attrs = project.CloneAttrs();
             var own = attrs[Climate.Key] is JsonObject had ? (JsonObject)had.DeepClone() : new JsonObject();
-            if (a.ContainsKey("snow")) { if (a["snow"] is JsonObject s) own["snow"] = Climate.WriteSnow(s); else if (a["snow"] is null) own.Remove("snow"); else throw new CommandException("The snow is {s0k, ce, ct, importance}."); }
-            if (a.ContainsKey("wind")) { if (a["wind"] is JsonObject w) own["wind"] = Climate.WriteWind(w); else if (a["wind"] is null) own.Remove("wind"); else throw new CommandException("The wind is {qb, terrain, importance}."); }
+            var (snowSet, windSet) = (false, false);
+            if (a.ContainsKey("region"))
+            {
+                if (a["region"] is null) own.Remove(Climate.RegionKey);
+                else
+                {
+                    var name = (string?)a["region"] is { Length: > 0 } n ? n : throw new CommandException("A region is named by its name in the rules' climate list.");
+                    var region = ClimateRuleSection.Find(ctx.Model, name) ?? throw new CommandException($"The rules in use list no region „{name}” (Manage → Rules → Climate).");
+                    if (region.Sk is { } sk)
+                    {
+                        var s0 = own["snow"] as JsonObject;
+                        own["snow"] = Climate.WriteSnow(new JsonObject { ["s0k"] = sk, ["ce"] = s0?["ce"]?.DeepClone(), ["ct"] = s0?["ct"]?.DeepClone(), ["importance"] = s0?["importance"]?.DeepClone() });
+                        snowSet = true;
+                    }
+                    if (region.Qb is { } qb)
+                    {
+                        var w0 = own["wind"] as JsonObject;
+                        own["wind"] = Climate.WriteWind(new JsonObject { ["qb"] = qb, ["terrain"] = w0?["terrain"]?.DeepClone(), ["importance"] = w0?["importance"]?.DeepClone() });
+                        windSet = true;
+                    }
+                    own[Climate.RegionKey] = region.Name;
+                }
+            }
+            if (a.ContainsKey("snow")) { if (a["snow"] is JsonObject s) { own["snow"] = Climate.WriteSnow(s); snowSet = true; } else if (a["snow"] is null) own.Remove("snow"); else throw new CommandException("The snow is {s0k, ce, ct, importance}."); }
+            if (a.ContainsKey("wind")) { if (a["wind"] is JsonObject w) { own["wind"] = Climate.WriteWind(w); windSet = true; } else if (a["wind"] is null) own.Remove("wind"); else throw new CommandException("The wind is {qb, terrain, importance}."); }
+            // A region named while its values are no longer the site's (typed over): no longer named.
+            if ((string?)own[Climate.RegionKey] is { } picked && !Climate.StillOf(ctx.Model, own, picked)) own.Remove(Climate.RegionKey);
             attrs.Remove(Climate.Key);
             if (own.Count > 0) attrs[Climate.Key] = own;
             ctx.Replace(project.With(attrs: attrs));
-            return Ids(Climate.EnsureCases(ctx, a["snow"] is JsonObject, a["wind"] is JsonObject));
+            return Ids(Climate.EnsureCases(ctx, snowSet, windSet));
         });
 
         // ── Queries ──
@@ -158,7 +189,7 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
             var own = Categories.Overrides(q.Model);
             return new JsonArray(Categories.All.Select(c => (JsonNode)new JsonObject
             {
-                ["key"] = c.Key, ["label"] = c.Label, ["qk"] = own.TryGetValue(c.Key, out var v) ? v : c.Qk, ["default"] = c.Qk, ["overridden"] = own.ContainsKey(c.Key),
+                ["key"] = c.Key, ["label"] = c.Label, ["qk"] = own.TryGetValue(c.Key, out var v) ? v : Categories.PackQk(q.Model, c.Key) ?? c.Qk, ["default"] = Categories.PackQk(q.Model, c.Key) ?? c.Qk, ["overridden"] = own.ContainsKey(c.Key),
             }).ToArray());
         });
 
@@ -176,8 +207,9 @@ public sealed class AnalysisModule : ILapinModule, IElementUpdate, IDeletion, IV
 
         // ── Combinations (§13) ──
 
-        // {set?: en | cr0, gammaGSup?, gammaGInf?, gammaQ?, psi?: {category: {0, 1, 2} | null}, expression?: 6.10 | 6.10ab, xi?}:
-        // the project's combination factors; null back to the set's. One undo step.
+        // {set?: en | cr0 | a set of the rule pack's, gammaGSup?, gammaGInf?, gammaQ?, psi?: {category: {0, 1, 2} | null},
+        // expression?: 6.10 | 6.10ab, xi?, safetyClass?: a class of the set's (its γd) | null}: the project's combination factors;
+        // null back to the set's. One undo step.
         r.Command("setCombinationOptions", "Combination factors", (ctx, a) => { CombinationSettings.Write(ctx, a); return null; });
 
         // {key, enabled}: a combination switched off (left out of results, envelopes, checks and export) or on again. One undo step.

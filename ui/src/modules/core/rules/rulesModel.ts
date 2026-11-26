@@ -6,9 +6,11 @@
  */
 
 export type Section = Record<string, unknown>;
-export interface PackItem { id: string; name: string; builtin: boolean; active: boolean; description?: string | null }
+/** What a pack says of itself: the country, the edition of the rules it follows, its language, its sources (one a line). */
+export interface PackMeta { country?: string; edition?: string; language?: string; sources?: string[] }
+export interface PackItem { id: string; name: string; builtin: boolean; active: boolean; description?: string | null; meta?: PackMeta }
 export interface RulesList { items: PackItem[]; active: string; sections: { key: string; label: string }[] }
-export interface RulePack { id: string; name: string; builtin: boolean; indicative: boolean; sections: Record<string, Section>; defaults: Record<string, Section> }
+export interface RulePack { id: string; name: string; builtin: boolean; indicative: boolean; sections: Record<string, Section>; defaults: Record<string, Section>; meta?: PackMeta }
 export interface Finding { module: string; element: string | null; severity: string; message: string }
 
 // ─── Stairs ──────────────────────────────────────────────────────────────────
@@ -150,3 +152,230 @@ export function findingsByModule(findings: Finding[]): [string, Finding[]][] {
   for (const f of findings) by.set(f.module, [...(by.get(f.module) ?? []), f]);
   return [...by].map(([m, l]) => [m, [...l].sort((a, b) => (rank[a.severity] ?? 3) - (rank[b.severity] ?? 3))] as [string, Finding[]]);
 }
+
+// ─── Pack metadata ───────────────────────────────────────────────────────────
+
+/** The sources typed (one a line) as rules.update takes them: blank lines left out. */
+export const sourcesFrom = (text: string): string[] => text.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0);
+
+/** A language code as a pack gives it (sv, ro, pt-BR), or empty; null when it does not read. */
+export function languageFrom(text: string): string | null {
+  const t = text.trim();
+  return t === '' || /^[a-z]{2}(-[A-Z]{2})?$/.test(t) ? t : null;
+}
+
+// ─── Loads (docs/plan-national-packs.md N1) ──────────────────────────────────
+
+export type PsiValues = Record<'0' | '1' | '2', number>;
+export interface SnowZone { from: number; psi: PsiValues }
+/** A factor set as the pack holds it: γ, the expression and ξ, ψ by category, ψ of snow by s0,k, γd by safety class. */
+export interface LoadSet {
+  label: string; gammaGSup: number; gammaGInf: number; gammaQ: number; expression: '6.10' | '6.10ab'; xi: number;
+  psi: Record<string, PsiValues>; snowPsi: SnowZone[]; safetyClasses: Record<string, number>;
+}
+export interface LoadsSection { sets: Record<string, LoadSet>; imposed: Record<string, number> }
+
+/** Lapin's own sets: a pack may change them; a set of the user's comes and goes. */
+export const BUILTIN_LOAD_SETS = ['en', 'cr0'];
+
+/** Each number of a set, its label and its range (as the engine checks it). */
+export const LOAD_SET_FIELDS: { key: 'gammaGSup' | 'gammaGInf' | 'gammaQ' | 'xi'; label: string; min: number; max: number }[] = [
+  { key: 'gammaGSup', label: 'γG,sup', min: 1, max: 2 }, { key: 'gammaGInf', label: 'γG,inf', min: 0, max: 1.5 },
+  { key: 'gammaQ', label: 'γQ', min: 1, max: 2 }, { key: 'xi', label: 'ξ', min: 0.5, max: 1 },
+];
+
+export function setLoadSet(loads: LoadsSection, name: string, patch: Partial<LoadSet>): LoadsSection {
+  return { ...loads, sets: { ...loads.sets, [name]: { ...loads.sets[name]!, ...patch } } };
+}
+
+/** A set of one's own started as a copy of another; null when the name is empty, too long or taken. */
+export function addLoadSet(loads: LoadsSection, name: string, from: string): LoadsSection | null {
+  const n = name.trim();
+  if (!n || n.length > 32 || n in loads.sets || !loads.sets[from]) return null;
+  return { ...loads, sets: { ...loads.sets, [n]: { ...loads.sets[from]!, label: n } } };
+}
+
+export function removeLoadSet(loads: LoadsSection, name: string): LoadsSection {
+  if (BUILTIN_LOAD_SETS.includes(name) || Object.keys(loads.sets).length <= 1) return loads;
+  const { [name]: _gone, ...rest } = loads.sets;
+  return { ...loads, sets: rest };
+}
+
+/** One ψ of a category set (ψ0, ψ1 or ψ2). */
+export function setPsi(set: LoadSet, category: string, i: 0 | 1 | 2, value: number): LoadSet {
+  const had = set.psi[category] ?? { '0': 0, '1': 0, '2': 0 };
+  return { ...set, psi: { ...set.psi, [category]: { ...had, [String(i)]: value } as PsiValues } };
+}
+
+/** A safety class given its γd (added or changed); null when the name is empty or too long, or γd out of 0.5–1.5. */
+export function setSafetyClass(set: LoadSet, name: string, gammaD: number): LoadSet | null {
+  const n = name.trim();
+  if (!n || n.length > 32 || !(gammaD >= 0.5 && gammaD <= 1.5)) return null;
+  return { ...set, safetyClasses: { ...set.safetyClasses, [n]: gammaD } };
+}
+
+export function removeSafetyClass(set: LoadSet, name: string): LoadSet {
+  const { [name]: _gone, ...rest } = set.safetyClasses;
+  return { ...set, safetyClasses: rest };
+}
+
+/** The snow zones in order of their s0,k; a new one starts 1 kN/m² past the last with its ψ. */
+export function addSnowZone(set: LoadSet): LoadSet {
+  const zones = [...set.snowPsi].sort((a, b) => a.from - b.from);
+  const last = zones[zones.length - 1];
+  const psi = last?.psi ?? set.psi.snow ?? { '0': 0.5, '1': 0.2, '2': 0 };
+  return { ...set, snowPsi: [...zones, { from: last ? last.from + 1 : 0, psi: { ...psi } }] };
+}
+
+export function setSnowZone(set: LoadSet, at: number, patch: Partial<SnowZone>): LoadSet {
+  return { ...set, snowPsi: set.snowPsi.map((z, i) => (i === at ? { ...z, ...patch, psi: { ...z.psi, ...(patch.psi ?? {}) } } : z)) };
+}
+
+export function removeSnowZone(set: LoadSet, at: number): LoadSet {
+  return { ...set, snowPsi: set.snowPsi.filter((_, i) => i !== at) };
+}
+
+/** What the engine would refuse in a set, found before sending: two zones from the same s0,k, a value out of range. */
+export function loadSetProblem(set: LoadSet): string | null {
+  for (const f of LOAD_SET_FIELDS) if (!(set[f.key] >= f.min && set[f.key] <= f.max)) return `${f.label} is between ${f.min} and ${f.max}`;
+  const froms = set.snowPsi.map((z) => z.from);
+  if (new Set(froms).size !== froms.length) return 'two snow zones start at the same s0,k';
+  if (froms.some((f) => !(f >= 0 && f <= 20))) return "a snow zone's s0,k is between 0 and 20 kN/m²";
+  const psis = [...Object.values(set.psi), ...set.snowPsi.map((z) => z.psi)];
+  if (psis.some((p) => [p['0'], p['1'], p['2']].some((v) => !(v >= 0 && v <= 1)))) return 'ψ0, ψ1 and ψ2 are between 0 and 1';
+  return null;
+}
+
+// ─── Climate (docs/plan-national-packs.md N2) ────────────────────────────────
+
+/** A region of a pack's climate list: its name, sk (kN/m²), vb,0 (m/s) or qb (kN/m²), a note. */
+export interface Region { name: string; sk?: number; vb0?: number; qb?: number; note?: string }
+export interface ClimateSection { regionLabel: string; regions: Region[] }
+
+/** qb from vb,0 as the engine works it out: ½ · 1.25 kg/m³ · vb,0², in kN/m² (four decimals). */
+export const qbFromVb0 = (vb0: number): number => Math.round(0.5 * 1.25 * vb0 * vb0 / 1000 * 1e4) / 1e4;
+
+/** What the engine would refuse in a region, in words; null when it reads. */
+export function regionProblem(r: Region): string | null {
+  const n = r.name.trim();
+  if (!n || n.length > 80) return "a region's name is 1 to 80 characters";
+  if (r.sk != null && !(r.sk >= 0 && r.sk <= 20)) return `${n}: sk is between 0 and 20 kN/m²`;
+  if (r.vb0 != null && !(r.vb0 >= 0 && r.vb0 <= 60)) return `${n}: vb,0 is between 0 and 60 m/s`;
+  if (r.qb != null && !(r.qb >= 0 && r.qb <= 10)) return `${n}: qb is between 0 and 10 kN/m²`;
+  if (r.vb0 != null && r.qb != null) return `${n}: give vb,0 or qb, not both`;
+  if (r.sk == null && r.vb0 == null && r.qb == null) return `${n}: a region gives sk, vb,0 or qb`;
+  return null;
+}
+
+export function regionsProblem(c: ClimateSection): string | null {
+  const seen = new Set<string>();
+  for (const r of c.regions) {
+    const p = regionProblem(r);
+    if (p) return p;
+    const k = r.name.trim().toLowerCase();
+    if (seen.has(k)) return `the region ${r.name.trim()} is listed twice`;
+    seen.add(k);
+  }
+  return c.regions.length > 500 ? 'a pack lists at most 500 regions' : null;
+}
+
+/** A region changed in place; a value set to null is taken off. */
+export function setRegion(c: ClimateSection, at: number, patch: { name?: string; sk?: number | null; vb0?: number | null; qb?: number | null; note?: string | null }): ClimateSection {
+  return {
+    ...c,
+    regions: c.regions.map((r, i) => {
+      if (i !== at) return r;
+      const next: Record<string, unknown> = { ...r, ...patch };
+      for (const k of Object.keys(next)) if (next[k] == null || next[k] === '') delete next[k];
+      return next as unknown as Region;
+    }),
+  };
+}
+
+/** A region added at the end (its values empty until typed); null when the name is empty, too long or taken. */
+export function addRegion(c: ClimateSection, name: string): ClimateSection | null {
+  const n = name.trim();
+  if (!n || n.length > 80 || c.regions.some((r) => r.name.toLowerCase() === n.toLowerCase())) return null;
+  return { ...c, regions: [...c.regions, { name: n, sk: 0 }] };
+}
+
+export function removeRegion(c: ClimateSection, at: number): ClimateSection {
+  return { ...c, regions: c.regions.filter((_, i) => i !== at) };
+}
+
+const numberIn = (t: string | undefined): number | undefined => {
+  const s = (t ?? '').trim().replace(',', '.');
+  if (s === '') return undefined;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : NaN;
+};
+
+/**
+ * Regions pasted from a table, one a line: name, sk, vb,0 (and a note), the columns split by tabs or semicolons (a decimal comma
+ * reads). A first line whose sk does not read is a header, left out. The regions, or the first line that does not read.
+ */
+export function parseRegions(text: string): { regions: Region[]; problem: string | null } {
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0);
+  const regions: Region[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const cells = lines[i]!.split(/\t|;/).map((c) => c.trim());
+    const [name, skText, vbText, ...rest] = cells;
+    const sk = numberIn(skText);
+    const vb0 = numberIn(vbText);
+    if (i === 0 && (Number.isNaN(sk) || Number.isNaN(vb0))) continue;
+    if (Number.isNaN(sk) || Number.isNaN(vb0)) return { regions, problem: `line ${i + 1} does not read: name; sk; vb,0` };
+    const r: Region = { name: (name ?? '').trim() };
+    if (sk != null) r.sk = sk;
+    if (vb0 != null) r.vb0 = vb0;
+    const note = rest.join(' ').trim();
+    if (note) r.note = note;
+    const p = regionProblem(r);
+    if (p) return { regions, problem: `line ${i + 1}: ${p}` };
+    regions.push(r);
+  }
+  return { regions, problem: null };
+}
+
+/** Regions pasted into a list: one of a name already there replaced, a new one added at the end. */
+export function mergeRegions(c: ClimateSection, regions: Region[]): ClimateSection {
+  const next = [...c.regions];
+  for (const r of regions) {
+    const at = next.findIndex((x) => x.name.toLowerCase() === r.name.toLowerCase());
+    if (at >= 0) next[at] = r; else next.push(r);
+  }
+  return { ...c, regions: next };
+}
+
+// ─── Accessibility (docs/plan-national-packs.md N3) ──────────────────────────
+
+/** The limits a pack checks (null: not checked), whether ramps are checked against the stairs' set ramp, the rooms' functions. */
+export interface AccessibilitySection {
+  doorClearWidth: number | null; corridorWidth: number | null; turningDiameter: number | null; checkRamps: boolean;
+  corridorFunctions: string[]; turningFunctions: string[];
+}
+
+/** Each limit, its label and its range in metres (as the engine checks it). */
+export const ACCESS_LIMITS: { key: 'doorClearWidth' | 'corridorWidth' | 'turningDiameter'; label: string; min: number; max: number }[] = [
+  { key: 'doorClearWidth', label: "A door's least clear width", min: 0.5, max: 2.5 },
+  { key: 'corridorWidth', label: "A corridor's least width", min: 0.6, max: 5 },
+  { key: 'turningDiameter', label: 'Turning circle, diameter', min: 1, max: 3 },
+];
+
+/** A limit set (null: not checked); null when it is out of its range. */
+export function setAccessLimit(a: AccessibilitySection, key: typeof ACCESS_LIMITS[number]['key'], metres: number | null): AccessibilitySection | null {
+  const f = ACCESS_LIMITS.find((x) => x.key === key)!;
+  if (metres != null && !(metres >= f.min && metres <= f.max)) return null;
+  return { ...a, [key]: metres };
+}
+
+/** Room functions typed as a list (Bath, WC; Bedroom): trimmed, each once (whatever its case), at most 30. */
+export function functionsFrom(text: string): string[] {
+  const out: string[] = [];
+  for (const t of text.split(/[,;\n]+/).map((x) => x.trim()).filter((x) => x.length > 0 && x.length <= 60))
+    if (!out.some((o) => o.toLowerCase() === t.toLowerCase())) out.push(t);
+  return out.slice(0, 30);
+}
+
+/** Whether a pack checks anything of accessibility. */
+export const checksAccessibility = (a: AccessibilitySection): boolean =>
+  a.doorClearWidth != null || a.corridorWidth != null || a.turningDiameter != null || a.checkRamps;

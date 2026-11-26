@@ -406,6 +406,12 @@ public sealed record GeometryPart
     /// <summary>The part's own properties (a roof timber member's role, section, grade and length), written to IFC as the set <see cref="PropertySet"/>.</summary>
     public IReadOnlyList<(string Name, string Value)>? Properties { get; init; }
     public string? PropertySet { get; init; }
+    /// <summary>The part's own numbers, written to IFC in its <see cref="PropertySet"/> beside <see cref="Properties"/> as measures (a roof panel's length and widths).</summary>
+    public IReadOnlyList<PartMeasure>? Measures { get; init; }
+    /// <summary>The part's own quantity sets, written to IFC on the part's element (a roof panel's Qto_CoveringBaseQuantities); never the element's quantities, so a takeoff counts them once.</summary>
+    public IReadOnlyList<QuantitySet>? Quantities { get; init; }
+    /// <summary>The group IFC assigns the part's element to (IfcGroup, IfcRelAssignsToGroup): a roof panel's roof plane.</summary>
+    public PartGroup? Group { get; init; }
     /// <summary>The type the part is an occurrence of (a wall's lintel made of a beam type, report #135): IFC types the part's element by it.</summary>
     public string? TypeId { get; init; }
     /// <summary>A part plans cut as any other although its class draws by its symbols there (a lift's shaft walls round its car's symbol).</summary>
@@ -453,6 +459,19 @@ public sealed record GeometryPart
     /// <summary>The part's render: a mesh drawn as one (shared vertices, smooth, crease edges), a solid tessellated face by face.</summary>
     public TriMesh Tessellate() => Mesh is { } m ? MeshShading.Smooth(m.Xyz, m.Tris) : Tessellator.Tessellate(Solid);
 }
+
+/// <summary>
+/// A number of a part's own for IFC: <see cref="Kind"/> LENGTH (m), AREA (m²), ANGLE (degrees, written in the file's radians),
+/// COUNT, or REAL.
+/// </summary>
+public sealed record PartMeasure(string Name, double Value, string Kind);
+
+/// <summary>
+/// A group of an element's parts in IFC (an IfcGroup the parts' elements are assigned to): its <see cref="Key"/> stable within the
+/// element (its GlobalId is derived from the element's and the key), its name, and its own property set.
+/// </summary>
+public sealed record PartGroup(string Key, string Name, string? Description = null, string? ObjectType = null, string? PropertySet = null,
+    IReadOnlyList<(string Name, string Value)>? Properties = null, IReadOnlyList<PartMeasure>? Measures = null);
 
 /// <summary>
 /// Where one copy of a part's <see cref="GeometryPart.Unit"/> stands (a

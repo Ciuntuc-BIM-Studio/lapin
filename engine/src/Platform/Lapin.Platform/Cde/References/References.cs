@@ -25,7 +25,7 @@ public sealed record ReferenceFile(string Name, string Sha256, long Size, string
 }
 
 /// <summary>
-/// The documents a project receives (docs/plan-cde-references.md, decision 874): urbanism certificates, permits, land-book
+/// The documents a project receives (docs/plan-cde-references.md, decision 878): urbanism certificates, permits, land-book
 /// extracts, studies, a consultant's IFC. Each is a <c>LapinReference</c> entity (a resource, never exported to IFC) with its
 /// metadata (type, issuer, number, dates, phase, discipline, status), one folder of the project's folder tree, its files (the
 /// bytes in the project's file, outside the project state: <see cref="IReferenceFiles"/>), a certificate's checklist of the

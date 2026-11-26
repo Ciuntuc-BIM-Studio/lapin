@@ -298,6 +298,109 @@ public partial class LevelDatumTests
         finally { File.Delete(path); }
     }
 
+    // ------------------------------------------------------------ schedules (S4), spot levels, the elevation legend
+
+    static List<string> Column(ScheduleGrid g, int col) => [.. g.Rows.Where(r => r[0] != "Total").Select(r => r[col])];
+
+    [Fact]
+    public void A_schedule_s_level_column_writes_as_the_project_relative_or_absolute_and_a_plain_one_as_before()
+    {
+        var (f, _, _, _, upper) = Scene();
+        f.Run("architecture.addWall", new JsonObject { ["storeyId"] = upper, ["x1"] = 0, ["y1"] = 5, ["x2"] = 6, ["y2"] = 5 });
+        JsonObject Col(string? level) { var c = new JsonObject { ["field"] = "storey.elevation" }; if (level != null) c["level"] = level; return c; }
+        var fields = new JsonObject
+        {
+            ["filter"] = new JsonObject { ["classes"] = new JsonArray("IfcWall") }, ["sort"] = new JsonArray("storey.elevation"),
+            ["columns"] = new JsonArray(new JsonObject { ["field"] = "storey.name" }, Col(null), Col("project"), Col("relative"), Col("absolute")),
+        };
+        var id = (string)f.Run("architecture.createSchedule", new JsonObject { ["kind"] = "fields", ["name"] = "Levels", ["fields"] = fields })!["id"]!;
+        ScheduleGrid G() => new Lapin.Architecture.Schedules.FieldSchedule().Grid(f.Session.Reader, f.Model.Get(id)!);
+        // A column without a level format writes its numbers as before; the totals line adds those, never the levels.
+        var g = G();
+        Assert.Equal(["0", "3"], Column(g, 1));
+        Assert.Equal(["±0.00", "+3.00"], Column(g, 2));
+        Assert.Equal(["±0.00", "+3.00"], Column(g, 3));
+        Assert.Equal(["±0.00", "+3.00"], Column(g, 4));
+        Assert.Equal(["Total", "3", "", "", ""], g.Rows[^1]);
+        // ±0.00 tied to 650.00 at the upper storey, the project writing both.
+        f.Run("project.levelDatum", new JsonObject { ["zeroStorey"] = upper, ["tie"] = 650.0, ["mode"] = "both" });
+        g = G();
+        Assert.Equal(["0", "3"], Column(g, 1));
+        Assert.Equal(["−3.00 (+647.00)", "±0.00 (+650.00)"], Column(g, 2));
+        Assert.Equal(["−3.00", "±0.00"], Column(g, 3));
+        Assert.Equal(["+647.00", "+650.00"], Column(g, 4));
+        // Kept with the schedule, refused when it is no datum.
+        Assert.Equal("absolute", (string?)((JsonArray)((JsonObject)f.Model.Get(id)!.Attrs["fields"]!)["columns"]!)[4]!["level"]);
+        Assert.Throws<CommandException>(() => f.Run("architecture.updateSchedule", new JsonObject { ["id"] = id, ["fields"] = new JsonObject { ["columns"] = new JsonArray(Col("sideways")) } }));
+    }
+
+    [Fact]
+    public void A_spot_level_says_its_own_datum_over_the_view_s_and_keeps_it_through_a_split()
+    {
+        var (f, _, plan, t, _) = Scene();
+        f.Run("project.levelDatum", new JsonObject { ["tie"] = 100.0 });
+        // As the view's (relative): the golden +1.75.
+        Assert.Contains("+1.75", Texts(f, plan));
+        f.Run("civil.setSpotDatum", new JsonObject { ["id"] = t, ["index"] = 0, ["datum"] = "absolute" });
+        var texts = Texts(f, plan);
+        Assert.Contains("+101.75", texts);
+        Assert.DoesNotContain("+1.75", texts);
+        // The contours and the platform keep the view's.
+        Assert.Contains("+1.00", texts);
+        Assert.Contains("Platform 1 +0.75", texts);
+        // A new one placed with its own; one undo step each.
+        f.Run("civil.addSpot", new JsonObject { ["id"] = t, ["x"] = 5, ["y"] = 5, ["datum"] = "both" });
+        Assert.Contains("+0.25 (+100.25)", Texts(f, plan));
+        f.Session.Undo();
+        Assert.DoesNotContain("+0.25 (+100.25)", Texts(f, plan));
+        Assert.Contains("+101.75", Texts(f, plan));
+        // Back to the view's (null or project).
+        f.Run("civil.setSpotDatum", new JsonObject { ["id"] = t, ["all"] = true, ["datum"] = "project" });
+        Assert.Contains("+1.75", Texts(f, plan));
+        Assert.Equal(new JsonArray(35, 35).ToJsonString(), ((JsonArray)f.Model.Get(t)!.Attrs["spots"]!)[0]!.ToJsonString());
+        Assert.Throws<CommandException>(() => f.Run("civil.setSpotDatum", new JsonObject { ["id"] = t, ["index"] = 0, ["datum"] = "up" }));
+        Assert.Throws<CommandException>(() => f.Run("civil.setSpotDatum", new JsonObject { ["id"] = t, ["index"] = 7, ["datum"] = "absolute" }));
+        // A spot with its own datum goes with its half of a split, its datum with it; removing another keeps it.
+        f.Run("civil.addSpot", new JsonObject { ["id"] = t, ["x"] = 5, ["y"] = 5, ["datum"] = "absolute" });
+        f.Run("civil.addSpot", new JsonObject { ["id"] = t, ["x"] = 30, ["y"] = 30 });
+        f.Run("civil.removeSpot", new JsonObject { ["id"] = t, ["index"] = 0 });
+        Assert.Equal(["absolute", null], Terrains.SpotLevels(f.Model.Get(t)!).Select(s => s.Datum));
+        var ids = ((JsonObject)f.Run("civil.splitTerrain", new JsonObject { ["id"] = t, ["x1"] = 15, ["y1"] = -5, ["x2"] = 15, ["y2"] = 45 })!)["ids"]!.AsArray().Select(x => (string)x!).ToList();
+        var other = f.Model.Get(ids[1])!;
+        Assert.Equal([(new Lapin.Geometry.Vec2(5, 5), (string?)"absolute")], Terrains.SpotLevels(other).Select(s => (s.At, s.Datum)));
+        Assert.Single(Terrains.Spots(f.Model.Get(t)!));
+    }
+
+    static JsonObject Legend(Fixture f, string terrain, string? view)
+    {
+        var a = new JsonObject { ["id"] = terrain, ["kind"] = "elevation" };
+        if (view != null) a["viewId"] = view;
+        return (JsonObject)f.Session.Query("civil.analysis", a)!;
+    }
+
+    static string FirstBand(JsonObject legend) => (string)legend["bands"]![0]!["label"]!;
+
+    [Fact]
+    public void The_elevation_legend_follows_the_view_s_datum_and_by_default_writes_as_before()
+    {
+        var (f, _, plan, t, _) = Scene();
+        f.Run("civil.updateTerrain", new JsonObject { ["id"] = t, ["analysis"] = "elevation" });
+        // As before: the project's datum, nothing set.
+        Assert.Equal("±0.00 … +0.25", FirstBand(Legend(f, t, null)));
+        Assert.Equal("±0.00 … +0.25", FirstBand(Legend(f, t, plan)));
+        f.Run("project.levelDatum", new JsonObject { ["tie"] = 100.0 });
+        plan = (string)f.Run("view.levelDatum", new JsonObject { ["id"] = plan, ["datum"] = "absolute" })!["id"]!;
+        Assert.Equal("+100.00 … +100.25", FirstBand(Legend(f, t, plan)));
+        Assert.Equal("±0.00 … +0.25", FirstBand(Legend(f, t, null)));
+        // A view saying relative in a project of altitudes.
+        f.Run("project.levelDatum", new JsonObject { ["mode"] = "absolute" });
+        plan = (string)f.Run("view.levelDatum", new JsonObject { ["id"] = plan, ["datum"] = "relative" })!["id"]!;
+        Assert.Equal("±0.00 … +0.25", FirstBand(Legend(f, t, plan)));
+        Assert.Equal("+100.00 … +100.25", FirstBand(Legend(f, t, null)));
+        // The areas and colours do not depend on how the levels are written.
+        Assert.Equal(Legend(f, t, plan)["area"]!.ToJsonString(), Legend(f, t, null)["area"]!.ToJsonString());
+    }
+
     // ------------------------------------------------------------ no new direct FormatLevel in drawings
 
     /// <summary>

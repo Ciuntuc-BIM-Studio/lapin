@@ -106,12 +106,14 @@ export interface Prefs {
   xrayPeek: boolean;
   scrubFields: boolean;
   roleCards: boolean;
+  /** The 3D cursor pill, equal-spacing magnets, animated ribbon tooltips, the hold ring and right-click + WASD flight (docs/plan-ux-game-like.md, phase 4). */
+  precisionTools: boolean;
   /** The quick tools chosen for the workspace (architecture, structure, MEP, site, drafting): on only once a role card was picked, or here. */
   roleHotbars: boolean;
 }
 
 /** The extras the Flow preset turns on, in the order Preferences shows them (tactile sounds and the role's quick tools stay their own choice). */
-export const FLOW_EXTRAS = ['viewCube', 'selectionToolbar', 'healthRadar', 'microTips', 'quickWalkSplit', 'keycapHints', 'ghostPreview', 'xrayPeek', 'scrubFields', 'roleCards'] as const;
+export const FLOW_EXTRAS = ['viewCube', 'selectionToolbar', 'healthRadar', 'microTips', 'quickWalkSplit', 'keycapHints', 'ghostPreview', 'xrayPeek', 'scrubFields', 'roleCards', 'precisionTools'] as const;
 export type FlowExtra = (typeof FLOW_EXTRAS)[number];
 
 export const SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'tangent', 'nearest', 'wallAxis', 'gridAxis', 'division', 'distance'];
@@ -135,7 +137,7 @@ export const DEFAULT_PREFS: Prefs = {
   crosshair: false,
   tactileSounds: false,
   viewCube: false, selectionToolbar: false, healthRadar: false, microTips: false, quickWalkSplit: false,
-  keycapHints: false, ghostPreview: false, xrayPeek: false, scrubFields: false, roleCards: false, roleHotbars: false,
+  keycapHints: false, ghostPreview: false, xrayPeek: false, scrubFields: false, roleCards: false, precisionTools: false, roleHotbars: false,
 };
 
 const names = (v: unknown): string[] | null => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim()))] : null);
@@ -187,7 +189,7 @@ export function readPrefs(stored: unknown): Prefs {
     viewCube: o.viewCube === true, selectionToolbar: o.selectionToolbar === true, healthRadar: o.healthRadar === true,
     microTips: o.microTips === true, quickWalkSplit: o.quickWalkSplit === true, keycapHints: o.keycapHints === true,
     ghostPreview: o.ghostPreview === true, xrayPeek: o.xrayPeek === true, scrubFields: o.scrubFields === true,
-    roleCards: o.roleCards === true, roleHotbars: o.roleHotbars === true,
+    roleCards: o.roleCards === true, precisionTools: o.precisionTools === true, roleHotbars: o.roleHotbars === true,
     openingAlong: {
       from: pick((o.openingAlong as { from?: unknown } | undefined)?.from, ['start', 'face', 'core'] as const, d.openingAlong.from),
       point: pick((o.openingAlong as { point?: unknown } | undefined)?.point, ['start', 'centre', 'end'] as const, d.openingAlong.point),

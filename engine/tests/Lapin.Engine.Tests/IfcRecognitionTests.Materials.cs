@@ -2,6 +2,7 @@ using Lapin.Architecture;
 using Lapin.Ifc;
 using Lapin.Model;
 using Lapin.Platform;
+using Lapin.Structure;
 using static Lapin.Ifc.Step;
 
 namespace Lapin.Engine.Tests;
@@ -79,5 +80,56 @@ public partial class IfcRecognitionTests
         Assert.Equal("Alu RAL 7016", spec.Materials!.Frame);
         Assert.Equal("Blue glass", spec.Materials.Glass);
         Assert.Equal(blue.Id, f.Session.Geometry(window.Id)!.Parts.First(p => p.Key == "glass").Material);
+    }
+
+    [Fact]
+    public void A_bars_material_written_as_a_profile_set_comes_in_with_the_file()
+    {
+        // How IfcOpenShell, Revit and Tekla write the material of a beam or a column (issue #121): an IfcMaterialProfileSet
+        // with the profile's material, and on the occurrence its IfcMaterialProfileSetUsage, the set on the type or on neither.
+        var x = new Foreign();
+        string ProfileSet(string material)
+        {
+            var mat = x.F.Add("IFCMATERIAL", S(material), Null, S("Concrete"));
+            var prof = x.F.Add("IFCRECTANGLEPROFILEDEF", E("AREA"), S("300x300"), Null, "300.", "300.");
+            return x.F.Add("IFCMATERIALPROFILESET", S(material), Null, L([x.F.Add("IFCMATERIALPROFILE", Null, Null, mat, prof, Null, Null)]), Null);
+        }
+        // A column with only its usage (IfcOpenShell without a type).
+        var own = x.Element("IFCCOLUMN", "own", "C-own", x.Place(0, 0, 0), x.Shape(x.Box(0, 0, 0, 300, 300, 3000)), E("COLUMN"));
+        x.Material(own, x.F.Add("IFCMATERIALPROFILESETUSAGE", ProfileSet("HA-25/B/20/IIa"), "5", Null));
+        // A column with its usage and its type holding the set (Revit), and one with a tapering usage (IFC4's subtype).
+        var typed = x.Element("IFCCOLUMN", "typed", "C-typed", x.Place(3000, 0, 0), x.Shape(x.Box(0, 0, 0, 300, 300, 3000)), E("COLUMN"));
+        var set = ProfileSet("Concrete C30/37");
+        x.Material(typed, x.F.Add("IFCMATERIALPROFILESETUSAGE", set, "5", Null));
+        var type = x.F.Add("IFCCOLUMNTYPE", x.G("c3037"), Null, S("C 300x300"), Null, Null, Null, Null, Null, Null, E("COLUMN"));
+        x.F.Add("IFCRELDEFINESBYTYPE", x.G("c3037-rel"), Null, Null, Null, L([typed]), type);
+        x.Material(type, set);
+        var tapered = x.Element("IFCCOLUMN", "tapered", "C-tapered", x.Place(6000, 0, 0), x.Shape(x.Box(0, 0, 0, 300, 300, 3000)), E("COLUMN"));
+        var endSet = ProfileSet("HA-30/B/20/IIa");
+        x.Material(tapered, x.F.Add("IFCMATERIALPROFILESETUSAGETAPERING", endSet, "5", Null, endSet, "5"));
+        // A beam with only its type's set: the occurrence has no material of its own.
+        var bp = x.F.Add("IFCRECTANGLEPROFILEDEF", E("AREA"), Null, x.F.Add("IFCAXIS2PLACEMENT2D", x.F.Add("IFCCARTESIANPOINT", "(0.,0.)"), Null), "250.", "400.");
+        var bAt = x.F.Add("IFCAXIS2PLACEMENT3D", x.F.Add("IFCCARTESIANPOINT", "(0.,5000.,2800.)"), x.F.Add("IFCDIRECTION", "(1.,0.,0.)"), x.F.Add("IFCDIRECTION", "(0.,1.,0.)"));
+        var beam = x.Element("IFCBEAM", "beam", "B1", x.Place(0, 0, 0), x.Shape(x.F.Add("IFCEXTRUDEDAREASOLID", bp, bAt, x.F.Add("IFCDIRECTION", "(0.,0.,1.)"), "5000.")), E("BEAM"));
+        var beamType = x.F.Add("IFCBEAMTYPE", x.G("b2540"), Null, S("B 250x400"), Null, Null, Null, Null, Null, Null, E("BEAM"));
+        x.F.Add("IFCRELDEFINESBYTYPE", x.G("b2540-rel"), Null, Null, Null, L([beam]), beamType);
+        x.Material(beamType, ProfileSet("HA-25/B/20/IIa beam"));
+        // A profile set whose profile names no material: the column takes the default, as one with no material at all does.
+        var blank = x.Element("IFCCOLUMN", "blank", "C-blank", x.Place(9000, 0, 0), x.Shape(x.Box(0, 0, 0, 300, 300, 3000)), E("COLUMN"));
+        var blankProf = x.F.Add("IFCMATERIALPROFILE", Null, Null, Null, x.F.Add("IFCRECTANGLEPROFILEDEF", E("AREA"), S("300x300"), Null, "300.", "300."), Null, Null);
+        x.Material(blank, x.F.Add("IFCMATERIALPROFILESETUSAGE", x.F.Add("IFCMATERIALPROFILESET", S("No material"), Null, L([blankProf]), Null), "5", Null));
+        x.Element("IFCCOLUMN", "bare", "C-bare", x.Place(12000, 0, 0), x.Shape(x.Box(0, 0, 0, 300, 300, 3000)), E("COLUMN"));
+
+        var f = Full();
+        IfcImport.Run(f.Session, x.Write(Path.Combine(_dir, "profile-sets.ifc")), null, out _);
+        var m = f.Session.Model;
+
+        string? Of(string key, bool column) =>
+            m.Get((column ? Columns.Spec(m, m.Get(x.Gid(key))!).Material : Beams.Spec(m, m.Get(x.Gid(key))!).Material)!)?.Name;
+        Assert.Equal("HA-25/B/20/IIa", Of("own", true));
+        Assert.Equal("Concrete C30/37", Of("typed", true));
+        Assert.Equal("HA-30/B/20/IIa", Of("tapered", true));
+        Assert.Equal("HA-25/B/20/IIa beam", Of("beam", false));
+        Assert.Equal(Of("bare", true), Of("blank", true));
     }
 }

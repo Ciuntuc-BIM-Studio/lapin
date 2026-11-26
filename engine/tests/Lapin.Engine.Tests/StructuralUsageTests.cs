@@ -125,6 +125,59 @@ public sealed class StructuralUsageTests : IDisposable
     }
 
     [Fact]
+    public void The_type_dialogs_tick_sets_the_types_attribute_in_one_step_and_saving_the_type_keeps_it()
+    {
+        // What the Wall types, Floor types and Structure types dialogs send: {ids: [the type], value, onType: true}.
+        var f = Full();
+        var wallType = f.Type("Brick 25", ("Brick", 0.25, true));
+        var wall = f.Wall(0, 0, 5, 0, wallType);
+        var slabType = (string)f.Run("architecture.createSlabType", new JsonObject { ["name"] = "Slab 20", ["layers"] = new JsonArray(new JsonObject { ["material"] = "Concrete", ["thickness"] = 0.2, ["core"] = true }) })!["id"]!;
+        var colType = (string)f.Run("structure.createColumnType", new JsonObject { ["name"] = "C30", ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.3, ["depth"] = 0.3 } })!["id"]!;
+        var beamType = (string)f.Run("structure.createBeamType", new JsonObject { ["name"] = "B30", ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.3, ["depth"] = 0.5 } })!["id"]!;
+        var gid = f.Model.Get(wallType)!.Str("globalId");
+        void OnType(string type, bool? value) =>
+            f.Run("element.setStructural", new JsonObject { ["ids"] = new JsonArray(type), ["value"] = value is { } v ? JsonValue.Create(v) : null, ["onType"] = true });
+        OnType(wallType, false);
+        Assert.False(StructuralUsage.Own(f.Model.Get(wallType)!));
+        Assert.Equal(new StructuralUsage.Usage(false, false, "type"), Views(f, wall));
+        Assert.Equal(gid, f.Model.Get(wallType)!.Str("globalId"));
+        f.Session.Undo();
+        Assert.Null(StructuralUsage.Own(f.Model.Get(wallType)!));
+        Assert.Equal(new StructuralUsage.Usage(null, true, "rule:class"), Views(f, wall));
+        // Each type ticked, then saved by its dialog: the tick stays.
+        foreach (var t in new[] { wallType, slabType, colType, beamType }) OnType(t, t == colType);
+        f.Run("architecture.updateWallType", new JsonObject { ["id"] = wallType, ["name"] = "Brick 25", ["layers"] = new JsonArray(new JsonObject { ["material"] = "Brick", ["thickness"] = 0.25, ["core"] = true }), ["wrapEnds"] = null });
+        f.Run("architecture.updateSlabType", new JsonObject { ["id"] = slabType, ["name"] = "Slab 20", ["layers"] = new JsonArray(new JsonObject { ["material"] = "Concrete", ["thickness"] = 0.22, ["core"] = true }), ["beamBlock"] = null });
+        f.Run("structure.updateType", new JsonObject { ["id"] = colType, ["name"] = "C35", ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.35, ["depth"] = 0.35 } });
+        f.Run("structure.updateType", new JsonObject { ["id"] = beamType, ["name"] = "B35", ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.35, ["depth"] = 0.5 } });
+        Assert.False(StructuralUsage.Own(f.Model.Get(wallType)!));
+        Assert.False(StructuralUsage.Own(f.Model.Get(slabType)!));
+        Assert.True(StructuralUsage.Own(f.Model.Get(colType)!));
+        Assert.False(StructuralUsage.Own(f.Model.Get(beamType)!));
+        // Back to the rule.
+        OnType(colType, null);
+        Assert.Null(f.Model.Get(colType)!.Attrs[StructuralUsage.Key]);
+    }
+
+    /// <summary>
+    /// U4 (one default rule for every consumer) is left: no rule keeps both consumers' answers for unsaid walls. A thin wall
+    /// that is no partition bears load in the views (decisions 500/502, the cores of the load-bearing, the Structure discipline)
+    /// and stays out of the analysis (a core under 10 cm): a single rule changes one of them for models that say nothing.
+    /// </summary>
+    [Fact]
+    public void U4_the_views_and_the_analysis_disagree_on_an_unsaid_thin_wall_so_one_rule_would_change_a_result()
+    {
+        var f = Full();
+        var board = f.Type("Board 7.5", ("Plasterboard", 0.075, true));
+        var wall = f.Wall(0, 0, 6, 0, board);
+        Assert.True(Views(f, wall).Effective);
+        Assert.True(ViewStyles.BearsLoad(f.Model, f.Model.Get(wall)!));
+        var am = AnalyticalModel.Build(f.Model, f.Session.Reader.Services, new AnalyticalOptions());
+        Assert.DoesNotContain(am.Shells, s => s.Source.SourceId == wall);
+        Assert.Equal("rule:thickness", StructuralUsage.ForAnalysis(f.Model, f.Model.Get(wall)!).Source);
+    }
+
+    [Fact]
     public void A_column_a_beam_or_a_floor_said_not_to_bear_load_leaves_the_analysis_with_a_note()
     {
         var frame = AnalysisRunTests.Frame6x4();

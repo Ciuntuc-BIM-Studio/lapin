@@ -526,6 +526,10 @@ public static partial class IfcImport
                 var usage = mat.Type == "IFCMATERIALLAYERSETUSAGE" ? (Enum(mat[2]) == "NEGATIVE", Length(mat[3])) : ((bool, double)?)null;
                 return (layers, null, usage);
             }
+            // A beam's or a column's (IfcOpenShell, Revit, Tekla): a profile set, through its usage (tapering or not) on the occurrence; its first profile's material.
+            var profiles = mat.Type is "IFCMATERIALPROFILESETUSAGE" or "IFCMATERIALPROFILESETUSAGETAPERING" ? f.Get(mat[0]) : mat.Type == "IFCMATERIALPROFILESET" ? mat : null;
+            if (profiles != null)
+                return (null, Items(profiles[2]).Select(p => f.Get(p[2])).FirstOrDefault(m => m?.Type == "IFCMATERIAL") is { } pm ? Str(pm[0]) : null, null);
             if (mat.Type == "IFCMATERIAL") return (null, Str(mat[0]), null);
             if (mat.Type == "IFCMATERIALLIST" && Items(mat[0]).FirstOrDefault() is { } m0) return (null, Str(m0[0]), null);
             if (mat.Type == "IFCMATERIALCONSTITUENTSET" && Items(mat[2]).FirstOrDefault() is { } c0 && f.Get(c0[2]) is { } cm) return (null, Str(cm[0]), null);

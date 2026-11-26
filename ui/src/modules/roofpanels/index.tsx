@@ -7,7 +7,7 @@
  * drawn by the engine in 3D, plans and sections.
  */
 
-import { LayoutGrid, Table2 } from 'lucide-react';
+import { Layers, LayoutGrid, Table2 } from 'lucide-react';
 import type { LapinModule, ToolDef } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
@@ -17,6 +17,7 @@ import { PanelsSection } from './PanelsSection';
 
 // Fetched the first time it is opened (platform/lazyPart.tsx).
 const PanelLayoutDialog = lazyPart(() => import('./PanelLayoutDialog').then((m) => m.PanelLayoutDialog), { title: 'Panel layout' });
+const ProfilesDialog = lazyPart(() => import('./ProfilesDialog').then((m) => m.ProfilesDialog), { title: 'Roof panel profiles' });
 
 /** The roof Panel layout opens on: the one selected, else the project's only roof. */
 export function roofFor(selected: readonly string[], nodes: ReadonlyMap<string, NodeDto>): NodeDto | null {
@@ -48,6 +49,13 @@ const itemSchedule: ToolDef = {
   run: () => void execute('architecture.importSchedule', { builtin: 'roofPanelItems' }).then((r) => { if (r) notify('Roof panel accessories schedule made: it is in the project browser, under Schedules.'); }),
 };
 
+// Stage S7: the project's own profiles beside Lapin's, and a firm's .lapinpanels file.
+const profiles: ToolDef = {
+  id: 'roofpanels.profiles', label: 'Panel profiles…', icon: Layers, alsoCalled: ['roof panel profiles', 'lapinpanels'],
+  tooltip: 'Lapin\'s roof panel profiles and the project\'s own: duplicate one to change its widths, laps, lengths, colours or accessories',
+  run: () => useUi.setState({ dialog: 'roofPanelProfiles' }),
+};
+
 const sloped = (n: NodeDto) => !['flat', 'barrel'].includes(String(n.props.shape ?? ''));
 
 const roofpanels: LapinModule = {
@@ -56,9 +64,9 @@ const roofpanels: LapinModule = {
   summary: 'Metal tiles and standing-seam panels laid out on the roofs: what to buy by length, the offcuts reused in the valleys, the panels drawn as the covering.',
   tabs: [{
     id: 'architecture', label: 'Architecture', order: 20,
-    groups: [{ label: 'Roof panels', after: 'Build', tools: [layout], small: [schedule, itemSchedule] }],
+    groups: [{ label: 'Roof panels', after: 'Build', tools: [layout], small: [profiles, schedule, itemSchedule] }],
   }],
-  dialogs: { roofPanelLayout: PanelLayoutDialog },
+  dialogs: { roofPanelLayout: PanelLayoutDialog, roofPanelProfiles: ProfilesDialog },
   propertySections: [
     { id: 'roofPanels', label: 'Panels', classes: ['IfcRoof'], shows: sloped, component: PanelsSection },
   ],

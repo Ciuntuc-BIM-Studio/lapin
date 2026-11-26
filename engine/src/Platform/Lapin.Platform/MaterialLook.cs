@@ -74,11 +74,25 @@ public sealed record MaterialLook(double Roughness, double Metalness, double Tra
         return Plain;
     }
 
+    /// <summary>
+    /// A bare metal guessed from a name, in a colour darker than any bare metal is (a roof's Metal sheet in anthracite, #3c4247): a
+    /// painted sheet, as roofs and cladding are, so the painted look. Drawn fully metallic, its reflectance is its dark colour and it
+    /// reads black in 3D. A metal the user made metallic (its own metalness), a polished one and a light one keep their look.
+    /// </summary>
+    public static MaterialLook PaintedMetal(MaterialLook g, string? color)
+    {
+        if (g.Metalness < 0.9 || g.Roughness < 0.2 || color is not { Length: 7 } || color[0] != '#'
+            || !int.TryParse(color.AsSpan(1), System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out var rgb)) return g;
+        double C(int shift) => ((rgb >> shift) & 0xff) / 255.0;
+        var luminance = 0.2126 * C(16) + 0.7152 * C(8) + 0.0722 * C(0);
+        return luminance < 0.3 ? g with { Roughness = 0.45, Metalness = 0.1 } : g;
+    }
+
     /// <summary>A material's look: its own values, the rest from its name.</summary>
     public static MaterialLook Of(Entity? material)
     {
         if (material == null) return Plain;
-        var g = Guess(material.Name);
+        var g = PaintedMetal(Guess(material.Name), material.Str("color"));
         double V(string key, double fallback) => material.NumOrNull(key) is { } v && double.IsFinite(v) ? v : fallback;
         var emissive = material.Attrs.ContainsKey("emissive") ? material.Str("emissive") : g.Emissive;
         return new MaterialLook(V("roughness", g.Roughness), V("metalness", g.Metalness), V("transparency", g.Transparency), V("transmission", g.Transmission), V("ior", g.Ior),

@@ -26,13 +26,24 @@ export interface PanelChoice {
   profile: string; color?: string | null; maxLength?: number | null; support?: string; ridge?: string; fixing?: string;
   /** S5: the rainwater system (`125/90`, `150/100`; absent: Auto), the downpipes (absent: Auto), the rain (l/s·m²; absent: 0.05). */
   drainage?: string; downpipes?: number | null; rain?: number | null;
+  /** S7: the slopes' exceptions by code: left without panels, or a fixed phase of the columns (mm). */
+  faces?: Record<string, FaceRule>;
 }
+
+export interface FaceRule { skip?: boolean; phase?: number }
 
 export type Pt = [number, number];
 
 /** An opening the panels are cut round (S3): a roof window, a dormer, another roof in the slope; laid flat and in plan. */
 export interface HoleDto { id: string; name: string; kind: string; outline: Pt[]; plan: Pt[] }
-export interface FaceDto { id: string; plane: number; pitch: number; eave: number; area: number; coverage: number; slopeLength: number; outline: Pt[]; planOutline: Pt[]; holes?: HoleDto[] }
+/**
+ * A roof plane of the layout; S7: `skip`, left without panels (the roof's covering there, nothing counted); `phase`, its columns'
+ * phase as laid (mm along the eave from its origin, modulo the useful width); `fixedPhase`, the one the user fixed, if any.
+ */
+export interface FaceDto {
+  id: string; plane: number; pitch: number; eave: number; area: number; coverage: number; slopeLength: number; outline: Pt[]; planOutline: Pt[]; holes?: HoleDto[];
+  skip?: boolean | null; phase?: number | null; fixedPhase?: number | null;
+}
 export interface EdgeDto { kind: string; faces: string[]; length: number; lap: number; pieces: number; joints: number; a: number[]; b: number[]; opening?: string | null }
 
 /** A line of the takeoff (S3): an accessory, a fixing, the support; its quantity in its unit and what that comes from. */
@@ -131,7 +142,90 @@ export function choiceOf(node: NodeDto | undefined): PanelChoice | null {
     maxLength: typeof p.maxLength === 'number' ? p.maxLength : null,
     support: text(p.support), ridge: text(p.ridge), fixing: text(p.fixing),
     drainage: text(p.drainage), downpipes: typeof p.downpipes === 'number' ? p.downpipes : undefined, rain: typeof p.rain === 'number' ? p.rain : undefined,
+    faces: facesOf((p as { faces?: unknown }).faces),
   };
+}
+
+/** The slopes' exceptions as the roof stores them (`panels.faces`); an entry saying nothing left out. */
+export function facesOf(v: unknown): Record<string, FaceRule> | undefined {
+  if (!v || typeof v !== 'object') return undefined;
+  const o: Record<string, FaceRule> = {};
+  for (const [k, r] of Object.entries(v as Record<string, unknown>)) {
+    if (!r || typeof r !== 'object') continue;
+    const x = r as { skip?: unknown; phase?: unknown };
+    const rule: FaceRule = {};
+    if (x.skip === true) rule.skip = true;
+    if (typeof x.phase === 'number' && Number.isFinite(x.phase)) rule.phase = Math.round(x.phase);
+    if (rule.skip || rule.phase != null) o[k] = rule;
+  }
+  return Object.keys(o).length ? o : undefined;
+}
+
+/** A phase typed (mm): a number from 0, or none (empty, or not one), taken to whole millimetres. */
+export function phaseOf(text: string): number | null {
+  const t = text.trim().replace(',', '.');
+  const n = Number(t);
+  return t === '' || !Number.isFinite(n) || n < 0 || n > 10000 ? null : Math.round(n);
+}
+
+/** The arguments of `roofpanels.setFacePanels` (one undo step): a slope with or without panels, its phase fixed or left to the layout (null). */
+export function faceArgs(roofId: string, face: string, change: { skip?: boolean; phase?: number | null }): Record<string, unknown> {
+  const args: Record<string, unknown> = { id: roofId, face };
+  if (change.skip !== undefined) args.skip = change.skip;
+  if (change.phase !== undefined) args.phase = change.phase;
+  return args;
+}
+
+// ---------------------------------------------------------------------------------------------------- the project's profiles (S7)
+
+/** A profile of the project (S7): its entity, its profile id, name, what it was copied from, the roofs using it, its summary and every field. */
+export interface ProjectProfileDto {
+  id: string; profile: string; name: string; basedOn?: string | null; uses: number; roofs: string[];
+  summary: PanelProfileDto | null; problem?: string | null; def: Record<string, unknown>;
+}
+/** A built-in profile as the profiles dialog lists it: read-only, every field. */
+export interface BuiltInProfileDto { profile: string; name: string; maker: string; summary: PanelProfileDto; def: Record<string, unknown> }
+export interface ProfileLibraryDto { builtin: BuiltInProfileDto[]; project: ProjectProfileDto[] }
+
+/** Every profile a roof can name: Lapin's, then the project's (those that read), each marked by where it comes from. */
+export function allProfiles(builtin: PanelProfileDto[], project: ProjectProfileDto[] | undefined): (PanelProfileDto & { own?: boolean })[] {
+  return [...builtin, ...(project ?? []).filter((p) => p.summary).map((p) => ({ ...p.summary!, own: true }))];
+}
+
+/** The fields the profile editor shows one by one, in its order (the rest — accessories, support, fixings, ridge caps, flat sheet — as JSON). */
+export const PROFILE_FIELDS: { key: string; label: string; kind: 'text' | 'number' | 'joints' | 'bool' }[] = [
+  { key: 'name', label: 'Name', kind: 'text' }, { key: 'id', label: 'Id', kind: 'text' }, { key: 'maker', label: 'Maker', kind: 'text' },
+  { key: 'grossWidth', label: 'Whole width (mm)', kind: 'number' }, { key: 'usefulWidth', label: 'Useful width (mm)', kind: 'number' },
+  { key: 'slopeLap', label: 'Slope lap (mm)', kind: 'number' }, { key: 'module', label: 'Module (mm)', kind: 'number' },
+  { key: 'joints', label: 'Joints', kind: 'joints' }, { key: 'stagger', label: 'Stagger (mm)', kind: 'number' }, { key: 'endFold', label: 'End fold (mm)', kind: 'number' },
+  { key: 'minPitch', label: 'Least pitch (°)', kind: 'number' }, { key: 'minPitchHipValley', label: 'Least pitch at hips and valleys (°)', kind: 'number' },
+  { key: 'valleyGap', label: 'Gap at valleys (mm)', kind: 'number' }, { key: 'reuseOffcuts', label: 'Reuse hip offcuts in valleys', kind: 'bool' },
+  { key: 'waves', label: 'Waves', kind: 'number' }, { key: 'waveHeight', label: 'Wave height (mm)', kind: 'number' },
+  { key: 'accessoryLength', label: 'Flashing length (mm)', kind: 'number' }, { key: 'article', label: 'Article code', kind: 'text' },
+  { key: 'notes', label: 'Notes', kind: 'text' }, { key: 'source', label: 'Source', kind: 'text' },
+];
+
+/** The keys the editor writes as JSON, not field by field. */
+export const PROFILE_JSON_KEYS = ['accessoryLaps', 'ridges', 'support', 'fixings', 'flatSheet', 'accessories'];
+
+/** Lengths typed „1180, 2230, 2930”: the whole positive numbers, ascending, once each. */
+export function lengthsOf(text: string): number[] {
+  return [...new Set(text.split(/[\s,;]+/).map((x) => Math.round(Number(x))).filter((n) => Number.isFinite(n) && n > 0))].sort((a, b) => a - b);
+}
+
+/** A profile's sale: stock lengths or an order range, as the editor shows it. */
+export function saleOf(def: Record<string, unknown>): { kind: 'stock' | 'order'; lengths: number[]; order: { min: number; start: number; step: number; max: number } } {
+  const o = def.order as { min?: number; start?: number; step?: number; max?: number } | undefined;
+  const lengths = Array.isArray(def.lengths) ? (def.lengths as unknown[]).map(Number).filter((n) => n > 0) : [];
+  const order = { min: o?.min ?? 500, start: o?.start ?? o?.min ?? 500, step: o?.step ?? 100, max: o?.max ?? 6000 };
+  return { kind: o ? 'order' : 'stock', lengths, order };
+}
+
+/** The editor's definition with its sale set: stock lengths drop the order range, an order range drops the lengths. */
+export function withSale(def: Record<string, unknown>, sale: ReturnType<typeof saleOf>): Record<string, unknown> {
+  const o = { ...def };
+  if (sale.kind === 'order') { o.order = { ...sale.order }; delete o.lengths; } else { o.lengths = [...sale.lengths]; delete o.order; }
+  return o;
 }
 
 /**

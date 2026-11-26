@@ -76,6 +76,11 @@ interface LiveState {
   lockable: boolean;
 }
 
+/** The command line's prompt while an end grip that could keep its angle is dragged: the hint, then the lock's state (decision 865); null otherwise. */
+export function dragPrompt(s: Pick<LiveState, 'lock' | 'lockable'>): string | null {
+  return s.lock ? 'Angle kept' : s.lockable ? 'Ctrl/⌘: keep its angle' : null;
+}
+
 /** An element's own line: the fixed point and the unit direction from it to the end being dragged. */
 export interface AlongLine { from: Vec2; dir: Vec2 }
 

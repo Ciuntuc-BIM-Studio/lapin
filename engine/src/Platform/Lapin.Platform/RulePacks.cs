@@ -32,6 +32,8 @@ public interface IRuleCheck
 /// diameters, mandrels and hook tails, bolt grades, coverings' least pitches —, each a section a module reads. Lapin's own,
 /// „Romania (indicative)”, holds the values its code has always had; a project's own packs (<c>LapinRulePack</c>) are copies the
 /// user changes, or files brought in (<c>.lapinrules</c>); the project names the one it uses (<c>rulePack</c> on the IfcProject).
+/// A pack may say the country, the edition, the language and the sources it was written from (<see cref="MetaKeys"/>), and hold
+/// the loads (factor sets, imposed loads: docs/plan-national-packs.md N1) beside the configurators' sections.
 /// Every pack is indicative: the norms are the user's to check. Configurators propose and warn from the pack; they never refuse.
 /// </summary>
 public static class RulePacks
@@ -80,13 +82,54 @@ public static class RulePacks
         var checkedPack = new JsonObject();
         foreach (var (k, v) in o)
         {
-            if (k is "format" or "version" or "name" or "indicative" or "description") continue;
+            if (k is "format" or "version" or "name" or "indicative" or "description" || MetaKeys.Contains(k)) continue;
             var section = Sections(s).FirstOrDefault(x => x.Key == k);
             try { checkedPack[k] = section != null ? section.Check(v) : v?.DeepClone(); }
             catch (CommandException e) { throw new CommandException($"{section?.Label ?? k}: {e.Message}"); }
         }
         return checkedPack;
     }
+
+    /// <summary>
+    /// What a pack says of itself (docs/plan-national-packs.md): the country it is for, the edition of the rules it follows
+    /// (rules change: a pack names the one it was written from), the language of its texts (ISO 639-1) and its sources (each a
+    /// line: a title, a link). Kept on the pack, exported and imported with it; none is required.
+    /// </summary>
+    public static readonly string[] MetaKeys = ["country", "edition", "language", "sources"];
+
+    /// <summary>A pack's metadata as given (a command's arguments or a file), checked: null for a key not given, the key removed for an empty one.</summary>
+    static JsonObject Meta(JsonObject given, JsonObject? had = null)
+    {
+        var o = had?.DeepClone() as JsonObject ?? new JsonObject();
+        foreach (var k in MetaKeys)
+        {
+            if (!given.ContainsKey(k)) continue;
+            var v = given[k];
+            if (k == "sources")
+            {
+                if (v is null) { o.Remove(k); continue; }
+                if (v is not JsonArray a || a.Count > 30 || a.Any(x => x is not JsonValue xv || !xv.TryGetValue<string>(out var t) || t.Length > 300))
+                    throw new CommandException("The sources are a list of at most 30 lines of up to 300 characters.");
+                var lines = a.Select(x => ((string)x!).Trim()).Where(x => x.Length > 0).ToList();
+                if (lines.Count == 0) o.Remove(k); else o[k] = new JsonArray(lines.Select(x => (JsonNode)x).ToArray());
+                continue;
+            }
+            var text = v is null ? "" : v is JsonValue sv && sv.TryGetValue<string>(out var t0) ? t0.Trim() : throw new CommandException($"The pack's {k} is a text.");
+            var max = k == "language" ? 10 : 120;
+            if (text.Length > max) throw new CommandException($"The pack's {k} is at most {max} characters.");
+            if (k == "language" && text.Length > 0 && !System.Text.RegularExpressions.Regex.IsMatch(text, "^[a-z]{2}(-[A-Z]{2})?$")) throw new CommandException("The pack's language is a two-letter code (sv, ro, en).");
+            if (text.Length == 0) o.Remove(k); else o[k] = text;
+        }
+        return o;
+    }
+
+    static void PutMeta(JsonObject target, JsonObject? meta)
+    {
+        foreach (var k in MetaKeys) target.Remove(k);
+        if (meta != null) foreach (var (k, v) in meta) target[k] = v?.DeepClone();
+    }
+
+    static JsonObject MetaOf(Entity e) => new(MetaKeys.Where(k => e.Attrs[k] != null).Select(k => KeyValuePair.Create(k, (JsonNode?)e.Attrs[k]!.DeepClone())));
 
     static string FreeName(IModelView m, string name, string? except = null)
     {
@@ -110,7 +153,7 @@ public static class RulePacks
             var active = ActiveId(m);
             var items = new JsonArray((JsonNode)new JsonObject { ["id"] = Builtin, ["name"] = BuiltinName, ["builtin"] = true, ["active"] = active == Builtin });
             foreach (var e in m.OfClass(Class).OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase))
-                items.Add((JsonNode)new JsonObject { ["id"] = e.Id, ["name"] = e.Name, ["builtin"] = false, ["active"] = active == e.Id, ["description"] = e.Str("description") });
+                items.Add((JsonNode)new JsonObject { ["id"] = e.Id, ["name"] = e.Name, ["builtin"] = false, ["active"] = active == e.Id, ["description"] = e.Str("description"), ["meta"] = MetaOf(e) });
             return new JsonObject
             {
                 ["items"] = items, ["active"] = active,
@@ -124,6 +167,7 @@ public static class RulePacks
             var id = (string?)a["id"] is { Length: > 0 } given ? given : ActiveId(q.Model);
             var def = Def(q.Model, q.Services, id) ?? throw new CommandException("There is no such rule pack.");
             var o = new JsonObject { ["id"] = id, ["name"] = id == Builtin ? BuiltinName : q.Model.Get(id)?.Name, ["builtin"] = id == Builtin, ["indicative"] = true };
+            o["meta"] = id == Builtin ? new JsonObject() : MetaOf(q.Model.Get(id)!);
             var sections = new JsonObject();
             foreach (var s in Sections(q.Services))
                 try { sections[s.Key] = s.Check(def[s.Key]); } catch (CommandException) { sections[s.Key] = s.Default; }
@@ -149,6 +193,8 @@ public static class RulePacks
             }
             var attrs = new JsonObject { ["def"] = def };
             if ((string?)a["description"] is { Length: > 0 } d) attrs["description"] = d;
+            if ((string?)a["from"] is { Length: > 0 } src && src != Builtin && ctx.Model.Get(src) is { Class: Class } srcPack) PutMeta(attrs, MetaOf(srcPack));
+            PutMeta(attrs, Meta(a, MetaOf(new Entity("", Class, "", attrs))));
             var e = new Entity(ctx.NewId(), Class, FreeName(ctx.Model, name.Trim()), attrs);
             ctx.Add(e);
             if (a["activate"] is JsonValue av && av.TryGetValue<bool>(out var act) && act) SetActive(ctx, e.Id);
@@ -170,6 +216,7 @@ public static class RulePacks
             }
             attrs["def"] = def;
             if (a.ContainsKey("description")) { if ((string?)a["description"] is { Length: > 0 } d) attrs["description"] = d; else attrs.Remove("description"); }
+            if (MetaKeys.Any(a.ContainsKey)) PutMeta(attrs, Meta(a, MetaOf(e)));
             var name = (string?)a["name"] is { } n ? n.Trim() is { Length: > 0 } nn ? FreeName(ctx.Model, nn, e.Id) : throw new CommandException("A rule pack needs a name.") : null;
             ctx.Replace(e.With(name: name, attrs: attrs));
             return null;
@@ -199,6 +246,8 @@ public static class RulePacks
             var def = Def(q.Model, q.Services, id) ?? throw new CommandException("There is no such rule pack.");
             var name = id == Builtin ? BuiltinName : q.Model.Get(id)!.Name;
             var o = new JsonObject { ["name"] = name, ["indicative"] = true };
+            if (id != Builtin && q.Model.Get(id)!.Str("description") is { Length: > 0 } desc) o["description"] = desc;
+            if (id != Builtin) PutMeta(o, MetaOf(q.Model.Get(id)!));
             foreach (var (k, v) in Parse(q.Services, def)) o[k] = v?.DeepClone();
             return new JsonObject { ["text"] = LibraryFile.Write(Spec, o, LibraryFile.SourceOf(q.Model)).ToJsonString(new JsonSerializerOptions { WriteIndented = true }), ["file"] = name + ".lapinrules" };
         });
@@ -242,7 +291,7 @@ public static class RulePacks
         var name = NameIn(file);
         var mine = m.OfClass(Class).FirstOrDefault(e => string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
         var match = mine is null ? LibraryMerge.Match.New
-            : JsonNode.DeepEquals(mine.Attrs["def"], Parse(s, file)) && mine.Str("description") == (string?)file["description"] ? LibraryMerge.Match.Same : LibraryMerge.Match.Name;
+            : JsonNode.DeepEquals(mine.Attrs["def"], Parse(s, file)) && mine.Str("description") == (string?)file["description"] && JsonNode.DeepEquals(MetaOf(mine), Meta(file)) ? LibraryMerge.Match.Same : LibraryMerge.Match.Name;
         return new LibraryMerge.Row(name, "rulePack", name, match, match == LibraryMerge.Match.Name ? ["rules"] : null);
     }
 
@@ -267,6 +316,7 @@ public static class RulePacks
                 var attrs = mine!.CloneAttrs();
                 attrs["def"] = Parse(ctx.Services, file);
                 if ((string?)file["description"] is { Length: > 0 } d) attrs["description"] = d; else attrs.Remove("description");
+                PutMeta(attrs, Meta(file));
                 ctx.Replace(mine.With(attrs: attrs));
                 tally.Updated++;
                 id = mine.Id;
@@ -278,6 +328,7 @@ public static class RulePacks
                 var name = taken.Contains(row.Name) ? LibraryMerge.FreeName(taken.Contains, row.Name) : row.Name;
                 var e = new Entity(ctx.NewId(), Class, name, new JsonObject { ["def"] = Parse(ctx.Services, file) });
                 if ((string?)file["description"] is { Length: > 0 } d) e.Attrs["description"] = d;
+                PutMeta(e.Attrs, Meta(file));
                 ctx.Add(e);
                 tally.Added++;
                 if (name != row.Name) tally.Renamed.Add(name);

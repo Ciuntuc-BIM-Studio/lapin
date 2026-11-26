@@ -33,6 +33,7 @@ import { parseVcb } from './sketch/vcb';
 import { useMove3d } from './moveIn3d';
 import { playSound } from '../app/sounds';
 import { usePrefs } from '../app/prefs';
+import { PrecisionPill } from './PrecisionPill';
 
 const HINT: Record<PointGesture['kind'], string> = {
   point: 'Click a point: on the level, or a corner or an edge of the model',
@@ -235,12 +236,19 @@ export function Place3D({ camera, canvas, scene }: ViewRefs) {
       </svg>
       {cur && at && <div className={`face-sketch-snap-name ${at.color ?? ''}`} style={{ left: cur.x + 10, top: cur.y + 8 }} data-place3d="inference" data-at={`${at.point.x.toFixed(3)},${at.point.y.toFixed(3)},${at.point.z.toFixed(3)}`}>{at.kind}</div>}
       {cur && pts.length > 0 && (
-        <div className="axis-drag-value" style={{ left: cur.x + 18, top: cur.y - 30 }}>
-          <input value={text} placeholder={label || '…'} aria-label="Measurements" spellCheck={false} data-place3d="vcb"
-            className={text && !typed ? 'bad' : undefined}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); enterRef.current(); } }} />
-        </div>
+        <PrecisionPill
+          x={cur.x + 18}
+          y={cur.y - 30}
+          text={text}
+          placeholder={label || '…'}
+          bad={Boolean(text && !typed)}
+          badge={lock ? lock.axis.toUpperCase() : at?.kind ?? null}
+          badgeColor={lock?.axis ?? at?.color ?? null}
+          ariaLabel="Measurements"
+          dataTestAttr={{ 'data-place3d': 'vcb' }}
+          onChange={setText}
+          onEnter={() => enterRef.current()}
+        />
       )}
       <div className="axis-drag-chip mode-chip" data-place3d="chip">
         <span>{tool.label}</span>

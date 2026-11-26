@@ -150,7 +150,7 @@ Limits: comments are not edited from Lapin (only made and deleted); the BCF fiel
 
 ## Reference documents (R4)
 
-`docs/plan-cde-references.md` (decision 874), stage R4, over Atrium Server's register (R3, Atrium's `docs/atrium-server.md` "Reference documents (R3)"). As the remarks: the documents live in the `.lapin` (`LapinReference`, by GlobalId) and on the server; with a server remote the server is the truth; last writer wins per field.
+`docs/plan-cde-references.md` (decision 878), stage R4, over Atrium Server's register (R3, Atrium's `docs/atrium-server.md` "Reference documents (R3)"). As the remarks: the documents live in the `.lapin` (`LapinReference`, by GlobalId) and on the server; with a server remote the server is the truth; last writer wins per field.
 
 | What | Where |
 |---|---|

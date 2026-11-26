@@ -151,6 +151,10 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new(WallLean.Key, "Lean", "angle", Min: -WallLean.Max, Max: WallLean.Max, ShowIf: FieldDescriptor.When(WallLean.Key, "\u0001never")),
             new(WallLean.FromKey, "Lean from", "choice", Choices: WallLean.Froms, ShowIf: FieldDescriptor.When(WallLean.FromKey, "\u0001never")),
             new(WallLean.CutKey, "Openings in a leaning wall", "choice", Choices: WallLean.Cuts, ShowIf: FieldDescriptor.When(WallLean.CutKey, "\u0001never")),
+            // Its taper (plan-wall-lean-taper, L2): its thickness at its top, the face that stays plumb, the layer that takes the change. Set in its Wall section, never here.
+            new(WallTaper.Key, "Thickness at top", "length", Min: WallTaper.MinLayer, Max: 10, ShowIf: FieldDescriptor.When(WallTaper.Key, "\u0001never")),
+            new(WallTaper.FaceKey, "Face that stays plumb", "choice", Choices: WallTaper.Faces, ShowIf: FieldDescriptor.When(WallTaper.FaceKey, "\u0001never")),
+            new(WallTaper.LayerKey, "Layer that tapers", "number", Min: 0, Max: 99, ShowIf: FieldDescriptor.When(WallTaper.LayerKey, "\u0001never")),
         ], "#b5654a"));
         r.Class(new(IfcClass.WallType, "Wall type", [new("mark", "Mark", "text"), new(OpeningSills.FinishedFloorKey, "Finished floor above base", "length", Min: 0, Max: 1)], "#b5654a", Kind: "type"));
         r.Class(new(IfcClass.OpeningElement, "Opening", [new("width", "Width", "length", Min: 0.01), new("height", "Height", "length", Min: 0.01)], Kind: "element"));
@@ -369,6 +373,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         // A window's sills as parts of their own for schedules and tags (forum topic 178, decision 736).
         WindowSills.Register(r);
         Stairs.StairsModule.Register(r);
+        // Accessibility in the project's rule pack (docs/plan-national-packs.md N3): doors, corridors, turning circles, ramps.
+        AccessibilityRuleSection.Register(r);
         Stairs.UnderStairs.Register(r);
         Ceilings.Register(r);
         Skirtings.Register(r);
@@ -1195,6 +1201,13 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 WallLean.Set(attrs, a);
                 ctx.Replace(type = type.With(attrs: attrs));
             }
+            // thicknessTop, plumbFace, taperLayer (plan-wall-lean-taper, L2): its walls' thickness at the top, the face that stays plumb, the layer that tapers.
+            if (WallTaper.Given(a))
+            {
+                var attrs = type.CloneAttrs();
+                WallTaper.Set(attrs, a);
+                ctx.Replace(type = type.With(attrs: attrs));
+            }
             return new JsonObject { ["id"] = type.Id };
         });
 
@@ -1227,6 +1240,14 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 var current = ctx.Model.Get(type.Id)!;
                 var attrs = current.CloneAttrs();
                 WallLean.Set(attrs, a);
+                ctx.Replace(current.With(attrs: attrs));
+            }
+            // thicknessTop, plumbFace, taperLayer (plan-wall-lean-taper, L2): null clears each (its walls then of one thickness, the first layer's face plumb, the core tapering).
+            if (WallTaper.Given(a))
+            {
+                var current = ctx.Model.Get(type.Id)!;
+                var attrs = current.CloneAttrs();
+                WallTaper.Set(attrs, a);
                 ctx.Replace(current.With(attrs: attrs));
             }
             return null;
@@ -1274,6 +1295,13 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             {
                 var attrs = wall.CloneAttrs();
                 WallLean.Set(attrs, a);
+                ctx.Replace(wall = wall.With(attrs: attrs));
+            }
+            // Drawn tapered (plan-wall-lean-taper, L2): its own thickness at the top, plumb face and tapering layer.
+            if (WallTaper.Given(a))
+            {
+                var attrs = wall.CloneAttrs();
+                WallTaper.Set(attrs, a);
                 ctx.Replace(wall = wall.With(attrs: attrs));
             }
             if (!unjoined) Joins.Auto(ctx, Paths(ctx), wall.Id, Style(a["joinStyle"]) ?? JoinStyle.Mitre);
@@ -1405,6 +1433,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             if (a.ContainsKey("wrapEnds")) WallEndWraps.Set(attrs, a["wrapEnds"]);
             // Its own lean, the level that stays put, how its openings stand (plan-wall-lean-taper, L1; null: its type's again).
             WallLean.Set(attrs, a);
+            // Its own taper (plan-wall-lean-taper, L2; null: its type's again).
+            WallTaper.Set(attrs, a);
             ctx.Replace(wall.With(attrs: attrs));
             if (floorGiven) OpeningSills.CheckWall(ctx.Model, ctx.Model.Get(wall.Id)!);
             var moveJoined = a["moveJoinedEnds"] is not JsonValue mj || !mj.TryGetValue<bool>(out var keep) || keep;

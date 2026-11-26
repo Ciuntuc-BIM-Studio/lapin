@@ -1729,12 +1729,10 @@ export const scenes = [
       t.expect(await width.count() === 1 && await t.page.locator('aside.props [data-field=joinery-height]').count() === 1, 'a door\'s width and height are fields of its own');
       await width.fill('950');
       await width.press('Enter');
-      await t.wait(400);
-      const sized = (await t.nodes()).find((n) => n.id === door.id);
-      t.expect(Math.abs((sized?.props.width ?? 0) - 0.95) < 1e-6, `the door 950 wide of its own (${sized?.props.width})`);
+      // Polled, not waited for: a machine at work on other scenes answers late.
+      await t.until(async () => Math.abs(((await t.nodes()).find((n) => n.id === door.id)?.props.width ?? 0) - 0.95) < 1e-6, 'the door 950 wide of its own');
       await t.page.locator('aside.props [data-action=joinery-type-size]').click();
-      await t.wait(400);
-      t.expect((await t.nodes()).find((n) => n.id === door.id)?.props.width == null, 'Type\'s size gives its own width up');
+      await t.until(async () => (await t.nodes()).find((n) => n.id === door.id)?.props.width == null, 'Type\'s size gives its own width up');
       await t.tool('architecture.joineryTypes');
       // The 3D preview under the drawings (report #108), drawn once the engine's meshes come.
       t.expect(await t.page.locator('[data-testid=joinery-preview-3d] canvas').count() === 1, 'the configurator shows its 3D preview');
@@ -1846,6 +1844,33 @@ export const scenes = [
       await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.4, pitch: -0.3, distance: 16, target: { x: 5, y: 2, z: 1.5 } }, false));
       await t.wait(1500);
       await t.shot('wall-lean-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
+    // Tapered walls (in-app report #191, plan-wall-lean-taper L2): a 500 mm concrete wall joined at a corner to a plumb one, 300 mm typed
+    // in Thickness at top in its properties; its exterior (first layer's) face stays plumb, the core tapers, the corner follows the
+    // faces. Seen in 3D.
+    id: 'wall-taper',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const type = (await t.cmd('architecture.createWallType', { name: 'Retaining wall 500', layers: [{ material: 'Concrete', thickness: 0.5, core: true }] })).id;
+      const a = (await t.cmd('architecture.addWall', { storeyId: s, typeId: type, x1: 0, y1: 0, x2: 8, y2: 0, height: 3 })).id;
+      await t.cmd('architecture.addWall', { storeyId: s, typeId: type, x1: 8, y1: 0, x2: 8, y2: 6, height: 3 });
+      await t.ui({ view: 'plan', keyPlan: false, selection: a, selected: [a] });
+      await t.wait(800);
+      const field = t.page.locator('[data-field=wall-thickness-top]');
+      await field.fill('300');
+      await field.press('Enter');
+      await t.until(async () => (await t.nodes()).some((n) => n.id === a && Math.abs(Number(n.props.thicknessTop) - 0.3) < 1e-9), 'the wall is 300 mm at its top');
+      t.expect((await t.page.locator('[data-testid=wall-plumb-face]').count()) === 1, 'Face that stays plumb shows once the wall tapers');
+      t.expect((await t.page.locator('[data-testid=wall-taper-layer]').count()) === 1, 'Layer that tapers shows once the wall tapers');
+      await t.shot('wall-taper-properties', { of: 'aside.props', pad: 0, maxHeight: 620 });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.4, pitch: -0.35, distance: 16, target: { x: 5, y: 2, z: 1.5 } }, false));
+      await t.wait(1500);
+      await t.shot('wall-taper-3d', { of: '[data-testid=view3d]', pad: 0 });
     },
   },
   {
@@ -2600,6 +2625,44 @@ export const scenes = [
         await t.page.evaluate(async () => (await import('/src/viewport/diagram.ts')).setDiagram({ variant: 'white' }));
         await profile('drawing');
       }
+      // S7, the project's own profiles: Profiles… lists Lapin's (read-only) and the project's; Duplicate to edit makes a copy in the
+      // project, which keeps the original's article codes; the roof takes the copy and lays, counts and prices the same.
+      await select(t, roof.id);
+      await t.wait(600);
+      await t.page.locator('[data-testid=roof-panels-profiles]').click();
+      const profiles = t.page.locator('[data-dialog=roofPanelProfiles]');
+      await t.until(async () => await profiles.locator('[data-panel-profile=bilka-balcanic]').count() === 1, 'the profiles dialog lists Lapin\'s profiles');
+      await profiles.locator('[data-panel-profile=bilka-balcanic]').click();
+      t.expect(await profiles.locator('[data-testid=panel-profile-builtin]').count() === 1, 'a built-in profile is shown read-only');
+      await profiles.locator('[data-action=panel-profile-duplicate]').click();
+      await t.until(async () => await profiles.locator('[data-testid=panel-profile-editor]').count() === 1, 'the copy opens in the editor');
+      t.expect(await profiles.locator('[data-panel-profile=bilka-balcanic-copy]').count() === 1, 'the copy is listed under this project\'s');
+      t.expect((await profiles.locator('[data-field=pp-article]').inputValue()).startsWith('bilka-balcanic/'), 'the copy keeps the original\'s article codes');
+      await t.shot('roof-panel-profiles', { of: '[data-dialog=roofPanelProfiles]', pad: 0 });
+      await t.ui({ dialog: null });
+      await t.wait(400);
+      const shipped = (await t.page.locator('[data-testid=roof-panels-summary] .roof-panels-buy').innerText()).replace(/\s+/g, ' ');
+      await t.page.locator('[data-testid=roof-panels-profile]').selectOption('bilka-balcanic-copy');
+      await t.until(async () => (await t.nodes()).find((n) => n.id === roof.id)?.props?.panels?.profile === 'bilka-balcanic-copy', 'the roof names the project\'s copy');
+      await t.until(async () => (await t.page.locator('[data-testid=roof-panels-summary] .roof-panels-buy').innerText()).replace(/\s+/g, ' ') === shipped, `the copy buys the same panels (${shipped})`);
+      // A slope left without panels and a slope's phase fixed, in Panel layout's Per roof plane table; each one undo step.
+      await t.page.locator('[data-testid=roof-panels-open]').click();
+      await t.until(async () => await dialog.locator('[data-testid=roof-panels-faces] tr[data-face]').count() === 6, 'the table lists the six roof planes');
+      const before = await dialog.locator('[data-panel]').count();
+      await dialog.locator('[data-testid=roof-panels-faces] tr[data-face="A06"] [data-field=face-laid]').click();
+      await t.until(async () => (await t.nodes()).find((n) => n.id === roof.id)?.props?.panels?.faces?.A06?.skip === true, 'the roof keeps the slope without panels');
+      await t.until(async () => await dialog.locator('[data-panel]').count() < before, 'the slope\'s panels are gone from the layout');
+      t.expect(await dialog.locator('[data-face-outline="A06"][fill^="url"]').count() === 1, 'the slope without panels is hatched');
+      await dialog.locator('[data-testid=roof-panels-faces] tr[data-face="A01"] [data-action=face-phase-fix]').click();
+      await t.until(async () => typeof (await t.nodes()).find((n) => n.id === roof.id)?.props?.panels?.faces?.A01?.phase === 'number', 'the first slope\'s phase is fixed');
+      await t.wait(400);
+      await t.shot('roof-panels-slope-exceptions', { of: '[data-testid=roof-panel-layout]', pad: 0 });
+      await t.ui({ dialog: null, selection: null, selected: [] });
+      await open3d(t);
+      // From the west, looking east: the slope without panels (A06) in front, its plain covering beside the panels.
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.35, pitch: -0.55, distance: 30, target: { x: 5, y: 5.5, z: 3 } }, false));
+      await t.wait(1500);
+      await t.shot('roof-panels-3d-slope-without', { of: 'canvas', pad: 0 });
     },
   },
   {
@@ -6316,6 +6379,12 @@ export const scenes = [
       await t.wait(800);
       await t.shot('structural-usage-plan', { of: '[data-testid=plan]', pad: 0 });
       await t.ui({ planViewId: null });
+      // The tick in a type dialog: on the wall type itself, one undo step (half-ticked while the rule decides).
+      await t.ui({ dialog: 'wallTypes' });
+      await t.page.waitForSelector('[data-testid=type-structural]', { timeout: 10_000 });
+      await t.page.locator('[data-action=type-structural]').click();
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'IfcWallType' && n.props.loadBearing === true), 'the Wall types tick sets the type structural');
+      await t.ui({ dialog: null });
     },
   },
   {
@@ -8122,6 +8191,14 @@ export const scenes = [
       await t.fit();
       await t.wait(1200);
       await t.shot('level-datum-site', { of: '[data-testid=plan]', pad: 0 });
+      // A spot level written as an altitude over a relative view: its terrain's Written as.
+      await t.cmd('project.levelDatum', { mode: null });
+      await t.cmd('civil.addSpot', { id: made.id, x: 20, y: 15 });
+      await t.cmd('civil.setSpotDatum', { id: made.id, all: true, datum: 'absolute' });
+      await select(t, made.id);
+      await t.until(async () => (await page.locator('[data-field=spot-level-datum]').count()) === 1, 'the terrain\'s properties offer the spot levels\' Written as');
+      t.expect(await page.locator('[data-field=spot-level-datum]').inputValue() === 'absolute', 'the spot levels are written as altitudes');
+      await t.ui({ selection: null, selected: [] });
       // A section across the house: both, +0.00 (+650.37).
       await t.cmd('project.levelDatum', { mode: 'both' });
       const view = (await t.cmd('view.create', { kind: 'section', start: [16, 4], end: [16, 22], name: 'Section A' })).id;
@@ -14238,6 +14315,9 @@ export const scenes = [
       await t.ui({ dialog: 'rebarSettings' });
       await t.wait(1000);
       t.expect(await page.locator('[data-field=notation-rebar]').count() === 1, 'Rebar settings has its Notation block');
+      // The dialog scrolls: in a language with longer texts the block starts below the window.
+      await page.locator('[data-field=notation-rebar]').scrollIntoViewIfNeeded();
+      await t.wait(300);
       await t.shot('rebar-notation', { of: '[data-field=notation-rebar]', pad: 6 });
       await t.ui({ dialog: null, keyPlan: true });
     },
@@ -16474,6 +16554,103 @@ export const scenes = [
     },
   },
   {
+    // Loads in a rule pack (docs/plan-national-packs.md N1): a copy of Lapin's pack with a set of factors of the user's (an example,
+    // the values typed as a user would: 6.10a and 6.10b, γd by safety class, ψ of snow by s0,k); the pack's country, edition and
+    // sources; the Loads tab shows the set; the project takes it with safety class 2 and its combinations carry γd.
+    id: 'rules-loads',
+    touches: ['core', 'analysis'],
+    async run(t) {
+      await t.fresh();
+      const { page } = t;
+      const listed = await t.call('doc.query', { name: 'rules.list', args: {} });
+      const builtin = listed.items.find((i) => i.builtin);
+      const mine = (await t.cmd('rules.create', { from: builtin.id, name: 'Sweden (example)', activate: true })).id;
+      await t.cmd('rules.update', { id: mine, country: 'SE', edition: 'Example: the edition you follow', language: 'sv', sources: ['The regulation you read the values from'] });
+      const pack = await t.call('doc.query', { name: 'rules.get', args: { id: mine } });
+      const loads = structuredClone(pack.sections.loads);
+      loads.sets['se-example'] = {
+        ...loads.sets.en, label: 'Sweden, example (your values)', expression: '6.10ab', xi: 0.89,
+        safetyClasses: { 1: 0.83, 2: 0.91, 3: 1 },
+        snowPsi: [{ from: 0, psi: { 0: 0.6, 1: 0.3, 2: 0.1 } }, { from: 2, psi: { 0: 0.7, 1: 0.4, 2: 0.2 } }],
+      };
+      await t.cmd('rules.update', { id: mine, section: 'loads', values: loads });
+      await t.cmd('analysis.setCombinationOptions', { set: 'se-example', safetyClass: '2' });
+      const options = (await t.call('doc.query', { name: 'analysis.combinations', args: {} })).options;
+      t.expect(options.gammaD === 0.91 && options.expression === '6.10ab', 'the project takes the pack\'s set with γd 0.91');
+      await t.button('Manage', { exact: true });
+      await t.tool('manage.rules');
+      await page.waitForSelector('[data-dialog=rules]', { timeout: 10_000 });
+      await page.locator(`[data-rules-pack="${mine}"]`).click();
+      await page.locator('[data-rules-section=loads]').click();
+      await t.until(async () => (await page.locator('[data-testid=rules-loads]').count()) === 1, 'the Loads tab is shown');
+      await page.locator('[data-load-set="se-example"]').click();
+      await t.until(async () => (await page.locator('[data-testid=rules-safety-classes] tbody tr').count()) === 3, 'the set\'s three safety classes are listed');
+      t.expect(await page.locator('[data-testid=rules-meta]').count() === 1, 'the pack\'s country, edition and sources are shown');
+      await t.wait(500);
+      await t.shot('rules-loads', { of: '[data-dialog=rules]', pad: 8 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
+    // Climate and accessibility in rule packs (docs/plan-national-packs.md N2, N3): regions with sk and vb,0, picked in Loads →
+    // Snow and wind; a door's, a corridor's, the turning circle's limits and ramps checked, the check's findings.
+    id: 'rules-climate-access',
+    touches: ['core', 'analysis', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const { page } = t;
+      const s = await t.storey();
+      const listed = await t.call('doc.query', { name: 'rules.list', args: {} });
+      const builtin = listed.items.find((i) => i.builtin);
+      const mine = (await t.cmd('rules.create', { from: builtin.id, name: 'Sweden (example)', activate: true })).id;
+      await t.cmd('rules.update', {
+        id: mine, section: 'climate',
+        values: { regionLabel: 'Kommun', regions: [{ name: 'Kiruna', sk: 5.5, vb0: 22 }, { name: 'Luleå', sk: 3.5, vb0: 23 }, { name: 'Malmö', sk: 1.0, vb0: 26 }, { name: 'Stockholm', sk: 2.0, vb0: 24 }] },
+      });
+      await t.cmd('rules.update', { id: mine, section: 'accessibility', values: { doorClearWidth: 0.8, corridorWidth: 1.3, turningDiameter: 1.5, checkRamps: true } });
+      // A door of 900 (780 clear) and a corridor 1.0 m wide, for the check.
+      const wall = (await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: -3, x2: 6, y2: -3 })).id;
+      await t.cmd('architecture.addDoor', { wallId: wall, along: 1.5 });
+      await t.cmd('architecture.addRoom', { storeyId: s, points: [[0, 0], [6, 0], [6, 1], [0, 1]], name: 'Corridor', function: 'Circulation' });
+      await t.button('Manage', { exact: true });
+      await t.tool('manage.rules');
+      await page.waitForSelector('[data-dialog=rules]', { timeout: 10_000 });
+      await page.locator(`[data-rules-pack="${mine}"]`).click();
+      await page.locator('[data-rules-section=climate]').click();
+      await t.until(async () => (await page.locator('[data-testid=rules-regions] tbody tr').count()) === 4, 'the four regions are listed');
+      await t.wait(400);
+      await t.shot('rules-climate', { of: '[data-dialog=rules]', pad: 8 });
+      await page.locator('[data-rules-section=accessibility]').click();
+      await t.until(async () => (await page.locator('[data-testid=rules-accessibility]').count()) === 1, 'the Accessibility tab is shown');
+      await page.locator('[data-field=rules-check]').click();
+      await t.until(async () => (await page.locator('[data-testid=rules-findings] li').count()) >= 2, 'the check lists the narrow door and corridor');
+      await t.wait(400);
+      await t.shot('rules-accessibility', { of: '[data-dialog=rules]', pad: 8 });
+      await t.ui({ dialog: null });
+      // Loads → Snow and wind: the region picked fills s0,k and qb.
+      await t.tool('analysis.cases');
+      const dialog = page.locator('.dialog');
+      await dialog.getByRole('tab', { name: 'Snow and wind' }).click();
+      await t.until(async () => (await dialog.locator('[data-testid=climate-region]').count()) === 1, 'the tab offers the pack\'s regions');
+      // Typed until the button takes it (the tab may draw again as the climate is read).
+      const picked = async () => (await t.call('doc.query', { name: 'analysis.climate', args: {} }))?.region === 'Luleå';
+      await t.until(async () => {
+        if (await picked()) return true;
+        await dialog.locator('[data-testid=climate-region]').fill('Luleå');
+        await t.wait(150);
+        if (await dialog.locator('[data-testid=climate-region-apply]').isEnabled()) await dialog.locator('[data-testid=climate-region-apply]').click({ timeout: 2000 }).catch(() => {});
+        return picked();
+      }, 'the region typed is one of the pack\'s, and used');
+      await t.until(async () => (await t.call('doc.query', { name: 'analysis.climate', args: {} }))?.region === 'Luleå', 'the site takes Luleå\'s values');
+      const climate = await t.call('doc.query', { name: 'analysis.climate', args: {} });
+      t.expect(climate.snow?.s0k === 3.5 && Math.abs(climate.wind?.qb - 0.3306) < 1e-4, `s0,k 3.5 and qb 0.3306 from the region (${climate.snow?.s0k}, ${climate.wind?.qb})`);
+      await t.until(async () => (await dialog.locator('[data-testid=climate-region-current]').count()) === 1, 'the tab says the values are the region\'s');
+      await t.wait(400);
+      await t.shot('loads-climate-region', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     // Classifications (docs/plan-user-extensibility.md §7.3): a system with items, a code on a wall in Properties, the office's keynotes, a shared parameter.
     id: 'classifications',
     touches: ['core'],
@@ -17786,6 +17963,8 @@ export const scenes = [
       const s = await t.storey();
       const a = (37 * Math.PI) / 180;
       const wall = (await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 0, x2: 4 * Math.cos(a), y2: 4 * Math.sin(a) })).id;
+      // The key plan's thumbnail would sit over the wall's end once it is fitted.
+      await t.ui({ keyPlan: false });
       await t.fit();
       await select(t, wall);
       await t.wait(800);
@@ -17799,15 +17978,16 @@ export const scenes = [
       await page.mouse.move(tx, ty, { steps: 4 });
       await t.wait(300);
       t.expect(await page.locator('[data-testid=angle-lock-hint]').count() > 0, 'the live box says Ctrl/⌘ keeps the angle');
+      // The change in length typed: 1500 mm longer, on the side of the cursor (typed before the key: Ctrl+digit is a shortcut; what is typed stays).
+      for (const k of ['1', '5', '0', '0']) await page.keyboard.press(k);
       await page.keyboard.down('Control');
       await page.mouse.move(tx + 2, ty - 2, { steps: 2 });
       await t.wait(300);
       t.expect(await page.locator('[data-testid=angle-lock]').count() > 0, 'the live box shows the angle is kept');
-      // The change in length typed: 1500 mm longer, on the side of the cursor.
-      for (const k of ['1', '5', '0', '0']) await page.keyboard.press(k);
-      await t.wait(300);
       await t.shot('grip-angle-lock', { clip: { x: 250, y: 120, width: 1190, height: 700 } });
       await page.keyboard.press('Enter');
+      await t.wait(300);
+      await page.mouse.up();
       await page.keyboard.up('Control');
       await t.wait(800);
       const w = (await t.nodes()).find((n) => n.id === wall);

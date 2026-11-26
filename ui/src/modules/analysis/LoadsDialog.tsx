@@ -12,7 +12,7 @@ import { CombinationsTab } from './CombinationsTab';
 import { runAnalysis } from './useResults';
 import {
   ACTION_SOURCES, ACTION_SOURCE_LABEL, ACTION_TYPES, ACTION_TYPE_LABEL, EXPOSURES, formatKn, imposedArgs, psiFrom,
-  snowArgs, TERRAINS, windArgs,
+  regionArgs, regionSummary, snowArgs, TERRAINS, windArgs,
   type CategoryDto, type ClimateDto, type CombinationsDto, type LoadCaseDto, type LoadsDto,
 } from './loads';
 
@@ -190,6 +190,7 @@ function SiteTab({ climate }: { climate: ClimateDto }) {
   );
   return (
     <>
+      {(climate.regions?.length ?? 0) > 0 && <RegionPick climate={climate} />}
       <span className="eyebrow">Snow (CR 1-1-3/2012, EN 1991-1-3)</span>
       {field('Ground snow load s0,k (kN/m²)', 'The characteristic snow load on the ground at the site: CR 1-1-3 Figure 3.1 or its Annex A', snow.s0k, (v) => setSnow({ ...snow, s0k: v }), !!snow.s0k.trim() && !sa, 'climate-s0k')}
       <label className="row" title="CR 1-1-3 Table 4.1: how the site exposes the roof to the wind">
@@ -223,5 +224,31 @@ function SiteTab({ climate }: { climate: ClimateDto }) {
       <p className="muted small">The wind blows towards +X, -X, +Y and -Y, each in two cases: the roofs' suction (/s) and their pressure (/p). Walls and columns make the building's outline; the façades go to the beams, rails and floor edges along them, the roofs to their rafters or purlins.</p>
       <p className="muted small">Lapin does not ship the national maps: read the site's values from CR 1-1-3 and CR 1-1-4 (or the national annex you work to). The rules and coefficients are the recommended ones, indicative.</p>
     </>
+  );
+}
+
+/**
+ * Pick from the pack's list (docs/plan-national-packs.md N2): a region of the rule pack's climate (for Sweden the kommun) fills the
+ * site's s0,k and qb from its sk and vb,0, the exposure, terrain and importance kept; one undo step. The values can still be typed
+ * below; a value typed over the region's ends the pick.
+ */
+function RegionPick({ climate }: { climate: ClimateDto }) {
+  const regions = climate.regions ?? [];
+  const [name, setName] = useState(climate.region ?? '');
+  useEffect(() => { setName(climate.region ?? ''); }, [climate.region]);
+  const args = regionArgs(name, regions);
+  const chosen = args ? regions.find((r) => r.name === args.region) : undefined;
+  return (
+    <div className="climate-region" data-testid="climate-region-pick">
+      <span className="eyebrow">Pick from the pack's list</span>
+      <label className="row" title="The rule pack in use lists its regions with their sk and vb,0 (Manage → Rules → Climate)">
+        <span style={{ minWidth: 220 }} data-no-i18n>{climate.regionLabel ?? 'Region'}</span>
+        <input list="climate-regions" data-testid="climate-region" value={name} aria-invalid={!!name.trim() && !args} className={name.trim() && !args ? 'invalid' : undefined} onChange={(e) => setName(e.target.value)} style={{ width: 200 }} data-no-i18n />
+        <datalist id="climate-regions">{regions.map((r) => <option key={r.name} value={r.name} />)}</datalist>
+        <button type="button" className="btn primary" data-testid="climate-region-apply" disabled={!args || args.region === climate.region} onClick={() => args && void execute('analysis.setClimate', args)}>Use the region</button>
+      </label>
+      {chosen && <p className="muted small" data-no-i18n>{regionSummary(chosen)}{chosen.note ? ` · ${chosen.note}` : ''}</p>}
+      {climate.region && <p className="small" data-testid="climate-region-current"><span>The site's values are the region's:</span> <strong data-no-i18n>{climate.region}</strong></p>}
+    </div>
   );
 }

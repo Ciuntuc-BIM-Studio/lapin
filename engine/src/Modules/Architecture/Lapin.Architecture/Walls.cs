@@ -277,8 +277,10 @@ public static partial class Walls
         if (WallTops.Problem(m, wall, services) is { } attachProblem) problems.Add(attachProblem);
         // A leaning wall, or one joined to a leaning wall: lofted between its layouts at its base and its top (plan-wall-lean-taper, L1).
         // One that has a lean stage 1 cannot build stands plumb and says why.
+        // A tapered wall (L2) likewise, one face plumb; one it cannot build keeps its thickness and says why.
         if (WallLean.Problem(m, wall, services) is { } leanProblem) problems.Add(leanProblem);
-        else if (WallLean.Touches(m, wall) && LeanGeometry(wall, m, services, problems) is { } leaning) return leaning;
+        if (WallTaper.Problem(m, wall, services) is { } taperProblem) problems.Add(taperProblem);
+        if (WallLean.Touches(m, wall) && LeanGeometry(wall, m, services, problems) is { } leaning) return leaning;
         var paths = services?.Get<IPathElements>();
         // Its ends where its joins put them; a free end cut at its own angle (startAngle, endAngle).
         var joinedEnds = paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
@@ -1251,6 +1253,7 @@ public static partial class Walls
         if (WallTop.Problem(m, wall) is { } topProblem) problems.Add(topProblem);
         if (WallTops.Problem(m, wall, services) is { } attachProblem) problems.Add(attachProblem);
         if (WallLean.Problem(m, wall, services) is { } leanProblem) problems.Add(leanProblem);
+        if (WallTaper.Problem(m, wall, services) is { } taperProblem) problems.Add(taperProblem);
         var paths = services?.Get<IPathElements>();
         var ends = paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
         var length = c.Length;
@@ -1424,6 +1427,8 @@ public static partial class Walls
         var bands = Section(m, wall);
         double y0 = bands.Min(b => b.From), y1 = bands.Max(b => b.To);
         var z = Spatial.Base(m, wall);
+        // A tapered wall's is its section lofted from its base to its top.
+        if (WallTaper.Of(m, wall) is { } taper) return WallTaper.Envelope(taper, start, end, z);
         var c = PathCurve.Of(wall);
         IReadOnlyList<Vec2> fp = c.IsArc ? c.Band(_ => 0, _ => c.Length, y0, y1) : [start + left * y0, end + left * y0, end + left * y1, start + left * y1];
         var body = Prism.ExtrudeFootprint(fp, z, HeightOf(m, wall), "wall");
@@ -1517,6 +1522,9 @@ public static partial class Walls
         var height = HeightOf(m, wall);
         var bands = Section(m, wall);
         var width = bands.Max(b => b.To) - bands.Min(b => b.From);
+        // A tapered wall's width is its mean thickness (IFC's "nominal or average"), each layer's its normal one, the tapering layer's its mean.
+        var taper = WallTaper.Of(m, wall);
+        if (taper != null) width = taper.MeanThickness;
         // A layer interrupted by a wall crossing it is several parts of one key: measured together.
         var volumes = geometry.Parts.GroupBy(p => p.Key ?? p.Name).ToDictionary(g => g.Key, g => g.Sum(p => Measure.Volume(p.Solid)));
         var net = volumes.Values.Sum();
@@ -1558,7 +1566,7 @@ public static partial class Walls
         {
             if (band.Core && zones.Count > 0) continue;
             if (!volumes.TryGetValue($"layer:{band.Index}", out var v)) continue;
-            var t = band.To - band.From;
+            var t = taper != null && bands.ToList().IndexOf(band) is var bi and >= 0 ? taper.Width(bi) : band.To - band.From;
             // A layer of several materials in its height (decision 264): a set per material, its own pieces measured.
             var byMaterial = geometry.Parts.Where(p => p.Key == $"layer:{band.Index}").GroupBy(p => p.Material).ToList();
             foreach (var g in byMaterial)

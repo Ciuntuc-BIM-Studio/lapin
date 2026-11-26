@@ -8,7 +8,7 @@ namespace Lapin.Protocol;
 
 /// <summary>
 /// The project's reference documents synced with a CDE server's register (docs/plan-cde-references.md §2 "Both places", §3.5, stage R4;
-/// decision 874), as <see cref="IssueSync"/> does for BCF topics. With a server remote the server is the truth: a document lives both in the
+/// decision 878), as <see cref="IssueSync"/> does for BCF topics. With a server remote the server is the truth: a document lives both in the
 /// <c>.lapin</c> (<c>LapinReference</c>, by GlobalId) and in Atrium Server's register (<c>/atrium/1.0/projects/{p}/references</c>, the same
 /// members). One sync:
 /// <list type="number">

@@ -117,6 +117,7 @@ Orice perete, planșeu, acoperiș, stâlp, grindă și fundație are **Structura
 ![Bifa Structural în Proprietăți, setată pe perete](shots/structural-usage-properties.webp)
 
 - **Tip structural**, dedesubt, pune bifa pe tipul elementelor: o iau toate elementele tipului care nu spun nimic ele însele.
+- În **Tipuri de pereți**, **Tipuri de plăci** și **Tipuri structurale**, **Structural (portant)** sub marca tipului pune bifa pe tipul însuși, imediat și într-un singur pas de anulare: pe jumătate bifată și estompată cât timp decide regula, un clic pentru structural, încă unul pentru nestructural, săgeata înapoi la regulă.
 - **Perete structural** și **Placă structurală**, în grupul **Pereți și plăci** al tabului Structură, desenează pereții și planșeele din Arhitectură deja bifate; debifați **Structural** în bara liniei de comandă ca să rămână după regulă. Peretele și Placa din tabul Arhitectură o lasă nesetată.
 - **Modifică → Structural** și **Nestructural** o pun pe selecție.
 - Bifa este **Pset_…Common.LoadBearing** din IFC: contează și o valoare scrisă acolo sau venită dintr-un fișier IFC importat (bifa câștigă, iar Proprietățile spun când nu se potrivesc). Exportul IFC scrie bifa în setul comun; **Scrie LoadBearing dedus** din opțiunile exportului scrie și valoarea regulii pe celelalte (o emitere în CDE și o verificare IDS o fac mereu).

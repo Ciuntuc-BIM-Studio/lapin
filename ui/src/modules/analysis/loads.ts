@@ -26,7 +26,8 @@ export interface LoadsDto {
 }
 export interface CategoryDto { key: string; label: string; qk: number; default: number; overridden: boolean }
 export type CombinationKind = 'uls' | 'sls-characteristic' | 'sls-frequent' | 'sls-quasi' | 'seismic' | 'accidental';
-export type FactorSet = 'en' | 'cr0';
+/** A set of factors: Lapin's en and cr0, or one of the rule pack's (docs/plan-national-packs.md N1). */
+export type FactorSet = string;
 export type PsiCategory = Record<'0' | '1' | '2', number>;
 export interface CombinationDto {
   key: string; kind: CombinationKind; name: string; factors: { caseId: string; code: string; factor: number }[];
@@ -34,12 +35,19 @@ export interface CombinationDto {
   /** A user combination only: its id, and the cases it names that no longer exist. */
   id?: string; missing?: string[];
 }
-export interface CombinationSetDto { name: string; label: string; gammaGSup: number; gammaGInf: number; gammaQ: number; psi: Record<string, PsiCategory> }
+export interface CombinationSetDto {
+  name: string; label: string; gammaGSup: number; gammaGInf: number; gammaQ: number; psi: Record<string, PsiCategory>;
+  expression?: '6.10' | '6.10ab'; xi?: number; safetyClasses?: Record<string, number>; snowPsi?: { from: number; psi: PsiCategory }[];
+  /** Whether it holds exactly Lapin's values of its name. */
+  builtin?: boolean;
+}
 export interface CombinationOptionsDto {
   set: FactorSet; gammaGSup: number; gammaGInf: number; gammaQ: number;
   own: { gammaGSup: number | null; gammaGInf: number | null; gammaQ: number | null; xi: number | null; psi: Record<string, PsiCategory> };
   psi: Record<string, PsiCategory>; expression: '6.10' | '6.10ab'; xi: number; disabled: string[];
   sets: Record<string, CombinationSetDto>;
+  /** The project's safety class and its γd (1 without one); the set it names that the rules in use lack; the snow zone the site falls in. */
+  safetyClass?: string | null; gammaD?: number; missingSet?: string; snowZone?: { from: number; s0k: number; psi: PsiCategory };
 }
 export interface CombinationsDto { combinations: CombinationDto[]; options?: CombinationOptionsDto; kinds?: CombinationKind[]; notes: string[] }
 
@@ -49,7 +57,18 @@ export const COMBINATION_KIND_LABEL: Record<CombinationKind, string> = {
   uls: 'Ultimate (ULS)', 'sls-characteristic': 'Characteristic (SLS)', 'sls-frequent': 'Frequent (SLS)', 'sls-quasi': 'Quasi-permanent (SLS)',
   seismic: 'Seismic (with AEd)', accidental: 'Accidental',
 };
-export const FACTOR_SET_LABEL: Record<FactorSet, string> = { cr0: 'CR 0-2012 (Romania)', en: 'EN 1990 Annex A1, recommended' };
+export const FACTOR_SET_LABEL: Record<string, string> = { cr0: 'CR 0-2012 (Romania)', en: 'EN 1990 Annex A1, recommended' };
+
+/** The sets offered, Lapin's first (cr0, en), then the rule pack's by name; each its label and whether it is a translated one of Lapin's. */
+export function factorSetOptions(sets: Record<string, CombinationSetDto>): { key: string; label: string; ours: boolean }[] {
+  const keys = Object.keys(sets);
+  const lapin = ['cr0', 'en'].filter((k) => keys.includes(k));
+  const own = keys.filter((k) => !lapin.includes(k)).sort();
+  return [
+    ...lapin.map((k) => ({ key: k, label: sets[k]!.builtin === false ? sets[k]!.label : FACTOR_SET_LABEL[k]!, ours: sets[k]!.builtin !== false })),
+    ...own.map((k) => ({ key: k, label: sets[k]!.label || k, ours: false })),
+  ];
+}
 /** The categories of the ψ table, in the engine's order. */
 export const PSI_CATEGORIES = ['A', 'A-stairs', 'A-balcony', 'B', 'C1', 'C2', 'C3', 'C4', 'C5', 'D1', 'D2', 'E1', 'F', 'G', 'H', 'snow', 'wind'] as const;
 
@@ -137,6 +156,10 @@ export interface ClimateDto {
   snow: { s0k: number; ce: number; ct: number; importance: number } | null;
   wind: { qb: number; terrain: string; importance: number } | null;
   terrains: { key: string; z0: number; zmin: number; label: string }[];
+  /** The rule pack's regions (none in Lapin's), their label (Kommun, County) and the one the site's values were picked from. */
+  regions?: ClimateRegionDto[];
+  regionLabel?: string;
+  region?: string | null;
 }
 
 /** CR 1-1-3/2012 Table 4.1: the exposure coefficient Ce of a site. */
@@ -161,4 +184,23 @@ export function windArgs(qb: string, terrain: string, importance: string): WindA
   const i = importance.trim() ? parseNumber(importance) : 1;
   if (q == null || q < 0 || q > 10 || i == null || i < 0.5 || i > 2 || !(TERRAINS as readonly string[]).includes(terrain)) return undefined;
   return { qb: q, terrain, importance: i };
+}
+
+/** A region of the rule pack's climate list (docs/plan-national-packs.md N2), as the climate query gives it. */
+export interface ClimateRegionDto { name: string; sk?: number; vb0?: number; qb?: number; qbDerived?: number; note?: string }
+
+/** The region a typed name picks from the list (any case, trimmed); undefined when the list has none of that name. */
+export function regionArgs(name: string, regions: ClimateRegionDto[]): { region: string } | undefined {
+  const n = name.trim().toLowerCase();
+  const r = n ? regions.find((x) => x.name.toLowerCase() === n) : undefined;
+  return r ? { region: r.name } : undefined;
+}
+
+/** What a region gives, in words: sk and qb (from vb,0 when it gives that). */
+export function regionSummary(r: ClimateRegionDto): string {
+  const parts: string[] = [];
+  if (r.sk != null) parts.push(`sk ${formatKn(r.sk)} kN/m²`);
+  if (r.vb0 != null) parts.push(`vb,0 ${formatKn(r.vb0)} m/s`);
+  if (r.qbDerived != null) parts.push(`qb ${String(Math.round(r.qbDerived * 1e4) / 1e4)} kN/m²`);
+  return parts.join(' · ');
 }

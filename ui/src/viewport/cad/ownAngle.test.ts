@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { resolveAim, type AimInput } from './aim';
-import { axisGrips, outlineGrips } from '../gripKit';
+import { axisGrips, outlineGrips, alongOfChain } from '../gripKit';
+import { dragPrompt } from '../liveInput';
+import { railingGrips } from '../../modules/architecture/Railing';
+import { sectionGrips } from '../../modules/core/sections';
+import type { NodeDto } from '../../engine/protocol';
 import { ownGuideOf } from '../gripLock';
 
 const P = (x: number, y: number) => ({ x, y });
@@ -73,5 +77,36 @@ describe('grips that know their own line', () => {
     // Alt+Ctrl still moves one element only: no lock is asked of it.
     expect(ownGuideOf(end, { ctrl: true, alt: true, copy: false })).toEqual({ ...end.along!, locked: true });
     expect(ownGuideOf({ key: 'x', at: P(0, 0) }, { ctrl: true, alt: false, copy: false })).toBeNull();
+  });
+});
+
+describe('the open chains keep the segment they end', () => {
+  const pts = [P(0, 0), P(4, 0), P(4, 3), P(8, 3)];
+  it('locks a vertex to the segment before it, the first to the one after', () => {
+    expect(alongOfChain(pts, 2)).toEqual({ from: P(4, 0), dir: P(0, 1) });
+    expect(alongOfChain(pts, 3)).toEqual({ from: P(4, 3), dir: P(1, 0) });
+    expect(alongOfChain(pts, 0)).toEqual({ from: P(4, 0), dir: P(-1, 0) });
+  });
+  it('gives nothing for a curved neighbour or a zero-length segment', () => {
+    expect(alongOfChain(pts, 2, [0, 0.4, 0])).toBeUndefined();
+    expect(alongOfChain([P(1, 1), P(1, 1), P(2, 2)], 1)).toBeUndefined();
+    expect(alongOfChain([P(1, 1)], 0)).toBeUndefined();
+  });
+  it('is on the railing\'s points and the section line\'s points', () => {
+    const rail = { id: 'r', type: 'LapinRailing', name: 'r', editable: true, props: { points: [[0, 0], [4, 0], [4, 3]] } } as unknown as NodeDto;
+    const rg = railingGrips(rail).filter((g) => g.key.startsWith('v'));
+    expect(rg[2].along).toEqual({ from: P(4, 0), dir: P(0, 1) });
+    const sec = { id: 's', type: 'LapinView', name: 's', editable: true, props: { kind: 'section', pts: [[0, 0], [4, 0], [4, 3]] } } as unknown as NodeDto;
+    const sg = sectionGrips(sec).filter((g) => g.key.startsWith('p'));
+    expect(sg.length).toBe(3);
+    expect(sg[2].along).toEqual({ from: P(4, 0), dir: P(0, 1) });
+  });
+});
+
+describe('the command line prompt while an end grip is dragged', () => {
+  it('hints Ctrl/⌘ until the angle is kept, and says so after', () => {
+    expect(dragPrompt({ lock: null, lockable: false })).toBeNull();
+    expect(dragPrompt({ lock: null, lockable: true })).toBe('Ctrl/⌘: keep its angle');
+    expect(dragPrompt({ lock: { from: P(0, 0), dir: P(1, 0) }, lockable: true })).toBe('Angle kept');
   });
 });

@@ -117,6 +117,7 @@ Every wall, floor, roof, column, beam and footing has **Structural (load-bearing
 ![The Structural tick in Properties, set on the wall](shots/structural-usage-properties.webp)
 
 - **Type structural**, under it, sets the tick on the elements' type: every element of the type that says nothing itself takes it.
+- In **Wall types**, **Floor types** and **Structure types**, **Structural (load-bearing)** under the type's mark sets the tick on the type itself, at once and as one undo step: half-ticked and greyed while the rule decides, a click for structural, another for not structural, the arrow back to the rule.
 - **Structural wall** and **Structural floor**, in the Structure tab's **Walls and floors** group, draw Architecture's walls and floors already ticked; untick **Structural** in the command line's bar to leave them to the rule. The Architecture tab's Wall and Floor leave it unset.
 - **Modify → Structural** and **Not structural** set it on the selection.
 - The tick is IFC's **Pset_…Common.LoadBearing**: a value typed there, or given by an imported IFC file, counts too (the tick wins over it, and Properties says when they disagree). The IFC export writes the tick into the common set; **Write derived LoadBearing** in the export's options writes the rule's value on the others too (a CDE issue and an IDS check always do).

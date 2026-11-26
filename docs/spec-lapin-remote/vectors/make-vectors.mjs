@@ -364,7 +364,7 @@ putJson('folder/layout.json', {
 // ---------------------------------------------------------------- tree paths (§4.2)
 
 // The names that are never parts of a project state (§4.2, B14), compared without case on the first segment, and the generic
-// rules. `references` was added with the reference documents (docs/plan-cde-references.md, decision 874).
+// rules. `references` was added with the reference documents (docs/plan-cde-references.md, decision 878).
 putJson('paths/tree-paths.json', {
   title: 'Paths a tree may name (§4.2): valid ones, and refused ones with why. The first segment is compared without case.',
   never: ['manifest.json', 'versions', 'issues', 'references', 'history', 'derived', 'journal'],

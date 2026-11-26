@@ -1,3 +1,4 @@
+using System.Globalization;
 using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
@@ -130,6 +131,7 @@ public sealed partial class StructuralProblem
         var frames = new List<AFrame>();
         var assumedNu = new HashSet<string>();
         var timberG = new HashSet<string>();
+        var indicativeE = new Dictionary<string, (double E, double Nu)>();
         var selfWeight = new List<(int Element, double Q)>();
         var slabNodes = shellOf.Keys.Where(s => s.Source.Kind == "slab").SelectMany(s => s.Nodes).ToHashSet();
         var armed = 0;
@@ -139,8 +141,11 @@ public sealed partial class StructuralProblem
         {
             var props = SectionProperties.Of(f.Source.Section.Shape);
             if (props is not { Area: > 0 }) { refused.Add(new(f, $"its section „{f.Source.Section.Name}” gives no properties")); continue; }
-            var mat = MaterialOf(f.Source.MaterialId);
+            // A bar takes its material's E, else its indicative one (Lapin's default „Reinforced concrete”, issue #121).
+            var own = MaterialOf(f.Source.MaterialId);
+            var mat = own?.ForBars();
             if (mat?.E is not { } e) { refused.Add(new(f, f.Source.MaterialId == null ? "its type names no material" : NoE(mat, f.Source.MaterialId))); continue; }
+            if (own!.E == null) indicativeE[mat.Name] = (e.Value, mat.Poisson!.Value);
             var g = StructuralMaterials.ShearModulus(mat, e.Value, out var basis);
             if (basis == "timber") timberG.Add(mat.Name);
             else if (basis == "assumed") assumedNu.Add(mat.Name);
@@ -179,6 +184,9 @@ public sealed partial class StructuralProblem
         if (refused.Count > 0)
             notes.Add($"{refused.Count} bar{(refused.Count == 1 ? " is" : "s are")} refused, the analysis does not start: " +
                 string.Join("; ", refused.Take(8).Select(r => $"{r.Frame.Source.Name}: {r.Reason}")) + (refused.Count > 8 ? "…" : "") + ".");
+        foreach (var (name, (ie, inu)) in indicativeE)
+            notes.Add($"Bars of „{name}” (no class named): indicative Ecm of C25/30 = {(ie / 1e9).ToString("0.#", CultureInfo.InvariantCulture)} GPa, " +
+                $"ν = {inu.ToString("0.###", CultureInfo.InvariantCulture)}; name its class or give its fck in Manage → Materials → Data.");
         if (timberG.Count > 0) notes.Add($"Timber ({string.Join(", ", timberG)}): G = E0,mean / 16, as EN 338's tables give it (no Poisson ratio for an orthotropic material).");
         if (armed > 0) notes.Add($"{armed} beam piece{(armed == 1 ? "" : "s")} under a slab analysed as a shell: on the slab's nodes, {(armed == 1 ? "its" : "their")} own axis below by rigid arms (the slab and the beam work as a T).");
         if (offCentre > 0) notes.Add($"{offCentre} bar{(offCentre == 1 ? "" : "s")} of an unsymmetric section (a T, a channel, an angle): {(offCentre == 1 ? "its" : "their")} axis through the centroid, joined to the box centre's nodes by rigid arms.");

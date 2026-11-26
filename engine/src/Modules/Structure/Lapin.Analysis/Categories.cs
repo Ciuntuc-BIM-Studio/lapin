@@ -60,8 +60,11 @@ public static class Categories
         return o;
     }
 
-    /// <summary>The imposed load of a category (kN/m²): the project's, else the default; null for an unknown key.</summary>
-    public static double? Qk(IModelView m, string key) => Overrides(m).TryGetValue(key, out var q) ? q : Of(key)?.Qk;
+    /// <summary>The imposed load of a category (kN/m²): the project's, else its rule pack's (Lapin's: the default); null for an unknown key.</summary>
+    public static double? Qk(IModelView m, string key) => Overrides(m).TryGetValue(key, out var q) ? q : Of(key) is null ? null : LoadRuleSection.Imposed(m, key) ?? Of(key)!.Qk;
+
+    /// <summary>The imposed load of a category the project's rule pack gives (Lapin's: the default), what a project's own value goes back to.</summary>
+    public static double? PackQk(IModelView m, string key) => Of(key) is null ? null : LoadRuleSection.Imposed(m, key) ?? Of(key)!.Qk;
 
     /// <summary>The category a room's function says (Living, Bedroom… → A; Balcony → A-balcony; Office → B; Storage, Technical → E1; Garage → F; anything else A).</summary>
     public static string FromFunction(string? function) => (function ?? "").Trim().ToLowerInvariant() switch

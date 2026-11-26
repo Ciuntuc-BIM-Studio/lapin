@@ -28,7 +28,10 @@ export const UNITS = ['m', 'cm', 'mm', 'km', 'm²', 'cm²', 'mm²', 'ha', 'm³',
 export interface Condition { field: string; op: Operator | (string & {}); value?: string | number; values?: string[] }
 /** A group of conditions inside a filter: all or any of them, and groups inside. */
 export interface ConditionGroupDef { match?: 'all' | 'any'; conditions?: Condition[]; nested?: ConditionGroupDef[] }
-export interface FieldColumn { field?: string; formula?: string; heading?: string; aggregate?: Aggregate; unit?: string; decimals?: number; format?: string }
+/** A column's values written as levels (decision 867): the project's datum, relative to ±0.00, altitudes or both. */
+export const LEVEL_FORMATS = ['project', 'relative', 'absolute', 'both'] as const;
+export type LevelFormat = typeof LEVEL_FORMATS[number];
+export interface FieldColumn { field?: string; formula?: string; heading?: string; aggregate?: Aggregate; unit?: string; decimals?: number; format?: string; level?: LevelFormat }
 export interface FieldFilter { classes?: string[]; types?: string[]; storeys?: string[]; materials?: string[]; groups?: string[]; phases?: string[]; conditions?: Condition[]; match?: 'all' | 'any'; nested?: ConditionGroupDef[] }
 /** A field the rows are put in order by. */
 export type FieldSort = string | { field: string; desc?: boolean };
@@ -93,6 +96,7 @@ export function cleanOptions(o: FieldOptions): FieldOptions {
     if (c.unit?.trim()) k.unit = c.unit.trim();
     if (typeof c.decimals === 'number' && Number.isFinite(c.decimals)) k.decimals = Math.max(0, Math.min(9, Math.round(c.decimals)));
     if (c.format?.trim() && isFormat(c.format.trim())) k.format = c.format.trim();
+    if (c.level && (LEVEL_FORMATS as readonly string[]).includes(c.level)) k.level = c.level;
     return k;
   });
   const out: FieldOptions = { filter, groupBy: (o.groupBy ?? []).filter((g) => g.trim()), columns, totals: o.totals === 'always' ? 'always' : o.totals !== false, count: o.count !== false };

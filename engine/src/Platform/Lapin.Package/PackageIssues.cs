@@ -14,7 +14,7 @@ namespace Lapin.Package;
 /// opens the zip without Lapin. The bytes are found where they are: made by an
 /// issue since the last save (held in memory), else in the package the project
 /// was read from or last written to (a file, or the bytes a browser holds).
-/// The reference documents' files (docs/plan-cde-references.md §3.5, decision 874) are kept the same way under
+/// The reference documents' files (docs/plan-cde-references.md §3.5, decision 878) are kept the same way under
 /// <c>references/blobs/</c>, in a store of their own (<see cref="ReferencesPrefix"/>, <see cref="ReferencesOf(string)"/>).
 /// </summary>
 public sealed class PackageIssues

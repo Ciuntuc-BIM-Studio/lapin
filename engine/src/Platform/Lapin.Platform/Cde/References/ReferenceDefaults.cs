@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Lapin.Platform.Cde.References;
 
 /// <summary>
-/// The built-in defaults of the reference documents (docs/plan-cde-references.md §3.2–3.3, decision 874): the folder tree in
+/// The built-in defaults of the reference documents (docs/plan-cde-references.md §3.2–3.3, decision 878): the folder tree in
 /// Romanian and English, the document types with their default folders and extra fields, and the urbanism certificate's
 /// checklist of permits. All of them are indicative: the user edits them per project (<c>references.setFolders</c>,
 /// <c>references.setTypes</c>) and a company may bring its own. A project keeps none of them until it changes them: they are

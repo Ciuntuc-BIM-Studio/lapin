@@ -502,6 +502,8 @@ public static class Openings
         }
         var bands = Walls.Section(m, wall);
         var z = Spatial.Base(m, wall);
+        // A tapered wall's (plan-wall-lean-taper, L2): its faces over its whole height, so its openings go right through it.
+        if (WallTaper.Of(m, wall) is { } taper && taper.Envelope is var (lo, hi)) return new WallFrame(start, dir, dir.Perp, z, lo, hi);
         return new WallFrame(start, dir, dir.Perp, z, bands.Min(b => b.From), bands.Max(b => b.To));
     }
 

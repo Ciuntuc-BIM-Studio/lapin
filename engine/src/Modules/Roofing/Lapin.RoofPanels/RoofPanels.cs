@@ -23,17 +23,59 @@ public static class RoofPanels
     /// scheme (Retro Panel's boards or battens), the ridge caps (large or small) and the support's fixings (nails, the default, or
     /// screws); null when the roof has none.
     /// </summary>
-    /// <remarks>Stage S5: the rainwater system (<c>drainage</c>: <c>125/90</c> or <c>150/100</c>, none: Auto), the downpipes (<c>downpipes</c>, none: Auto) and the rain (<c>rain</c>, l/s·m²).</remarks>
+    /// <remarks>
+    /// Stage S5: the rainwater system (<c>drainage</c>: <c>125/90</c> or <c>150/100</c>, none: Auto), the downpipes (<c>downpipes</c>, none: Auto) and the rain (<c>rain</c>, l/s·m²).
+    /// Stage S7: the exceptions on its slopes (<c>faces</c>: <c>{"A02": {"skip": true}, "A03": {"phase": 120}}</c>, see <see cref="FaceRule"/>), and a project's
+    /// profile named by its id as a built-in one is.
+    /// </remarks>
     public sealed record Choice(string Profile, string? Color, int? MaxLength, string? Support = null, string? Ridge = null, string? Fixing = null,
-        string? Drainage = null, int? Downpipes = null, double? Rain = null)
+        string? Drainage = null, int? Downpipes = null, double? Rain = null, IReadOnlyDictionary<string, FaceRule>? Faces = null)
     {
         public Takeoff.Options Options => new(Support, Ridge, Fixing, Drainage, Downpipes, Rain);
+    }
+
+    /// <summary>
+    /// A slope's exception (S7, plan §2.1: the only part of a layout ever stored, and only when the user makes one): left without panels
+    /// (<see cref="Skip"/>: out of the layout, the quantities, the cost and the IFC panels, its covering drawn as before), or its columns'
+    /// phase fixed (<see cref="Phase"/>, mm: the columns' left sides that far along the eave from the slope's origin, modulo the useful
+    /// width) instead of the cheapest the layout finds — to line the joints up with a dormer, a ridge vent or the slope beside it.
+    /// </summary>
+    public sealed record FaceRule(bool Skip, int? Phase);
+
+    /// <summary>The slopes' exceptions as <c>faces</c> stores them; an entry saying nothing left out.</summary>
+    public static Dictionary<string, FaceRule> FacesOf(JsonNode? n)
+    {
+        var o = new Dictionary<string, FaceRule>(StringComparer.Ordinal);
+        if (n is not JsonObject faces) return o;
+        foreach (var (k, v) in faces)
+        {
+            if (v is not JsonObject r) continue;
+            var skip = r["skip"] is JsonValue sv && sv.TryGetValue<bool>(out var b) && b;
+            int? phase = Json.Number(r["phase"]) is { } ph && double.IsFinite(ph) ? (int)Math.Round(ph) : null;
+            if (skip || phase != null) o[k] = new FaceRule(skip, phase);
+        }
+        return o;
+    }
+
+    /// <summary>The exceptions written back as <c>faces</c> stores them (by slope code, in order); null when there are none.</summary>
+    public static JsonObject? FacesJson(IReadOnlyDictionary<string, FaceRule> rules)
+    {
+        if (rules.Count == 0) return null;
+        var o = new JsonObject();
+        foreach (var (k, r) in rules.OrderBy(kv => kv.Key, StringComparer.Ordinal))
+        {
+            var e = new JsonObject();
+            if (r.Skip) e["skip"] = true;
+            if (r.Phase is { } ph) e["phase"] = ph;
+            o[k] = e;
+        }
+        return o;
     }
 
     public static Choice? ChoiceOf(Entity roof) =>
         roof.Attrs[Key] is JsonObject o && (string?)o["profile"] is { Length: > 0 } id
             ? new Choice(id, (string?)o["color"], Json.Number(o["maxLength"]) is { } m ? (int)m : null, (string?)o["support"], (string?)o["ridge"], (string?)o["fixing"],
-                (string?)o["drainage"], Json.Number(o["downpipes"]) is { } dp ? (int)dp : null, Json.Number(o["rain"]))
+                (string?)o["drainage"], Json.Number(o["downpipes"]) is { } dp ? (int)dp : null, Json.Number(o["rain"]), FacesOf(o["faces"]))
             : null;
 
     /// <summary>
@@ -60,9 +102,16 @@ public static class RoofPanels
     }
 
     /// <summary>A roof's panel layout, with its profile, colour and warnings.</summary>
+    /// <remarks>
+    /// Stage S7: <see cref="Faces"/> and <see cref="Edges"/> are the slopes with panels and the edges that bound one; <see cref="Skipped"/>,
+    /// the slopes left without (drawn as the roof's covering, never counted); <see cref="Rules"/>, the slopes' exceptions as the roof has them.
+    /// </remarks>
     public sealed record Layout(
         Entity Roof, PanelProfile Profile, string? Color, List<RoofFace> Faces, List<RoofEdge> Edges, PanelLayout.Result Result, List<string> Warnings, Takeoff.Result Takeoff)
     {
+        public List<RoofFace> Skipped { get; init; } = [];
+        public IReadOnlyDictionary<string, FaceRule> Rules { get; init; } = new Dictionary<string, FaceRule>();
+
         public IEnumerable<PanelLayout.Panel> Bought => Result.Panels.Where(p => !Result.Reuse.ContainsKey(p.Id));
 
         /// <summary>Panels to buy, by nominal length (mm), the shortest first.</summary>
@@ -199,18 +248,38 @@ public static class RoofPanels
     /// <summary>The roof's own layout (its <c>panels</c>), cached per roof and model revision; null when it names no profile or it does not lay.</summary>
     public static Layout? Of(Entity roof, IModelView m) => ChoiceOf(roof) is not { } c ? null : Cache.Get(roof, m, v =>
     {
-        try { return Lay(roof, v, PanelProfiles.Resolve(JsonValue.Create(c.Profile)).WithMaxLength(c.MaxLength), c.Color, c.Options); }
+        try { return Lay(roof, v, PanelProfiles.Resolve(JsonValue.Create(c.Profile), v).WithMaxLength(c.MaxLength), c.Color, c.Options, c.Faces); }
         catch (ArgumentException) { return null; }
     });
 
-    /// <summary>The layout of <paramref name="roof"/> in <paramref name="profile"/>; an <see cref="ArgumentException"/> says why it does not lay.</summary>
-    public static Layout Lay(Entity roof, IModelView m, PanelProfile profile, string? color, Takeoff.Options? options = null)
+    /// <summary>
+    /// The layout of <paramref name="roof"/> in <paramref name="profile"/>; an <see cref="ArgumentException"/> says why it does not lay. Stage S7:
+    /// <paramref name="rules"/>, the slopes' exceptions: a slope left without panels drops out of the layout and the takeoff (its share of the
+    /// rafters' counter-battens and of the snow guards with it, its roof windows' flashings), while the rainwater system still drains every slope
+    /// (the gutters take the rain whatever covers the roof); a slope's fixed phase lays its columns there.
+    /// </summary>
+    public static Layout Lay(Entity roof, IModelView m, PanelProfile profile, string? color, Takeoff.Options? options = null, IReadOnlyDictionary<string, FaceRule>? rules = null)
     {
         var (set, problem) = Planes(roof, m);
         if (set == null) throw new ArgumentException(problem ?? "The roof cannot be solved.");
-        var (faces, edges) = RoofFaces.Read(set.Planes, profile.ValleyGap / 1000.0, set.Junctions, set.PlaneOf, set.Walls, set.Abutments, set.Lift, set.Holes);
-        if (faces.Count == 0) throw new ArgumentException("The roof has no sloped plane to lay panels on.");
+        var (all, allEdges) = RoofFaces.Read(set.Planes, profile.ValleyGap / 1000.0, set.Junctions, set.PlaneOf, set.Walls, set.Abutments, set.Lift, set.Holes);
+        if (all.Count == 0) throw new ArgumentException("The roof has no sloped plane to lay panels on.");
         var warnings = new List<string>();
+        rules ??= new Dictionary<string, FaceRule>();
+        foreach (var id in rules.Keys.Where(k => all.All(f => f.Id != k)).Order(StringComparer.Ordinal))
+            warnings.Add($"Roof plane {id} has an exception but the roof has no such plane any more: it is left aside.");
+        var faces = all.Where(f => !(rules.TryGetValue(f.Id, out var r) && r.Skip)).ToList();
+        var skipped = all.Where(f => !faces.Contains(f)).ToList();
+        if (faces.Count == 0) throw new ArgumentException("Every roof plane is left without panels.");
+        var kept = faces.Select(f => f.Id).ToHashSet(StringComparer.Ordinal);
+        var edges = skipped.Count == 0 ? allEdges : allEdges.Where(e => e.Faces.Any(kept.Contains)).ToList();
+        foreach (var f in faces)
+            if (rules.TryGetValue(f.Id, out var r) && r.Phase is { } ph)
+            {
+                f.FixedPhase = ph / 1000.0;
+                if (PanelLayout.LeavesSliver(f, profile, f.FixedPhase.Value))
+                    warnings.Add(string.Create(CultureInfo.InvariantCulture, $"Roof plane {f.Id}: the fixed phase of {ph} mm leaves a strip of eave narrower than 22 cm."));
+            }
         var diagonal = edges.Where(e => e.Kind is EdgeKinds.Valley or EdgeKinds.Hip).SelectMany(e => e.Faces).ToHashSet();
         foreach (var f in faces)
         {
@@ -221,13 +290,27 @@ public static class RoofPanels
         if (color != null && profile.Colors.Count > 0 && !profile.Colors.Any(c => c.Code == color))
             warnings.Add($"{profile.Name} is not made in {color}.");
         var result = PanelLayout.Lay(faces, edges, profile);
-        var takeoff = Takeoff.Of(profile, faces, edges, result, set.Data, options ?? new Takeoff.Options(null, null, null));
+        // A slope without panels: its share of the counter-battens and snow guards (by area) and its roof windows out of the takeoff.
+        var data = set.Data;
+        if (skipped.Count > 0)
+        {
+            var share = faces.Sum(f => Clip.Area(f.Poly)) / Math.Max(1e-9, all.Sum(f => Clip.Area(f.Poly)));
+            data = data with
+            {
+                RafterLength = data.RafterLength * share, Snow = data.Snow * share,
+                Windows = faces.Sum(f => f.Holes.Count(h => h.Of.Kind == RoofHole.Window)),
+            };
+        }
+        var takeoff = Takeoff.Of(profile, faces, edges, result, data, options ?? new Takeoff.Options(null, null, null));
         if (takeoff.RaftersEstimated) warnings.Add("The roof has no rafters: its counter-battens are estimated at 600 mm spacing.");
         // Stage S5: the rainwater system on the roof's own gutters and downpipes, and the pieces cut from flat sheet.
         var o = options ?? new Takeoff.Options(null, null, null);
-        var drainage = Rainwater.Of(PanelProfiles.Rain, faces, edges, Rainwater.Read(roof, m), takeoff.Stats, o);
+        var drainage = Rainwater.Of(PanelProfiles.Rain, all, allEdges, Rainwater.Read(roof, m), takeoff.Stats, o);
         var sheets = FlatStock.Of(profile, PanelProfiles.Sheet, PanelProfiles.Rain, takeoff.Ridge, drainage.Sizing.Selected, takeoff.Stats, drainage.Counts.Angles);
-        return new Layout(roof, profile, color ?? profile.Colors.FirstOrDefault()?.Code, faces, edges, result, warnings, takeoff) { Drainage = drainage, Sheets = sheets };
+        return new Layout(roof, profile, color ?? profile.Colors.FirstOrDefault()?.Code, faces, edges, result, warnings, takeoff)
+        {
+            Drainage = drainage, Sheets = sheets, Skipped = skipped, Rules = rules,
+        };
     }
 
     static double R(double v, int d = 4) => Math.Round(v, d);
@@ -246,9 +329,13 @@ public static class RoofPanels
             ["profile"] = p.ToJson(),
             ["color"] = l.Color,
             ["stock"] = new JsonArray([.. l.Result.Stock.Select(n => (JsonNode)n)]),
-            ["faces"] = new JsonArray([.. l.Faces.Select(f => (JsonNode)new JsonObject
+            // Every slope, in its order: those left without panels (S7) say so; each its phase as laid and the one fixed, if any.
+            ["faces"] = new JsonArray([.. l.Faces.Concat(l.Skipped).OrderBy(f => f.Id, StringComparer.Ordinal).Select(f => (JsonNode)new JsonObject
             {
                 ["id"] = f.Id, ["plane"] = f.Plane, ["pitch"] = R(f.PitchDegrees, 2), ["eave"] = R(f.Eave, 5),
+                ["skip"] = l.Skipped.Contains(f) ? true : null,
+                ["phase"] = l.Faces.IndexOf(f) is var fi and >= 0 ? Math.Round(PanelLayout.PhaseOf(l.Result.Faces[fi], p) * 1000, 1) : null,
+                ["fixedPhase"] = l.Rules.TryGetValue(f.Id, out var rule) ? rule.Phase : null,
                 ["area"] = R(Clip.Area(f.Poly), 5), ["coverage"] = R(Clip.Area(f.Target), 5), ["slopeLength"] = R(Clip.MaxY(f.Poly), 5),
                 // Laid flat (u along the eave, v up the slope, m) and in plan: what the layout dialog draws.
                 ["outline"] = Uv(f.Poly), ["planOutline"] = new JsonArray([.. f.World.Select(w => (JsonNode)new JsonArray(R(w.X), R(w.Y)))]),

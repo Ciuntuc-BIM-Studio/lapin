@@ -1,6 +1,6 @@
 # Reference documents, folders, the generator and MCP in the CDE: plan
 
-Asked by the user on 25.11.2026 (in Romanian): "can we import IFC files, do we have an ISO folder structure for projects, can we include documents there, for example urbanism certificates, permits and so on; and we would need a documentation generator starting from some data, using MCP servers too so AI models can connect to the application", then "I mean the Atrium CDE". Answered the same day: **metadata and folders, both places (the `.lapin` and the server), the open part.** Decision 874.
+Asked by the user on 25.11.2026 (in Romanian): "can we import IFC files, do we have an ISO folder structure for projects, can we include documents there, for example urbanism certificates, permits and so on; and we would need a documentation generator starting from some data, using MCP servers too so AI models can connect to the application", then "I mean the Atrium CDE". Answered the same day: **metadata and folders, both places (the `.lapin` and the server), the open part.** Decision 878.
 
 Everything here is open: MIT in lapin-pro, MIT-0 in Atrium. Premium may later add per-folder permissions, company folder templates on a server and SharePoint (`docs/plan-cde.md` stage 4), through hooks, never in these repos.
 

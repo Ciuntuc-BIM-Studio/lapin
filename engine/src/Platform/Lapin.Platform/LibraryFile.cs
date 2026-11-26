@@ -8,7 +8,7 @@ namespace Lapin.Platform;
 /// <summary>
 /// The one envelope of the library files a user keeps and shares (audit D13, docs/audit-2026-11-15.md): symbols, type packs, the
 /// wall and floor types' JSON, drafting standards, rule packs, shared parameters, field aliases, title blocks, bar shapes, parts,
-/// families, schedule templates, my furniture, profile libraries, price lists and mappings. Each keeps its own payload as it was;
+/// families, schedule templates, my furniture, profile libraries, price lists, mappings and roof panel profiles. Each keeps its own payload as it was;
 /// what is common is the header, read and written here once:
 /// <code>{"format": "lapin-symbols", "version": 1, "lapin": {"envelope": 1, "app": "0.1.1234", "created": "2026-11-16T10:00:00Z", "source": "Bloc P+4"}, …payload}</code>
 /// <c>format</c> and <c>version</c> stay where every build has read them (the payload's version, upgraded step by step when a format
@@ -53,6 +53,7 @@ public static class LibraryFile
         new("lapin-profiles", "lapinprofiles", "a profile library", 1, "core"),
         new("lapin-price-list", "lapinprices", "a price list", 1, "cost"),
         new("lapin-mapping", "lapinmapping", "a mapping file", 1, "core"),
+        new("lapin-panel-profiles", "lapinpanels", "a roof panel profiles file", 1, "roofpanels"),
         new("autocad-lin", "lin", "a line type file", 0, "core", Json: false),
         new("autocad-pat", "pat", "a hatch pattern file", 0, "core", Json: false),
     ];

@@ -9,7 +9,7 @@ import { RotateCcw } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import { useUi } from '../../app/store';
-import { byRule, isStructuralClass, setArgs, sourceText, type StructuralRow } from './structural';
+import { byRule, isStructuralClass, setArgs, sourceText, typeTick, typeTickNext, type StructuralRow } from './structural';
 
 export function StructuralSection({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
@@ -59,5 +59,29 @@ export function StructuralSection({ node }: { node: NodeDto }) {
         </>
       )}
     </dl>
+  );
+}
+
+/**
+ * The Structural tick in a type dialog (Wall types, Floor types, Structure types): the type's own attribute, written at once
+ * through `element.setStructural {onType}` (one undo step). Unset it shows greyed and half-ticked (the rule decides for every
+ * element of the type that says nothing itself); a click says structural, a second not structural; the arrow goes back to the rule.
+ */
+export function TypeStructuralField({ typeId }: { typeId: string | null }) {
+  const type = useSession((s) => (typeId ? s.nodes.get(typeId) : undefined));
+  if (!typeId || !type || !isStructuralClass(type.type)) return null;
+  const tick = typeTick(type.props.loadBearing);
+  return (
+    <div className="field-line" data-testid="type-structural" title="The tick on the type: every element of the type that says nothing itself takes it">
+      <span className="eyebrow">Structural (load-bearing)</span>
+      <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, opacity: tick === 'rule' ? 0.55 : 1 }}>
+        <input type="checkbox" data-action="type-structural" checked={tick === 'yes'} disabled={!type.editable}
+          ref={(el) => { if (el) el.indeterminate = tick === 'rule'; }}
+          onChange={() => void execute('element.setStructural', setArgs([typeId], typeTickNext(tick), true))} />
+      </label>
+      {tick !== 'rule' && type.editable && (
+        <button type="button" className="icon mini" data-action="type-structural-rule" title="Back to the rule" onClick={() => void execute('element.setStructural', setArgs([typeId], null, true))}><RotateCcw size={11} /></button>
+      )}
+    </div>
   );
 }

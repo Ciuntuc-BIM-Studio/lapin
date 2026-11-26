@@ -13,7 +13,7 @@ using Lapin.Protocol;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// The reference documents (docs/plan-cde-references.md, decision 874, stage R1): a document added with its file (kept once
+/// The reference documents (docs/plan-cde-references.md, decision 878, stage R1): a document added with its file (kept once
 /// by its SHA-256) or requested without one, updated, moved, superseded, withdrawn and deleted, each one undo step; expired
 /// derived from its date; the folder tree and the type list as the project's own copy; a certificate's checklist; the files
 /// in the package under references/blobs/ (a round trip byte for byte, the unreferenced dropped, an older package opening

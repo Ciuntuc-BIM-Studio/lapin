@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { addCombinationArgs, boundedOrNull, factorsPayload, factorTexts, groupCombinations, isUltimate, areaLoadArgs, combinationName, formatFactor, formatKn, imposedArgs, lineLoadArgs, parsePositive, pointLoadArgs, psiFrom, snowArgs, windArgs } from './loads';
+import { factorSetOptions } from './loads';
+import { addCombinationArgs, boundedOrNull, factorsPayload, factorTexts, groupCombinations, isUltimate, areaLoadArgs, combinationName, formatFactor, formatKn, imposedArgs, lineLoadArgs, parsePositive, pointLoadArgs, psiFrom, regionArgs, regionSummary, snowArgs, windArgs } from './loads';
 
 describe('structural load helpers', () => {
   it('reads typed values', () => {
@@ -71,5 +72,32 @@ describe('combination helpers', () => {
     expect(g.ultimate.map((c) => c.key)).toEqual(['a', 'c', 'd']);
     expect(g.serviceability.map((c) => c.key)).toEqual(['b']);
     expect(isUltimate('sls-frequent')).toBe(false);
+  });
+});
+
+describe('the sets of factors offered (N1)', () => {
+  const set = (label: string, builtin?: boolean) => ({ name: label, label, gammaGSup: 1.35, gammaGInf: 1, gammaQ: 1.5, psi: {}, builtin });
+  it('lists Lapin\'s first, translated, then the rule pack\'s by name with their own labels', () => {
+    const o = factorSetOptions({ 'se-example': set('Sweden, example'), en: set('EN', true), cr0: set('CR 0-2012', true) });
+    expect(o).toEqual([
+      { key: 'cr0', label: 'CR 0-2012 (Romania)', ours: true },
+      { key: 'en', label: 'EN 1990 Annex A1, recommended', ours: true },
+      { key: 'se-example', label: 'Sweden, example', ours: false },
+    ]);
+    // A pack that changed Lapin's set: its own label, not translated.
+    expect(factorSetOptions({ en: set('EN, our values', false) })[0]).toEqual({ key: 'en', label: 'EN, our values', ours: false });
+  });
+});
+
+describe('a region picked from the pack (N2)', () => {
+  const regions = [{ name: 'Kiruna', sk: 5.5, vb0: 22, qbDerived: 0.3025 }, { name: 'Malmö', sk: 1, vb0: 26, qbDerived: 0.4225 }];
+  it('finds the region typed, whatever its case', () => {
+    expect(regionArgs(' malmö ', regions)).toEqual({ region: 'Malmö' });
+    expect(regionArgs('Nowhere', regions)).toBeUndefined();
+    expect(regionArgs('', regions)).toBeUndefined();
+  });
+  it('says what a region gives', () => {
+    expect(regionSummary(regions[0]!)).toBe('sk 5.5 kN/m² · vb,0 22 m/s · qb 0.3025 kN/m²');
+    expect(regionSummary({ name: 'W', qb: 0.5, qbDerived: 0.5 })).toBe('qb 0.5 kN/m²');
   });
 });

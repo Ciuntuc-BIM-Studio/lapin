@@ -11,14 +11,17 @@
  * the Flat sheet tab (the app's "Debitare tablă": each sheet drawn with its pieces, every combination's sheet count).
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Pin, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { Dialog } from '../../shell/Dialog';
+import { phrase } from '../../shell/prompts';
 import { notify } from '../../app/store';
 import { engine, engineInBrowser, execute, useSession } from '../../engine/session';
 import { useLayout } from './PanelsSection';
+import { useProfileLibrary } from './projectProfiles';
 import {
-  BILKA_TEMPLATE, bounds, centroid, choiceOf, COST_GROUPS, costRows, costState, drainageCheck, drainageRows, EDGE_COLOUR, EDGE_LABEL, edgeRows, faceTotals,
+  allProfiles, BILKA_TEMPLATE, bounds, faceArgs, phaseOf, type PanelChoice, centroid, choiceOf, COST_GROUPS, costRows, costState, drainageCheck, drainageRows, EDGE_COLOUR, EDGE_LABEL, edgeRows, faceTotals,
   isLayout, ITEM_GROUPS, itemRows, laidFlat, lengthColours, money, needText, pieceColour, profilesOf, purchaseRows, quantityText, REUSED, reuseLinks, setArgs, sheetRows,
   sheetsOf, sheetUse, subtotalText, type CostDto, type CostLineDto, type DrainageDto, type FlatSheetDto, type LayoutDto, type PanelDto, type Pt, type SheetPieceDto,
 } from './roofpanels';
@@ -37,7 +40,9 @@ export function PanelLayoutDialog() {
   const roofId = useUi((s) => s.roofId);
   const node = useSession((s) => (roofId ? s.nodes.get(roofId) : undefined));
   const info = useSession((s) => s.info);
-  const profiles = profilesOf(info?.catalogs as Record<string, unknown> | undefined);
+  const lib = useProfileLibrary();
+  // Lapin's profiles and the project's own (S7).
+  const profiles = allProfiles(profilesOf(info?.catalogs as Record<string, unknown> | undefined), lib?.project);
   const choice = choiceOf(node);
   const [tried, setTried] = useState<string | null>(null);
   const trying = tried != null && tried !== choice?.profile ? tried : null;
@@ -61,7 +66,7 @@ export function PanelLayoutDialog() {
           <span>Profile</span>
           <select data-testid="roof-panel-layout-profile" value={trying ?? choice?.profile ?? ''} onChange={(e) => setTried(e.target.value || null)}>
             {!choice && <option value="">none</option>}
-            {profiles.map((p) => <option key={p.id} value={p.id} data-no-i18n>{p.id === choice?.profile ? `${p.name} ✓` : p.name}</option>)}
+            {profiles.map((p) => <option key={p.id} value={p.id} data-no-i18n>{`${p.name}${p.own ? ' *' : ''}${p.id === choice?.profile ? ' ✓' : ''}`}</option>)}
           </select>
         </label>
         <span className="seg small" role="group">
@@ -93,7 +98,7 @@ export function PanelLayoutDialog() {
             <Legend layout={layout} />
           </div>
           <div style={{ flex: '1 1 320px', minWidth: 280 }}>
-            <Tables layout={layout} />
+            <Tables layout={layout} roofId={roofId} choice={choice} editable={!!node?.editable && !trying} />
           </div>
         </div>
       )}
@@ -130,6 +135,7 @@ function Drawing({ layout, mode, onHover }: { layout: LayoutDto; mode: Mode; onH
     return pts.map(([x, y]) => [x + o.dx, y + o.dy]);
   };
   const faces = layout.faces.map((f) => ({ id: f.id, pts: mode === 'plan' ? f.planOutline : at(f.id, f.outline) }));
+  const skipped = new Set(layout.faces.filter((f) => f.skip).map((f) => f.id));
   const panels = layout.panels.map((p) => ({ p, pts: mode === 'plan' ? p.plan : at(p.face, p.net) }));
   const box = bounds(faces.flatMap((f) => f.pts));
   const pad = Math.max(box.x1 - box.x0, box.y1 - box.y0) * 0.04 + 0.2;
@@ -143,7 +149,12 @@ function Drawing({ layout, mode, onHover }: { layout: LayoutDto; mode: Mode; onH
   return (
     <svg className="roof-panels-drawing" data-testid="roof-panels-drawing" viewBox={view} style={{ width: '100%', height: 460, background: 'var(--raised)', borderRadius: 6 }}
       onMouseLeave={() => onHover(null)}>
-      {faces.map((f) => <path key={f.id} d={d(f.pts)} fill="none" stroke="#7d8590" strokeWidth={stroke} />)}
+      <defs>
+        <pattern id="roof-panels-skip" patternUnits="userSpaceOnUse" width={stroke * 14} height={stroke * 14} patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2={stroke * 14} stroke="#9aa3ad" strokeWidth={stroke * 2} />
+        </pattern>
+      </defs>
+      {faces.map((f) => <path key={f.id} d={d(f.pts)} data-face-outline={f.id} fill={skipped.has(f.id) ? 'url(#roof-panels-skip)' : 'none'} stroke="#7d8590" strokeWidth={stroke}>{skipped.has(f.id) && <title>{phrase('{face}: without panels', { face: f.id })}</title>}</path>)}
       {panels.map(({ p, pts }) => (
         <path key={p.id} d={d(pts)} data-panel={p.id} fill={p.donor ? REUSED : colours.get(p.length)} fillOpacity={0.9} stroke="#36404a" strokeWidth={stroke}
           onMouseEnter={() => onHover(p)}>
@@ -176,6 +187,7 @@ function Legend({ layout }: { layout: LayoutDto }) {
     <div className="small row roof-panels-legend" style={{ gap: 10, flexWrap: 'wrap' }}>
       {[...colours].map(([n, c]) => <span key={n} className="row" style={{ gap: 4 }}><Swatch c={c} /><span data-no-i18n>{`${n} mm`}</span></span>)}
       {layout.totals.reused > 0 && <span className="row" style={{ gap: 4 }}><Swatch c={REUSED} /><span>Reused offcut</span></span>}
+      {layout.faces.some((f) => f.skip) && <span className="row" style={{ gap: 4 }}><Swatch c="#c7ccd1" /><span>Without panels</span></span>}
       {kinds.map((k) => <span key={k} className="row" style={{ gap: 4 }}><Swatch c={EDGE_COLOUR[k] ?? '#555'} line /><span>{EDGE_LABEL[k] ?? k}</span></span>)}
     </div>
   );
@@ -185,7 +197,7 @@ const Swatch = ({ c, line }: { c: string; line?: boolean }) => (
   <span style={{ display: 'inline-block', width: 14, height: line ? 3 : 10, background: c, border: line ? 'none' : '1px solid #36404a' }} />
 );
 
-function Tables({ layout }: { layout: LayoutDto }) {
+function Tables({ layout, roofId, choice, editable }: { layout: LayoutDto; roofId: string | null; choice: PanelChoice | null; editable: boolean }) {
   const buy = purchaseRows(layout);
   const faces = faceTotals(layout);
   const edges = edgeRows(layout);
@@ -207,17 +219,30 @@ function Tables({ layout }: { layout: LayoutDto }) {
         <dt>Sheet bought (m²)</dt><dd className="num" data-no-i18n>{n2(layout.totals.sheetArea)}</dd>
       </dl>
       <p className="eyebrow">Per roof plane</p>
-      <table className="layer-table" data-testid="roof-panels-faces">
-        <thead><tr><th>Roof plane</th><th>Pitch</th><th>Area (m²)</th><th>Panels</th><th>Bought</th><th>Reused</th><th>Sheet bought (m²)</th></tr></thead>
+      <div>
+      <table className="layer-table small" data-testid="roof-panels-faces" style={{ fontSize: '0.9em' }}>
+        <thead><tr><th title="Untick to leave the slope without panels: the roof's covering there, nothing counted">Roof plane</th><th>Pitch</th><th>Area (m²)</th>
+          <th title="Where the columns start along the eave (mm from the slope's corner, modulo the useful width): the layout's own, or one you fix">Phase</th>
+          <th>Panels</th><th>Bought</th><th>Reused</th><th title="Sheet bought (m²)">m²</th></tr></thead>
         <tbody>
-          {faces.map((f) => (
-            <tr key={f.id}>
-              <td data-no-i18n>{f.id}</td><td className="num" data-no-i18n>{`${f.pitch.toFixed(1)}°`}</td><td className="num" data-no-i18n>{n2(f.area)}</td>
-              <td className="num" data-no-i18n>{f.panels}</td><td className="num" data-no-i18n>{f.bought}</td><td className="num" data-no-i18n>{f.reused}</td><td className="num" data-no-i18n>{n2(f.sheet)}</td>
-            </tr>
-          ))}
+          {faces.map((f) => {
+            const face = layout.faces.find((x) => x.id === f.id);
+            return (
+              <tr key={f.id} data-face={f.id} className={face?.skip ? 'muted' : undefined}>
+                <td style={{ whiteSpace: 'nowrap' }}>
+                  <input type="checkbox" data-field="face-laid" checked={!face?.skip} disabled={!editable || !roofId || !choice} title="Laid"
+                    onChange={(e) => roofId && void execute('roofpanels.setFacePanels', faceArgs(roofId, f.id, { skip: !e.target.checked }))} />
+                  {' '}<span data-no-i18n>{f.id}</span>
+                </td>
+                <td className="num" data-no-i18n>{`${f.pitch.toFixed(1)}°`}</td><td className="num" data-no-i18n>{n2(f.area)}</td>
+                <td><PhaseCell roofId={roofId} face={f.id} laid={face?.phase ?? null} fixed={face?.fixedPhase ?? null} disabled={!editable || !roofId || !choice || !!face?.skip} /></td>
+                <td className="num" data-no-i18n>{f.panels}</td><td className="num" data-no-i18n>{f.bought}</td><td className="num" data-no-i18n>{f.reused}</td><td className="num" data-no-i18n>{n2(f.sheet)}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
+      </div>
       <p className="eyebrow">Edges</p>
       <table className="layer-table" data-testid="roof-panels-edges">
         <thead><tr><th>Kind</th><th>Number</th><th>Length (m)</th><th title="Flashings and caps of the profile's accessory length, lapped">Accessory pieces</th></tr></thead>
@@ -276,6 +301,27 @@ function Tables({ layout }: { layout: LayoutDto }) {
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * A slope's phase (S7): the layout's own shown greyed as a placeholder, a phase fixed shown as typed with a pin to clear it;
+ * Enter or leaving the cell fixes what is typed, an empty cell gives the phase back to the layout. Each change one undo step.
+ */
+function PhaseCell({ roofId, face, laid, fixed, disabled }: { roofId: string | null; face: string; laid: number | null; fixed: number | null; disabled: boolean }) {
+  const [text, setText] = useState(fixed != null ? String(fixed) : '');
+  useEffect(() => { setText(fixed != null ? String(fixed) : ''); }, [fixed]);
+  const send = (phase: number | null) => { if (roofId && phase !== fixed) void execute('roofpanels.setFacePanels', faceArgs(roofId, face, { phase })); };
+  return (
+    <span className="row" style={{ gap: 4, flexWrap: 'nowrap' }}>
+      <input className="cell num" style={{ width: 42, minWidth: 0, padding: '0 3px' }} data-field="face-phase" inputMode="numeric" value={text} disabled={disabled}
+        placeholder={laid != null ? String(Math.round(laid)) : ''} title={fixed != null ? 'Fixed: the layout keeps the columns here' : 'The layout\'s own phase: type one to fix it'}
+        onChange={(e) => setText(e.target.value)} onBlur={() => send(phaseOf(text))} onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+      {fixed == null && laid != null && !disabled && (
+        <button type="button" className="icon mini" data-action="face-phase-fix" title="Fix the phase the layout chose, so a change elsewhere does not move the columns" onClick={() => send(Math.round(laid))}><Pin size={11} /></button>
+      )}
+      {fixed != null && !disabled && <button type="button" className="icon mini" data-action="face-phase-clear" title="Give the phase back to the layout" onClick={() => send(null)}><X size={11} /></button>}
+    </span>
   );
 }
 
