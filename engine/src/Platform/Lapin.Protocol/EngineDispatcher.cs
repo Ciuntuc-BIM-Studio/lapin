@@ -618,6 +618,19 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
         return (File.ReadAllBytes(path), info.Name, path, $"{path}:{info.Length}:{info.LastWriteTimeUtc.Ticks}");
     }
 
+    /// <summary>
+    /// An IFC to survey or import (<see cref="IfcBytes"/>), an .ifczip read from its first .ifc entry (a consultant's model on a CDE
+    /// server often comes zipped, docs/plan-cde-references.md R7), given as bytes. Only these two calls unzip, and only bytes (a file by path
+    /// is read again by its path, for a link's reload and the journal): the other formats read this way (meshes) may be zips of their own.
+    /// </summary>
+    (byte[] Bytes, string Name, string? Path, string Key) IfcModelBytes(JsonObject p)
+    {
+        var (bytes, name, path, key) = IfcBytes(p);
+        if (path != null || !name.EndsWith(".ifczip", StringComparison.OrdinalIgnoreCase)) return (bytes, name, path, key);
+        try { return (IfcOptimize.Unzipped(bytes), name, path, key); }
+        catch (Exception e) when (e is InvalidDataException or IOException) { throw new CommandException($"{name} is not an .ifczip Lapin reads: {e.Message}"); }
+    }
+
     /// <summary>A start screen template's levels (decision 261): each a name, an elevation and a height in metres; null when none or one is unreadable.</summary>
     public static List<(string Name, double Elevation, double Height)>? TemplateStoreys(JsonNode? n)
     {
@@ -1357,7 +1370,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             case "project.ifcSurvey":
             {
                 // What a file holds, for the user to choose from before it is imported: read and indexed here, kept for the import that follows.
-                var (bytes, name, _, key) = IfcBytes(p);
+                var (bytes, name, _, key) = IfcModelBytes(p);
                 ReportProgress("Indexing the file", 0, 0);
                 var file = StepFile.Read(bytes);
                 _surveyed = (key, bytes, file, Hashes.Sha256Hex(bytes));
@@ -1379,7 +1392,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 var mode = Rules(new IfcImportOptions(modeName is "link" or "editable" ? "auto" : modeName, kinds, storeys, plan2d, only2d, Group: group, Editable: modeName == "editable"), p["rules"] as JsonObject);
                 // By path (the desktop), or its bytes, base64 in `data` (the browser); the file as the survey read it, when it is the same.
                 ReportProgress("Reading the file", 0, 0);
-                var (bytes, name, path, key) = IfcBytes(p);
+                var (bytes, name, path, key) = IfcModelBytes(p);
                 (string Key, byte[] Bytes, StepFile File, string Hash)? surveyed = _surveyed is { } sv && sv.Key == key ? sv : null;
                 _surveyed = null;
                 StepFile file;

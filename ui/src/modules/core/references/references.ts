@@ -164,7 +164,7 @@ export function fileKind(name: string, mime?: string): FileKind {
   const ext = name.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] ?? '';
   if (ext === 'pdf' || mime === 'application/pdf') return 'pdf';
   if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg'].includes(ext) || mime?.startsWith('image/')) return 'image';
-  if (ext === 'ifc') return 'ifc';
+  if (ext === 'ifc' || ext === 'ifczip') return 'ifc';
   if (['txt', 'md', 'csv'].includes(ext)) return 'text';
   return 'other';
 }

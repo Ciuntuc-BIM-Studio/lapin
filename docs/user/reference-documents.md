@@ -24,7 +24,7 @@ Drag a document (or several, with Ctrl or Cmd held) onto a folder to move it. Wh
 
 ## The document
 
-Its form holds the title, type, issuer, number, date, validity, phases, role and folder, and the extra fields of its type. Its files can be previewed (a PDF page by page, an image inline), saved as a copy, taken off the document, or added to. An IFC offers **Open as link**: it opens in the project as a read-only link, like File → Link IFC….
+Its form holds the title, type, issuer, number, date, validity, phases, role and folder, and the extra fields of its type. Its files can be previewed (a PDF page by page, an image inline), saved as a copy, taken off the document, or added to. An IFC (or an .ifczip) offers **Open as link**: it opens in the project as a read-only link, like File → Link IFC…. A file the project does not keep (one above the size limit, on a server) is fetched from the server first.
 
 **Suggest** reads the file's text and proposes the number, the date, the issuer, the type and the validity, each with the words it was read from. You tick what is right and apply it; nothing is written without you. A scan has no text and gets no suggestion. A validity that comes only from the type's usual period is marked *indicative*: the dates written on the document are what count.
 
@@ -80,4 +80,4 @@ On a project kept on a CDE server, the documents are kept there too, and the **s
 
 - A file above the size limit stays on the server and not in your project file. It is fetched when you open it, preview it or save a copy.
 - Deleting follows the roles: viewers read, editors add and change the documents they added, owners change any document, delete one and edit the folders and types. A change the server refuses (your role does not allow it) comes back as it was, and Lapin says why.
-- The same register is on the project's page in the browser, in the **Documents** tab, without opening the project at all: see [CDE server](cde-server.md).
+- The same register is on the project's page in the browser, in the **Documents** tab, without opening the project at all: see [CDE server](cde-server.md). There a consultant's IFC opens in the browser's 3D read-only, alone or linked into the project's latest commit, with the IDS report the server made of it.

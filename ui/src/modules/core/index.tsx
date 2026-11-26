@@ -80,6 +80,7 @@ import { MATERIAL_IMPORT } from './materialData';
 import { FieldsInspectorDialog } from '../../shell/FieldsInspector';
 // A section profile's board on the shared sketch canvas (audit S11 stage 2): registered at once, so a project reopened with one open shows it.
 import './profileLibraries/profileBoard';
+import { ReferenceModelBand } from './references/ReferenceModelBand';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const ProfileLibrariesDialog = lazyPart(() => import('./profileLibraries/ProfileLibrariesDialog').then((m) => m.ProfileLibrariesDialog), { title: 'Profile libraries' });
@@ -203,7 +204,7 @@ const butDiscipline = (cls: string) => () => (useSession.getState().info?.nodeTy
 const viewFields = (node: NodeDto) => butDiscipline('LapinView')().filter((k) => viewShowsField(node.props.kind, k));
 
 /** What the core keeps running while the workspace is open: the 3D's visibility and storeys shown, the links' looks. */
-function CoreBackground() { return <><Visibility3D /><Storeys3DLooks /><LinksLook /><LinkedProjectsWatch /><LibraryImportHost /></>; }
+function CoreBackground() { return <><Visibility3D /><Storeys3DLooks /><LinksLook /><LinkedProjectsWatch /><LibraryImportHost /><ReferenceModelBand /></>; }
 
 /** Manage → Clash check…: the openings checked against MEP (a tab of Clash detection when the product has it, else a window of its own). */
 const openingsCheck: ToolDef = {

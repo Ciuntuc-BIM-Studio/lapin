@@ -13,6 +13,7 @@
 
 import { create } from 'zustand';
 import { engineInBrowser } from './session';
+import type { IdsReport } from './serverIds';
 
 /** A CDE server's origin when the interface is served by one; null otherwise. */
 export interface CdeState {
@@ -32,9 +33,14 @@ export interface CdeState {
   unpushed: { ahead: number; uncommitted: boolean } | null;
   /** The open project's remote is this server (cloned from it, or connected to it in Collaborate). */
   linked: boolean;
+  /** R7: the reference model opened from the Documents tab (alone, or linked into the latest commit), with its IDS report. */
+  reference?: OpenedReference | null;
 }
 
-export const useCde = create<CdeState>(() => ({ server: '', user: null, offline: false, opened: null, cloned: null, unpushed: null, linked: false }));
+/** A reference model open in the workspace (docs/plan-cde-references.md R7): its document, its file, and the server's IDS report of it. */
+export interface OpenedReference { project: string; document: string; title: string; file: string; withProject: boolean; ids: IdsReport | null }
+
+export const useCde = create<CdeState>(() => ({ server: '', user: null, offline: false, opened: null, cloned: null, unpushed: null, linked: false, reference: null }));
 
 /** True when the interface is in front of a CDE server. */
 export const cdeActive = () => Boolean(useCde.getState().server);

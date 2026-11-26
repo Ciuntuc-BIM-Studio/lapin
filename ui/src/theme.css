@@ -1407,6 +1407,11 @@ button.mode-chip:hover { color: var(--accent); }
 .avatar { display: inline-grid; place-items: center; border-radius: 50%; color: #fff; font-weight: 600; line-height: 1; letter-spacing: 0.02em; border: 2px solid var(--panel); box-sizing: border-box; }
 .guest-bar { position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%); z-index: 25; display: flex; align-items: center; gap: 8px; padding: 5px 12px; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 14px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); font-size: 12px; }
 .guest-bar .link { display: inline-flex; align-items: center; gap: 3px; }
+/* R7: a reference model opened from the CDE web, its IDS report beside the 3D. */
+.reference-band { position: fixed; left: 12px; bottom: 30px; z-index: 25; max-width: min(560px, calc(100vw - 24px)); background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 10px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); font-size: 12px; }
+.reference-band-line { display: flex; align-items: center; gap: 6px; padding: 5px 10px; flex-wrap: wrap; }
+.reference-band-line .link { display: inline-flex; align-items: center; gap: 3px; }
+.reference-band-report { max-height: 50vh; overflow: auto; padding: 0 10px 8px; border-top: 1px solid var(--rule); }
 .share-dialog { width: min(640px, calc(100vw - 32px)); }
 .share-dialog .fields input { width: 100%; box-sizing: border-box; }
 .share-secret { display: flex; gap: 4px; align-items: center; }

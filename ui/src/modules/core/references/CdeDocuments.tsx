@@ -13,7 +13,7 @@ import { ReferencesWorkspace } from './ReferencesDialog';
 import { folderLanguage } from './references';
 import { serverAdapter, serverPerms } from './serverRefs';
 
-export function CdeDocuments({ server, project }: { server: string; project: string }) {
+export function CdeDocuments({ server, project, name }: { server: string; project: string; name?: string }) {
   const ui = useLang((s) => s.lang);
   const [who, setWho] = useState<{ role: Role; authorId: string | null } | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export function CdeDocuments({ server, project }: { server: string; project: str
     return () => { live = false; };
   }, [server, project]);
   const [adapter, setAdapter] = useState<RefAdapter | null>(null);
-  useEffect(() => { setAdapter(serverAdapter(project, folderLanguage(ui))); }, [project, ui]);
+  useEffect(() => { setAdapter(serverAdapter(project, folderLanguage(ui), name ?? project)); }, [project, ui, name]);
 
   if (failed) return <p className="muted small">{failed}</p>;
   if (!who || !adapter) return <p className="muted small">Loading…</p>;

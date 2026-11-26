@@ -708,6 +708,10 @@ public sealed partial class EngineDispatcher
     static readonly System.Text.RegularExpressions.Regex IdsPath = new(
         "^atrium/1\\.0/projects/[A-Za-z0-9._-]{1,128}/ids/[A-Za-z0-9._~%!$&'()*+,;=@-]{1,800}\\.[iI][dD][sS]$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
+    /// <summary>An object of a project's store (R7: a file submitted from disk, Publishing → Submit files…), put as its bytes, named by their SHA-256.</summary>
+    static readonly System.Text.RegularExpressions.Regex ObjectPath = new(
+        "^lapin-remote/1\\.0/projects/[A-Za-z0-9._-]{1,128}/objects/([0-9a-f]{64})$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
     /// <summary>
     /// One request to the server's own API (Atrium's <c>/atrium/1.0</c>: the account, its administration, members, rules, activity;
     /// BCF 3.0; and the making of a project, <c>POST /lapin-remote/1.0/projects</c>) on the sign-in the call carries, for the desktop's
@@ -722,18 +726,21 @@ public sealed partial class EngineDispatcher
         // W4: a commit's package, its viewer record and an object (its IFC copy, an issued file) read for the desktop's containers view.
         var download = method == "GET" && (ReadOnlyObject.IsMatch(bare) || IdsPath.IsMatch(path));
         var allowed = bare.StartsWith("atrium/1.0/", StringComparison.Ordinal) || bare.StartsWith("bcf/3.0/", StringComparison.Ordinal)
-            || (bare == "lapin-remote/1.0/projects" && method == "POST") || download;
+            || (bare == "lapin-remote/1.0/projects" && method == "POST") || download || (method == "PUT" && ObjectPath.IsMatch(path));
         if (!allowed || !AtriumMethods.Contains(method) || path.Contains("..", StringComparison.Ordinal) || path.Contains('\\') || path.Contains("//", StringComparison.Ordinal) || path.Contains('#'))
             throw new CommandException("Not a request of the server's own API.");
-        // W5: a project's document register goes up as the file itself (CSV or XLSX, base64 in `data`); W6c: an IDS file, the same way.
-        // No other request carries bytes.
+        // W5: a project's document register goes up as the file itself (CSV or XLSX, base64 in `data`); W6c: an IDS file, the same way;
+        // R7: an object (a submitted file), its bytes checked against the id it is put under. No other request carries bytes.
         byte[]? raw = null;
+        var put = method == "PUT" ? ObjectPath.Match(path) : null;
         if ((string?)p["data"] is { } data)
         {
-            if (method != "PUT" || !(RegisterPath.IsMatch(path) || IdsPath.IsMatch(path))) throw new CommandException("Only a document register or an IDS file is sent as a file.");
+            if (method != "PUT" || !(RegisterPath.IsMatch(path) || IdsPath.IsMatch(path) || put is { Success: true })) throw new CommandException("Only a document register, an IDS file or an object is sent as a file.");
             try { raw = Convert.FromBase64String(data); }
             catch (FormatException) { throw new CommandException("The file's bytes are not base64."); }
+            if (put is { Success: true } && Lapin.Model.Hashes.Sha256Hex(raw) != put.Groups[1].Value) throw new CommandException("The file's bytes are not the object they are put as.");
         }
+        else if (put is { Success: true }) throw new CommandException("An object is put with its bytes.");
         var remote = (HttpRemote)await HttpRemote.ConnectAsync(Http, url, "-", tokens);
         var bytes = download && Flag(p, "bytes");
         var a = await remote.ApiAsync(new HttpMethod(method), path, raw == null ? p["body"]?.DeepClone() : null, (string?)p["ifMatch"], bytes, raw, (string?)p["contentType"]);

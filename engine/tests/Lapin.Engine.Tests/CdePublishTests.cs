@@ -322,4 +322,30 @@ public sealed partial class CdeTests
         c.Token = "tok-ana";
         Assert.Equal(403, (int)c.Call("remote.atrium", new JsonObject { ["method"] = "PUT", ["path"] = path, ["data"] = Convert.ToBase64String(ids) })["status"]!);
     }
+    [Fact]
+    public void The_desktop_puts_a_file_submitted_from_disk_as_an_object_under_its_own_hash_and_nothing_else()
+    {
+        // R7 (Publishing → Submit files…): a consultant's PDF from disk goes up as an object, then the submission names it.
+        var server = new PublishServer(new IssueSyncTests.FakeCde());
+        var c = Issued(new HttpClient(server), _ => Server());
+        var pdf = Encoding.UTF8.GetBytes("%PDF-1.4 a consultant's sheet");
+        var id = ObjectIds.Of(pdf);
+        var r = c.Call("remote.atrium", new JsonObject { ["method"] = "PUT", ["path"] = $"lapin-remote/1.0/projects/{CdeProject}/objects/{id}", ["data"] = Convert.ToBase64String(pdf) });
+        Assert.Equal(201, (int)r["status"]!);
+        Assert.Equal(pdf, server.Objects[id]);
+        // Bytes under another object's id, an object without its bytes, any other lapin-remote path: refused before anything is sent.
+        var other = ObjectIds.Of(Encoding.UTF8.GetBytes("something else"));
+        foreach (var (method, path, data) in new (string, string, string?)[] {
+            ("PUT", $"lapin-remote/1.0/projects/{CdeProject}/objects/{other}", Convert.ToBase64String(pdf)),
+            ("PUT", $"lapin-remote/1.0/projects/{CdeProject}/objects/{id}", null),
+            ("POST", $"lapin-remote/1.0/projects/{CdeProject}/objects/{id}", Convert.ToBase64String(pdf)),
+            ("PUT", $"lapin-remote/1.0/projects/{CdeProject}/objects/{id}/x", Convert.ToBase64String(pdf)),
+            ("PUT", $"lapin-remote/1.0/projects/{CdeProject}/refs", Convert.ToBase64String(pdf)) })
+        {
+            var args = new JsonObject { ["method"] = method, ["path"] = path };
+            if (data != null) args["data"] = data;
+            Assert.Throws<InvalidOperationException>(() => c.Call("remote.atrium", args));
+        }
+        Assert.DoesNotContain(other, server.Objects.Keys);
+    }
 }

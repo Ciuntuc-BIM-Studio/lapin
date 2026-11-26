@@ -223,7 +223,7 @@ export function enter(): void {
   select(null);
   // Another project: what the CDE start screen said of the last one (opened read-only, cloned, not saved to the server) goes.
   const cde = useCde.getState();
-  if (cde.opened || cde.cloned || cde.unpushed || cde.linked) useCde.setState({ opened: null, cloned: null, unpushed: null, linked: false });
+  if (cde.opened || cde.cloned || cde.unpushed || cde.linked || cde.reference) useCde.setState({ opened: null, cloned: null, unpushed: null, linked: false, reference: null });
   forget3d();
   const plan = emptyPane('plan');
   useUi.setState({ screen: 'workspace', storeyId: null, tool: null, panes: [plan], pane: 0, ...plan });

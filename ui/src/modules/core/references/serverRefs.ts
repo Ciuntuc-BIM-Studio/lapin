@@ -8,7 +8,7 @@
 import { api } from '../../../engine/cdeServer';
 import { notify } from '../../../app/store';
 import { refusalText } from '../../../engine/refusals';
-import type { RefAdapter, RefPerms } from './adapter';
+import type { ModelInfo, RefAdapter, RefPerms } from './adapter';
 import { today } from './expiry';
 import type { AddResult, Checklist, FolderTree, RefDoc, RefFile, RefFileData, RefFolder, TypeList } from './references';
 
@@ -69,7 +69,7 @@ const enc = encodeURIComponent;
 /**
  * The adapter for one server project. `lang` names the folders and the types.
  */
-export function serverAdapter(project: string, lang: string): RefAdapter {
+export function serverAdapter(project: string, lang: string, name = project): RefAdapter {
   const base = `/atrium/1.0/projects/${enc(project)}/references`;
   const objects = `/lapin-remote/1.0/projects/${enc(project)}/objects`;
   const seen = new Map<string, RefDoc>();
@@ -138,6 +138,15 @@ export function serverAdapter(project: string, lang: string): RefAdapter {
 
   return {
     kind: 'server',
+    project: { id: project, name },
+    async model(id, file) {
+      // The document read whole: its files' IDS reports come only with it, the list carrying their summaries.
+      try {
+        const r = await send('GET', `${base}/${enc(id)}?lang=${enc(lang)}`);
+        const f = ((r.body?.files as (RefFile & Partial<ModelInfo>)[] | undefined) ?? []).find((x) => x.name === file);
+        return f ? { kind: f.kind ?? null, ifc: f.ifc ?? null, ids: f.ids ?? null } : null;
+      } catch { return null; }
+    },
     async list() {
       const r = await send('GET', `${base}?today=${today()}&lang=${enc(lang)}`);
       seen.clear();

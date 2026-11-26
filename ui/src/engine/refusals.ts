@@ -41,6 +41,8 @@ export const REFUSALS: Record<string, string> = {
   no_ids: 'The project has no IDS file on the server.',
   bad_ids: 'Not an IDS 1.0 file.',
   too_many: 'The project holds 50 IDS files, the most a project may.',
+  // R7: files submitted from disk.
+  no_main: 'The project has nothing on the server yet, and an issue names a commit: save the project to the server once first.',
 };
 export const refusalText = (code: string, message?: string | null) => REFUSALS[code] ?? message ?? code;
 

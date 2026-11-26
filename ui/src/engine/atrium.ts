@@ -184,6 +184,8 @@ export interface Submission {
   tag: string | null; tagId: string | null; closedTopics: string[]; gate: { passed: boolean; topics: GateTopic[]; checks?: GateChecks | null } | null;
   /** W5: the checks on its PDF and DXF files (the list carries them without `files`). */
   checks?: ChecksReport | null;
+  /** R7: files submitted from disk (Publishing → Submit files…), `commit` being main's at the time. */
+  filesOnly?: boolean;
 }
 
 const S = (project: string) => `atrium/1.0/projects/${enc(project)}/submissions`;
@@ -194,6 +196,36 @@ export const approveSubmission = (server: string, project: string, id: string, n
   need<Submission>(server, 'POST', `${S(project)}/${enc(id)}/approve`, { note, ...(override ? { override: true } : {}) });
 export const rejectSubmission = (server: string, project: string, id: string, reason: string) => need<Submission>(server, 'POST', `${S(project)}/${enc(id)}/reject`, { reason });
 export const withdrawSubmission = (server: string, project: string, id: string) => need<Submission>(server, 'POST', `${S(project)}/${enc(id)}/withdraw`, {});
+/**
+ * R7: another tool's files submitted from disk (a server offering `submissions.files`): no commit, so the server takes main's and the
+ * tag names it. The files are put as objects when the server says they are missing (content-addressed: a file sent twice is stored once).
+ */
+export async function submitFiles(server: string, project: string, body: Record<string, unknown>, blobs: Map<string, Uint8Array>): Promise<Submission> {
+  const post = () => need<Submission>(server, 'POST', S(project), { ...body, commit: null });
+  try { return await post(); } catch (e) {
+    if (!(e instanceof AtriumError) || e.code !== 'object_missing') throw e;
+    const missing = (e.body?.missing as string[] | undefined) ?? [...blobs.keys()];
+    for (const sha of missing) {
+      const bytes = blobs.get(sha);
+      if (bytes) await putObject(server, project, sha, bytes);
+    }
+    return post();
+  }
+}
+
+/** An object of the project's store put as its bytes (its id their SHA-256): the page's fetch in the browser, the engine on the desktop. */
+export async function putObject(server: string, project: string, sha256: string, bytes: Uint8Array): Promise<void> {
+  const path = `lapin-remote/1.0/projects/${enc(project)}/objects/${sha256}`;
+  let status: number;
+  if (isCdeServer(server)) status = (await api(`/${path}`, { method: 'PUT', headers: { 'content-type': 'application/octet-stream' }, body: bytes as BodyInit })).status;
+  else {
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    status = (await remoteCall<{ status: number }>('remote.atrium', { url: server, method: 'PUT', path, data: btoa(bin) }, server)).status;
+  }
+  if (status < 200 || status >= 300) throw new AtriumError(status, `http_${status}`, refusalText(`http_${status}`, `The server did not take the file (${status}).`));
+}
+
 /** W5: the checks run again (202: the submission, its checks back to pending). */
 export const rerunChecks = (server: string, project: string, id: string) => need<Submission>(server, 'POST', `${S(project)}/${enc(id)}/checks`);
 

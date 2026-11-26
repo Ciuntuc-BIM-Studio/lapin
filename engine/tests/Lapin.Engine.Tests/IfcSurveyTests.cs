@@ -183,4 +183,24 @@ public class IfcSurveyTests : IDisposable
         Call(d, "project.importIfc", new JsonObject { ["path"] = Write() });
         Assert.Equal(8, f.Model.Entities.Count(e => e.Class != StoredBodies.SharedClass && (e.Name.Contains(" : ") || e.Name == "anything")));
     }
+    [Fact]
+    public void An_ifczip_given_as_bytes_is_surveyed_and_imported_from_its_ifc_entry()
+    {
+        // R7: a consultant's model on a CDE server may be an .ifczip; the browser hands it over as bytes.
+        var ms = new MemoryStream();
+        using (var zip = new System.IO.Compression.ZipArchive(ms, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true))
+        using (var w = new StreamWriter(zip.CreateEntry("plant.ifc").Open())) w.Write(Model());
+        var data = Convert.ToBase64String(ms.ToArray());
+        var f = Make();
+        var d = new EngineDispatcher(f.Session, PackageFiles.Create());
+        var s = Call(d, "project.ifcSurvey", new JsonObject { ["name"] = "plant.ifczip", ["data"] = data })!;
+        Assert.Equal("IFC2X3", (string?)s["schema"]);
+        Assert.Equal(9, (int)s["products"]!);
+        var r = Call(d, "project.importIfc", new JsonObject { ["name"] = "plant.ifczip", ["data"] = data, ["mode"] = "reference" })!;
+        // What the same file brings unzipped.
+        var plain = Call(new EngineDispatcher(Make().Session, PackageFiles.Create()), "project.importIfc",
+            new JsonObject { ["name"] = "plant.ifc", ["data"] = Convert.ToBase64String(Encoding.UTF8.GetBytes(Model())), ["mode"] = "reference" })!;
+        Assert.Equal((int)plain["references"]!, (int)r["references"]!);
+        Assert.True((int)r["references"]! > 0);
+    }
 }
