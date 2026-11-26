@@ -36,7 +36,7 @@
     <Exec Command="node &quot;$(MSBuildThisFileDirectory)../../../../scripts/build-manifold.mjs&quot;" IgnoreExitCode="true">
       <Output TaskParameter="ExitCode" PropertyName="_LapinManifoldExit" />
     </Exec>
-    <Error Condition="'$(_LapinManifoldExit)' != '0'" Text="manifold's library for Linux (engine/native/linux-x64/libmanifoldc.so) could not be built: run node scripts/build-manifold.mjs to see why (it needs git, cmake and a C++ compiler). Without it the engine cuts nothing and its tests fail; -p:LapinMakeManifold=false builds without it." />
+    <Error Condition="'$(_LapinManifoldExit)' != '0'" Text="manifold's library for Linux (engine/native/linux-x64/libmanifoldc.so) could not be built: run node scripts/build-manifold.mjs to see why (it needs git, cmake, a C++ compiler and the static C++ runtime, libstdc++.a: the libstdc++-static package on Fedora/RHEL). Without it the engine cuts nothing and its tests fail; -p:LapinMakeManifold=false builds without it." />
   </Target>
   <ItemGroup>
     <None Include="$(LapinNative)libmanifoldc.dylib" Condition="$(LapinNativeRid.StartsWith('osx')) And Exists('$(LapinNative)libmanifoldc.dylib')" Link="libmanifoldc.dylib" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
