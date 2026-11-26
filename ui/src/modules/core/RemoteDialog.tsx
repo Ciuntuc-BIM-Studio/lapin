@@ -25,6 +25,7 @@ import { when } from './format';
 import { useCde } from '../../engine/cdeServer';
 import { account } from '../../engine/atrium';
 import { ActivityList, RulesEditor, openAdmin } from './CdeAdmin';
+import { AccessTokensButton, AccessTokensSection, useTokensOffered } from './AccessTokensEntry';
 import { PublishingPanel } from './CdePublish';
 
 type Kind = 'folder' | 'server';
@@ -213,6 +214,8 @@ function Account({ server, signedIn: inNow, onChange }: { server: string; signed
     } catch (e) { notify(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
   };
   const [changing, setChanging] = useState(false);
+  const [tokens, setTokens] = useState(false);
+  const tokensOffered = useTokensOffered(inNow ? server : null);
   if (inNow) {
     return (
       <>
@@ -220,8 +223,10 @@ function Account({ server, signedIn: inNow, onChange }: { server: string; signed
           <span className="muted">Signed in as</span> <span data-no-i18n>{authorFor(server).name}</span>
           <button type="button" onClick={() => void signOut(server).then(onChange)}><LogOut size={13} /> Sign out</button>
           {!changing && <button type="button" onClick={() => setChanging(true)} title="A new password for this account on the server"><KeyRound size={13} /> Change password…</button>}
+          {tokensOffered && <AccessTokensButton className="" open={tokens} onToggle={() => setTokens(!tokens)} />}
         </div>
         {changing && <ChangePassword server={server} onDone={() => { setChanging(false); onChange(); }} />}
+        {tokens && <AccessTokensSection server={server} />}
       </>
     );
   }

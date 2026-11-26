@@ -18,6 +18,7 @@ import { useSession } from '../engine/session';
 import { notify, useUi } from '../app/store';
 import { when } from '../modules/core/format';
 import { ActivityList, AdminPanel, RulesEditor } from '../modules/core/CdeAdmin';
+import { AccessTokensButton, AccessTokensSection, useTokensOffered } from '../modules/core/AccessTokensEntry';
 import { PublishingPanel } from '../modules/core/CdePublish';
 import { account } from '../engine/atrium';
 import { REFUSALS } from '../engine/remote';
@@ -87,11 +88,13 @@ export function CdeStart() {
   const [changing, setChanging] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [admin, setAdmin] = useState(false);
+  const [tokens, setTokens] = useState(false);
   const [projectsShown, setProjectsShown] = useState(0);
   const host = window.location.host;
   const server = useCde((s) => s.server) || window.location.origin;
+  const tokensOffered = useTokensOffered(user ? server : null);
   useEffect(() => {
-    setIsAdmin(false); setAdmin(false);
+    setIsAdmin(false); setAdmin(false); setTokens(false);
     if (user) account(server).then((a) => setIsAdmin(a.isAdmin)).catch(() => setIsAdmin(false));
   }, [user, server]);
   return (
@@ -107,7 +110,8 @@ export function CdeStart() {
           <div className="cde-actions">
             <button type="button" className="btn" onClick={() => setChanging(!changing)}><KeyRound size={14} />Change password…</button>
             <button type="button" className="btn" onClick={() => { signOut(); setProject(null); }}><LogOut size={14} />Sign out</button>
-            {isAdmin && <button type="button" className={`btn${admin ? ' primary' : ''}`} data-cde="admin" onClick={() => { setAdmin(!admin); setProject(null); }}><ShieldCheck size={14} />Administration</button>}
+            {tokensOffered && <AccessTokensButton open={tokens} onToggle={() => { setTokens(!tokens); setAdmin(false); setProject(null); }} />}
+            {isAdmin && <button type="button" className={`btn${admin ? ' primary' : ''}`} data-cde="admin" onClick={() => { setAdmin(!admin); setTokens(false); setProject(null); }}><ShieldCheck size={14} />Administration</button>}
           </div>
           {changing && <ChangePassword onDone={() => setChanging(false)} />}
         </>}
@@ -122,7 +126,8 @@ export function CdeStart() {
       <section className="start-right">
         {!user && <p className="muted small">Sign in with the account the server's administrator made for you.</p>}
         {user && admin && <AdminPanel server={server} onProject={() => setProjectsShown((n) => n + 1)} />}
-        {user && !project && !admin && <Projects key={projectsShown} onOpen={setProject} />}
+        {user && tokens && !admin && <AccessTokensSection server={server} />}
+        {user && !project && !admin && !tokens && <Projects key={projectsShown} onOpen={setProject} />}
         {user && project && <ProjectPage key={project.id} project={project} back={() => setProject(null)} connected={connected} />}
       </section>
     </div>

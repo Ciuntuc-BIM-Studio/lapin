@@ -91,4 +91,17 @@ describe("Atrium's own API", () => {
     expect(e).toBeInstanceOf(atrium.AtriumError);
     expect(e.body.checks.errors).toBe(2);
   });
+  it('makes, lists and revokes personal access tokens (R6), the secret returned once', async () => {
+    remoteCall.mockResolvedValueOnce({ status: 201, body: { id: 't1', name: 'Claude', scope: 'read+write', created: 'c', expires: 'e', lastUsed: null, expired: false, token: 'atrium_pat_x' }, etag: null });
+    const made = await atrium.createAccessToken('https://other.example.org', { name: ' Claude ', scope: 'read+write', expiresInDays: 90 });
+    expect(made.token).toBe('atrium_pat_x');
+    expect(remoteCall).toHaveBeenLastCalledWith('remote.atrium', { url: 'https://other.example.org', method: 'POST', path: 'atrium/1.0/account/tokens', body: { name: 'Claude', scope: 'read+write', expiresInDays: 90 } }, 'https://other.example.org');
+    remoteCall.mockResolvedValueOnce({ status: 200, body: { tokens: [{ id: 't1', name: 'Claude' }] }, etag: null });
+    expect((await atrium.accessTokens('https://other.example.org')).map((t) => t.id)).toEqual(['t1']);
+    remoteCall.mockResolvedValueOnce({ status: 204, body: null, etag: null });
+    await atrium.revokeAccessToken('https://other.example.org', 't/1');
+    expect(remoteCall).toHaveBeenLastCalledWith('remote.atrium', { url: 'https://other.example.org', method: 'DELETE', path: 'atrium/1.0/account/tokens/t%2F1' }, 'https://other.example.org');
+    const { claudeCommand } = await import('../modules/core/AccessTokens');
+    expect(claudeCommand('https://cde.example.org/')).toBe('claude mcp add --transport http atrium https://cde.example.org/mcp --header "Authorization: Bearer <token>"');
+  });
 });

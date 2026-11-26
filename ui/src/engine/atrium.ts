@@ -77,6 +77,21 @@ export const forgetFeatures = () => offered.clear();
 export interface Account { id: string; publicId: string; authorId: string; name: string; email: string; isAdmin: boolean; projects: { id: string; name: string; role: Role }[] }
 export const account = (server: string) => need<Account>(server, 'GET', 'atrium/1.0/account');
 
+// ------------------------------------------------------------ personal access tokens, for AI clients over MCP (plan-cde-references R6)
+
+/** A personal access token as the server lists it (never its secret). */
+export interface AccessToken { id: string; name: string; scope: 'read' | 'read+write'; created: string; expires: string; lastUsed: string | null; expired: boolean }
+
+/** The account's tokens, newest first (feature `account.tokens`). */
+export const accessTokens = async (server: string) => (await need<{ tokens: AccessToken[] }>(server, 'GET', 'atrium/1.0/account/tokens')).tokens;
+
+/** A new token: its listing and `token`, the secret, which the server shows this once. */
+export const createAccessToken = (server: string, t: { name: string; scope: AccessToken['scope']; expiresInDays: number }) =>
+  need<AccessToken & { token: string }>(server, 'POST', 'atrium/1.0/account/tokens', { name: t.name.trim(), scope: t.scope, expiresInDays: t.expiresInDays });
+
+/** Revokes a token at once. */
+export const revokeAccessToken = (server: string, id: string) => need<unknown>(server, 'DELETE', `atrium/1.0/account/tokens/${enc(id)}`);
+
 // ------------------------------------------------------------ administration (server administrators)
 
 export interface AdminUser { email: string; name: string; publicId: string; authorId: string; isAdmin: boolean; disabled: boolean; created: string | null; projects: { id: string; name: string; role: Role }[] }
