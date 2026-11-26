@@ -13,6 +13,11 @@ import {
 
 export type FilePart = { name: string; data: string };
 
+/** A reference model's IFC header as the server read it on upload (Atrium docs/atrium-server.md, "Reading the files"). */
+export interface IfcHeaderInfo { schema?: string | null; application?: string | null; projectName?: string | null; author?: string | null; organization?: string | null; timeStamp?: string | null; readable?: boolean }
+/** What the server found in a reference model: its header, and the IDS report when the project's IDS rule ran on it. */
+export interface ModelInfo { kind: string | null; ifc: IfcHeaderInfo | null; ids: import('../../../engine/serverIds').IdsReport | null }
+
 export interface RefAdapter {
   /** Where the documents are: the project open here, or a server (some things then do not exist: Suggest, Scan folder, the keep limit). */
   kind: 'engine' | 'server';
@@ -32,6 +37,9 @@ export interface RefAdapter {
   remove(id: string): Promise<unknown>;
   setFolders(args: { folders?: unknown; typeFolders?: Record<string, string>; roleFolders?: Record<string, string>; language?: string }): Promise<unknown>;
   setTypes(types: RefType[]): Promise<unknown>;
+  /** Server only (R7): the server project the documents are in, and what reading a model found (its IFC header, its IDS report). */
+  project?: { id: string; name: string };
+  model?(id: string, name: string): Promise<ModelInfo | null>;
   /** Engine only: what a file's text suggests, and the project folder's scan. */
   suggest?(id: string, name?: string): Promise<Suggestion | null>;
   scan?(): Promise<ScanResult | null>;

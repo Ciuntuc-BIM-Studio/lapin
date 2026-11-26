@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Download, FileSpreadsheet, FolderOpen, GitCompare, RefreshCw, RotateCw, Undo2, X } from 'lucide-react';
+import { Check, Download, FilePlus2, FileSpreadsheet, FolderOpen, GitCompare, RefreshCw, RotateCw, Undo2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { download, isDesktop, openProjectBytes, pickPath, safeFileName, fileBytes } from '../../engine/files';
 import { historyStatus, refusalText, remoteCall, signedIn, syncIssuesAndDocuments, writingCall } from '../../engine/remote';
@@ -35,6 +35,8 @@ const IdsPanel = lazyPart(() => import('./ids/IdsPanel').then((m) => m.IdsPanel)
 const DocumentsTab = lazyPart(() => import('./references/CdeDocuments').then((m) => m.CdeDocuments), { inline: true });
 const IdsServerPanel = lazyPart(() => import('./CdeIds').then((m) => m.IdsServerPanel), { inline: true });
 const IdsCheckOnServer = lazyPart(() => import('./CdeIds').then((m) => m.IdsCheckOnServer), { inline: true });
+// R7: Submit files… (another program's drawings and models from disk into the queue).
+const SubmitFilesForm = lazyPart(() => import('./CdeSubmitFiles').then((m) => m.SubmitFilesForm), { inline: true });
 const short = (id: string) => id.slice(0, 8);
 const P = (project: string) => `lapin-remote/1.0/projects/${encodeURIComponent(project)}`;
 
@@ -181,8 +183,8 @@ function Publishing({ server, project, name, offers, withModel }: { server: stri
       </div>
       {failed && <p className="muted small">{failed}</p>}
       {tab === 'containers' && <ContainersView server={server} project={project} name={name} data={data} busy={busy} run={run} folders={offers.includes('references')} />}
-      {tab === 'documents' && <DocumentsTab server={server} project={project} />}
-      {tab === 'submissions' && <SubmissionsQueue server={server} project={project} who={who} onDecided={load} checks={offers.includes('checks')} />}
+      {tab === 'documents' && <DocumentsTab server={server} project={project} name={name} />}
+      {tab === 'submissions' && <SubmissionsQueue server={server} project={project} who={who} onDecided={load} checks={offers.includes('checks')} files={offers.includes('submissions.files')} />}
       {tab === 'diff' && <HandoverDiffView server={server} project={project} name={name} data={data} />}
       {tab === 'ids' && <IdsPanel server={server} project={project} />}
       {tab === 'register' && <RegisterPanel server={server} project={project} owner={owner} />}
@@ -260,10 +262,12 @@ const FILTERS: { id: SubmissionStatus | ''; label: string }[] = [
   { id: 'pending', label: 'Waiting for approval' }, { id: '', label: 'All' }, { id: 'approved', label: 'Approved' }, { id: 'rejected', label: 'Rejected' }, { id: 'withdrawn', label: 'Withdrawn' },
 ];
 
-function SubmissionsQueue({ server, project, who, onDecided, checks }: { server: string; project: string; who: ReturnType<typeof useMe>; onDecided: () => void; checks: boolean }) {
+function SubmissionsQueue({ server, project, who, onDecided, checks, files = false }: { server: string; project: string; who: ReturnType<typeof useMe>; onDecided: () => void; checks: boolean; files?: boolean }) {
   const [filter, setFilter] = useState<SubmissionStatus | ''>('pending');
   const [list, setList] = useState<Submission[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const mayAdd = files && who.me != null && atLeast(who.me.isAdmin && who.rules?.role === 'owner' ? 'owner' : who.me.role, 'editor');
   const load = useCallback(() => {
     listSubmissions(server, project, filter || undefined).then(setList).catch((e) => { notify(message(e)); setList([]); });
   }, [server, project, filter]);
@@ -276,7 +280,9 @@ function SubmissionsQueue({ server, project, who, onDecided, checks }: { server:
           {FILTERS.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}
         </select>
         <button type="button" className="icon" title="Refresh" onClick={() => { setList(null); load(); }}><RefreshCw size={12} /></button>
+        {mayAdd && <button type="button" className={`btn${submitting ? ' primary' : ''}`} data-cde="submit-files-open" title="Another program's drawings and models (PDF, DXF, IFC) from this computer, issued through this queue" onClick={() => setSubmitting(!submitting)}><FilePlus2 size={13} />Submit files…</button>}
       </div>
+      {submitting && <SubmitFilesForm server={server} project={project} onClose={() => setSubmitting(false)} onDone={(s) => { setSubmitting(false); setFilter('pending'); setList(null); load(); setOpen(s.id); }} />}
       {list === null && <p className="muted small">Loading…</p>}
       {list?.length === 0 && <p className="muted small">No submission here. Manage → Issue… submits an issue for approval when the project is on the server.</p>}
       <ul className="cde-list">
@@ -284,6 +290,7 @@ function SubmissionsQueue({ server, project, who, onDecided, checks }: { server:
           <li key={s.id} className={`cde-row${open === s.id ? ' active' : ''}`} data-cde-submission={s.number}>
             <button type="button" className="cde-row-body link" onClick={() => setOpen(open === s.id ? null : s.id)}>
               <span className="recent-name"><span data-no-i18n>{`${s.number}. ${issueLabel(s.issue, s.revision)} · ${s.suitability}`}</span> <span className="chip">{s.purpose === 'shared' ? 'Shared' : 'Published'}</span>
+                {s.filesOnly && <span className="chip" data-cde-files-only title="Files submitted from disk: the issue names the project's commit at the time">Files from disk</span>}
                 <span className={`chip${s.status === 'pending' ? ' warn' : ''}`}>{SUBMISSION_STATUS[s.status]}</span>
                 {s.status === 'pending' && s.gate && !s.gate.passed && <span className="chip warn" data-cde-gate="failed">{s.gate.topics.length > 0 ? 'Gate: open issues' : 'Gate fails'}</span>}
                 {checks && s.checks && <ChecksLine checks={s.checks} compact />}</span>

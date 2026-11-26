@@ -24,7 +24,7 @@ Trage un document (sau mai multe, cu Ctrl sau Cmd apăsat) peste un folder ca s�
 
 ## Documentul
 
-Formularul ține titlul, tipul, emitentul, numărul, data, valabilitatea, fazele, rolul și folderul, plus câmpurile suplimentare ale tipului. Fișierele se pot previzualiza (un PDF pagină cu pagină, o imagine direct), salva ca o copie, scoate din document sau completa. Un IFC are **Open as link**: se deschide în proiect ca legătură doar pentru citire, ca File → Link IFC….
+Formularul ține titlul, tipul, emitentul, numărul, data, valabilitatea, fazele, rolul și folderul, plus câmpurile suplimentare ale tipului. Fișierele se pot previzualiza (un PDF pagină cu pagină, o imagine direct), salva ca o copie, scoate din document sau completa. Un IFC (sau un .ifczip) are **Open as link**: se deschide în proiect ca legătură doar pentru citire, ca File → Link IFC…. Un fișier pe care proiectul nu-l ține (unul peste limita de mărime, pe un server) se aduce întâi de pe server.
 
 **Suggest** citește textul fișierului și propune numărul, data, emitentul, tipul și valabilitatea, fiecare cu cuvintele din care a fost citit. Bifezi ce e corect și aplici; nimic nu se scrie fără tine. Un scan nu are text și nu primește sugestii. O valabilitate care vine doar din perioada obișnuită a tipului e marcată *orientativ*: contează datele scrise pe document.
 
@@ -80,4 +80,4 @@ Un fișier peste limita de mărime nu e în fișierul proiectului. E adus întâ
 
 - Un fișier peste limita de mărime rămâne pe server, nu în fișierul proiectului. Se aduce când îl deschizi, îl previzualizezi sau salvezi o copie.
 - Ștergerea ține de roluri: cititorii citesc, editorii adaugă și schimbă documentele pe care le-au adăugat, proprietarii schimbă orice document, șterg unul și editează folderele și tipurile. O schimbare pe care serverul o refuză (rolul tău nu o permite) revine cum era, iar Lapin spune de ce.
-- Același registru e pe pagina proiectului din browser, în fila **Documente**, fără să deschizi proiectul: vezi [Server CDE](cde-server.md).
+- Același registru e pe pagina proiectului din browser, în fila **Documente**, fără să deschizi proiectul: vezi [Server CDE](cde-server.md). Acolo IFC-ul unui consultant se deschide în 3D-ul din browser doar pentru citire, singur sau legat în ultimul commit al proiectului, cu raportul IDS pe care l-a făcut serverul.

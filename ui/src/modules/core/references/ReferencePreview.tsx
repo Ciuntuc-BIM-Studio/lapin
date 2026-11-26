@@ -1,7 +1,9 @@
 /**
  * A reference document's file shown (docs/plan-cde-references.md §5): a PDF drawn page by page with pdf.js (loaded only when the
  * first one is shown, as the checks do), an image inline, a text file's text, and an IFC offered as a link to the project
- * (Open as link: the same import as File → Link IFC…, docs/links.md). Anything else is saved with Save a copy.
+ * (Open as link: the same import as File → Link IFC…, docs/links.md; a file the project does not hold is fetched from its server,
+ * remote.referenceFile). On a server (the CDE web, R7) an IFC opens in the browser's 3D read-only, alone or linked into the latest
+ * commit, its IDS report beside it (ReferenceModelPreview.tsx). Anything else is saved with Save a copy.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -9,6 +11,7 @@ import { ChevronLeft, ChevronRight, Link2 } from 'lucide-react';
 import { notify } from '../../../app/store';
 import { useRefAdapter } from './adapter';
 import type { FileKind, RefDoc, RefFile } from './references';
+import { ServerModelPreview } from './ReferenceModelPreview';
 
 const bytesOf = (data: string) => Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
 
@@ -100,7 +103,8 @@ function IfcPreview({ doc, file }: { doc: RefDoc; file: RefFile }) {
     const { surveyIfc } = await import('../../../engine/ifcImport');
     await surveyIfc({ name: r.name, data: r.data }, 'link');
   };
-  if (adapter.kind === 'server') return <p className="muted small refs-preview">A model: save a copy, and open it in Lapin as a link (File → Link IFC…).</p>;
+  // The CDE web (R7): its header and IDS report as the server read them, opened in the browser's 3D alone or with the project.
+  if (adapter.kind === 'server') return <ServerModelPreview doc={doc} file={file} />;
   return (
     <div className="refs-preview">
       <p className="muted small">A model: it opens in the project as a link, read-only, drawn in the views and in 3D.</p>

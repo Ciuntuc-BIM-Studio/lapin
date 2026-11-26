@@ -115,6 +115,7 @@ describe('the checklist and the files', () => {
     expect(fileKind('plan.png')).toBe('image');
     expect(fileKind('scan', 'image/jpeg')).toBe('image');
     expect(fileKind('model.ifc')).toBe('ifc');
+    expect(fileKind('Structura.IFCZIP')).toBe('ifc');
     expect(fileKind('notes.txt')).toBe('text');
     expect(fileKind('drawing.dwg')).toBe('other');
   });
