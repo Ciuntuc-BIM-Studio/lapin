@@ -1041,7 +1041,7 @@
     {"name":"browser.sets","module":"core","args":[]},
     {"name":"cde.check","module":"core","args":[{"name":"sheets"},{"name":"revision","type":"str"}]},
     {"name":"cde.issues","module":"core","args":[]},
-    {"name":"cde.naming","module":"core","args":[{"name":"of","type":"str"},{"name":"revision","type":"str"},{"name":"status","type":"str"},{"name":"sheets"},{"name":"documents","type":"list"},{"name":"model","type":"bool"}]},
+    {"name":"cde.naming","module":"core","args":[{"name":"of","type":"str"},{"name":"revision","type":"str"},{"name":"status","type":"str"},{"name":"sheets"},{"name":"documents","type":"list"},{"name":"model","type":"bool"},{"name":"references","type":"list"},{"name":"referenceFolders","type":"list"}]},
     {"name":"cde.pdfRemarks","module":"core","args":[{"name":"data","type":"str"},{"name":"name","type":"str"},{"name":"sheetId","type":"str"}]},
     {"name":"cde.remarks","module":"core","args":[{"name":"sheetId","type":"str"}]},
     {"name":"cde.settings","module":"core","args":[]},

@@ -458,6 +458,33 @@ public sealed class CdeReferenceDocumentsTests
     }
 
     [Fact]
+    public void The_names_preview_lists_the_reference_files_as_the_issue_names_them()
+    {
+        var f = F();
+        var d = Setup(f);
+        // The same choice as the issue above, without the study: the certificate, then the utilities' folder in the tree's order.
+        var names = f.Session.Query("cde.naming", new JsonObject
+        {
+            ["references"] = new JsonArray(d.Cu), ["referenceFolders"] = new JsonArray("permits"), ["revision"] = "P01", ["status"] = "S2",
+        })!;
+        var refs = ((JsonArray)names["references"]!).OfType<JsonObject>().ToList();
+        Assert.Equal([d.Cu, d.Gas, d.Water], refs.Select(x => (string)x["id"]!));
+        Assert.Equal(["cu.pdf", "aviz.pdf", "aviz (2).pdf", "plan.png"], refs.SelectMany(x => ((JsonArray)x["files"]!).Select(y => (string)y!["file"]!)));
+        Assert.Equal(["cu.pdf", "aviz.pdf", "aviz.pdf", "plan.png"], refs.SelectMany(x => ((JsonArray)x["files"]!).Select(y => (string)y!["name"]!)));
+        Assert.Equal("45", (string?)refs[0]["number"]);
+
+        // The names the issue writes are the same ones.
+        var (r, _) = CdeIssue.Run(f.Session, PackageIssues.Empty(), new JsonObject
+        {
+            ["references"] = new JsonArray(d.Cu), ["referenceFolders"] = new JsonArray("permits"), ["revision"] = "P01", ["status"] = "S2", ["toFolder"] = false,
+        });
+        Assert.Equal(["cu.pdf", "aviz.pdf", "aviz (2).pdf", "plan.png"], ((JsonArray)r["files"]!).OfType<JsonObject>().Where(x => (string?)x["kind"] == "reference").Select(x => (string)x["name"]!));
+
+        // Without reference documents asked, the names have none.
+        Assert.Null(f.Session.Query("cde.naming", new JsonObject { ["revision"] = "P01" })!["references"]);
+    }
+
+    [Fact]
     public void The_transmittal_pdf_lists_the_reference_documents()
     {
         var header = new CdeTransmittal.Header("Casa", "Issue 1", 1, "26.11.2026", "P01", "S2", "Shared", null, "CBS");

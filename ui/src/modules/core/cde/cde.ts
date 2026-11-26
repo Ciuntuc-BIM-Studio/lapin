@@ -32,7 +32,10 @@ export interface Names {
   of?: string | null;
   /** The project's issues, and the one whose last revision sent exactly what is chosen (the default to issue a new revision of). */
   series?: Series[]; match?: Series | null;
-  revision: string; status: string; number: number; sheets: { id: string; number: string; title: string; name: string; file: string; problems: string[] }[]; documents?: { id: string; title: string; name: string; file: string; problems: string[] }[]; model: string; set: string; transmittal: string }
+  revision: string; status: string; number: number; sheets: { id: string; number: string; title: string; name: string; file: string; problems: string[] }[]; documents?: { id: string; title: string; name: string; file: string; problems: string[] }[];
+  /** The reference documents' files as the issue names them (each its own name, numbered when an earlier file has it), when asked with `references`. */
+  references?: { id: string; title: string; number?: string | null; files: { name: string; file: string }[] }[];
+  model: string; set: string; transmittal: string }
 
 /** The revision after `last`: P02 after P01, C01 for the first contractual one, C02 after C01; P01 with none. */
 export function nextRevision(last: string | null | undefined, contractual?: boolean): string {
@@ -105,7 +108,7 @@ export const canUseFolder = () => (isDesktop() || devOverride()) && !isGuest();
 export const cdeSettings = () => query<CdeSettings>('cde.settings');
 export const cdeIssues = () => query<Issue[]>('cde.issues').then((r) => r ?? []);
 export const cdeCheck = (sheets?: string[], revision?: string) => query<CheckResult>('cde.check', { ...(sheets ? { sheets } : {}), ...(revision ? { revision } : {}) });
-export const cdeNames = (args: { sheets?: string[]; documents?: string[]; model?: boolean; revision?: string; status?: string; of?: string }) => query<Names>('cde.naming', args);
+export const cdeNames = (args: { sheets?: string[]; documents?: string[]; references?: string[]; dxf?: boolean; set?: boolean; documentsDocx?: boolean; model?: boolean; revision?: string; status?: string; of?: string }) => query<Names>('cde.naming', args);
 
 /** A folder picked with the desktop's dialog; null when stepped back (or no desktop). */
 export async function pickFolder(current: string | null): Promise<string | null> {
