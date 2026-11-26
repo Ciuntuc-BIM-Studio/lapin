@@ -10,6 +10,7 @@
 import { brand } from '../platform/brand';
 import { emptyPane, useUi, type Pane, type UiState } from './store';
 import { isDesktop } from '../engine/files';
+import { useSectionBox } from '../viewport/sectionBox';
 
 const SHARED = ['storeyId', 'selected', 'selection', 'tool', 'theme', 'visualStyle', 'fog', 'refPlanes', 'planDrawing', 'wallTypeId', 'doorTypeId', 'windowTypeId', 'slabTypeId', 'roofStyle', 'keyPlan'] as const;
 type Shared = Pick<UiState, (typeof SHARED)[number]>;
@@ -40,6 +41,21 @@ export async function openViewWindow(pane: Pane, title = 'View', at?: { x: numbe
   });
 }
 
+type BoxState = Pick<ReturnType<typeof useSectionBox.getState>, 'box' | 'hidden'>;
+
+/**
+ * The section box is one thing for every window of the app (a view opened in a window of its own has no ribbon of its
+ * own to set it from, and cuts by the box of the main one): its changes go out through `send`, the ones that come in
+ * through the returned `apply`, which does not send them back.
+ */
+export function mirrorSectionBox(send: (s: BoxState) => void): { apply: (s: BoxState) => void; current: () => BoxState; stop: () => void } {
+  let applying = false;
+  const current = (): BoxState => { const { box, hidden } = useSectionBox.getState(); return { box, hidden }; };
+  const stop = useSectionBox.subscribe((s, before) => { if (!applying && (s.box !== before.box || s.hidden !== before.hidden)) send({ box: s.box, hidden: s.hidden }); });
+  const apply = (s: BoxState) => { applying = true; try { useSectionBox.setState({ box: s.box, hidden: s.hidden }); } finally { applying = false; } };
+  return { apply, current, stop };
+}
+
 /** Keep the shared state in step between the windows of this app. */
 export async function syncWindows(): Promise<void> {
   if (!isDesktop()) return;
@@ -62,7 +78,9 @@ export async function syncWindows(): Promise<void> {
     for (const k of SHARED) if (s[k] !== before[k]) (patch as Record<string, unknown>)[k] = s[k];
     if (Object.keys(patch).length) void emit('ui-shared', { from: me, patch });
   });
+  const boxes = mirrorSectionBox((b) => void emit('section-box', { from: me, ...b }));
+  await listen<{ from: string } & BoxState>('section-box', (e) => { if (e.payload.from !== me) boxes.apply({ box: e.payload.box, hidden: e.payload.hidden }); });
   // A new window asks the main one where things stand.
-  if (me === 'main') await listen('ui-hello', () => void emit('ui-shared', { from: me, patch: shared() }));
+  if (me === 'main') await listen('ui-hello', () => { void emit('ui-shared', { from: me, patch: shared() }); void emit('section-box', { from: me, ...boxes.current() }); });
   else void emit('ui-hello', { from: me });
 }

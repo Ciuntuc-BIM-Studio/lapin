@@ -21,3 +21,7 @@ Left for later, by the user's choice of what to plan next: Fabio 4 (a watch on a
 ## Stage status
 
 Each stage records here what was done, with its decision's source.
+
+**R2 (report #195, 0.1.1667, 1493×802).** The update window is the system dialog of Tauri's dialog plugin, sized by its text; a build's release notes made it taller than the screen, and a system dialog cannot be moved or scrolled by the page. `shortNotes` (`ui/src/app/updates.ts`) now shows at most 10 lines and 700 characters of the notes (a line cut at 160), with an ellipsis when more follows, so the window and its buttons always fit. The Install and Later buttons are unchanged. Test: `updates.test.ts`.
+
+**R3 (report #194, Windows, 0.1.2058).** A view in a window of its own is the same interface in a separate webview (`?pane=`, no ribbon). The section box lives in a zustand store per webview and `syncWindows` shared only the `SHARED` keys of `useUi`, so the box set in the main window never reached the floating view, and the floating window had no ribbon to set one from. `mirrorSectionBox` (`ui/src/app/windows.ts`) now carries the box and its hidden flag between the windows as a `section-box` event (a new window asks the main one at start, as for the other state), and a floating 3D view shows a Section box chip button when it has no box (the existing phrase, no new string). Test: `windows.test.ts`. Not run on a real second window (Tauri events cannot be driven here): check on desktop.

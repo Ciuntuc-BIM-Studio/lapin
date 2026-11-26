@@ -16,6 +16,25 @@ import { isDesktop, saveProject } from '../engine/files';
 
 let busy = false;
 
+/** The most the update window shows of a build's notes: its size follows its text, so a long list would outgrow a small screen, and the window cannot be moved to reach its buttons (report 195). */
+export const NOTES_LINES = 10;
+export const NOTES_CHARS = 700;
+
+/** The notes as the update window shows them, after a blank line: the first lines, cut at a line's end, with an ellipsis when more follows; nothing when there are none. */
+export function shortNotes(body: string | null | undefined): string {
+  const text = (body ?? '').replace(/\r\n?/g, '\n').trim();
+  if (!text) return '';
+  const out: string[] = [];
+  let used = 0;
+  for (const raw of text.split('\n')) {
+    const line = raw.length > 160 ? `${raw.slice(0, 159)}…` : raw;
+    if (out.length >= NOTES_LINES || used + line.length > NOTES_CHARS) return `\n\n${out.join('\n').trimEnd()}\n…`;
+    out.push(line);
+    used += line.length + 1;
+  }
+  return `\n\n${out.join('\n')}`;
+}
+
 /** Look for an update; `manual` (the help menu) also says when there is none or the check failed. */
 export async function checkForUpdates(manual = false): Promise<void> {
   if (!isDesktop() || busy) return;
@@ -26,9 +45,8 @@ export async function checkForUpdates(manual = false): Promise<void> {
     const update = await check();
     if (!update) { if (manual) notify('Lapin is up to date.'); return; }
     const dialog = await import('@tauri-apps/plugin-dialog');
-    const notes = update.body?.trim();
     const install = await dialog.ask(
-      `${phrase('Lapin {version} is available (this is {current}).', { version: update.version, current: update.currentVersion })}${notes ? `\n\n${notes}` : ''}\n\n${phrase('Install it now? Lapin restarts when it is done.')}`,
+      `${phrase('Lapin {version} is available (this is {current}).', { version: update.version, current: update.currentVersion })}${shortNotes(update.body)}\n\n${phrase('Install it now? Lapin restarts when it is done.')}`,
       { title: phrase('Lapin update'), kind: 'info', okLabel: phrase('Install and restart'), cancelLabel: phrase('Later') },
     );
     if (!install || !(await letWorkGo(dialog))) return;

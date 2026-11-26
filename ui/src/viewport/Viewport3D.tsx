@@ -72,7 +72,7 @@ import { planePoint, refPlanesGroup, refPlanesKey, refPlanesOf } from './refPlan
 import { REBAR_GROUP, useRebar3d } from './rebar3d';
 import { useVoids3d, VOIDS_GROUP } from './voids3d';
 import { boxPlanes, modelBounds, planesKey, toggleSectionBoxHidden, useSectionBox, type SectionBox } from './sectionBox';
-import { alignSectionBox, commitBox, cutAtPlan, fitSectionBox } from './sectionBoxTools';
+import { alignSectionBox, commitBox, cutAtPlan, fitSectionBox, toggleSectionBox } from './sectionBoxTools';
 import { useDrawing, type DrawingDto } from './drawing';
 import { CUT_LAYERS, cssColor, dashSegments, drawingPoint, penPixels, evenOddShapes, onCut, sectionPieces, sectionPlanes, sectionPose, textFont, textQuad, useClip3d, useSection3d, type ClipPlane, type DrawingText, type ViewFrameDto } from './section3d';
 import { clampPitch, easeEye, exitWalk, lookVector, toggleFly, useWalk, walkStep, walkWish, EYE_HEIGHT, WALK_KEYS, type WalkStart } from './walk';
@@ -2363,6 +2363,7 @@ export function Viewport3D() {
   const sectionNotes = useSection3d((st) => st.annotations);
   const capStyle = useSection3d((st) => st.caps);
   const box = useSectionBox((st) => st.box);
+  const windowRole = useUi((st) => st.windowRole);
   const boxHidden = useSectionBox((st) => st.hidden);
   useEffect(() => { remember3d(keyRef.current, { box }); }, [box]);
   const shown = sectionId && sectionDrawing?.frame && sectionDrawing.kind === 'section' ? sectionDrawing : null;
@@ -2504,6 +2505,11 @@ export function Viewport3D() {
                   onClick={() => useSection3d.setState({ caps: capStyle === 'drawing' ? 'material' : 'drawing' })}>Hatches</button>
               )}
               <button type="button" className="mode-close" title="Stop showing the section in 3D" aria-label="Stop showing the section in 3D" onClick={() => useSection3d.setState({ viewId: null })}><X size={12} /></button>
+            </span>
+          )}
+          {!box && !walkStart && windowRole === 'view' && (
+            <span className="mode-chip section">
+              <button type="button" onClick={toggleSectionBox} title="Section box">Section box</button>
             </span>
           )}
           {box && !walkStart && (
