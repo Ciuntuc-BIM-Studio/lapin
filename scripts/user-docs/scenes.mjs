@@ -13425,7 +13425,7 @@ export const scenes = [
       t.expect(await t.page.getByRole('menuitem', { name: 'Forum', exact: true }).count() === 1 && await t.page.getByRole('menuitem', { name: 'Ask on the forum…' }).count() === 1, 'the help menu opens the forum and a new topic on it');
       await t.page.locator('[data-menu-sub="Language"]').click();
       await t.wait(200);
-      t.expect((await t.page.locator('.menu-langs button').allTextContents()).join(' ') === 'English Română Español Deutsch Français Dansk Italiano Polski Português ພາສາລາວ 简体中文 Ελληνικά Svenska ไทย', 'the help menu offers the interface in English, Romanian, Spanish, German, French, Danish, Italian, Polish, Portuguese, Lao, Simplified Chinese, Greek, Swedish and Thai');
+      t.expect((await t.page.locator('.menu-langs button').allTextContents()).join(' ') === 'English Română Español Deutsch Français Dansk Italiano Polski Português ພາສາລາວ 简体中文 Ελληνικά Svenska ไทย Русский Українська', 'the help menu offers the interface in English, Romanian, Spanish, German, French, Danish, Italian, Polish, Portuguese, Lao, Simplified Chinese, Greek, Swedish, Thai, Russian and Ukrainian');
       await t.page.getByRole('menuitem', { name: 'About Lapin…' }).click();
       await t.wait(200);
       t.expect(await t.page.getByText('Helpware', { exact: true }).count() > 0, 'About Lapin says what helpware means');
