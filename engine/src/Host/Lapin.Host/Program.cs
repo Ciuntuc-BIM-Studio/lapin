@@ -3,7 +3,7 @@ using Lapin.Host;
 using Lapin.Platform;
 using Lapin.Protocol;
 
-// The local engine. Started by the desktop shell (or by `pnpm dev`):
+// The local engine. Started by the desktop shell (or by `pnpm dev`), or without a window to run a job (--run, HeadlessRun):
 //   Lapin.Host --product <product.json> --modules-dir <dir> [--user-dir <dir>] [--port auto|N] [--parent-pid <pid>] [--python-dir <dir>]
 // It listens on 127.0.0.1 only: without a port of its own (auto, 0 or none: the desktop app's) on the first free of
 // 14912, 14913, … (EnginePort); with --port N on N, exactly. It prints one line the shell waits for:
@@ -17,6 +17,28 @@ string Arg(string name, string? fallback = null)
 
 var product = ModuleLoader.ReadProduct(Arg("--product"));
 var modules = ModuleLoader.Load(Arg("--modules-dir"), product.Modules);
+
+// Without a window (docs/headless-run.md): --run <job.json | -> [--out <answer.json>] opens a project, runs the job's steps,
+// answers and ends; no port, no recovery journal, nothing kept in a user folder (the run's own temporary one, removed after).
+if (Array.IndexOf(args, "--run") >= 0)
+{
+    var scratch = Path.Combine(Path.GetTempPath(), $"lapin-run-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(scratch);
+    try
+    {
+        Views.UseProduct(product);
+        PointCloudLinks.CacheDir = Path.Combine(scratch, "PointClouds");
+        Lapin.Package.PackageBases.Folder = Path.Combine(scratch, "bases");
+        // A copy of the project opened (what a save carries over) is not needed: the job saves only with saveAs, from the session.
+        Lapin.Package.PackageBases.MaxCopy = 0;
+        var headless = new Session(ModuleCatalog.Create(modules), product);
+        return await HeadlessRun.RunFile(headless, Arg("--run"), Arg("--out", "") is { Length: > 0 } outPath ? outPath : null);
+    }
+    finally
+    {
+        try { Directory.Delete(scratch, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+    }
+}
 var port = EnginePort.Parse(Arg("--port", "auto"));
 var parentPid = int.Parse(Arg("--parent-pid", "0"));
 // The user's own data on this computer: the recovery journals and the project templates. The shell passes its app data folder.
@@ -100,3 +122,5 @@ _ = Task.Run(async () =>
 });
 
 await app.WaitForShutdownAsync();
+
+return 0;

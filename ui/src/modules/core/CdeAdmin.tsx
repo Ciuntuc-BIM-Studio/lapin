@@ -21,6 +21,8 @@ import {
   type ActivityItem, type AdminUser, type Rules,
 } from '../../engine/atrium';
 
+/** The whole `clash` rule PUT rules takes (members left out would take their defaults). */
+const clashRule = (rules: Rules) => ({ enabled: rules.clash?.enabled ?? true, blocking: rules.clash?.blocking ?? false, maxNew: rules.clash?.maxNew ?? 0 });
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 /** A password the server made, shown once with a copy button. */
@@ -165,6 +167,12 @@ export function RulesEditor({ server, project }: { server: string; project: stri
           {checks.includes('ids') && <>
             <tr><td>IDS files run on every submission</td><td><input type="checkbox" aria-label="IDS files run on every submission" checked={rules.ids?.enabled ?? true} disabled={off} data-cde-rule="ids.enabled" onChange={(e) => void set(idsRule(rules, { enabled: e.target.checked }))} /></td></tr>
             <tr><td>A failing IDS specification stops the approval</td><td><input type="checkbox" aria-label="A failing IDS specification stops the approval" checked={rules.ids?.blocking ?? true} disabled={off} data-cde-rule="ids.blocking" onChange={(e) => void set(idsRule(rules, { blocking: e.target.checked }))} /></td></tr>
+          </>}
+          {checks.includes('clash') && <>
+            <tr><td>Clash tests run on every submission</td><td><input type="checkbox" aria-label="Clash tests run on every submission" checked={rules.clash?.enabled ?? true} disabled={off} data-cde-rule="clash.enabled" onChange={(e) => void set({ clash: { ...clashRule(rules), enabled: e.target.checked } })} /></td></tr>
+            <tr><td>New hard clashes stop the approval</td><td><input type="checkbox" aria-label="New hard clashes stop the approval" checked={rules.clash?.blocking ?? false} disabled={off} data-cde-rule="clash.blocking" onChange={(e) => void set({ clash: { ...clashRule(rules), blocking: e.target.checked } })} />
+              {' '}<label className="small"><span>New hard clashes allowed</span> <input type="number" min={0} step={1} style={{ width: '5em' }} defaultValue={rules.clash?.maxNew ?? 0} disabled={off || !rules.clash?.blocking} data-cde-rule="clash.maxNew"
+                onBlur={(e) => { const n = Math.max(0, Math.round(Number(e.target.value) || 0)); if (n !== (rules.clash?.maxNew ?? 0)) void set({ clash: { ...clashRule(rules), maxNew: n } }); }} /></label></td></tr>
           </>}
           <tr><td>Resolved needs a comment</td><td><input type="checkbox" aria-label="Resolved needs a comment" checked={rules.resolveNeedsComment} disabled={off} onChange={(e) => void set({ resolveNeedsComment: e.target.checked })} /></td></tr>
         </tbody>

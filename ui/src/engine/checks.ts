@@ -7,6 +7,7 @@
 
 import type { Person } from './atrium';
 import type { IdsReport } from './serverIds';
+import type { ClashReport } from './serverAnalysis';
 
 export type Severity = 'error' | 'warning' | 'info';
 export type Bbox = [number, number, number, number];
@@ -24,6 +25,8 @@ export interface ChecksReport {
   summary: CheckSummary | null; files?: CheckedFile[];
   /** W6c: the IDS files over the submission's models (null when the rule is off or the project has none). */
   ids?: IdsReport | null;
+  /** The project's clash tests run by the server with Lapin's engine (null without an engine, with the rule off, or for files only). */
+  clash?: ClashReport | null;
 }
 /** The checks' part of the publish gate. */
 export interface GateChecks { status: ChecksReport['status']; errors: number; warnings: number; infos: number }

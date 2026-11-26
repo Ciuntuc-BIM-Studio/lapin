@@ -1062,6 +1062,7 @@
     {"name":"civil.tunnelValues","module":"civil","args":[{"name":"spec","type":"dict"}]},
     {"name":"clash.list","module":"clash","args":[]},
     {"name":"clash.members","module":"clash","args":[{"name":"set","type":"dict"},{"name":"id","type":"str"}]},
+    {"name":"clash.report","module":"clash","args":[{"name":"resolved","type":"bool"}]},
     {"name":"clash.reportFile","module":"clash","args":[{"name":"id","type":"str"},{"name":"resolved","type":"bool"},{"name":"groupBy","type":"str"},{"name":"format","type":"str"}]},
     {"name":"clash.results","module":"clash","args":[{"name":"id","type":"str"},{"name":"status","type":"str"},{"name":"groupBy","type":"str"}]},
     {"name":"clash.values","module":"clash","args":[{"name":"field","type":"str"},{"name":"parameter","type":"str"}]},

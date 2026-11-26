@@ -36,6 +36,8 @@ const DocumentsTab = lazyPart(() => import('./references/CdeDocuments').then((m)
 const ProjectInfoTab = lazyPart(() => import('./projectInfo/CdeProjectInfo').then((m) => m.CdeProjectInfo), { inline: true });
 const IdsServerPanel = lazyPart(() => import('./CdeIds').then((m) => m.IdsServerPanel), { inline: true });
 const IdsCheckOnServer = lazyPart(() => import('./CdeIds').then((m) => m.IdsCheckOnServer), { inline: true });
+// The sun study on the server (premium, where the server offers sunStudy): CdeSunStudy.tsx, fetched when its tab is shown.
+const SunStudyTab = lazyPart(() => import('./CdeSunStudy').then((m) => m.SunStudyPanel), { inline: true });
 // R7: Submit files… (another program's drawings and models from disk into the queue).
 const SubmitFilesForm = lazyPart(() => import('./CdeSubmitFiles').then((m) => m.SubmitFilesForm), { inline: true });
 const short = (id: string) => id.slice(0, 8);
@@ -115,7 +117,7 @@ function useMe(server: string, project: string): { me: Me | null; rules: Rules |
 
 // ------------------------------------------------------------ the panel
 
-type Tab = 'containers' | 'submissions' | 'diff' | 'register' | 'serverIds' | 'ids' | 'documents' | 'info';
+type Tab = 'containers' | 'submissions' | 'diff' | 'register' | 'serverIds' | 'ids' | 'documents' | 'info' | 'sun';
 
 /**
  * A submission read whole (with its checks report) and kept up to date while its checks run (W5): polled until they are done or
@@ -178,7 +180,7 @@ function Publishing({ server, project, name, offers, withModel }: { server: stri
         <button type="button" className="link small" data-cde="handover-report" disabled={busy} title="The issues, their comments and the journal of who changed what, as an Excel workbook" onClick={() => void run(() => exportHandover(server, project, name))}><FileSpreadsheet size={12} /> Handover report (XLSX)</button>
       </p>
       <div className="cde-tabs" role="tablist">
-        {([['containers', 'Containers'], ['submissions', 'Submissions'], ['diff', 'Handover diff'], ...(offers.includes('references') && isCdeServer(server) ? [['documents', 'Documents']] : []), ...(offers.includes('project.info') ? [['info', 'Project information']] : []), ...(offers.includes('register') ? [['register', 'Register']] : []), ...(offers.includes('ids') ? [['serverIds', 'IDS on the server']] : []), ...(withModel ? [['ids', 'IDS']] : [])] as [Tab, string][]).map(([id, label]) => (
+        {([['containers', 'Containers'], ['submissions', 'Submissions'], ['diff', 'Handover diff'], ...(offers.includes('references') && isCdeServer(server) ? [['documents', 'Documents']] : []), ...(offers.includes('project.info') ? [['info', 'Project information']] : []), ...(offers.includes('register') ? [['register', 'Register']] : []), ...(offers.includes('ids') ? [['serverIds', 'IDS on the server']] : []), ...(offers.includes('sunStudy') ? [['sun', 'Sun study']] : []), ...(withModel ? [['ids', 'IDS']] : [])] as [Tab, string][]).map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={tab === id} className={`tab${tab === id ? ' active' : ''}`} data-cde-tab={id} onClick={() => setTab(id)}>{label}</button>
         ))}
       </div>
@@ -191,6 +193,7 @@ function Publishing({ server, project, name, offers, withModel }: { server: stri
       {tab === 'ids' && <IdsPanel server={server} project={project} />}
       {tab === 'register' && <RegisterPanel server={server} project={project} owner={owner} />}
       {tab === 'serverIds' && <IdsServerPanel server={server} project={project} owner={owner} model={withModel} />}
+      {tab === 'sun' && <SunStudyTab server={server} project={project} />}
     </div>
   );
 }

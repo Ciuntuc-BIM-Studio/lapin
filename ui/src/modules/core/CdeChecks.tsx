@@ -26,6 +26,8 @@ import {
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const IdsReportView = lazyPart(() => import('./CdeIds').then((m) => m.IdsReportView), { inline: true });
+// The project's clash tests run by the server (Atrium § Clash detection on the server): fetched when a report has them.
+const ClashReportView = lazyPart(() => import('./CdeClash').then((m) => m.ClashReportView), { inline: true });
 const P = (project: string) => `lapin-remote/1.0/projects/${encodeURIComponent(project)}`;
 
 // ------------------------------------------------------------ counts and the summary
@@ -100,6 +102,7 @@ export function ChecksReportView({ server, project, checks }: { server: string; 
         {checks.finished && <span className="muted small" data-no-i18n> · {checks.requestedBy?.name ?? ''} · {when(checks.finished)}</span>}</p>
       {checks.files?.map((f) => <CheckedFileView key={f.sha256 + f.name} server={server} project={project} file={f} />)}
       {checks.ids && <IdsReportView ids={checks.ids} />}
+      {checks.clash && <ClashReportView server={server} project={project} clash={checks.clash} />}
     </div>
   );
 }

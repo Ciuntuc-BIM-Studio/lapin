@@ -155,6 +155,8 @@ export interface Rules {
   naming?: string | null; checks?: CheckSettings;
   /** W6c: the project's IDS files run on every submission (`enabled`), a failing specification an error (`blocking`). */
   ids?: { enabled: boolean; blocking: boolean };
+  /** A server with Lapin's engine: the project's clash tests run on every submission (`enabled`), more than `maxNew` new hard clashes an error (`blocking`). */
+  clash?: { enabled: boolean; blocking: boolean; maxNew: number };
 }
 export const getRules = (server: string, project: string) => need<Rules>(server, 'GET', `atrium/1.0/projects/${enc(project)}/rules`);
 /** Changes the rules given; `checks` replaces the settings whole (members left out take their defaults). */

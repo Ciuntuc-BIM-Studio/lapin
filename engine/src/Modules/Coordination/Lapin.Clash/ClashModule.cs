@@ -316,6 +316,24 @@ public sealed class ClashModule : ILapinModule
                 ["clashes"] = new JsonArray(Ordered(list, groups).Select(c => { var o = ClashJson(q, c); if (groups.TryGetValue(c.Number, out var g)) o["group"] = g; return (JsonNode)o; }).ToArray()),
             };
         });
+        // Every test with its clashes in one answer, for a program reading a project without the interface (a CDE server's run,
+        // docs/headless-run.md): {resolved?: also the resolved ones}; {hash, tests: [test as clash.list gives it, with its clashes as
+        // clash.results gives them]}, by name. Elements are named by their ids, which are their IFC GlobalIds.
+        r.Query("clash.report", (q, a) =>
+        {
+            var resolved = a["resolved"] is JsonValue rv && rv.TryGetValue<bool>(out var rb) && rb;
+            var hash = ClashReports.ModelHash(q.Model);
+            return new JsonObject
+            {
+                ["hash"] = hash,
+                ["tests"] = new JsonArray(q.Model.OfClass(ClashTests.Class).Select(ClashTests.Read).OrderBy(t => t.Name, StringComparer.CurrentCultureIgnoreCase).Select(t =>
+                {
+                    var o = TestJson(q.Model, t, hash);
+                    o["clashes"] = new JsonArray(t.Clashes.Where(c => resolved || c.Status != ClashTests.Resolved).Select(c => (JsonNode)ClashJson(q, c)).ToArray());
+                    return (JsonNode)o;
+                }).ToArray()),
+            };
+        });
         // A test's clashes as a file: {id, format: xml | pdf, groupBy?, resolved?}; {name, data (base64)}. XML as Navisworks writes its clash reports.
         r.Query("clash.reportFile", (q, a) =>
         {
