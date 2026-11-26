@@ -605,8 +605,36 @@ public sealed class ForeignElements : IIfcRecognizer
             if (ring.Count < 3) continue;
             try { Slabs.AddOpening(edit, slab, ring); } catch (CommandException ex) { ctx.Notes.Add($"Floor {e.Name}: {ex.Message}"); }
         }
+        // What the file voids it with (an IfcOpeningElement's body): a vertical void through its whole depth, its outline in plan
+        // (a recess, a sloped void, one the file clipped or one with holes of its own is no such opening); the file's GlobalId
+        // and name kept, as a wall's opening keeps them. What is not carried leaves the floor a reference at the gate.
+        foreach (var op in e.Openings)
+        {
+            if (op.Fill != null) { ctx.Skip("a floor opening with a door or window in it"); continue; }
+            if (ThroughVoid(op, prism) is not { } ring) { ctx.Skip("a floor opening that is not a vertical void through its whole depth"); continue; }
+            try
+            {
+                var opening = Slabs.AddOpening(edit, slab, ring, id: op.GlobalId, name: op.Name?.Trim());
+                ctx.Made.Add(opening.Id);
+            }
+            catch (CommandException ex) { ctx.Notes.Add($"Floor {e.Name}: {ex.Message}"); }
+        }
         ctx.Made.Add(slab.Id);
         return slab.Id;
+    }
+
+    /// <summary>
+    /// An opening's body as one plan contour through a floor's whole depth (within the gate's millimetre): its one vertical
+    /// prism, not one the file clipped, with no holes of its own; null for any other void.
+    /// </summary>
+    static IReadOnlyList<Vec2>? ThroughVoid(ForeignOpening op, ShapePrism slab)
+    {
+        if (OnePrismOrNull(op.Prisms, p => p.Vertical) is not { } prism || prism.Clipped || prism.Holes.Count > 0) return null;
+        var (slabLow, slabHigh) = (Math.Min(slab.BaseZ, slab.BaseZ + slab.Sweep.Z), Math.Max(slab.BaseZ, slab.BaseZ + slab.Sweep.Z));
+        var (low, high) = (Math.Min(prism.BaseZ, prism.BaseZ + prism.Sweep.Z), Math.Max(prism.BaseZ, prism.BaseZ + prism.Sweep.Z));
+        if (low > slabLow + 0.001 || high < slabHigh - 0.001) return null;
+        var ring = Footprints.Plan(prism.Outer);
+        return ring.Count >= 3 ? ring : null;
     }
 
     Entity SlabType(IEdit edit, ForeignElement e, double thickness, RecognitionContext ctx)
