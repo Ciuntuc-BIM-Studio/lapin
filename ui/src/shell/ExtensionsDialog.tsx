@@ -8,6 +8,8 @@
  * Stage 2a (docs/plan-extensions.md §12): a paid extension is marked Paid with its price as indicative, sold by its author
  * through their shop (Buy opens the checkout, Seller's terms their terms); Install asks for the licence key once, which is
  * kept on this computer; a key its seller revoked gets no more updates, and says so.
+ * Extension modules (docs/plan-extension-modules.md, S2): Installed shows each one's permission (it runs code with full access),
+ * what the engine found at its start (refused, and why), an On switch, and Restart now when a change waits for the next start.
  */
 
 import { confirmAction } from './prompts';
@@ -18,6 +20,8 @@ import { engine, engineInBrowser, useSession } from '../engine/session';
 import { CATEGORY_ORDER, countByKind, filterCatalogue, sizeText, updatesOf, type InstalledExtension } from '../platform/extensions/install';
 import { compareVersions, compatibility, isNonCommercial, isPaid, isPermissive, KIND_INFO, PERMISSION_LABELS, PROVIDERS, runnable, type ExtensionKind, type Manifest } from '../platform/extensions/manifest';
 import { cleanKey, isRevoked, LICENCE_MESSAGES } from '../platform/extensions/licence';
+import { FULL_ACCESS, isModuleKind, moduleStatus, refreshEngineModules, restartNow, setModuleEnabled, useEngineModules, usePluginLeft } from '../platform/extensions/moduleKind';
+import { saveProject } from '../engine/files';
 import { appFacts, contentInstallers, DEFAULT_INDEX, forgetLicence, install, loadCatalogue, setCatalogueAddress, uninstall, useExtensions } from '../platform/extensions/runtime';
 
 const close = () => useUi.setState({ dialog: null });
@@ -187,8 +191,40 @@ function Browse() {
   );
 }
 
+/** The work open before Lapin restarts: saved, or let go when the user says so. */
+async function letWorkGo(): Promise<boolean> {
+  if (!useSession.getState().doc?.dirty) return true;
+  if (confirmAction('Save the changes to the project before Lapin restarts?')) return saveProject();
+  return confirmAction('Restart without saving? The changes will be lost.');
+}
+
+/** An extension module's line in Installed: its permission, what this start made of it, and its On switch. */
+function ModuleState({ x }: { x: InstalledExtension }) {
+  const engineList = useEngineModules();
+  const left = usePluginLeft((s) => s.left.find((l) => l.id === x.id));
+  const e = engineList.installed.find((m) => m.id === x.id);
+  const status = moduleStatus(e, left?.reason);
+  const toggle = async (on: boolean) => {
+    try { await setModuleEnabled(x.id, on); } catch (err) { notify(message(err)); }
+  };
+  return (
+    <>
+      <span className="small ext-full-access" role="note" data-testid="module-full-access"><ShieldAlert size={12} /> {FULL_ACCESS}</span>
+      {status && <span className={`small${status.problem ? ' ext-revoked' : ' muted'}`} role="note" data-testid="module-status">{status.text}{status.detail && <span data-no-i18n> {status.detail}</span>}</span>}
+      {e && !e.pendingRemoval && (
+        <label className="small ext-module-switch" data-action="extension-module-enabled">
+          <input type="checkbox" checked={e.enabled} onChange={(ev) => void toggle(ev.target.checked)} /> On
+        </label>
+      )}
+    </>
+  );
+}
+
 function Installed() {
   const { installed, list, busy, licences } = useExtensions();
+  const restart = useEngineModules((s) => s.restart);
+  const hasModules = installed.some((x) => isModuleKind(x.kind));
+  useEffect(() => { if (hasModules && !engineInBrowser) void refreshEngineModules(); }, [hasModules]);
   const updates = new Set(updatesHere(installed, list).map((m) => m.id));
   const app = appFacts();
   const forget = (x: InstalledExtension) => {
@@ -200,8 +236,15 @@ function Installed() {
     try { await uninstall(x.id); notify(`${x.name} uninstalled.`); } catch (e) { notify(message(e)); }
   };
   if (!installed.length) return <p className="muted small">No extension is installed on this computer yet: Browse lists what the catalogue has.</p>;
+  const restartLapin = async () => { try { await restartNow(letWorkGo); } catch (e) { notify(message(e)); } };
   return (
     <div className="ext-installed">
+      {restart && (
+        <div className="ext-restart" role="note" data-testid="modules-restart">
+          <span className="small">Changes to extension modules take effect when Lapin restarts.</span>
+          <button type="button" className="btn small primary" data-action="extensions-restart" onClick={() => void restartLapin()}><RefreshCw size={12} />Restart now</button>
+        </div>
+      )}
       {[...installed].sort((a, b) => a.name.localeCompare(b.name)).map((x) => {
         const open = contentInstallers().get(x.kind)?.open;
         const next = list.find((m) => m.id === x.id);
@@ -209,8 +252,9 @@ function Installed() {
           <div key={x.id} className="recent ext-installed-row" data-installed-extension={x.id}>
             <span className="recent-body">
               <span className="recent-name" data-no-i18n>{x.name}</span>
-              <span className="muted small"><span>{KIND_INFO[x.kind].label}</span><span data-no-i18n> · {x.version} · {x.manifest.license} · {when(x.at)}</span></span>
-              {x.kind === 'script' && !runnable(x.manifest, app) && <span className="muted small">Runs once the Python console is in Lapin.</span>}
+              <span className="muted small"><span>{KIND_INFO[x.kind]?.label ?? x.kind}</span><span data-no-i18n> · {x.version} · {x.manifest.license} · {when(x.at)}</span></span>
+              {isModuleKind(x.kind) && <ModuleState x={x} />}
+              {KIND_INFO[x.kind]?.code && !isModuleKind(x.kind) && !runnable(x.manifest, app) && <span className="muted small">Runs once the Python console is in Lapin.</span>}
               {isRevoked(licences, x.id) && <span className="small ext-revoked" role="note" data-testid="installed-revoked">{REVOKED_NOTE}</span>}
             </span>
             {licences[x.id] && <button type="button" className="btn small" data-action="extension-forget-key" onClick={() => forget(x)}><KeyRound size={12} />Forget licence key</button>}

@@ -1,1 +1,1 @@
-{ "id": "speckle", "name": "Speckle", "assembly": "Lapin.Speckle.dll", "requires": ["core"], "desktopOnly": true }
+{ "id": "speckle", "name": "Speckle", "assembly": "Lapin.Speckle.dll", "requires": ["core"], "desktopOnly": true, "api": 1 }

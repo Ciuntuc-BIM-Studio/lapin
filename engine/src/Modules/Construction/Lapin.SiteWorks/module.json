@@ -1,1 +1,1 @@
-{ "id": "sitework", "name": "Site works", "assembly": "Lapin.SiteWorks.dll", "requires": ["core", "architecture", "structure", "phases"] }
+{ "id": "sitework", "name": "Site works", "assembly": "Lapin.SiteWorks.dll", "requires": ["core", "architecture", "structure", "phases"], "api": 1 }

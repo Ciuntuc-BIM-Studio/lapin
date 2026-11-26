@@ -79,6 +79,10 @@ The catalogue also lists **Python scripts**. On the desktop you can install one 
 
 An **extension module** adds tools to Lapin itself: ribbon tabs and buttons, views, dialogs, with the code behind them. It runs on the desktop only, never in the browser. Its interface is loaded when Lapin starts, from the files the engine has checked (the store's signature and each file's fingerprint), so a change to the extensions installed shows at the next start. If one cannot run in this version of Lapin (it needs a newer one) or fails while it loads, Lapin starts without it and says **Some extensions were left out:** with their names.
 
+An **extension module** adds tools to Lapin itself: engine code and its own part of the interface (tabs, panes, dialogs). Modules run in the **desktop app only**. Each is checked by Lapin every time it starts: it must be signed by Lapin Extensions and every file must be exactly the one signed, or it is not loaded. Its details and Installed say **Runs code with full access**: a module can do on your computer what you can, so it is published only after its full source has been reviewed.
+
+Installing one shows its licence, and its licence agreement when it has one, to accept (**I accept**). In **Installed**, each module has an **On** switch and says why it was not loaded when Lapin refused it (a file changed, a newer Lapin needed, a module this edition does not have). Installing, updating, turning a module on or off and uninstalling take effect when Lapin restarts: **Restart now** saves your work (or asks), then starts Lapin again.
+
 ## Paid extensions
 
 Some extensions are **sold by their authors**, through their own shop (today Gumroad). They are marked **Paid** in the list, with their price; the price is *indicative*: the one that counts is the seller's, at the checkout. Lapin Extensions takes no commission and is not part of the sale: the seller takes the payment, issues the invoice and handles refunds, under the terms that **Seller's terms** opens.

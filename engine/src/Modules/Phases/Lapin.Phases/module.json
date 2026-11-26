@@ -1,1 +1,1 @@
-{ "id": "phases", "name": "Phases", "assembly": "Lapin.Phases.dll", "requires": ["core"] }
+{ "id": "phases", "name": "Phases", "assembly": "Lapin.Phases.dll", "requires": ["core"], "api": 1 }
