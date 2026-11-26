@@ -8,7 +8,7 @@ public sealed record LevelResult(IReadOnlyDictionary<string, DateOnly> Starts, I
 /// every task before it is placed, the one that can start first going first (then the one with less float, then the row),
 /// each at the first working day its links allow, as the critical path reads them, on which every resource it takes has
 /// the units it needs on every day it holds them (its own days and the days after it keeps formwork). The tasks under way
-/// or done, and those that must start on a date, stay where they are and take their units first. A task asking for more
+/// or done, those that must start on a date and level of effort tasks stay where they are and take their units first. A task asking for more
 /// than a resource has at all is placed by its links alone and named. The result is a start for each task it moved,
 /// written as the task's levelling start, which the critical path then keeps: the same dates come out of it.
 /// </summary>
@@ -35,7 +35,7 @@ public static class Levelling
             if (p.ById.ContainsKey(l.From) && p.ById.ContainsKey(l.To))
                 foreach (var a in p.LeavesOf(l.From))
                     foreach (var b in p.LeavesOf(l.To))
-                        if (a != b && incoming.ContainsKey(b)) { incoming[b].Add((l, a)); outgoing[a].Add(b); }
+                        if (a != b && incoming.ContainsKey(b) && !Cpm.IsLoe(p, a) && !Cpm.IsLoe(p, b)) { incoming[b].Add((l, a)); outgoing[a].Add(b); }
 
         var es = new Dictionary<string, DateOnly>();
         var ef = new Dictionary<string, DateOnly>();
@@ -54,7 +54,8 @@ public static class Levelling
         foreach (var id in leaves)
         {
             var tm = t0[id];
-            var fixedTask = tm.Status != "planned" || p.ById[id].Constraint == "mso";
+            // A level of effort task stays on the dates it spans (it drives nothing).
+            var fixedTask = tm.Status != "planned" || p.ById[id].Constraint == "mso" || Cpm.IsLoe(p, id);
             if (!fixedTask) { open.Add(id); continue; }
             es[id] = tm.EarlyStart; ef[id] = tm.EarlyFinish;
             Take(id, tm.EarlyStart, Resources.DaysOf(p, tm, id));

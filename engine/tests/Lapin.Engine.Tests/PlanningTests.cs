@@ -375,7 +375,7 @@ public class PlanningTests
     // ------------------------------------------------------------------ exchange
 
     /// <summary>A small schedule of every kind of thing: a summary, a milestone, a wet task, a constraint, links of each type with lags, holidays crossed.</summary>
-    static (Fixture F, Dictionary<string, string> Ids) Sample()
+    internal static (Fixture F, Dictionary<string, string> Ids) Sample()
     {
         var f = F();
         Start(f, "2026-11-16");
