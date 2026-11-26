@@ -18058,6 +18058,55 @@ export const scenes = [
       void added;
     },
   },
+  {
+    // The generator reading the reference documents and the issue sending them (docs/plan-cde-references.md §6, stage R5): the urbanism
+    // certificate with its checklist (water answered by a permit, fire safety asked for, the environment still missing), the starter
+    // template "Borderou de avize și acorduri" filled from them (the certificate's number and date, the Permits and agreements table),
+    // then Manage → Issue… with Include reference documents: the certificate ticked by itself, the permits by their folder.
+    id: 'reference-generator',
+    async run(t) {
+      await t.fresh();
+      await t.cmd('project.setInfo', {
+        name: 'Locuință unifamilială P+1E', number: '12/2026', phase: 'DTAC', address: 'Str. Corneliu Codreanu nr. 14, Huși, jud. Vaslui',
+        client: 'Popescu Ion și Maria', designer: 'Ciuntuc BIM Studio SRL', author: 'arh. Ionuț Ciuntuc', checkedBy: 'ing. Ana Pop',
+      });
+      const pdf = (lines) => ({ name: `${lines[1]}.pdf`, data: referencePdf(lines).toString('base64') });
+      const water = (await t.cmd('references.add', {
+        files: [pdf(['APA-CANAL VASLUI', 'AVIZ DE PRINCIPIU', 'Nr. 512 din 02.05.2026'])], title: 'Aviz alimentare cu apă și canalizare', type: 'aviz',
+        issuer: 'Aquavaslui SA', number: '512', date: '2026-05-02', validUntil: '2027-05-02', folder: 'permits-utilities',
+      })).id;
+      const fire = (await t.cmd('references.add', { title: 'Aviz de securitate la incendiu', type: 'aviz', issuer: 'ISU Vaslui', folder: 'permits-fire' })).id;
+      const cu = (await t.cmd('references.add', {
+        files: [pdf(['PRIMARIA MUNICIPIULUI HUSI', 'CERTIFICAT DE URBANISM', 'Nr. 1234 din 15.03.2026'])], title: 'Certificat de urbanism nr. 1234', type: 'cu',
+        issuer: 'Primăria Municipiului Huși', number: '1234', date: '2026-03-15', validUntil: '2099-03-15',
+      })).id;
+      await t.cmd('references.update', { id: cu, requires: [{ key: 'water', document: water }, { key: 'fire', document: fire }, 'environment'] });
+      await t.cmd('document.create', { template: 'borderou-avize' });
+      await t.tool('manage.documents');
+      await t.page.waitForSelector('[data-dialog=documents] .doc-sheet:not(.doc-measure)', { timeout: 90_000 });
+      await t.wait(600);
+      const preview = await t.page.locator('[data-field=doc-preview]').innerText();
+      t.expect(preview.includes('1234') && preview.includes('15.03.2026'), 'the certificate\'s number and date are filled in');
+      t.expect(preview.includes('Alimentare cu apă') && preview.includes('Aquavaslui SA'), 'the permits table lists the checklist with the documents answering it');
+      t.expect(await t.page.locator('[data-field=doc-template-borderou-avize] .tag').count() > 0, 'the starter template is marked indicative');
+      await t.shot('documents-permits', { of: '[data-dialog=documents]', pad: 0 });
+      await t.page.locator('[data-dialog=documents] .dialog-head button[title=Close]').click(); await t.wait(300);
+      // Manage → Issue… with the reference documents: the certificate by itself, the permits by their folder (the one asked for has no file yet).
+      await t.tool('manage.issue');
+      await t.page.waitForSelector('[data-field=issue-references]', { timeout: 10_000 });
+      await t.page.locator('[data-field=issue-references]').check();
+      await t.page.waitForSelector('[data-field=issue-ref-folder-permits]', { timeout: 10_000 });
+      await t.page.locator(`[data-field="issue-ref-${cu}"]`).check();
+      await t.page.locator('[data-field=issue-ref-folder-permits]').check();
+      await t.wait(300);
+      t.expect(await t.page.locator(`[data-field="issue-ref-${water}"]`).isChecked(), 'the permits folder ticks the water permit');
+      t.expect(await t.page.locator(`[data-field="issue-ref-${fire}"]`).isDisabled(), 'the permit asked for has no file: it cannot go');
+      t.expect((await t.page.locator('[data-field=issue-references-list]').innerText()).includes('2'), 'two reference documents go with the issue');
+      await t.page.locator('[data-field=issue-references-list]').scrollIntoViewIfNeeded();
+      await t.shot('issue-references', { of: '.dialog .cde-sheets', pad: 6 });
+      await t.page.locator('.dialog-head button[title=Close]').click(); await t.wait(300);
+    },
+  },
 ];
 
 /** A one-page PDF whose page shows the lines given, in Helvetica, one under the other (text a reader can extract). */

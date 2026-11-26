@@ -79,6 +79,10 @@ Salvarea e automată: la o clipă după ce te oprești din scris și când treci
 
 În setările unui bloc, **Elimină** îl scoate; la o repetare sau o condiție, **Păstrează doar conținutul** scoate banda și păstrează ce e în ea.
 
+## Documentele de referință într-un document
+
+Un document citește documentele primite de proiect (vezi [Documente de referință](reference-documents.md#in-documentele-scrise)): câmpurile `{{ref.cu.number}}`, `{{ref.cu.date}}`, `{{ref.cu.issuer}}` și celelalte, pentru fiecare tip, repetările pe *Documente de referință* și pe *lista certificatului de urbanism*, și două tabele. **Inserează → Tabel din proiect…** oferă **Avize și acorduri** și **Documente de referință**; setările celui de-al doilea au **Tip**, **Folder** (cu subfolderele lui) și **Stare** (implicit documentele care nu sunt nici înlocuite, nici retrase).
+
 ## Șabloanele tale
 
 **Salvează ca șablon…** păstrează textul, așezarea, intrările și stilul documentului ca șablon. Îi dai un titlu și o descriere și alegi unde îl păstrezi:
@@ -129,11 +133,16 @@ Un câmp încă gol rămâne gol în fișiere, așa că verifică **De completat
 
 ## Șabloanele
 
-Lapin vine cu trei șabloane, deocamdată în română:
+Lapin vine cu aceste șabloane:
 
-- **Memoriu tehnic de arhitectură** (după conținutul-cadru al Legii 50/1991): datele generale din Datele proiectului; regimul de înălțime (de exemplu `P+1E`) și înălțimea maximă; suprafețele — construită, desfășurată, utilă și a subsolului — în total și pe niveluri; încăperile fiecărui nivel, cu ariile lor; pereții pe tipuri, cu straturile lor; planșeele și acoperișurile; extrasul de tâmplărie; finisajele încăperilor; intrări pentru situația existentă, funcțiune, structură, fațade, instalații, securitatea la incendiu, accesibilitate, eficiența energetică și organizarea de șantier.
+- **Memoriu tehnic de arhitectură** (după conținutul-cadru al Legii 50/1991): datele generale din Datele proiectului, cu numărul, data și emitentul certificatului de urbanism; regimul de înălțime (de exemplu `P+1E`) și înălțimea maximă; suprafețele — construită, desfășurată, utilă și a subsolului — în total și pe niveluri; încăperile fiecărui nivel, cu ariile lor; pereții pe tipuri, cu straturile lor; planșeele și acoperișurile; extrasul de tâmplărie; finisajele încăperilor; intrări pentru situația existentă, funcțiune, structură, fațade, instalații, securitatea la incendiu, accesibilitate, eficiența energetică și organizarea de șantier.
 - **Caiet de sarcini: tâmplărie și finisaje**: materialele proiectului pe categorii, extrasul de tâmplărie cu numărul bucăților, finisajele încăpere cu încăpere și intrări pentru generalități, cerințe, execuție și recepție, cu texte implicite de adaptat.
 - **Borderou de piese scrise și desenate**: documentele și planșele proiectului, cu numărul, titlul, scara și revizia fiecăreia.
+- **Borderou de avize și acorduri** și varianta lui în engleză, **List of permits and agreements**: numărul, data, emitentul și valabilitatea certificatului de urbanism, avizele și acordurile pe care le cere, cu documentele care le răspund, și avizele primite.
+- **Opis dosar de autorizare** și **Building permit application index**: documentele de referință primite (cu numărul de pagini unde se știe: paginile unui PDF, una pentru o imagine), piesele scrise și piesele desenate.
+- **Foaie de capăt** și **Cover page**: denumirea proiectului, amplasamentul, beneficiarul, proiectantul, numărul și faza, certificatul de urbanism și lista de semnături.
+
+Ultimele trei, cu variantele lor în engleză, sunt marcate **Orientativ** în listă: sunt un punct de pornire, iar ce cere o autoritate verifici tu. Lapin nu livrează formularul oficial al cererii pentru autorizația de construire: textul lui actual e în anexa normelor. Ca să-l ai, scrie-l o dată într-un document (cu câmpurile lui, ca `{{project.client}}`, `{{project.address}}`, `{{ref.cu.number}}`…), apoi **Salvează ca șablon…** în proiect sau în biblioteca acestui calculator.
 
 Pornește de la unul dintre ele, schimbă-l în editor, apoi **Salvează ca șablon…** ca să ai propriul șablon.
 

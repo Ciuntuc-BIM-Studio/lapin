@@ -54,6 +54,26 @@ A received document past its *valid until* date is **expired**; one that ends wi
 
 On the desktop, when the project has a folder, **Scan folder** lists the files in its `Reference/` that the register does not hold, with the folder and type their path suggests, for you to add. It also lists the register's copies that are missing there or lie in another folder. The register is the truth: a file gone from the disk is a warning, never a deletion.
 
+## In written documents
+
+The documents read the register (see [Documents](documents.md#reference-documents-in-a-document)):
+
+- **Fields** `{{ref.<type>.number}}`, `.date`, `.issuer`, `.validUntil` and `.title` give the latest received document of a type that is still valid (by its own date): `{{ref.cu.number}}` is the urbanism certificate's number. Expired, superseded, withdrawn and requested documents are never read. `{{ref.<type>.count}}` says how many valid ones there are. Dates are written in the document's language.
+- **Repeat over** *Reference documents* (`{{reference.title}}`, `.number`, `.issuer`, `.date`, `.status`, `.folderPath`, `.pages`, the type's extra fields…) and over the *Urbanism certificate's checklist* (`{{check.label}}`, `.stateText`, and the number, date and issuer of the document that answers it).
+- **Tables**: *Permits and agreements* (the certificate's checklist with the documents answering it) and *Reference documents* (filtered by type, folder and status).
+
+The certificate these read is the latest received certificate still valid.
+
+![The list of permits and agreements, filled from the register](shots/documents-permits.webp)
+
+## Sending them with an issue
+
+**Manage → Issue…** has **Include reference documents**. Tick documents one by one, or a folder to tick the documents in it and in its subfolders (a requested document has no file and cannot go; a folder does not take superseded or withdrawn ones). Their files go with the issue as copies under their own names (a second file with the same name gets a number), listed in the transmittal (kind `REF`, with the document's number and title) and in the manifest with their SHA-256. On a CDE server they are files of the issue, not documents of the register.
+
+![Issue: the certificate and the permits folder ticked](shots/issue-references.webp)
+
+A file above the size limit is not in the project file. It is fetched from the project's server first. Without a server, the copy in the project folder or the file it was added from is used. When it is found nowhere, it is left out of the issue and Lapin says which.
+
 ## With a server
 
 On a project kept on a CDE server, the documents are kept there too, and the **server is the truth**. **Sync issues and documents** (File → Collaborate → Collaborate…) brings the server's documents into the project and sends yours; **Save to server** and **Get latest** do the same along with the issues. Documents are matched by their id and merged field by field: when two people changed the same field, the last writer's value stays, and Lapin says how many edits met someone else's. What others changed is said by name.

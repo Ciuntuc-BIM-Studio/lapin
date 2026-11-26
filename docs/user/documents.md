@@ -79,6 +79,10 @@ Saving is automatic: a moment after you stop typing, and when you go back to **P
 
 In a block's settings, **Remove** takes it away; for a repeat or a condition, **Keep the content only** takes away the band and keeps what is in it.
 
+## Reference documents in a document
+
+A document reads the documents the project received (see [Reference documents](reference-documents.md#in-written-documents)): the fields `{{ref.cu.number}}`, `{{ref.cu.date}}`, `{{ref.cu.issuer}}` and the like for each type, the repeats over *Reference documents* and over the *Urbanism certificate's checklist*, and two tables. **Insert → Table from project…** offers **Permits and agreements** and **Reference documents**; the second's settings have **Type**, **Folder** (with its subfolders) and **Status** (by default the documents neither superseded nor withdrawn).
+
 ## Templates
 
 **Save as template…** keeps the document's text, layout, inputs and style as a template. Give it a title and a description and choose where to keep it:
@@ -129,11 +133,16 @@ A field still empty is left blank in the files, so check **To complete** before 
 
 ## The templates
 
-Lapin comes with three templates, in Romanian for now:
+Lapin comes with these templates:
 
-- **Memoriu tehnic de arhitectură** (the architectural technical report, after Law 50/1991): the general data from Project information; the height regime (for example `P+1E`) and the maximum height; the areas — built, gross, usable and basement — in total and per storey; the rooms of each storey with their areas; the walls by type, with their layers; the floors and roofs; the joinery schedule; the room finishes; inputs for the existing site, the use, the structure, the facades, the services, fire safety, accessibility, energy efficiency and the site organisation.
+- **Memoriu tehnic de arhitectură** (the architectural technical report, after Law 50/1991): the general data from Project information, with the urbanism certificate's number, date and issuer; the height regime (for example `P+1E`) and the maximum height; the areas — built, gross, usable and basement — in total and per storey; the rooms of each storey with their areas; the walls by type, with their layers; the floors and roofs; the joinery schedule; the room finishes; inputs for the existing site, the use, the structure, the facades, the services, fire safety, accessibility, energy efficiency and the site organisation.
 - **Caiet de sarcini: tâmplărie și finisaje** (the specification for joinery and finishes): the project's materials by category, the joinery schedule with its counts, the finishes room by room, and inputs for the general terms, the requirements, the execution and the acceptance, with default texts to adapt.
 - **Borderou de piese scrise și desenate** (the list of written and drawn parts): the project's documents and its sheets, with their numbers, titles, scales and revisions.
+- **Borderou de avize și acorduri** and its English version **List of permits and agreements**: the urbanism certificate's number, date, issuer and validity, the permits and agreements it asks for with the documents answering them, and the permits received.
+- **Opis dosar de autorizare** and **Building permit application index**: the reference documents received (with their page counts where known: a PDF's pages, one for an image), the written parts and the drawings.
+- **Foaie de capăt** and **Cover page**: the project's name, site, client, designer, number and phase, the urbanism certificate, and the signatures.
+
+The last three, and their English versions, are marked **Indicative** in the list: they are a starting point, and what an authority asks for is yours to check. Lapin does not ship the official form of the building permit application: its current wording is in the regulations' annex. To have it, write it once in a document (its fields as `{{project.client}}`, `{{project.address}}`, `{{ref.cu.number}}`…), then **Save as template…** into the project or this computer's library.
 
 Start from one of them and change it in the editor, then **Save as template…** to have your own.
 

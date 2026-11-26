@@ -54,6 +54,26 @@ Un document primit, cu data *valabil până la* depășită, e **expirat**; unul
 
 Pe desktop, când proiectul are un folder, **Scan folder** listează fișierele din `Reference/` pe care registrul nu le ține, cu folderul și tipul sugerate de cale, ca să le adaugi. Listează și copiile registrului care lipsesc de acolo sau stau în alt folder. Registrul e adevărul: un fișier dispărut de pe disc e un avertisment, niciodată o ștergere.
 
+## În documentele scrise
+
+Documentele citesc registrul (vezi [Documente](documents.md#documentele-de-referinta-intr-un-document)):
+
+- **Câmpurile** `{{ref.<tip>.number}}`, `.date`, `.issuer`, `.validUntil` și `.title` dau cel mai nou document primit al unui tip care e încă valabil (după data lui): `{{ref.cu.number}}` e numărul certificatului de urbanism. Documentele expirate, înlocuite, retrase sau cerute nu sunt citite niciodată. `{{ref.<tip>.count}}` spune câte documente valabile sunt. Datele se scriu în limba documentului.
+- **Repetă pentru** *Documente de referință* (`{{reference.title}}`, `.number`, `.issuer`, `.date`, `.status`, `.folderPath`, `.pages`, câmpurile suplimentare ale tipului…) și pentru *lista certificatului de urbanism* (`{{check.label}}`, `.stateText` și numărul, data și emitentul documentului care îi răspunde).
+- **Tabelele**: *Avize și acorduri* (lista certificatului cu documentele care îi răspund) și *Documente de referință* (filtrat după tip, folder și stare).
+
+Certificatul citit e cel mai nou certificat primit și încă valabil.
+
+![Borderoul de avize și acorduri, completat din registru](shots/documents-permits.webp)
+
+## Trimiterea lor cu o emitere
+
+**Gestionare → Emite…** are **Include documentele de referință**. Bifează documentele unul câte unul sau un folder, ca să bifezi documentele din el și din subfolderele lui (un document cerut nu are fișier și nu poate pleca; un folder nu ia documentele înlocuite sau retrase). Fișierele lor pleacă odată cu emiterea, copii sub numele lor (un al doilea fișier cu același nume primește un număr), trecute în borderoul de transmitere (tipul `REF`, cu numărul și titlul documentului) și în manifest, cu SHA-256. Pe un server CDE sunt fișiere ale emiterii, nu documente ale registrului.
+
+![Emite: certificatul și folderul de avize bifate](shots/issue-references.webp)
+
+Un fișier peste limita de mărime nu e în fișierul proiectului. E adus întâi de pe serverul proiectului. Fără server, se folosește copia din folderul proiectului sau fișierul din care a fost adăugat. Când nu e găsit nicăieri, e lăsat în afara emiterii, iar Lapin spune care.
+
 ## Cu un server
 
 Într-un proiect ținut pe un server CDE, documentele sunt păstrate și acolo, iar **serverul e adevărul**. **Sincronizează problemele și documentele** (Fișier → Colaborare → Colaborează…) aduce documentele serverului în proiect și le trimite pe ale tale; **Salvează pe server** și **Ia ultima versiune** fac același lucru odată cu problemele. Documentele se potrivesc după id și se îmbină câmp cu câmp: când doi oameni au schimbat același câmp, rămâne valoarea ultimului care a scris, iar Lapin spune câte modificări au întâlnit modificările altcuiva. Ce au schimbat alții se spune pe nume.
