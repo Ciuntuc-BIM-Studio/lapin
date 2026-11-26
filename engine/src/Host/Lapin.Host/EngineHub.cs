@@ -239,6 +239,9 @@ public sealed class EngineHub
     /// <summary>The modules' folder the host was started with (the app's resources hold OIDN beside it: Denoiser.Find).</summary>
     public string? ModulesDir { get; set; }
 
+    /// <summary>The installed extension modules (docs/plan-extension-modules.md): the desktop host's, from its user folder; null without one.</summary>
+    public ExtensionInstaller? Extensions { get; init; }
+
     /// <summary>
     /// Who this is, for a program looking for Lapin on this computer (docs/python.md, How a program finds Lapin): the
     /// <c>engine.hello</c> call's answer and /health's. <c>engine</c> is always "lapin", so another program listening on
@@ -535,6 +538,28 @@ public sealed class EngineHub
                     if (caller.Remote) throw new CommandException("Only the host can do that.");
                     var dir = Denoiser.Find(ModulesDir) ?? throw new CommandException("Open Image Denoise is not beside this engine (node scripts/fetch-oidn.mjs).");
                     result = await Task.Run(() => Denoiser.Run(dir, p));
+                    break;
+                }
+                // Extension modules (docs/plan-extension-modules.md §1.2, §4.3): installed, removed, turned on and off for the next start,
+                // and listed with what this start loaded. The host's own, never a guest's; the desktop's only (the browser engine has none).
+                case "extensions.install" or "extensions.inspect" or "extensions.uninstall" or "extensions.enable" or "extensions.disable" or "extensions.modules":
+                {
+                    if (caller.Remote) throw new CommandException("Only the host can do that.");
+                    var installer = Extensions ?? throw new CommandException("Extension modules are installed in the desktop app only.");
+                    try
+                    {
+                        result = method switch
+                        {
+                            "extensions.install" => await Task.Run(() => installer.Install(p)),
+                            "extensions.inspect" => await Task.Run(() => installer.Inspect(p)),
+                            "extensions.uninstall" => installer.Uninstall(p),
+                            "extensions.enable" => installer.Enable(p),
+                            "extensions.disable" => installer.Disable(p),
+                            _ => installer.Modules(p),
+                        };
+                    }
+                    catch (ExtensionException e) { throw new CommandException(e.Message); }
+                    catch (Exception e) when (e is IOException or UnauthorizedAccessException) { throw new CommandException($"The extension could not be written: {e.Message}"); }
                     break;
                 }
                 case "extensions.source":

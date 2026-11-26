@@ -2656,6 +2656,9 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .ext-key { display: flex; gap: 6px; align-items: center; }
 .ext-key input { flex: 1; min-width: 0; font-family: var(--mono, monospace); }
 .ext-revoked { color: var(--accent); }
+.ext-full-access { display: flex; align-items: center; gap: 4px; color: var(--accent); }
+.ext-module-switch { display: inline-flex; align-items: center; gap: 4px; }
+.ext-restart { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px; margin-bottom: 6px; border: 1px solid var(--accent); border-radius: 4px; }
 @media (max-width: 760px) { .ext-split { grid-template-columns: 1fr; } .ext-list { border-right: 0; max-height: 200px; } }
 
 /* The Script panel (docs/plan-python-scripting.md, stage 2): Python in Lapin, a developer extra. */

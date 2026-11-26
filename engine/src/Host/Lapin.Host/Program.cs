@@ -28,10 +28,25 @@ PointCloudLinks.CacheDir ??= Path.Combine(userDir, "PointClouds");
 // those of Lapins that ended, which no journal starts from, go (before this session's first is taken).
 Lapin.Package.PackageBases.Folder ??= Path.Combine(userDir, "recovery", "bases");
 Lapin.Package.PackageBases.Sweep(new FileJournalStore(Path.Combine(userDir, "recovery")).Starts());
-var session = new Session(ModuleCatalog.Create(modules), product);
+// Extension modules (docs/plan-extension-modules.md §2.1): after the product's, each checked whole (the store's signature, every file's
+// hash, its contract and requirements) and loaded into its own context; one that fails, or whose Register throws, is turned off with why,
+// and the engine starts.
+var extensionHost = new ExtensionHostInfo(Path.Combine(userDir, "extensions"), StoreKeys.All,
+    product.Modules.Append(CoreModule.ModuleId).ToHashSet(), ModuleLoader.Apis(Arg("--modules-dir"), product.Modules),
+    Directory.Exists(Arg("--modules-dir")) ? Directory.EnumerateDirectories(Arg("--modules-dir")).Select(Path.GetFileName).OfType<string>().ToHashSet() : null);
+List<ExtensionState> extensions;
+try { extensions = ExtensionLoader.Load(extensionHost); }
+catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+{
+    Console.Error.WriteLine($"lapin: extension modules not loaded: {e.Message}");
+    extensions = [];
+}
+var catalog = ModuleCatalog.Create(modules, extensions.Where(x => x.Module != null).Select(x => x.Module!), (m, e) => ExtensionLoader.Failed(extensions, m, e));
+foreach (var x in extensions.Where(x => x.Problem != null)) Console.Error.WriteLine($"lapin: extension {x.Id} {x.Version} not loaded: {x.Problem}");
+var session = new Session(catalog, product);
 using var recovery = new Recovery(userDir, session);
 
-var hub = new EngineHub(session, PackageFiles.Create(), recovery, userDir);
+var hub = new EngineHub(session, PackageFiles.Create(), recovery, userDir) { Extensions = new ExtensionInstaller(extensionHost, extensions) };
 // The lapinbim package the Script panel's Python runs (docs/plan-python-scripting.md): named, else beside the modules (the app's resources/python), else the checkout's python/.
 hub.ModulesDir = Arg("--modules-dir");
 hub.Scripts.PackageDir = Arg("--python-dir", "") is { Length: > 0 } pythonDir ? pythonDir : ScriptHost.FindPackage(Arg("--modules-dir"));

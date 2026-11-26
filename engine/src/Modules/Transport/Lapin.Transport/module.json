@@ -1,1 +1,1 @@
-{ "id": "transport", "name": "Transport", "assembly": "Lapin.Transport.dll", "requires": ["core", "architecture"] }
+{ "id": "transport", "name": "Transport", "assembly": "Lapin.Transport.dll", "requires": ["core", "architecture"], "api": 1 }

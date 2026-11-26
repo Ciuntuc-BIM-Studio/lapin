@@ -1,1 +1,1 @@
-{ "id": "steel", "name": "Steel", "assembly": "Lapin.Steel.dll", "requires": ["core", "structure"] }
+{ "id": "steel", "name": "Steel", "assembly": "Lapin.Steel.dll", "requires": ["core", "structure"], "api": 1 }
