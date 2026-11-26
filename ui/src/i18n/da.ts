@@ -2250,6 +2250,11 @@ export const DA: Record<string, string> = {
   // Site imports in real coordinates (docs/plan-urban.md)
   'Import': 'Importér',
   'Points from DXF': 'Punkter fra DXF',
+  'From map…': 'Fra kort…',
+  'DEM / GeoTIFF': 'DEM / GeoTIFF',
+  'Heightmap': 'Højdekort',
+  'From point cloud': 'Fra punktsky',
+  'Buildings from point cloud': 'Bygninger fra punktsky',
   'GeoJSON': 'GeoJSON',
   'CityJSON': 'CityJSON',
   'Orthophoto': 'Ortofoto',

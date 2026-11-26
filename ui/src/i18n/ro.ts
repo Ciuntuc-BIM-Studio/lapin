@@ -2256,6 +2256,11 @@ export const RO: Record<string, string> = {
   // Site imports in real coordinates (docs/plan-urban.md)
   'Import': 'Import',
   'Points from DXF': 'Puncte din DXF',
+  'From map…': 'Din hartă…',
+  'DEM / GeoTIFF': 'DEM / GeoTIFF',
+  'Heightmap': 'Hartă de înălțimi',
+  'From point cloud': 'Din nor de puncte',
+  'Buildings from point cloud': 'Clădiri din nor de puncte',
   'GeoJSON': 'GeoJSON',
   'CityJSON': 'CityJSON',
   'Orthophoto': 'Ortofotoplan',

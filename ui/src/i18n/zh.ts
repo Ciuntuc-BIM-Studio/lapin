@@ -2253,6 +2253,11 @@ export const ZH: Record<string, string> = {
   // Site imports in real coordinates (docs/plan-urban.md)
   'Import': '导入',
   'Points from DXF': '来自 DXF 的点',
+  'From map…': '从地图导入…',
+  'DEM / GeoTIFF': 'DEM / GeoTIFF',
+  'Heightmap': '高度图',
+  'From point cloud': '从点云生成',
+  'Buildings from point cloud': '从点云提取建筑',
   'GeoJSON': 'GeoJSON',
   'CityJSON': 'CityJSON',
   'Orthophoto': '正射影像',

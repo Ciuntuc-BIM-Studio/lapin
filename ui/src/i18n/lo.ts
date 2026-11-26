@@ -2234,6 +2234,11 @@ export const LO: Record<string, string> = {
   // Site imports in real coordinates (docs/plan-urban.md)
   'Import': 'ນຳເຂົ້າ',
   'Points from DXF': 'ຈຸດຕ່າງໆຈາກ DXF',
+  'From map…': 'ຈາກແຜນທີ່…',
+  'DEM / GeoTIFF': 'DEM / GeoTIFF',
+  'Heightmap': 'ແຜນທີ່ຄວາມສູງ',
+  'From point cloud': 'ຈາກກຸ່ມຈຸດ',
+  'Buildings from point cloud': 'ອາຄານຈາກກຸ່ມຈຸດ',
   'GeoJSON': 'GeoJSON',
   'CityJSON': 'CityJSON',
   'Orthophoto': 'ພາບຖ່າຍທາງອາກາດ (Orthophoto)',
