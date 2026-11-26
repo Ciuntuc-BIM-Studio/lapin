@@ -5504,6 +5504,13 @@ export const RO: Record<string, string> = {
   "Pattern saved.": "Model salvat.",
   "This pattern has no line families to copy.": "Acest model nu are familii de linii de copiat.",
   "The pattern could not be deleted.": "Modelul nu a putut fi șters.",
+  "Blank: one line at 45°": "Gol: o linie la 45°",
+  "A copy of {name}: change it, then Make pattern.": "O copie a lui {name}: schimb-o, apoi Fă modelul.",
+  "Built-in patterns are fixed: Duplicate one to make a copy you can change.": "Modelele incluse sunt fixe: Duplică unul ca să faci o copie pe care o poți schimba.",
+  "Change its numbers, then Save. Duplicate starts a new pattern from it.": "Schimbă-i numerele, apoi Salvează. Duplică pornește un model nou de la el.",
+  "The pattern could not be read.": "Modelul nu a putut fi citit.",
+  "Delete this pattern": "Șterge acest model",
+  "A new pattern starting from this one": "Un model nou pornind de la acesta",
   "The project has no pattern of its own to export.": "Proiectul nu are niciun model propriu de exportat.",
   "Patterns exported.": "Modele exportate.",
   "{n} hatch pattern(s) loaded{skipped}, and kept in My patterns on this computer.": "{n} model(e) de hașură încărcate{skipped} și păstrate în Modelele mele pe acest calculator.",
@@ -5570,6 +5577,10 @@ export const RO: Record<string, string> = {
   "Purlin section": "Secțiunea panei",
   "Ridge beam section": "Secțiunea grinzii de coamă",
   "Wall plate section": "Secțiunea cosoroabei",
+  "Wall plate laid flat": "Cosoroaba pusă pe lat",
+  "Ridge beam laid flat": "Grinda de coamă pusă pe lat",
+  "Purlins laid flat": "Panele puse pe lat",
+  "Collar ties laid flat": "Cleștii puși pe lat",
   "Unfolded covering": "Învelitoare desfășurată",
   "Explode roof": "Explodează acoperișul",
   "Show door or window open or closed": "Arată ușa sau fereastra deschisă sau închisă",
@@ -7185,6 +7196,10 @@ export const RO: Record<string, string> = {
   "Change roof panel profile": "Schimbă profilul de panouri de acoperiș",
   "Delete roof panel profile": "Șterge profilul de panouri de acoperiș",
   "Import roof panel profiles": "Importă profiluri de panouri de acoperiș",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "Măsurat ca",
+  "No measure": "Fără măsură",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "O piesă plasată dă acest parametru ca o cantitate de acest fel, pentru articolele de deviz, extrase și IFC",
 };
 
 /** Phrases with a number or a name in them. */

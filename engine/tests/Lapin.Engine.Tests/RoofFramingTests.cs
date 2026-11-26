@@ -276,6 +276,151 @@ public class RoofFramingTests
         });
     }
 
+    /// <summary>
+    /// A member laid flat (forum round 26.11.2026, R1): the wall plate, ridge beam, purlins or collar ties turned 90°, their width
+    /// and depth swapped wherever the section is used. A flat plate is lower, so the rafters seat lower and the ridge follows.
+    /// </summary>
+    [Fact]
+    public void A_member_laid_flat_swaps_its_width_and_depth_and_the_roof_seats_on_it()
+    {
+        var f = new Fixture();
+        var roof = AddRoof(f, "se_falu_red", new JsonObject
+        {
+            ["structure"] = "rafters", ["purlins"] = 1, ["plateSection"] = "45x145 mm", ["ridgeSection"] = "45x195 mm", ["purlinSection"] = "45x170 mm",
+        });
+        static List<RoofParts.Member> Of(List<RoofParts.Member> ms, string role) => ms.Where(m => m.Role == role).ToList();
+        var (r0, m0) = Framing(f, roof);
+        // Not laid flat: on edge, as every roof was.
+        Assert.All(Of(m0, "plate"), m => Assert.Equal((0.045, 0.145), (m.Width, m.Depth)));
+        Assert.All(Of(m0, "ridge"), m => Assert.Equal((0.045, 0.195), (m.Width, m.Depth)));
+        Assert.All(Of(m0, "purlin"), m => Assert.Equal((0.045, 0.17), (m.Width, m.Depth)));
+        Assert.Equal(r0.PlateZ + 0.145, r0.BaseZ, 9);
+        Assert.NotEmpty(Of(m0, "ridge"));
+        Assert.NotEmpty(Of(m0, "purlin"));
+        var ridgeTop0 = Of(m0, "ridge").Max(m => m.A.Z + m.Depth / 2);
+        var rafterLow0 = Of(m0, "rafter").SelectMany(m => m.Body("rafter")!.Vertices).Min(v => v.Z);
+
+        f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = new JsonObject { ["plateFlat"] = true } });
+        var (r1, m1) = Framing(f, roof);
+        var plates = Of(m1, "plate");
+        Assert.Equal(Of(m0, "plate").Count, plates.Count);
+        Assert.All(plates, m => Assert.Equal((0.145, 0.045), (m.Width, m.Depth)));
+        Assert.All(plates, m => Assert.Equal(r1.PlateZ + 0.045 / 2, m.A.Z, 9));
+        // The same timber, the same lengths: only turned.
+        Assert.Equal(Of(m0, "plate").Sum(m => m.Volume), plates.Sum(m => m.Volume), 9);
+        Assert.Equal(Of(m0, "plate").Sum(m => m.Length), plates.Sum(m => m.Length), 9);
+        // The plate's top is 100 mm lower: the rafters seat on it, the planes, the ridge and its beam come down with it.
+        Assert.Equal(r1.PlateZ + 0.045, r1.BaseZ, 9);
+        Assert.Equal(ridgeTop0 - 0.1, Of(m1, "ridge").Max(m => m.A.Z + m.Depth / 2), 6);
+        Assert.Equal(rafterLow0 - 0.1, Of(m1, "rafter").SelectMany(m => m.Body("rafter")!.Vertices).Min(v => v.Z), 6);
+        // The other members stay on edge.
+        Assert.All(Of(m1, "ridge"), m => Assert.Equal((0.045, 0.195), (m.Width, m.Depth)));
+
+        // The ridge beam and the purlins flat too: their tops stay under the rafters, where they were.
+        var purlinTop1 = Of(m1, "purlin").Select(m => m.A.Z + m.Depth / 2).ToList();
+        var ridgeTop1 = Of(m1, "ridge").Max(m => m.A.Z + m.Depth / 2);
+        f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = new JsonObject { ["ridgeFlat"] = true, ["purlinFlat"] = true } });
+        var (r2, m2) = Framing(f, roof);
+        Assert.All(Of(m2, "ridge"), m => Assert.Equal((0.195, 0.045), (m.Width, m.Depth)));
+        Assert.All(Of(m2, "purlin"), m => Assert.Equal((0.17, 0.045), (m.Width, m.Depth)));
+        Assert.Equal(ridgeTop1, Of(m2, "ridge").Max(m => m.A.Z + m.Depth / 2), 9);
+        Assert.Equal(purlinTop1, Of(m2, "purlin").Select(m => m.A.Z + m.Depth / 2).ToList(), new Tol(1e-9));
+
+        // The cutting list, the parts and the analytical model say the sections as laid.
+        var rows = RoofTimberSchedule.Rows(f.Model);
+        Assert.Contains(rows, x => x.Role == "Wall plate" && x.Section == "145x45 mm");
+        Assert.Contains(rows, x => x.Role == "Ridge beam" && x.Section == "195x45 mm");
+        Assert.Contains(rows, x => x.Role == "Purlin" && x.Section == "170x45 mm");
+        var parts = f.Session.Geometry(roof)!.Parts;
+        Assert.Contains(parts, p => p.Name == "Wall plate 145x45 mm" && p.Properties?.Contains(("Section", "145x45 mm")) == true);
+        var into = new Lapin.Platform.Analysis.AnalyticalContribution { Services = f.Session.Catalog };
+        new Lapin.Architecture.ArchitectureAnalytical().Contribute(f.Model, into);
+        var frames = into.Frames.Where(x => x.SourceId == roof).ToList();
+        Assert.All(frames.Where(x => x.Role == "plate"), x => Assert.Equal((0.045, 0.145, Vec3.UnitZ), (x.Depth, x.Width, x.DepthDir)));
+        Assert.Contains(frames, x => x.Role == "plate");
+        Assert.All(frames.Where(x => x.Role == "ridge"), x => Assert.Equal((0.045, 0.195), (x.Depth, x.Width)));
+
+        // Turned back: as it was, one undo step each.
+        f.Session.Undo();
+        Assert.All(Of(Framing(f, roof).Members, "ridge"), m => Assert.Equal((0.045, 0.195), (m.Width, m.Depth)));
+        f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = new JsonObject { ["plateFlat"] = false } });
+        var (r3, m3) = Framing(f, roof);
+        Assert.Equal(r0.BaseZ, r3.BaseZ, 12);
+        Assert.Equal(m0.Select(m => (m.Role, m.Width, m.Depth, m.A, m.B)), m3.Select(m => (m.Role, m.Width, m.Depth, m.A, m.B)));
+    }
+
+    [Fact]
+    public void A_collar_tie_laid_flat_is_as_deep_as_the_rafter_is_wide()
+    {
+        var f = new Fixture();
+        var roof = AddRoof(f, "nordic_collar");                          // 45×195 rafters; the collar ties take their section
+        f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = new JsonObject { ["collarFlat"] = true } });
+        var (r, members) = Framing(f, roof);
+        var collars = members.Where(m => m.Role == "collar").ToList();
+        Assert.Equal(17, collars.Count);
+        var rise = 3 * Math.Tan(38 * Math.PI / 180);
+        Assert.All(collars, c =>
+        {
+            Assert.Equal((0.195, 0.045), (c.Width, c.Depth));
+            Assert.Equal(r.BaseZ + 0.66 * rise + 0.045 / 2, c.A.Z, 6);
+        });
+        Assert.All(members.Where(m => m.Role == "rafter"), m => Assert.Equal((0.045, 0.195), (m.Width, m.Depth)));
+        // The plate is not laid flat: the roof seats where it did.
+        Assert.Equal(r.PlateZ + Roof.WallPlate.D, r.BaseZ, 9);
+    }
+
+    [Fact]
+    public void Lay_flat_is_a_tick_beside_each_section_kept_by_styles_and_read_back_from_IFC()
+    {
+        var f = new Fixture();
+        var cls = f.Session.Reader.Describe(IfcClass.Roof)!;
+        var keys = cls.Fields.Select(x => x.Key).ToList();
+        foreach (var (section, flat) in new[] { ("plateSection", "plateFlat"), ("ridgeSection", "ridgeFlat"), ("purlinSection", "purlinFlat"), ("collarSection", "collarFlat") })
+        {
+            var tick = cls.Fields.Single(x => x.Key == flat);
+            Assert.Equal("bool", tick.Kind);
+            Assert.Equal(keys.IndexOf(section) + 1, keys.IndexOf(flat));
+            Assert.Contains(flat, ProjectRoofStyles.Fields);
+        }
+        var gable = f.Model.Get(AddRoof(f, "traditional_campie"))!;
+        var flatRoof = f.Model.Get(AddRoof(f, "modern_minimalist"))!;
+        var plateFlat = cls.Fields.Single(x => x.Key == "plateFlat");
+        Assert.True(plateFlat.Shown(gable));
+        Assert.False(plateFlat.Shown(flatRoof));
+
+        // A project style keeps it, and puts it on the roofs it is given to.
+        var a = AddRoof(f, "se_falu_red", new JsonObject { ["structure"] = "rafters", ["plateSection"] = "45x145 mm", ["plateFlat"] = true });
+        var sid = (string)f.Run("architecture.saveRoofStyle", new JsonObject { ["id"] = a, ["name"] = "Flat plates" })!["styleId"]!;
+        var b = AddRoof(f, "traditional_campie");
+        f.Run("architecture.roofStyle", new JsonObject { ["id"] = b, ["style"] = sid });
+        Assert.True(f.Model.Get(b)!.Bool("plateFlat"));
+        Assert.All(Framing(f, b).Members.Where(m => m.Role == "plate"), m => Assert.Equal((0.145, 0.045), (m.Width, m.Depth)));
+
+        // IFC: the plates go as members 145 wide and 45 deep, and the roof comes back laid flat.
+        var path = Path.Combine(Path.GetTempPath(), $"flat-plate-{Guid.NewGuid():N}.ifc");
+        try
+        {
+            var g = new Fixture();
+            var roof = AddRoof(g, "se_falu_red", new JsonObject { ["structure"] = "rafters", ["plateSection"] = "45x145 mm", ["plateFlat"] = true });
+            IfcExport.Write(g.Session, path);
+            var file = StepFile.Read(path);
+            Assert.Contains(file.OfType("IFCPROPERTYSINGLEVALUE"), p => (string?)p[0] == "Section" && p[2] is StepTyped { Value: "145x45 mm" });
+            var h = new Fixture();
+            IfcImport.Run(h.Session, path, null, out _);
+            var back = h.Model.OfClass(IfcClass.Roof).Single();
+            Assert.True(back.Bool("plateFlat"));
+            Assert.Equal(Framing(g, roof).R.BaseZ, Roof.Resolve(back, h.Model)!.BaseZ, 9);
+            Assert.All(Framing(h, back.Id).Members.Where(m => m.Role == "plate"), m => Assert.Equal((0.145, 0.045), (m.Width, m.Depth)));
+        }
+        finally { File.Delete(path); }
+    }
+
+    sealed class Tol(double eps) : IEqualityComparer<double>
+    {
+        public bool Equals(double x, double y) => Math.Abs(x - y) <= eps;
+        public int GetHashCode(double obj) => 0;
+    }
+
     sealed class Q(Fixture f) : IQueryContext
     {
         public IModelView Model => f.Model;

@@ -5551,6 +5551,13 @@ export const PL: Record<string, string> = {
   "Pattern saved.": "Wzór zapisany.",
   "This pattern has no line families to copy.": "Ten wzór nie ma rodzin linii do skopiowania.",
   "The pattern could not be deleted.": "Nie udało się usunąć wzoru.",
+  "Blank: one line at 45°": "Pusty: jedna linia pod kątem 45°",
+  "A copy of {name}: change it, then Make pattern.": "Kopia wzoru {name}: zmień ją, a potem Utwórz wzór.",
+  "Built-in patterns are fixed: Duplicate one to make a copy you can change.": "Wzory wbudowane są stałe: Duplikuj jeden, aby mieć kopię do zmiany.",
+  "Change its numbers, then Save. Duplicate starts a new pattern from it.": "Zmień jego liczby, a potem Zapisz. Duplikuj zaczyna od niego nowy wzór.",
+  "The pattern could not be read.": "Nie udało się odczytać wzoru.",
+  "Delete this pattern": "Usuń ten wzór",
+  "A new pattern starting from this one": "Nowy wzór na podstawie tego",
   "The project has no pattern of its own to export.": "Projekt nie ma własnych wzorów do wyeksportowania.",
   "Patterns exported.": "Wzory wyeksportowane.",
   "{n} hatch pattern(s) loaded{skipped}, and kept in My patterns on this computer.": "Wczytano wzorów kreskowania: {n}{skipped}; zachowano je w Moich wzorach na tym komputerze.",
@@ -5617,6 +5624,10 @@ export const PL: Record<string, string> = {
   "Purlin section": "Przekrój płatwi",
   "Ridge beam section": "Przekrój belki kalenicowej",
   "Wall plate section": "Przekrój murłaty",
+  "Wall plate laid flat": "Murłata leżąca płasko",
+  "Ridge beam laid flat": "Belka kalenicowa leżąca płasko",
+  "Purlins laid flat": "Płatwie leżące płasko",
+  "Collar ties laid flat": "Jętki leżące płasko",
   "Unfolded covering": "Rozwinięte pokrycie",
   "Explode roof": "Rozbij dach",
   "Show door or window open or closed": "Pokaż drzwi lub okno otwarte lub zamknięte",
@@ -7232,6 +7243,10 @@ export const PL: Record<string, string> = {
   "Change roof panel profile": "Zmień profil paneli dachowych",
   "Delete roof panel profile": "Usuń profil paneli dachowych",
   "Import roof panel profiles": "Importuj profile paneli dachowych",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "Mierzony jako",
+  "No measure": "Bez miary",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "Wstawiony element podaje ten parametr jako ilość tego rodzaju, dla pozycji kosztorysu, zestawień i IFC",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

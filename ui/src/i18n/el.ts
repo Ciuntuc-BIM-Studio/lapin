@@ -11505,6 +11505,13 @@ export const EL: Record<string, string> = {
   'Pattern saved.': 'Το μοτίβο αποθηκεύτηκε.',
   'This pattern has no line families to copy.': 'Αυτό το μοτίβο δεν έχει οικογένειες γραμμών για αντιγραφή.',
   'The pattern could not be deleted.': 'Το μοτίβο δεν μπόρεσε να διαγραφεί.',
+  "Blank: one line at 45°": "Κενό: μία γραμμή στις 45°",
+  "A copy of {name}: change it, then Make pattern.": "Ένα αντίγραφο του {name}: αλλάξτε το και μετά Δημιουργία μοτίβου.",
+  "Built-in patterns are fixed: Duplicate one to make a copy you can change.": "Τα ενσωματωμένα μοτίβα είναι σταθερά: η Αναπαραγωγή δίνει ένα αντίγραφο που μπορείτε να αλλάξετε.",
+  "Change its numbers, then Save. Duplicate starts a new pattern from it.": "Αλλάξτε τους αριθμούς του και μετά Αποθήκευση. Η Αναπαραγωγή ξεκινά νέο μοτίβο από αυτό.",
+  "The pattern could not be read.": "Το μοτίβο δεν μπόρεσε να διαβαστεί.",
+  "Delete this pattern": "Διαγραφή αυτού του μοτίβου",
+  "A new pattern starting from this one": "Ένα νέο μοτίβο με βάση αυτό",
   'The project has no pattern of its own to export.': 'Το έργο δεν έχει δικό του μοτίβο για εξαγωγή.',
   'Patterns exported.': 'Τα μοτίβα εξήχθησαν.',
   '{n} hatch pattern(s) loaded{skipped}, and kept in My patterns on this computer.': 'Φορτώθηκαν {n} μοτίβο(α) διαγράμμισης{skipped} και διατηρούνται στα Δικά μου μοτίβα σε αυτόν τον υπολογιστή.',
@@ -11591,6 +11598,10 @@ export const EL: Record<string, string> = {
   'Purlin section': 'Διατομή τεγίδας',
   'Ridge beam section': 'Διατομή μεσοδοκού κορφιά',
   'Wall plate section': 'Διατομή τοιχοδοκού',
+  'Wall plate laid flat': 'Τοιχοδοκός ξαπλωτή',
+  'Ridge beam laid flat': 'Μεσοδοκός κορφιά ξαπλωτή',
+  'Purlins laid flat': 'Τεγίδες ξαπλωτές',
+  'Collar ties laid flat': 'Κάτω ζυγώματα ξαπλωτά',
   'Unfolded covering': 'Αναπτυγμένο κάλυμμα',
   'Explode roof': 'Ανάλυση οροφής',
   'Show door or window open or closed': 'Εμφάνιση πόρτας ή παραθύρου ανοιχτού ή κλειστού',
@@ -13350,6 +13361,10 @@ export const EL: Record<string, string> = {
   "Change roof panel profile": "Αλλαγή προφίλ πάνελ στέγης",
   "Delete roof panel profile": "Διαγραφή προφίλ πάνελ στέγης",
   "Import roof panel profiles": "Εισαγωγή προφίλ πάνελ στέγης",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "Μετριέται ως",
+  "No measure": "Καμία μέτρηση",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "Ένα τοποθετημένο εξάρτημα δίνει αυτή την παράμετρο ως ποσότητα αυτού του είδους, για άρθρα κόστους, πίνακες και IFC",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

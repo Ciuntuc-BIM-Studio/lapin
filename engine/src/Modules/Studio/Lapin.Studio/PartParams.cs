@@ -37,6 +37,8 @@ public static class PartParams
     internal static bool IsDerived(JsonObject p) => FormulaOf(p) != null;
     internal static bool IsInstance(JsonObject p) => Flag(p["instance"]) ?? true;
     internal static bool IsText(JsonObject p) => (string?)p["kind"] == "text";
+    /// <summary>The measure a parameter is marked as (length, count, area, volume), or null: none, as before R6.</summary>
+    internal static string? MeasureOf(JsonObject p) => p["measure"] is JsonValue v && v.TryGetValue<string>(out var s) && s.Trim() is { Length: > 0 } m && m != "none" ? m : null;
 
     static List<JsonObject> ParamsOf(JsonObject def) => [.. (def["params"] as JsonArray ?? []).OfType<JsonObject>()];
 
@@ -289,6 +291,14 @@ public static class PartParams
             if (po[text] is JsonValue tv && tv.TryGetValue<string>(out var s) && s.Trim() is { Length: > 0 } st) pc[text] = st;
         foreach (var flag in new[] { "instance", "published" })
             if (Flag(po[flag]) is { } fb) pc[flag] = fb;
+        // A measure (R6): the placed part gives it as a quantity of that kind (Lapin_PartQuantities), for estimates and schedules.
+        if (MeasureOf(po) is { } measure)
+        {
+            if (AuthoredQuantities.KindOf(measure) == null)
+                throw new CommandException($"{key}'s measure is one of {string.Join(", ", AuthoredQuantities.Measures.Select(x => x.Measure))}, or none.");
+            if (kind is "text" or "bool" or "angle") throw new CommandException($"{key} is a {kind}: only a length or a number can be a measure.");
+            pc["measure"] = measure;
+        }
         if (kind is not ("text" or "bool"))
         {
             foreach (var bound in new[] { "min", "max" })
@@ -364,7 +374,7 @@ public static class PartParams
 
     /// <summary>
     /// {partId, key, changes: {newKey?, label?, kind?, unit?, default?, formula? (null clears), instance?, published?, group? (null
-    /// clears), description?, min?, max? (null clears)}} → {key, droppedValues}. A new key is renamed in every formula of the part and
+    /// clears), description?, min?, max? (null clears), measure? (length | count | area | volume; null or none clears)}} → {key, droppedValues}. A new key is renamed in every formula of the part and
     /// in every placed part's values; a parameter made derived or a type parameter drops the placed parts' own values for it (counted).
     /// </summary>
     public static JsonNode? Update(ICommandContext ctx, JsonObject a)
@@ -382,6 +392,13 @@ public static class PartParams
             p["kind"] = kind;
             if (!IsDerived(p)) p["default"] = Convert(p["default"], kind) ?? (kind == "text" ? "" : 0);
             if (kind is "text" or "bool") { p.Remove("min"); p.Remove("max"); }
+            // A text, a yes/no or an angle measures nothing.
+            if (kind is "text" or "bool" or "angle") p.Remove("measure");
+        }
+        if (ch.ContainsKey("measure"))
+        {
+            if (ch["measure"] is JsonValue mv && mv.TryGetValue<string>(out var m) && m.Trim() is { Length: > 0 } mt && mt != "none") p["measure"] = mt;
+            else p.Remove("measure");
         }
         if (ch.ContainsKey("default")) p["default"] = ch["default"]?.DeepClone();
         if (ch.ContainsKey("formula"))

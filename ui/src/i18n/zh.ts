@@ -5547,6 +5547,13 @@ export const ZH: Record<string, string> = {
   "Pattern saved.": "图案已保存。",
   "This pattern has no line families to copy.": "此图案没有可复制的线族。",
   "The pattern could not be deleted.": "无法删除该图案。",
+  "Blank: one line at 45°": "空白：一条 45° 线",
+  "A copy of {name}: change it, then Make pattern.": "{name} 的副本：修改后点击 创建图案。",
+  "Built-in patterns are fixed: Duplicate one to make a copy you can change.": "内置图案是固定的：复制一个即可得到可修改的副本。",
+  "Change its numbers, then Save. Duplicate starts a new pattern from it.": "修改其数值，然后 保存。复制 会以它为起点新建图案。",
+  "The pattern could not be read.": "无法读取该图案。",
+  "Delete this pattern": "删除此图案",
+  "A new pattern starting from this one": "以此图案为起点的新图案",
   "The project has no pattern of its own to export.": "项目没有可导出的自有图案。",
   "Patterns exported.": "图案已导出。",
   "{n} hatch pattern(s) loaded{skipped}, and kept in My patterns on this computer.": "已载入 {n} 个填充图案{skipped}，并保存在此计算机的“我的图案”中。",
@@ -5613,6 +5620,10 @@ export const ZH: Record<string, string> = {
   "Purlin section": "檩条截面",
   "Ridge beam section": "脊梁截面",
   "Wall plate section": "墙顶梁截面",
+  "Wall plate laid flat": "墙顶梁平放",
+  "Ridge beam laid flat": "脊梁平放",
+  "Purlins laid flat": "檩条平放",
+  "Collar ties laid flat": "系梁平放",
   "Unfolded covering": "展开的屋面材料",
   "Explode roof": "分解屋顶",
   "Show door or window open or closed": "显示门或窗为打开或关闭状态",
@@ -7228,6 +7239,10 @@ export const ZH: Record<string, string> = {
   "Change roof panel profile": "更改屋面板型材",
   "Delete roof panel profile": "删除屋面板型材",
   "Import roof panel profiles": "导入屋面板型材",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "计量为",
+  "No measure": "不计量",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "放置的零件将此参数作为该类数量，用于成本条目、明细表和 IFC",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

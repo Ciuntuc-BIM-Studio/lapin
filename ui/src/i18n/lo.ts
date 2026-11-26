@@ -5604,6 +5604,13 @@ export const LO: Record<string, string> = {
   "Pattern saved.": "ບັນທຶກລວດລາຍແລ້ວ.",
   "This pattern has no line families to copy.": "ລວດລາຍນີ້ບໍ່ມີກຸ່ມເສັ້ນໃຫ້ສຳເນົາ.",
   "The pattern could not be deleted.": "ບໍ່ສາມາດລຶບລວດລາຍໄດ້.",
+  "Blank: one line at 45°": "ເປົ່າ: ເສັ້ນດຽວທີ່ 45°",
+  "A copy of {name}: change it, then Make pattern.": "ສຳເນົາຂອງ {name}: ແກ້ໄຂມັນ, ແລ້ວ ສ້າງລວດລາຍ.",
+  "Built-in patterns are fixed: Duplicate one to make a copy you can change.": "ລວດລາຍທີ່ມີໃນຕົວແມ່ນຄົງທີ່: ສຳເນົາຄືນອັນໜຶ່ງເພື່ອໄດ້ສຳເນົາທີ່ແກ້ໄຂໄດ້.",
+  "Change its numbers, then Save. Duplicate starts a new pattern from it.": "ແກ້ໄຂຕົວເລກຂອງມັນ, ແລ້ວ ບັນທຶກ. ສຳເນົາຄືນ ເລີ່ມລວດລາຍໃໝ່ຈາກມັນ.",
+  "The pattern could not be read.": "ບໍ່ສາມາດອ່ານລວດລາຍໄດ້.",
+  "Delete this pattern": "ລຶບລວດລາຍນີ້",
+  "A new pattern starting from this one": "ລວດລາຍໃໝ່ທີ່ເລີ່ມຈາກອັນນີ້",
   "The project has no pattern of its own to export.": "ໂຄງການບໍ່ມີລວດລາຍຂອງຕົນເອງໃຫ້ສົ່ງອອກ.",
   "Patterns exported.": "ສົ່ງອອກລວດລາຍແລ້ວ.",
   "{n} hatch pattern(s) loaded{skipped}, and kept in My patterns on this computer.": "ໂຫຼດລາຍແຮັດ {n} ອັນ{skipped} ແລະ ເກັບໄວ້ໃນ ລວດລາຍຂອງຂ້ອຍ ໃນຄອມພິວເຕີນີ້.",
@@ -5670,6 +5677,10 @@ export const LO: Record<string, string> = {
   "Purlin section": "ໜ້າຕັດຂອງຕົງ",
   "Ridge beam section": "ໜ້າຕັດຂອງຕົງສັນຫຼັງຄາ",
   "Wall plate section": "ໜ້າຕັດຂອງໄມ້ພື້ນຝາ",
+  "Wall plate laid flat": "ວາງໄມ້ພື້ນຝາແປ",
+  "Ridge beam laid flat": "ວາງຕົງສັນຫຼັງຄາແປ",
+  "Purlins laid flat": "ວາງຕົງແປ",
+  "Collar ties laid flat": "ວາງໄມ້ຮັດແປ",
   "Unfolded covering": "ວັດສະດຸມຸງທີ່ຄີ່ອອກ",
   "Explode roof": "ແຍກຫຼັງຄາອອກ",
   "Show door or window open or closed": "ສະແດງປະຕູ ຫຼື ປ່ອງຢ້ຽມແບບເປີດ ຫຼື ປິດ",
@@ -7285,6 +7296,10 @@ export const LO: Record<string, string> = {
   "Change roof panel profile": "ປ່ຽນໂປຣໄຟລ໌ແຜ່ນຫຼັງຄາ",
   "Delete roof panel profile": "ລຶບໂປຣໄຟລ໌ແຜ່ນຫຼັງຄາ",
   "Import roof panel profiles": "ນຳເຂົ້າໂປຣໄຟລ໌ແຜ່ນຫຼັງຄາ",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "ວັດແທກເປັນ",
+  "No measure": "ບໍ່ມີການວັດແທກ",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "ຊິ້ນສ່ວນທີ່ວາງໄວ້ໃຫ້ພາລາມິເຕີນີ້ເປັນປະລິມານຂອງປະເພດນັ້ນ, ສຳລັບລາຍການຕົ້ນທຶນ, ຕາຕະລາງ ແລະ IFC",
 };
 
 /** Phrases with a number or a name in them. */

@@ -5548,6 +5548,13 @@ export const PT: Record<string, string> = {
   "Pattern saved.": "Padrão salvo.",
   "This pattern has no line families to copy.": "Este padrão não tem famílias de linhas para copiar.",
   "The pattern could not be deleted.": "Não foi possível excluir o padrão.",
+  "Blank: one line at 45°": "Em branco: uma linha a 45°",
+  "A copy of {name}: change it, then Make pattern.": "Uma cópia de {name}: altere-a e depois Criar padrão.",
+  "Built-in patterns are fixed: Duplicate one to make a copy you can change.": "Os padrões embutidos são fixos: Duplicar cria uma cópia que você pode alterar.",
+  "Change its numbers, then Save. Duplicate starts a new pattern from it.": "Altere seus números e depois Salvar. Duplicar começa um padrão novo a partir dele.",
+  "The pattern could not be read.": "Não foi possível ler o padrão.",
+  "Delete this pattern": "Excluir este padrão",
+  "A new pattern starting from this one": "Um padrão novo a partir deste",
   "The project has no pattern of its own to export.": "O projeto não tem padrões próprios para exportar.",
   "Patterns exported.": "Padrões exportados.",
   "{n} hatch pattern(s) loaded{skipped}, and kept in My patterns on this computer.": "{n} padrão(ões) de hachura carregado(s){skipped} e mantido(s) em Meus padrões neste computador.",
@@ -5614,6 +5621,10 @@ export const PT: Record<string, string> = {
   "Purlin section": "Seção das terças",
   "Ridge beam section": "Seção da cumeeira",
   "Wall plate section": "Seção do frechal",
+  "Wall plate laid flat": "Frechal deitado",
+  "Ridge beam laid flat": "Cumeeira deitada",
+  "Purlins laid flat": "Terças deitadas",
+  "Collar ties laid flat": "Tirantes deitados",
   "Unfolded covering": "Cobertura planificada",
   "Explode roof": "Decompor telhado",
   "Show door or window open or closed": "Mostrar a porta ou a janela aberta ou fechada",
@@ -7229,6 +7240,10 @@ export const PT: Record<string, string> = {
   "Change roof panel profile": "Alterar perfil de painéis de cobertura",
   "Delete roof panel profile": "Excluir perfil de painéis de cobertura",
   "Import roof panel profiles": "Importar perfis de painéis de cobertura",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "Medido como",
+  "No measure": "Sem medida",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "Uma peça colocada dá este parâmetro como uma quantidade desse tipo, para os artigos de custo, as tabelas e o IFC",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

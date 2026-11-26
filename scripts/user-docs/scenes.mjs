@@ -2684,6 +2684,8 @@ export const scenes = [
       t.expect(isFramed, `the house's roof is framed (${roof.props?.shape}, ${roof.props?.structure})`);
       t.expect(await t.page.locator('aside.props dt[title=deckThickness]').count() === 0, 'a framed roof hides the deck fields');
       t.expect(await t.page.locator('aside.props dt[title=rafterSpacing]').count() > 0, 'a framed roof shows its rafters');
+      // Each beam's section with its tick to lay it flat (forum round 26.11.2026, R1).
+      t.expect(await t.page.locator('aside.props dt[title=plateFlat]').count() > 0, 'a framed roof shows the wall plate\'s lay-flat tick');
       await t.shot('roof-properties', { of: 'aside.props', pad: 0, maxHeight: 700 });
       t.expect((await t.nodes()).some((n) => n.type === 'IfcSlab'), 'a floor in the house');
       // The roof configurator (decision 231): the Swedish truss style picked, its framing seen in the section, applied.
@@ -17839,6 +17841,22 @@ export const scenes = [
       await dialog2.locator('[data-testid=hp-save]').click().catch(async () => { await dialog2.getByRole('button', { name: 'Make pattern' }).click(); });
       await t.wait(1000);
       await t.shot('hatch-patterns-family', { of: '.dialog', pad: 0 });
+      // Forum 275: a project pattern opens to edit, a built-in one is fixed and is the start of a new one (Duplicate), and a project
+      // pattern is deleted from the list (the confirm is accepted by the runner).
+      await dialog2.locator('[data-pattern=DIAGONAL-5]').click();
+      await t.until(async () => await dialog2.locator('[data-testid=hp-edit-note]').count() === 1, 'a project pattern opens to edit');
+      t.expect(await dialog2.locator('[data-testid=hp-delete]').count() === 1, 'a project pattern has Delete');
+      await dialog2.locator('[data-pattern=BRICK]').click();
+      await t.until(async () => await dialog2.locator('[data-testid=hp-builtin-note]').count() === 1, 'a built-in pattern says it is fixed');
+      await dialog2.locator('[data-testid=hp-duplicate]').click();
+      await t.until(async () => await dialog2.locator('[data-testid=hp-from-note]').count() === 1, 'Duplicate starts a new pattern from it');
+      t.expect(await dialog2.locator('[data-field=hp-name]').inputValue() === 'BRICK-COPY', 'the copy takes a free name');
+      await t.wait(800);
+      await t.shot('hatch-patterns-start-from', { of: '.dialog', pad: 0 });
+      await dialog2.locator('[data-testid=hp-save]').click();
+      await t.until(async () => await dialog2.locator('[data-pattern=BRICK-COPY]').count() === 1, 'the copy is made');
+      await dialog2.locator('li:has([data-pattern=DIAGONAL-5]) [data-testid=hp-row-delete]').click();
+      await t.until(async () => await dialog2.locator('[data-pattern=DIAGONAL-5]').count() === 0, 'the pattern is deleted from the list');
       await t.page.locator('.dialog button[title="Close"]').first().click();
       await t.wait(400);
       await t.ui({ dialog: 'preferences' });

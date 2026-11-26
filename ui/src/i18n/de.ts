@@ -5508,6 +5508,13 @@ export const DE: Record<string, string> = {
   "Pattern saved.": "Muster gespeichert.",
   "This pattern has no line families to copy.": "Dieses Muster hat keine Linienfamilien zum Kopieren.",
   "The pattern could not be deleted.": "Das Muster konnte nicht gelöscht werden.",
+  "Blank: one line at 45°": "Leer: eine Linie unter 45°",
+  "A copy of {name}: change it, then Make pattern.": "Eine Kopie von {name}: ändern Sie sie, dann Muster erstellen.",
+  "Built-in patterns are fixed: Duplicate one to make a copy you can change.": "Integrierte Muster sind fest: Duplizieren Sie eines, um eine änderbare Kopie zu erhalten.",
+  "Change its numbers, then Save. Duplicate starts a new pattern from it.": "Ändern Sie die Zahlen, dann Speichern. Duplizieren beginnt ein neues Muster daraus.",
+  "The pattern could not be read.": "Das Muster konnte nicht gelesen werden.",
+  "Delete this pattern": "Dieses Muster löschen",
+  "A new pattern starting from this one": "Ein neues Muster, ausgehend von diesem",
   "The project has no pattern of its own to export.": "Das Projekt hat kein eigenes Muster zum Exportieren.",
   "Patterns exported.": "Muster exportiert.",
   "{n} hatch pattern(s) loaded{skipped}, and kept in My patterns on this computer.": "{n} Schraffurmuster geladen{skipped} und in Meine Muster auf diesem Computer behalten.",
@@ -5574,6 +5581,10 @@ export const DE: Record<string, string> = {
   "Purlin section": "Pfettenquerschnitt",
   "Ridge beam section": "Firstpfettenquerschnitt",
   "Wall plate section": "Fußpfettenquerschnitt",
+  "Wall plate laid flat": "Fußpfette flach liegend",
+  "Ridge beam laid flat": "Firstpfette flach liegend",
+  "Purlins laid flat": "Pfetten flach liegend",
+  "Collar ties laid flat": "Kehlbalken flach liegend",
   "Unfolded covering": "Abgewickelte Dachdeckung",
   "Explode roof": "Dach auflösen",
   "Show door or window open or closed": "Tür oder Fenster offen oder geschlossen zeigen",
@@ -7189,6 +7200,10 @@ export const DE: Record<string, string> = {
   "Change roof panel profile": "Dachpaneel-Profil ändern",
   "Delete roof panel profile": "Dachpaneel-Profil löschen",
   "Import roof panel profiles": "Dachpaneel-Profile importieren",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "Gemessen als",
+  "No measure": "Kein Maß",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "Ein platziertes Bauteil gibt diesen Parameter als Menge dieser Art aus, für Kostenpositionen, Listen und IFC",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

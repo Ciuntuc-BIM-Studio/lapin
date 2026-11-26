@@ -11499,6 +11499,13 @@ export const TH: Record<string, string> = {
   "Pattern saved.": "บันทึกลายแล้ว.",
   "This pattern has no line families to copy.": "ลายนี้ไม่มีกลุ่มเส้นให้คัดลอก.",
   "The pattern could not be deleted.": "ไม่สามารถลบลายได้.",
+  "Blank: one line at 45°": "ว่าง: เส้นเดียวที่ 45°",
+  "A copy of {name}: change it, then Make pattern.": "สำเนาของ {name}: แก้ไขแล้วกด สร้างลาย.",
+  "Built-in patterns are fixed: Duplicate one to make a copy you can change.": "ลายในตัวแก้ไขไม่ได้: ทำสำเนา เพื่อได้สำเนาที่แก้ไขได้.",
+  "Change its numbers, then Save. Duplicate starts a new pattern from it.": "แก้ไขตัวเลขแล้วกด บันทึก. ทำสำเนา จะเริ่มลายใหม่จากลายนี้.",
+  "The pattern could not be read.": "ไม่สามารถอ่านลายได้.",
+  "Delete this pattern": "ลบลายนี้",
+  "A new pattern starting from this one": "ลายใหม่ที่เริ่มจากลายนี้",
   "The project has no pattern of its own to export.": "โครงการไม่มีลายของตัวเองให้ส่งออก.",
   "Patterns exported.": "ส่งออกลายแล้ว.",
   "{n} hatch pattern(s) loaded{skipped}, and kept in My patterns on this computer.": "โหลดลายแฮตช์ {n} ลาย{skipped} และเก็บไว้ใน My patterns บนคอมพิวเตอร์เครื่องนี้.",
@@ -11585,6 +11592,10 @@ export const TH: Record<string, string> = {
   "Purlin section": "หน้าตัดแป",
   "Ridge beam section": "หน้าตัดคานสันหลังคา",
   "Wall plate section": "หน้าตัดไม้รับหลังคาบนผนัง",
+  "Wall plate laid flat": "ไม้รับหลังคาบนผนังวางแบน",
+  "Ridge beam laid flat": "คานสันหลังคาวางแบน",
+  "Purlins laid flat": "แปวางแบน",
+  "Collar ties laid flat": "คานรัดจันทันวางแบน",
   "Unfolded covering": "วัสดุมุงคลี่ออก",
   "Explode roof": "แยกส่วนหลังคา",
   "Show door or window open or closed": "แสดงประตูหรือหน้าต่างแบบเปิดหรือปิด",
@@ -13348,6 +13359,10 @@ export const TH: Record<string, string> = {
   "Change roof panel profile": "เปลี่ยนโปรไฟล์แผงหลังคา",
   "Delete roof panel profile": "ลบโปรไฟล์แผงหลังคา",
   "Import roof panel profiles": "นำเข้าโปรไฟล์แผงหลังคา",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "วัดเป็น",
+  "No measure": "ไม่มีการวัด",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "ชิ้นส่วนที่วางแล้วให้พารามิเตอร์นี้เป็นปริมาณชนิดนั้น สำหรับรายการต้นทุน ตารางรายการ และ IFC",
 };
 
 /** Phrases with a number or a name in them. */

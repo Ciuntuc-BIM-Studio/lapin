@@ -142,6 +142,38 @@ public static class ArticleQuantities
     }
 }
 
+/// <summary>
+/// Quantities an element's author marked as its measures (a Studio part's parameters marked Length, Count, Area or Volume, R6 of
+/// docs/plan-forum-round-1126.md), worked out on every ask: a set of the whole element named <see cref="Set"/> (Lapin's own, never
+/// Qto_), each quantity named by its parameter's key. An article that measures the whole element by one of these measures reads
+/// the first of them before the element's own quantities (a fence of L = 20 m priced at 20 m, not by its volume); a count read
+/// from it is its value, not one an element.
+/// </summary>
+public static class AuthoredQuantities
+{
+    public const string Set = "Lapin_PartQuantities";
+
+    /// <summary>The measures a part's parameter may be marked as, and IFC's kind of quantity for each.</summary>
+    public static readonly (string Measure, string Kind)[] Measures = [("length", "LENGTH"), ("count", "COUNT"), ("area", "AREA"), ("volume", "VOLUME")];
+
+    /// <summary>IFC's kind of quantity for a measure; null when it is none of <see cref="Measures"/>.</summary>
+    public static string? KindOf(string? measure) => Measures.FirstOrDefault(x => x.Measure == measure).Kind;
+
+    /// <summary>Whether a set is one of these.</summary>
+    public static bool Is(QuantitySet s) => s.Name == Set && s.Part == null;
+
+    /// <summary>
+    /// The value an article's basis reads off such a set: a measure (length, count, area, volume, gross area, gross volume) its first
+    /// quantity of that kind, any other basis the quantity of that name; null when the set has none.
+    /// </summary>
+    public static double? Pick(QuantitySet s, string basis)
+    {
+        var kind = basis switch { "grossArea" => "AREA", "grossVolume" => "VOLUME", _ => KindOf(basis) };
+        if (kind != null) return s.Quantities.FirstOrDefault(q => q.Kind == kind)?.Value;
+        return basis is "weight" ? null : s.Quantities.FirstOrDefault(q => q.Name == basis)?.Value;
+    }
+}
+
 /// <summary>An article's price as the project's price lists give it: the list's row (its unit, its unit price in the list's currency, where it was taken from).</summary>
 public sealed record ArticlePrice(string Code, string Name, string Unit, double Price, string Currency, string List, bool Indicative,
     string? Source = null, string? Url = null, string? Checked = null);

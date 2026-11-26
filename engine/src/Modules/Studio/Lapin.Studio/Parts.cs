@@ -750,6 +750,7 @@ public static class Parts
                 if (PartParams.FormulaOf(p.Source) is { } formula) o["formula"] = formula;
                 foreach (var bound in new[] { "min", "max" }) if (Num(p.Source[bound]) is { } bv) o[bound] = bv;
                 foreach (var t in new[] { "unit", "group", "description" }) if ((string?)p.Source[t] is { } s) o[t] = s;
+                if (PartParams.MeasureOf(p.Source) is { } measure) o["measure"] = measure;
                 if (shown["problem"] is { } problem) o["problem"] = problem.DeepClone();
                 ps.Add((JsonNode)o);
             }

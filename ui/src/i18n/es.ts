@@ -5550,6 +5550,13 @@ export const ES: Record<string, string> = {
   "Pattern saved.": "Patrón guardado.",
   "This pattern has no line families to copy.": "Este patrón no tiene familias de líneas que copiar.",
   "The pattern could not be deleted.": "No se pudo eliminar el patrón.",
+  "Blank: one line at 45°": "En blanco: una línea a 45°",
+  "A copy of {name}: change it, then Make pattern.": "Una copia de {name}: cámbiela y luego Crear patrón.",
+  "Built-in patterns are fixed: Duplicate one to make a copy you can change.": "Los patrones integrados son fijos: Duplicar uno crea una copia que puede cambiar.",
+  "Change its numbers, then Save. Duplicate starts a new pattern from it.": "Cambie sus números y luego Guardar. Duplicar empieza un patrón nuevo a partir de él.",
+  "The pattern could not be read.": "No se pudo leer el patrón.",
+  "Delete this pattern": "Eliminar este patrón",
+  "A new pattern starting from this one": "Un patrón nuevo a partir de este",
   "The project has no pattern of its own to export.": "El proyecto no tiene patrones propios que exportar.",
   "Patterns exported.": "Patrones exportados.",
   "{n} hatch pattern(s) loaded{skipped}, and kept in My patterns on this computer.": "{n} patrón(es) de sombreado cargado(s){skipped} y guardado(s) en Mis patrones en este equipo.",
@@ -5616,6 +5623,10 @@ export const ES: Record<string, string> = {
   "Purlin section": "Sección de las correas",
   "Ridge beam section": "Sección de la viga cumbrera",
   "Wall plate section": "Sección de la carrera",
+  "Wall plate laid flat": "Carrera colocada en plano",
+  "Ridge beam laid flat": "Viga cumbrera colocada en plano",
+  "Purlins laid flat": "Correas colocadas en plano",
+  "Collar ties laid flat": "Tirantes altos colocados en plano",
   "Unfolded covering": "Cobertura desplegada",
   "Explode roof": "Descomponer cubierta",
   "Show door or window open or closed": "Mostrar la puerta o la ventana abierta o cerrada",
@@ -7231,6 +7242,10 @@ export const ES: Record<string, string> = {
   "Change roof panel profile": "Cambiar perfil de paneles de cubierta",
   "Delete roof panel profile": "Eliminar perfil de paneles de cubierta",
   "Import roof panel profiles": "Importar perfiles de paneles de cubierta",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "Medido como",
+  "No measure": "Sin medida",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "Una pieza colocada da este parámetro como una cantidad de ese tipo, para las partidas de coste, las tablas y el IFC",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

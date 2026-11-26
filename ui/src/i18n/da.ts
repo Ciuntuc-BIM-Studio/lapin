@@ -5545,6 +5545,13 @@ export const DA: Record<string, string> = {
   "Pattern saved.": "Mønster gemt.",
   "This pattern has no line families to copy.": "Dette mønster har ingen linjefamilier at kopiere.",
   "The pattern could not be deleted.": "Mønsteret kunne ikke slettes.",
+  "Blank: one line at 45°": "Tom: én linje i 45°",
+  "A copy of {name}: change it, then Make pattern.": "En kopi af {name}: ret den, og vælg så Opret mønster.",
+  "Built-in patterns are fixed: Duplicate one to make a copy you can change.": "Indbyggede mønstre er faste: Duplikér et for at få en kopi, du kan ændre.",
+  "Change its numbers, then Save. Duplicate starts a new pattern from it.": "Ret tallene, og vælg så Gem. Duplikér starter et nyt mønster ud fra det.",
+  "The pattern could not be read.": "Mønsteret kunne ikke læses.",
+  "Delete this pattern": "Slet dette mønster",
+  "A new pattern starting from this one": "Et nyt mønster ud fra dette",
   "The project has no pattern of its own to export.": "Projektet har ingen egne mønstre at eksportere.",
   "Patterns exported.": "Mønstre eksporteret.",
   "{n} hatch pattern(s) loaded{skipped}, and kept in My patterns on this computer.": "{n} skraveringsmønster(mønstre) indlæst{skipped} og gemt i Mine mønstre på denne computer.",
@@ -5611,6 +5618,10 @@ export const DA: Record<string, string> = {
   "Purlin section": "Åsens tværsnit",
   "Ridge beam section": "Kip-åsens tværsnit",
   "Wall plate section": "Remmens tværsnit",
+  "Wall plate laid flat": "Remmen lagt fladt",
+  "Ridge beam laid flat": "Kip-åsen lagt fladt",
+  "Purlins laid flat": "Åsene lagt fladt",
+  "Collar ties laid flat": "Hanebåndene lagt fladt",
   "Unfolded covering": "Udfoldet tagdækning",
   "Explode roof": "Eksplodér tag",
   "Show door or window open or closed": "Vis døren eller vinduet åbent eller lukket",
@@ -7226,6 +7237,10 @@ export const DA: Record<string, string> = {
   "Change roof panel profile": "Ændr tagpladeprofil",
   "Delete roof panel profile": "Slet tagpladeprofil",
   "Import roof panel profiles": "Importér tagpladeprofiler",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "Måles som",
+  "No measure": "Intet mål",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "En placeret del giver denne parameter som en mængde af den art, til omkostningsposter, skemaer og IFC",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

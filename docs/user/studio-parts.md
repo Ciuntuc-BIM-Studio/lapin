@@ -50,6 +50,7 @@ The panel on the left of the view lists what the part is made of, and is read ag
 - **This object**: this object's own value, for an *instance* parameter. A *type* parameter shows only its default, the same for every object, and a derived one shows `= value`, with its formula on hover.
 - **Inst.**: instance (each object may have its own value) or type (the part's value for all). Changing an instance parameter to type drops the objects' own values, and the table says so.
 - **Pub.**: published, shown in the object's Properties in the model. A parameter you leave unpublished is the part's inner working.
+- **Measure as**: *No measure* (the default), or **Length**, **Count**, **Area** or **Volume**: a placed part then gives this parameter as a quantity of that kind, so the estimate can price it by it (see below). Only a length or a number can be a measure.
 - **⋯**: the row menu opens the rest: the key (renaming it renames it in formulas), label, description, group, minimum and maximum, kind and unit, **Move up**, **Move down** and **Delete**. The engine refuses a **Delete** while a formula or a sketch's dimension still uses the parameter, and says where, under the row.
 
 **+ Parameter** adds one of the kind picked beside it: length, number, angle, yes/no, text or whole number. Every change is one undo step.
@@ -67,6 +68,12 @@ The panel on the left of the view lists what the part is made of, and is read ag
 ## In the model: the published parameters
 
 Back in the model, a placed part's Properties show **only its published parameters**. An instance parameter is a field to edit for this object (an empty field is the part's default); a type parameter is read-only, with a *type* badge, since it belongs to the part; a derived one is read-only with a *formula* badge and its formula on hover. **Edit part (Tab)** goes into the edit mode, where the rest is set up.
+
+## A part's values in schedules, filters and the estimate
+
+A placed part's **published parameters**, derived ones too, are fields of the element, named by their keys: a field schedule's column **L** lists each placed part's length, **N** its derived count of posts, a formula column `= L * N` works them out, a filter's rule *L is greater than 10* takes the longer ones, and a tag or live text writes `{L}` (in the project's unit). They are worked out on every ask from the part and the object's own values, so a schedule follows a value you change at once; nothing is stored on the element. In the field picker they are among **Its parameters**, in the set `Lapin_PartParameters` (`Lapin_PartParameters.L` names one when another field has the same name). An unpublished parameter is no field.
+
+A parameter marked **Measure as** in the table is also a **quantity** of the placed part, in Lapin's own set `Lapin_PartQuantities` (`Lapin_PartQuantities.L` in a schedule, the quantities' group in the field picker). The estimate's articles on the part (**Construction → Map articles…**, the part is a type like any other) read it first: a fence part whose **L** is marked Length, priced by an article in metres, costs 20 m for a fence of L = 20 m, not its volume; a whole number **N** marked Count, priced by the piece, gives N pieces per placed part. An article by a measure the part has not marked reads the part's body as before (its volume, its surface). IFC export writes the marked parameters as the element's `Lapin_PartQuantities` quantity set, beside its base quantities.
 
 ## Constrain part: a part's own sketches
 

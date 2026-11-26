@@ -51,6 +51,9 @@ public static class Roof
         return (w * unit, d * unit);
     }
 
+    /// <summary>A section as laid: on edge as written (width across, depth up), or flat, turned 90° (the two swapped).</summary>
+    public static (double W, double D) Laid((double W, double D) section, bool flat) => flat ? (section.D, section.W) : section;
+
     /// <summary>
     /// A roof read from the model: its outline, its rules, the height of its
     /// wall plates' underside (the storey's top + the eave offset). Its planes
@@ -77,11 +80,15 @@ public static class Roof
         /// <summary>The covering chosen, as thick as the roof says (<c>coveringThickness</c>, a foreign roof's, decision 334), else the catalogue's.</summary>
         public RoofCatalog.Covering Covering => RoofCatalog.CoveringOf(Roof.Str("covering")) is var c && Roof.NumOrNull("coveringThickness") is { } t && t > 0.001 ? c with { Thickness = t } : c;
         public (double W, double D) Rafter => Section(Roof.Str("rafterSection"), (0.08, 0.16));
-        /// <summary>Configurable sections for wall plates, ridge beams, purlins, and collar ties (defaulting to the standard sections).</summary>
-        public (double W, double D) WallPlateSection => Section(Roof.Str("plateSection"), WallPlate);
-        public (double W, double D) RidgeBeamSection => Section(Roof.Str("ridgeSection"), RidgeBeam);
-        public (double W, double D) PurlinSection => Section(Roof.Str("purlinSection"), Purlin);
-        public (double W, double D) CollarSection => Section(Roof.Str("collarSection"), Rafter);
+        /// <summary>
+        /// Configurable sections for wall plates, ridge beams, purlins, and collar ties (defaulting to the standard sections), each
+        /// as it is laid: on edge, or flat when the roof says so (<c>plateFlat</c>, <c>ridgeFlat</c>, <c>purlinFlat</c>,
+        /// <c>collarFlat</c>; forum round 26.11.2026, R1), its width and depth then swapped for every use of it.
+        /// </summary>
+        public (double W, double D) WallPlateSection => Laid(Section(Roof.Str("plateSection"), WallPlate), Roof.Bool("plateFlat"));
+        public (double W, double D) RidgeBeamSection => Laid(Section(Roof.Str("ridgeSection"), RidgeBeam), Roof.Bool("ridgeFlat"));
+        public (double W, double D) PurlinSection => Laid(Section(Roof.Str("purlinSection"), Purlin), Roof.Bool("purlinFlat"));
+        public (double W, double D) CollarSection => Laid(Section(Roof.Str("collarSection"), Rafter), Roof.Bool("collarFlat"));
         /// <summary>The planes' height over the wall line: on the plates when framed.</summary>
         public double BaseZ => PlateZ + (Framed ? WallPlateSection.D : 0);
         /// <summary>A roof without framing: its deck's thickness (decision 329), the roof's own, else 16 cm.</summary>

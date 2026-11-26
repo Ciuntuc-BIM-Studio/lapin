@@ -5511,6 +5511,13 @@ export const IT: Record<string, string> = {
   "Pattern saved.": "Motivo salvato.",
   "This pattern has no line families to copy.": "Questo motivo non ha famiglie di linee da copiare.",
   "The pattern could not be deleted.": "Non è stato possibile eliminare il motivo.",
+  "Blank: one line at 45°": "Vuoto: una linea a 45°",
+  "A copy of {name}: change it, then Make pattern.": "Una copia di {name}: modificala, poi Crea motivo.",
+  "Built-in patterns are fixed: Duplicate one to make a copy you can change.": "I motivi integrati sono fissi: Duplica crea una copia che puoi modificare.",
+  "Change its numbers, then Save. Duplicate starts a new pattern from it.": "Modifica i suoi numeri, poi Salva. Duplica avvia un nuovo motivo a partire da questo.",
+  "The pattern could not be read.": "Non è stato possibile leggere il motivo.",
+  "Delete this pattern": "Elimina questo motivo",
+  "A new pattern starting from this one": "Un nuovo motivo a partire da questo",
   "The project has no pattern of its own to export.": "Il progetto non ha motivi propri da esportare.",
   "Patterns exported.": "Motivi esportati.",
   "{n} hatch pattern(s) loaded{skipped}, and kept in My patterns on this computer.": "{n} motivo/i di campitura caricato/i{skipped} e conservato/i in I miei motivi su questo computer.",
@@ -5577,6 +5584,10 @@ export const IT: Record<string, string> = {
   "Purlin section": "Sezione degli arcarecci",
   "Ridge beam section": "Sezione della trave di colmo",
   "Wall plate section": "Sezione del dormiente",
+  "Wall plate laid flat": "Dormiente posato di piatto",
+  "Ridge beam laid flat": "Trave di colmo posata di piatto",
+  "Purlins laid flat": "Arcarecci posati di piatto",
+  "Collar ties laid flat": "Catene alte posate di piatto",
   "Unfolded covering": "Copertura sviluppata",
   "Explode roof": "Esplodi tetto",
   "Show door or window open or closed": "Mostra la porta o la finestra aperta o chiusa",
@@ -7192,6 +7203,10 @@ export const IT: Record<string, string> = {
   "Change roof panel profile": "Modifica profilo dei pannelli di copertura",
   "Delete roof panel profile": "Elimina profilo dei pannelli di copertura",
   "Import roof panel profiles": "Importa profili dei pannelli di copertura",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "Misurato come",
+  "No measure": "Nessuna misura",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "Un pezzo posizionato dà questo parametro come quantità di quel tipo, per le voci di costo, gli abachi e l'IFC",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

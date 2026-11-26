@@ -153,6 +153,15 @@ To change one element's hatch in one view only (a strip foundation's hatch scale
 
 ![A pattern made from its numbers](shots/hatch-patterns-family.webp)
 
+Click a pattern's name to open it. **This project**'s own patterns are edited in place: change the angle, origin, deltas and dashes, the name, the description or the units, then **Save**. The built-in ones are fixed (their fields are greyed out); to change one, use it as the start of your own:
+
+- **Duplicate** (any pattern with lines or a tile, built in or your own) opens a new pattern that starts as a copy of it, named *NAME-COPY*; change it, then **Make pattern**. Nothing is saved before that.
+- **New pattern → Start from** does the same from the list: choose the pattern to start from, or *Blank* for one line at 45°.
+
+![A new pattern started from a built-in one](shots/hatch-patterns-start-from.webp)
+
+**Delete** (in the editor, or the bin beside a project pattern in the list) removes a pattern of the project, after asking. A pattern in use says in how many places it is named: deleted anyway, materials, standards and sets lose that hatch, and drafted hatches take the 45° lines (*LINES45*); the elements themselves stay as they are, and **Undo** brings it all back in one step. The built-in patterns cannot be deleted.
+
 ### Save as hatch pattern
 
 Draw the pattern with lines, polylines, arcs and circles in any view (a brick bond, a tile joint), select them and choose **Draft → Fill → Save as hatch pattern** (or type **SAVEHATCH**). Click two corners for the cell (or <kbd>Enter</kbd> for the drawing's bounds), then name it and choose **Drafting** or **Real size** units.

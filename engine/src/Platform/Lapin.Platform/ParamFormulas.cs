@@ -87,6 +87,8 @@ public static class ParamFormulas
                 if (v.TryGetValue<string>(out var s)) return XValue.Read(s);
             }
         }
+        // A field its own definition names (a placed part's parameters, L or a derived N), worked out on every ask.
+        if (DerivedFields.FindNamed(m, e, name) is { } own) return own.AsValue;
         // A property of a set the file gave it, named with its set (Pset_WallCommon.FireRating, Pset_Firma.CodLucrare).
         if (name.Contains('.') && (TagText.ImportedNode(e, name) ?? TagText.ImportedNode(type, name)) is { } setProperty) return Imported(setProperty);
         foreach (var x in new[] { e, type })

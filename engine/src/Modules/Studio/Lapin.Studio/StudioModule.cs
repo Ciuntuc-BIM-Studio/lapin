@@ -110,7 +110,8 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
                 new("topThickness", "Top thickness", "length", Min: 0.001),
             ], "#b9b2a6"));
             r.Geometry(cls, Geometry);
-            r.Quantities(cls, Quantities);
+            // With a placed part's parameters marked as measures (R6), Lapin_PartQuantities.
+            r.Quantities(cls, (e, g, m) => PartFields.Quantities(m, e) is { } measured ? [.. Quantities(e, g, m), measured] : Quantities(e, g, m));
             // Studio solids give way to the building's elements; furniture to everything.
             r.Cutter(cls, cls == "IfcFurnishingElement" ? 10 : 40, (e, m) => !IsVoid(e) && !IsOpenSurface(e) && Geometry(e, m, null)?.Parts is [{ } only] ? only.Solid : null);
         }
@@ -119,6 +120,8 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         // Parts (decision 517): a solid type carrying a definition, placed as Studio solids; the families of the user's own
         // (docs/plan-user-extensibility.md §5.6) are parts now, their commands shortcuts onto the parts' and saved ones upgraded.
         Parts.Register(r);
+        // A placed part's published parameters as its fields (schedules, filters, formulas, tags), worked out on every ask (R6).
+        PartFields.Register();
         Families.Register(r);
         PartMembers.Register(r);
         // A part in IFC (P3): its class's type with the body of its defaults as its map, its parameters in Lapin_PartParameters.

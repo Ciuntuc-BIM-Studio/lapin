@@ -11499,6 +11499,13 @@ export const SV: Record<string, string> = {
   "Pattern saved.": "Mönstret är sparat.",
   "This pattern has no line families to copy.": "Det här mönstret har inga linjefamiljer att kopiera.",
   "The pattern could not be deleted.": "Mönstret kunde inte tas bort.",
+  "Blank: one line at 45°": "Tomt: en linje i 45°",
+  "A copy of {name}: change it, then Make pattern.": "En kopia av {name}: ändra den och välj sedan Skapa mönster.",
+  "Built-in patterns are fixed: Duplicate one to make a copy you can change.": "Inbyggda mönster är fasta: Duplicera ett för att få en kopia du kan ändra.",
+  "Change its numbers, then Save. Duplicate starts a new pattern from it.": "Ändra dess tal och välj sedan Spara. Duplicera startar ett nytt mönster utifrån det.",
+  "The pattern could not be read.": "Mönstret kunde inte läsas.",
+  "Delete this pattern": "Ta bort detta mönster",
+  "A new pattern starting from this one": "Ett nytt mönster utifrån detta",
   "The project has no pattern of its own to export.": "Projektet har inget eget mönster att exportera.",
   "Patterns exported.": "Mönstren är exporterade.",
   "{n} hatch pattern(s) loaded{skipped}, and kept in My patterns on this computer.": "{n} skrafferingsmönster inlästa{skipped} och sparade i Mina mönster på den här datorn.",
@@ -11585,6 +11592,10 @@ export const SV: Record<string, string> = {
   "Purlin section": "Sektion för åsstolpe",
   "Ridge beam section": "Sektion för nockbjälke",
   "Wall plate section": "Sektion för hammarband",
+  "Wall plate laid flat": "Hammarband liggande",
+  "Ridge beam laid flat": "Nockbjälke liggande",
+  "Purlins laid flat": "Åsar liggande",
+  "Collar ties laid flat": "Hanbjälkar liggande",
   "Unfolded covering": "Utvecklad beklädnad",
   "Explode roof": "Spräng takets delar",
   "Show door or window open or closed": "Visa dörr eller fönster öppet eller stängt",
@@ -13348,6 +13359,10 @@ export const SV: Record<string, string> = {
   "Change roof panel profile": "Ändra takpanelprofil",
   "Delete roof panel profile": "Ta bort takpanelprofil",
   "Import roof panel profiles": "Importera takpanelprofiler",
+  // A part parameter marked as a measure (R6).
+  "Measure as": "Mäts som",
+  "No measure": "Inget mått",
+  "A placed part gives this parameter as a quantity of that kind, for cost articles, schedules and IFC": "En placerad del ger denna parameter som en mängd av det slaget, för kostnadsposter, förteckningar och IFC",
 };
 
 /** Phrases with a number or a name in them. */
