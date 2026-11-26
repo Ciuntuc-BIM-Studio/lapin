@@ -8,7 +8,7 @@
 import { create } from 'zustand';
 import { activate } from '../../platform/modules';
 import { promptText } from '../../shell/prompts';
-import { BrickWall, Combine, Landmark, TrainFrontTunnel as TunnelIcon, Crop, Hexagon, Layers, MousePointerClick, PenLine, Scissors, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, ImagePlus, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, TrendingDown, Waves } from 'lucide-react';
+import { BrickWall, Cloud, Combine, Globe, Landmark, TrainFrontTunnel as TunnelIcon, Crop, Hexagon, Layers, MousePointerClick, PenLine, Scissors, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, ImagePlus, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, TrendingDown, Waves } from 'lucide-react';
 import { PlatformIcon, TerrainIcon } from '../../icons';
 import type { Grip, Grip3D, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
@@ -44,6 +44,7 @@ const HardscapeTypesDialog = lazyPart(() => import('./HardscapeTypesDialog').the
 const EntourageKindsDialog = lazyPart(() => import('./EntourageKindsDialog').then((m) => m.EntourageKindsDialog), { title: 'Entourage kinds' });
 const PortalDialog = lazyPart(() => import('./PortalDialog').then((m) => m.PortalDialog), { title: 'Portal or abutment' });
 const TunnelDialog = lazyPart(() => import('./TunnelDialog').then((m) => m.TunnelDialog), { title: 'Tunnel lining' });
+const MapImportDialog = lazyPart(() => import('./MapImportDialog').then((m) => m.MapImportDialog), { title: 'Import from map' });
 
 /** The lowest surveyed elevation, rounded down to the metre: what ±0.00 defaults to. */
 function lowest(text: string): number | null {
@@ -149,21 +150,137 @@ const cityJson: ToolDef = {
   }),
 };
 
-/** An orthophoto: a JPEG or PNG and its world file (.jgw, .pgw, .wld), picked together. */
+/** An orthophoto: a GeoTIFF, or a JPEG/PNG with its world file (.jgw, .pgw, .wld). */
 const orthophoto: ToolDef = {
   id: 'civil.orthophoto', label: 'Orthophoto', icon: ImageIcon,
-  run: () => void pickFiles('.jpg,.jpeg,.png,.jgw,.pgw,.wld,.jpgw,.pngw').then(async (files) => {
+  run: () => void pickFiles('.tif,.tiff,.jpg,.jpeg,.png,.tfw,.jgw,.pgw,.wld,.jpgw,.pngw').then(async (files) => {
     if (!files.length) return;
-    const image = files.find((f) => /\.(jpe?g|png)$/i.test(f.file.name));
-    const world = files.find((f) => /\.(jgw|pgw|wld|jpgw|pngw)$/i.test(f.file.name));
-    if (!image) { notify('Pick the image (JPEG or PNG) and its world file together.'); return; }
-    if (!world) { notify('Pick the image together with its world file (.jgw, .pgw or .wld): it says where the image lies.'); return; }
+    const tiff = files.find((f) => /\.tiff?$/i.test(f.file.name));
+    const image = tiff ?? files.find((f) => /\.(jpe?g|png)$/i.test(f.file.name));
+    const world = files.find((f) => /\.(tfw|jgw|pgw|wld|jpgw|pngw)$/i.test(f.file.name));
+    if (!image) { notify('Pick a GeoTIFF, or a JPEG/PNG together with its world file.'); return; }
+    if (!tiff && !world) { notify('Pick the image together with its world file (.jgw, .pgw or .wld): it says where the image lies.'); return; }
     const data = await toBase64(image.file);
-    const mime = /png$/i.test(image.file.name) ? 'image/png' : 'image/jpeg';
+    const mime = tiff ? 'image/tiff' : /png$/i.test(image.file.name) ? 'image/png' : 'image/jpeg';
     const storeyId = useUi.getState().storeyId;
-    const r = await execute('civil.addOrthophoto', { data, mime, name: image.file.name.replace(/\.[^.]+$/, ''), worldFile: await world.file.text(), ...(storeyId ? { storeyId } : {}) });
+    const r = await execute('civil.addOrthophoto', {
+      data, mime, name: image.file.name.replace(/\.[^.]+$/, ''),
+      ...(world ? { worldFile: await world.file.text() } : {}),
+      ...(storeyId ? { storeyId } : {}),
+    });
     if (r) notify('Orthophoto laid under the site.');
   }),
+};
+
+/** Interactive online map picker: terrain from elevation tiles + draped orthophoto. */
+const fromMap: ToolDef = {
+  id: 'civil.fromMap', label: 'From map…', icon: Globe,
+  run: () => useUi.setState({ dialog: 'mapImport' }),
+};
+
+/** A terrain from a GeoTIFF DEM raster (.tif / .tiff, optionally with a .tfw world file). */
+const terrainFromDem: ToolDef = {
+  id: 'civil.dem', label: 'DEM / GeoTIFF', icon: Mountain,
+  run: () => void pickFiles('.tif,.tiff,.tfw,.wld').then(async (files) => {
+    if (!files.length) return;
+    const tiff = files.find((f) => /\.tiff?$/i.test(f.file.name));
+    const world = files.find((f) => /\.(tfw|wld)$/i.test(f.file.name));
+    if (!tiff) { notify('Pick a GeoTIFF DEM file (.tif or .tiff).'); return; }
+    const tolStr = promptText('Vertical tolerance for TIN simplification ({unit}):', formatLength(0.25, levelUnit()), { unit: unitName(levelUnit()) });
+    if (tolStr == null) return;
+    const maxError = Math.max(0.01, parseLevel(tolStr) ?? 0.25);
+    const data = await toBase64(tiff.file);
+    const storeyId = useUi.getState().storeyId;
+    const r = await execute('civil.importDem', {
+      data, name: tiff.file.name.replace(/\.[^.]+$/, ''), maxError,
+      ...(world ? { worldFile: await world.file.text() } : {}),
+      ...(storeyId ? { storeyId } : {}),
+    }) as { points: number; gridWidth: number; gridHeight: number } | null;
+    if (r) notify(`Terrain created from ${r.gridWidth}×${r.gridHeight} DEM (${r.points} TIN points).`);
+  }),
+};
+
+/** A terrain from a grayscale heightmap image (PNG/JPEG) + min/max elevation + world file or size. */
+const terrainFromHeightmap: ToolDef = {
+  id: 'civil.heightmap', label: 'Heightmap', icon: ImageIcon,
+  run: () => void pickFiles('.png,.jpg,.jpeg,.pgw,.jgw,.wld').then(async (files) => {
+    if (!files.length) return;
+    const image = files.find((f) => /\.(png|jpe?g)$/i.test(f.file.name));
+    const world = files.find((f) => /\.(pgw|jgw|wld)$/i.test(f.file.name));
+    if (!image) { notify('Pick a grayscale heightmap image (PNG or JPEG).'); return; }
+    const rangeStr = promptText('Min and max elevation (m, e.g. 0, 50):', '0, 50');
+    if (rangeStr == null) return;
+    const [minZ, maxZ] = rangeStr.split(/[\s,;]+/).map(Number);
+    if (!Number.isFinite(minZ) || !Number.isFinite(maxZ) || maxZ <= minZ) { notify('Enter two numbers: min, max elevation (max > min).'); return; }
+    let corners: [[number, number], [number, number], [number, number], [number, number]] | undefined;
+    let worldFile: string | undefined;
+    if (world) worldFile = await world.file.text();
+    else {
+      const sizeStr = promptText('Ground width and height (m, e.g. 200, 200):', '200, 200');
+      if (sizeStr == null) return;
+      const [wM, hM] = sizeStr.split(/[\s,;]+/).map(Number);
+      if (!(wM > 0 && hM > 0)) { notify('Enter positive width and height in metres.'); return; }
+      corners = [[0, hM], [wM, hM], [wM, 0], [0, 0]];
+    }
+    const { decodeHeightmapImage } = await import('./mapTiles');
+    const decoded = await decodeHeightmapImage(image.file, minZ, maxZ, 512);
+    const storeyId = useUi.getState().storeyId;
+    const r = await execute('civil.importDem', {
+      width: decoded.width, height: decoded.height, heightsF32: decoded.heightsF32,
+      name: image.file.name.replace(/\.[^.]+$/, ''),
+      ...(worldFile ? { worldFile } : { corners }),
+      ...(storeyId ? { storeyId } : {}),
+    }) as { points: number } | null;
+    if (r) notify(`Terrain created from heightmap (${r.points} TIN points).`);
+  }),
+};
+
+/** A terrain from a linked LiDAR / point cloud (LAS, LAZ, E57, PLY, XYZ), filtering ASPRS Ground class 2 when present. */
+const terrainFromPointCloud: ToolDef = {
+  id: 'civil.pointCloudTerrain', label: 'From point cloud', icon: Cloud,
+  run: async () => {
+    const nodes = useSession.getState().nodes;
+    const clouds = [...nodes.values()].filter((n) => n.type === 'LapinLink' && n.props.kind === 'pointcloud');
+    if (clouds.length === 0) { notify('Link a point cloud first (Insert → Link point cloud, LAS/LAZ/E57/PLY/XYZ).'); return; }
+    const selected = useUi.getState().selected;
+    const link = clouds.find((c) => selected.includes(c.id)) ?? clouds[0];
+    const info = await query<{ name: string; points: number; groundPoints: number; hasClassification: boolean }>('civil.pointCloudTerrainInfo', { linkId: link.id });
+    if (!info) return;
+    const groundNote = info.groundPoints >= 3 ? `${info.groundPoints.toLocaleString()} ground points` : `${info.points.toLocaleString()} points (no ground class)`;
+    const stepStr = promptText(`Point cloud „${info.name}” (${groundNote}).\nGrid step (m) for ground binning:`, '1');
+    if (stepStr == null) return;
+    const gridStep = Math.max(0.1, Number(stepStr.replace(',', '.')) || 1);
+    const storeyId = useUi.getState().storeyId;
+    const r = await execute('civil.terrainFromPointCloud', {
+      linkId: link.id, gridStep, groundOnly: true,
+      ...(storeyId ? { storeyId } : {}),
+    }) as { points: number; sourcePoints: number; usedGroundClass: boolean } | null;
+    if (r) notify(`Terrain created from ${r.sourcePoints.toLocaleString()} ${r.usedGroundClass ? 'ground ' : ''}point cloud points (${r.points} TIN points).`);
+  },
+};
+
+/** Context building masses extracted from a linked classified LiDAR point cloud (ASPRS class 6). */
+const buildingsFromPointCloud: ToolDef = {
+  id: 'civil.pointCloudBuildings', label: 'Buildings from point cloud', icon: Building2,
+  run: async () => {
+    const nodes = useSession.getState().nodes;
+    const clouds = [...nodes.values()].filter((n) => n.type === 'LapinLink' && n.props.kind === 'pointcloud');
+    if (clouds.length === 0) { notify('Link a classified point cloud first (Insert → Link point cloud, LAS/LAZ).'); return; }
+    const selected = useUi.getState().selected;
+    const link = clouds.find((c) => selected.includes(c.id)) ?? clouds[0];
+    const info = await query<{ name: string; buildingPoints?: number }>('civil.pointCloudTerrainInfo', { linkId: link.id });
+    if (!info) return;
+    if (!info.buildingPoints || info.buildingPoints < 3) { notify(`Point cloud „${info.name}” has no building-classified points (ASPRS class 6).`); return; }
+    const stepStr = promptText(`Point cloud „${info.name}” (${info.buildingPoints.toLocaleString()} building points).\nGrid resolution (m) for footprint extraction:`, '1');
+    if (stepStr == null) return;
+    const gridStep = Math.max(0.25, Number(stepStr.replace(',', '.')) || 1);
+    const storeyId = useUi.getState().storeyId;
+    const r = await execute('civil.buildingsFromPointCloud', {
+      linkId: link.id, gridStep,
+      ...(storeyId ? { storeyId } : {}),
+    }) as { count: number } | null;
+    if (r) notify(`Extracted ${r.count} context building(s) from point cloud.`);
+  },
 };
 
 async function toBase64(f: File): Promise<string> {
@@ -499,7 +616,7 @@ const civil: LapinModule = {
     groups: [
       { label: 'Terrain', tools: [terrainFromFile, flatTerrain, terrainOnOutline, parcel], small: [terrainOnPicked, terrainBoundary, splitTerrain, mergeTerrains, slopeTag, terrainFromLandXml, landXmlOut, spot, breaklineFromLinework] },
       { label: 'Grading', tools: [featureLine, contourAt, dragContour, gradeBetweenEdges, slopeToGround], small: [sectionLine, profileOnLine] },
-      { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
+      { label: 'Import', tools: [fromMap], small: [terrainFromDem, terrainFromHeightmap, terrainFromPointCloud, buildingsFromPointCloud, terrainFromDxf, geoJson, cityJson, orthophoto] },
       { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [platformHole, subregion, sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
       { label: 'Landscape', tools: [path, hardscape, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework, hardscapeSlope, portal, tunnel] },
       { label: 'Drainage', tools: [channel, kerb, alongLine], small: [channelAlong, kerbAlong] },
@@ -573,7 +690,7 @@ const civil: LapinModule = {
   ],
   overlays: [ProfilePanel],
   planOverlays: [ProfilePlanOverlay],
-  dialogs: { brush: BrushDialog, corridor: CorridorDialog, entourageKinds: EntourageKindsDialog, portal: PortalDialog, tunnel: TunnelDialog, hardscapeTypes: HardscapeTypesDialog },
+  dialogs: { brush: BrushDialog, corridor: CorridorDialog, entourageKinds: EntourageKindsDialog, portal: PortalDialog, tunnel: TunnelDialog, hardscapeTypes: HardscapeTypesDialog, mapImport: MapImportDialog },
   editType: { LapinHardscapeType: (id: string) => { useHardscapeTypeEdit.setState({ id }); useUi.setState({ dialog: 'hardscapeTypes' }); } },
 };
 

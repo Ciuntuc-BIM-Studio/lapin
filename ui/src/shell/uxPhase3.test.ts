@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FLOW_EXTRAS, readPrefs, setPrefs, turnOnFlowExtras, usePrefs } from '../app/prefs';
+import { FLOW_EXTRAS, readPrefs, setPrefs, turnOffFlowExtras, turnOnFlowExtras, usePrefs } from '../app/prefs';
 import { playSound, toggleTactileSounds } from '../app/sounds';
 import { scanModelHealth } from '../app/modelHealth';
 import { buildSequence } from './BuildReplay';
@@ -25,17 +25,31 @@ describe('Phase 3 game-like UX', () => {
     setPrefs({ tactileSounds: false });
   });
 
-  it('keeps every Flow extra off for settings kept before them, and the Flow preset turns them on', () => {
-    const before = readPrefs({ theme: 'graphite', gridStep: 0.5 });
-    for (const k of FLOW_EXTRAS) expect(before[k], k).toBe(false);
+  it('has every Flow extra on until the user chooses, even over settings kept while they were off by default', () => {
+    const fresh = readPrefs(null);
+    for (const k of FLOW_EXTRAS) expect(fresh[k], k).toBe(true);
+    const before = readPrefs({ theme: 'graphite', gridStep: 0.5, viewCube: false, roleCards: false });
+    for (const k of FLOW_EXTRAS) expect(before[k], k).toBe(true);
+    expect(before.flowChosen).toBe(false);
     expect(before.roleHotbars).toBe(false);
+    expect(before.tactileSounds).toBe(false);
     expect(before.theme).toBe('graphite');
+    // A choice made is kept: all off (the start screen's switch), or one switched in Preferences.
+    turnOffFlowExtras();
+    for (const k of FLOW_EXTRAS) expect(usePrefs.getState()[k], k).toBe(false);
+    expect(usePrefs.getState().flowChosen).toBe(true);
+    expect(readPrefs(JSON.parse(JSON.stringify(usePrefs.getState()))).viewCube).toBe(false);
+    setPrefs({ theme: 'paper' });
+    expect(usePrefs.getState().viewCube).toBe(false);
+    setPrefs({ viewCube: true });
+    expect(usePrefs.getState().viewCube).toBe(true);
+    expect(usePrefs.getState().xrayPeek).toBe(false);
     turnOnFlowExtras();
     for (const k of FLOW_EXTRAS) expect(usePrefs.getState()[k], k).toBe(true);
     // Sounds and the role's quick tools stay their own choice.
     expect(usePrefs.getState().tactileSounds).toBe(false);
     expect(usePrefs.getState().roleHotbars).toBe(false);
-    setPrefs(Object.fromEntries(FLOW_EXTRAS.map((k) => [k, false])));
+    turnOffFlowExtras();
   });
 
   it('computes 3D ViewCube CSS transform from camera azimuth and pitch', () => {

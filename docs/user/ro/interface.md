@@ -53,9 +53,11 @@ Lapin îți păstrează alegerea pe acest calculator, pentru tine. Aplicația de
 
 ## Flow și extrasele lui
 
-**View → Interfață…** are un al patrulea mod, **Flow**: vederea pe primul loc, ribbonul care coboară din taburi, ambele panouri laterale pliate în bare și uneltele rapide <kbd>1</kbd>–<kbd>9</kbd> plutind jos, peste vedere. Alegerea lui Flow pornește și **Extra Flow**. Nimic din ele nu apare până nu le alegi: celelalte moduri, și oricine nu alege Flow, păstrează fereastra așa cum o arată restul ghidului.
+**Extra Flow** de mai jos sunt pornite când Lapin pornește prima dată. Ca să revii la interfața clasică, debifează **Extra Flow** pe ecranul de start, sub **Spațiu de lucru**: un clic le oprește pe toate, iar dacă bifezi din nou le pornești pe toate la loc. Imaginile din acest ghid arată interfața clasică, cu extrasele oprite.
 
-Fiecare extra se pornește sau se oprește separat din **File → Preferințe… → General → Extra Flow** (tot acolo sunt **Pornește-le pe toate** și **Oprește-le pe toate**). Dacă alegi apoi alt mod, ele rămân cum erau.
+Fiecare extra se pornește sau se oprește separat din **File → Preferințe… → General → Extra Flow** (tot acolo sunt **Pornește-le pe toate** și **Oprește-le pe toate**). Lapin îți păstrează alegerea.
+
+**View → Interfață…** are și un al patrulea mod, **Flow**: vederea pe primul loc, ribbonul care coboară din taburi, ambele panouri laterale pliate în bare și uneltele rapide <kbd>1</kbd>–<kbd>9</kbd> plutind jos, peste vedere. Alegerea lui Flow pornește și extrasele; dacă alegi apoi alt mod, ele rămân cum erau.
 
 - **ViewCube în vederea 3D**: un cub mic în dreapta sus a vederii 3D; clic pe o față pentru Sus, Jos, cele patru laturi, **ISO**, iar **PERSP**/**ORTHO** schimbă proiecția. Stă la stânga planului-cheie sau a butonului lui, ca amândouă să rămână la îndemână.
 - **Bară de selecție deasupra vederii**: când e ceva selectat și nicio unealtă pornită, un rând în dreapta jos cu Mută, Copiază, Rotește, Preia și creează similar, Izolează, Ascunde și Șterge. Indicațiile arată tastele tale (Scurtături de tastatură…). Șterge face ce face tasta <kbd>Delete</kbd>.

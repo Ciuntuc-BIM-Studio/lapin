@@ -212,6 +212,8 @@ async function takePictures() {
         page.on('dialog', (d) => void d.accept());
         // Exports and saves ask for a file name first (decision 509): no native picker here, and the Save as box (in any language: its input holds a name with an extension) answered with OK, so the download follows.
         await page.addInitScript(() => {
+          // The guide's pictures show the classic interface: the Flow extras (on by default) off, unless a scene switches them.
+          try { if (!localStorage.getItem('lapin.prefs')) localStorage.setItem('lapin.prefs', JSON.stringify({ flowChosen: true })); } catch { /* kept */ }
           try { Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true, writable: true }); } catch { /* kept */ }
           setInterval(() => {
             const box = document.querySelector('.ask-box');

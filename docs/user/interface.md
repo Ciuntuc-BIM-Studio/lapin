@@ -53,9 +53,11 @@ Lapin keeps your choice on this computer, for you. The desktop app and the brows
 
 ## Flow and its extras
 
-**View → Interface…** has a fourth mode, **Flow**: the view first, the ribbon dropping from its tabs, both side panels folded to rails and the quick tools <kbd>1</kbd>–<kbd>9</kbd> floating at the bottom of the view. Picking Flow also turns on the **Flow extras**. Nothing of them shows until you choose: the other modes, and everyone who never picks Flow, keep the window as the rest of this guide shows it.
+The **Flow extras** below are on when Lapin starts for the first time. To go back to the classic interface, untick **Flow extras** on the start screen, under **Workspace**: one click turns them all off, and ticking it again turns them all back on. The pictures in this guide show the classic interface, with the extras off.
 
-Each extra can be switched on or off by itself in **File → Preferences… → General → Flow extras** (**Turn all on** and **Turn all off** are there too). Choosing another mode afterwards leaves them as they are.
+Each extra can be switched on or off by itself in **File → Preferences… → General → Flow extras** (**Turn all on** and **Turn all off** are there too). Lapin keeps your choice.
+
+**View → Interface…** also has a fourth mode, **Flow**: the view first, the ribbon dropping from its tabs, both side panels folded to rails and the quick tools <kbd>1</kbd>–<kbd>9</kbd> floating at the bottom of the view. Picking Flow turns the extras on too; choosing another mode afterwards leaves them as they are.
 
 - **ViewCube in the 3D view**: a small cube at the top right of the 3D view; click a face for Top, Bottom, the four sides, **ISO**, and **PERSP**/**ORTHO** to switch the projection. It stands left of the key plan, or of its button, so both stay within reach.
 - **Selection toolbar over the view**: with something selected and no tool on, a row at the bottom right with Move, Copy, Rotate, Pick & create similar, Isolate, Hide and Delete. Its tooltips show your own keys (Keyboard shortcuts…). Delete does what the <kbd>Delete</kbd> key does.

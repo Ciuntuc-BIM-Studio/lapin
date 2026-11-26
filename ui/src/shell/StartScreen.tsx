@@ -14,7 +14,7 @@ import { thumbOf } from '../engine/recentThumbs';
 import { savedTemplatePicture, startFrom, templates } from './templates';
 import { ProjectTemplatesDialog } from './ProjectTemplatesDialog';
 import { defaultTemplateOf, refreshTemplates, startFromTemplate, useTemplates } from '../engine/templates';
-import { usePrefs } from '../app/prefs';
+import { FLOW_EXTRAS, turnOffFlowExtras, turnOnFlowExtras, usePrefs } from '../app/prefs';
 import { applyNewProjectStandard } from '../engine/newProjectStandard';
 import { MaterialStandardChoice } from './MaterialStandardChoice';
 import { engineInBrowser, useSession } from '../engine/session';
@@ -83,6 +83,7 @@ function LocalStart({ cde }: { cde: boolean }) {
         <button type="button" className="btn big" data-start="optimize-ifc" disabled={!connected} onClick={() => openOptimize()}><Feather size={18} />Optimize IFC…</button>
         {!connected && <p className="muted small">Starting the engine…</p>}
         <WorkspaceSelect />
+        <FlowSwitch />
         <p className="eyebrow">Start here</p>
         {brand.hint
           ? <p className="muted small">{brand.hint}</p>
@@ -156,5 +157,17 @@ function LocalStart({ cde }: { cde: boolean }) {
       {optimizing && <OptimizeIfcDialog />}
       {choosing && <ProjectTemplatesDialog />}
     </div>
+  );
+}
+
+/** The Flow extras on or off in one click (on by default; Preferences → General → Flow extras switches each). */
+function FlowSwitch() {
+  const on = usePrefs((p) => FLOW_EXTRAS.some((k) => p[k]));
+  return (
+    <label className="start-flow" data-field="start-flow" title="The ViewCube, the selection toolbar, shortcut tips, the role cards and the other Flow helpers. Off: the classic interface. Preferences → General switches each.">
+      <input type="checkbox" checked={on} onChange={(e) => (e.target.checked ? turnOnFlowExtras() : turnOffFlowExtras())} />
+      <span>Flow extras</span>
+      <span className="muted small">{on ? 'On: untick for the classic interface' : 'Off: the classic interface'}</span>
+    </label>
   );
 }
