@@ -13,7 +13,9 @@ namespace Lapin.Cost;
 /// winter break; a milestone's falls on its day), giving the planned curve; the same on the baseline's dates gives the
 /// baseline's; the part of each task done (its cost × its percentage), spread from its actual start to its actual finish
 /// or the status date, gives the curve of the work done. What no task builds is "not scheduled". All in direct costs, the
-/// estimate's own; the month table adds the value without VAT and with it, in proportion.
+/// estimate's own; the month table adds the value without VAT and with it, in proportion. A time-related item over the
+/// whole project (<see cref="EstimateLine.Span"/>, no task named) is spread evenly over the project's working days, and its
+/// part done is the part of those days up to the status date (<see cref="DoneUntasked"/>); one naming tasks is theirs, as any line.
 /// </summary>
 public sealed class CostOverTime
 {
@@ -30,10 +32,12 @@ public sealed class CostOverTime
     public Dictionary<string, SortedDictionary<DateOnly, double>> Planned { get; } = [];
     public Dictionary<string, SortedDictionary<DateOnly, double>> DoneByDay { get; } = [];
     public SortedDictionary<DateOnly, double> Baseline { get; } = [];
+    /// <summary>The part done of the time-related items over the whole project (in no task), up to the status date.</summary>
+    public double DoneUntasked { get; private set; }
 
     public double Budget => Estimate.Totals.Direct.Direct;
     public double Scheduled => Planned.Values.Sum(d => d.Values.Sum());
-    public double ToDate => Times.Tasks.Where(t => !t.Summary).Sum(t => Done.GetValueOrDefault(t.Id));
+    public double ToDate => Times.Tasks.Where(t => !t.Summary).Sum(t => Done.GetValueOrDefault(t.Id)) + DoneUntasked;
     public string Currency => Estimate.Settings.Currency;
 
     /// <summary>The first and last days the curves cover: the schedule's, its baseline's and the work done's.</summary>
@@ -74,6 +78,21 @@ public sealed class CostOverTime
                 var parts = new List<(double Fraction, IReadOnlyList<string> Tasks)>();
                 var named = l.Tasks.SelectMany(LeavesOf).Distinct().ToList();
                 if (named.Count > 0) parts.Add((1, named));
+                else if (l.Span is { } span && l.Tasks.Count == 0)
+                {
+                    // A time-related item over the whole project: its days, not a task's.
+                    var days = times.WorkedDays(span.From, span.To);
+                    if (days.Count == 0) days = [span.From];
+                    Spread(o.Planned.TryGetValue(c.Name, out var pp) ? pp : o.Planned[c.Name] = [], days, l.Value);
+                    if (times.DataDate is { } through && days.Count(d => d <= through) is var gone and > 0)
+                    {
+                        var share = l.Value * gone / days.Count;
+                        Spread(o.DoneByDay.TryGetValue(c.Name, out var dp) ? dp : o.DoneByDay[c.Name] = [], days.Take(gone).ToList(), share);
+                        o.DoneUntasked += share;
+                    }
+                    o.LineTasks[l.Key] = [];
+                    continue;
+                }
                 else if (l.Shares.Count > 0)
                 {
                     var sum = l.Shares.Sum(x => x.Quantity);

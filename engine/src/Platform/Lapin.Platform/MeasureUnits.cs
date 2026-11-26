@@ -26,6 +26,8 @@ public static class MeasureUnits
 
     /// <summary>The time units an article's quantity may be multiplied by (docs/plan-4d5d.md, "× duration"): months, working days, calendar days, working hours.</summary>
     public const string Months = "months", WorkingDays = "workingDays", Days = "days", Hours = "hours";
+    /// <summary>Weeks of the calendar (its days over seven): the rate of a time-related estimate item may be by the week (not a unit word an article's unit is read as).</summary>
+    public const string Weeks = "weeks";
 
     static readonly Dictionary<string, string> TimeWords = new()
     {
