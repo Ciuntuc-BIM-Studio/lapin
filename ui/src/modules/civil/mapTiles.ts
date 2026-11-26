@@ -250,6 +250,7 @@ export interface OsmBuilding {
 }
 
 const OVERPASS_ENDPOINTS = [
+  'https://overpass.private.coffee/api/interpreter',
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
 ];
@@ -265,10 +266,40 @@ export function parseOsmHeight(raw: string | undefined): number | undefined {
   return m[2] === 'ft' || m[2] === "'" ? v * 0.3048 : v;
 }
 
-/** Downloads building footprints and heights inside `bounds` from OpenStreetMap Overpass API. */
+/** Downloads building footprints and heights inside `bounds` (fast OSM map.json API first, Overpass fallback for large areas). */
 export async function fetchOsmBuildings(bounds: GeoBounds): Promise<OsmBuilding[]> {
+  const dLon = Math.abs(bounds.maxLon - bounds.minLon);
+  const dLat = Math.abs(bounds.maxLat - bounds.minLat);
+
+  // Fast path: official OSM cgimap API returns small site boxes (< ~2 km) in < 1 s with no Overpass queue.
+  if (dLon <= 0.025 && dLat <= 0.025) {
+    try {
+      const osmUrl = `https://api.openstreetmap.org/api/0.6/map.json?bbox=${bounds.minLon.toFixed(6)},${bounds.minLat.toFixed(6)},${bounds.maxLon.toFixed(6)},${bounds.maxLat.toFixed(6)}`;
+      const res = await fetch(osmUrl, { signal: AbortSignal.timeout(12_000) });
+      if (res.ok) {
+        const json = await res.json() as {
+          elements?: { type: string; id: number; lat?: number; lon?: number; nodes?: number[]; tags?: Record<string, string> }[];
+        };
+        const nodes = new Map<number, [number, number]>();
+        for (const el of json.elements ?? [])
+          if (el.type === 'node' && el.lon != null && el.lat != null) nodes.set(el.id, [el.lon, el.lat]);
+        const out: OsmBuilding[] = [];
+        for (const el of json.elements ?? []) {
+          if (el.type !== 'way' || !el.nodes || el.nodes.length < 3) continue;
+          const tags = el.tags ?? {};
+          if (!tags.building && !tags['building:part']) continue;
+          const pts: [number, number][] = [];
+          for (const nid of el.nodes) { const p = nodes.get(nid); if (p) pts.push(p); }
+          if (pts.length < 3) continue;
+          out.push(osmWayToBuilding(pts, tags));
+        }
+        return out;
+      }
+    } catch { /* fall through to Overpass */ }
+  }
+
   const bbox = `${bounds.minLat.toFixed(6)},${bounds.minLon.toFixed(6)},${bounds.maxLat.toFixed(6)},${bounds.maxLon.toFixed(6)}`;
-  const ql = `[out:json][timeout:25];(way["building"](${bbox});way["building:part"](${bbox}););out body geom;`;
+  const ql = `[out:json][timeout:12];(way["building"](${bbox});way["building:part"](${bbox}););out body geom;`;
   let data: { elements?: { type: string; id: number; tags?: Record<string, string>; geometry?: { lat: number; lon: number }[] }[] } | null = null;
   let lastErr: unknown = null;
 
@@ -278,6 +309,7 @@ export async function fetchOsmBuildings(bounds: GeoBounds): Promise<OsmBuilding[
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
         body: `data=${encodeURIComponent(ql)}`,
+        signal: AbortSignal.timeout(15_000),
       });
       if (res.ok) { data = await res.json(); break; }
       lastErr = new Error(`Overpass HTTP ${res.status}`);
@@ -285,21 +317,24 @@ export async function fetchOsmBuildings(bounds: GeoBounds): Promise<OsmBuilding[
       lastErr = e;
     }
   }
-  if (!data) throw lastErr instanceof Error ? lastErr : new Error('Could not reach OpenStreetMap Overpass API.');
+  if (!data) throw lastErr instanceof Error ? lastErr : new Error('Could not reach OpenStreetMap API.');
 
   const out: OsmBuilding[] = [];
   for (const el of data.elements ?? []) {
     if (!el.geometry || el.geometry.length < 3) continue;
     const pts: [number, number][] = el.geometry.map((g) => [g.lon, g.lat]);
-    const tags = el.tags ?? {};
-    const height = parseOsmHeight(tags.height) ?? parseOsmHeight(tags['building:height']);
-    const lvlsRaw = Number((tags['building:levels'] ?? '').replace(',', '.'));
-    const levels = Number.isFinite(lvlsRaw) && lvlsRaw > 0 ? lvlsRaw : undefined;
-    const name = tags.name || tags['addr:housenumber'] ? [tags.name, tags['addr:street'], tags['addr:housenumber']].filter(Boolean).join(' ') : undefined;
-    const properties: Record<string, string> = {};
-    if (tags.building) properties.building = tags.building;
-    if (tags['building:levels']) properties.levels = tags['building:levels'];
-    out.push({ name, footprint: pts, ...(height ? { height } : {}), ...(levels ? { levels } : {}), properties });
+    out.push(osmWayToBuilding(pts, el.tags ?? {}));
   }
   return out;
+}
+
+function osmWayToBuilding(pts: [number, number][], tags: Record<string, string>): OsmBuilding {
+  const height = parseOsmHeight(tags.height) ?? parseOsmHeight(tags['building:height']);
+  const lvlsRaw = Number((tags['building:levels'] ?? '').replace(',', '.'));
+  const levels = Number.isFinite(lvlsRaw) && lvlsRaw > 0 ? lvlsRaw : undefined;
+  const name = tags.name || tags['addr:housenumber'] ? [tags.name, tags['addr:street'], tags['addr:housenumber']].filter(Boolean).join(' ') : undefined;
+  const properties: Record<string, string> = {};
+  if (tags.building) properties.building = tags.building;
+  if (tags['building:levels']) properties.levels = tags['building:levels'];
+  return { name, footprint: pts, ...(height ? { height } : {}), ...(levels ? { levels } : {}), properties };
 }
