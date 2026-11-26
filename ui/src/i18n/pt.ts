@@ -7062,7 +7062,7 @@ export const PT: Record<string, string> = {
   'Mute tactile sounds': 'Silenciar os sons táteis',
   'Flow extras': 'Extras do Flow',
   'On by default. The start screen\'s Flow extras switch turns them all off or on; each can be switched here.': 'Ativados por predefinição. O interruptor Extras Flow do ecrã inicial desliga-os ou liga-os todos; cada um pode ser mudado aqui.',
-  'The ViewCube, the selection toolbar, shortcut tips, the role cards and the other Flow helpers. Off: the classic interface. Preferences → General switches each.': 'O ViewCube, a barra de seleção, as dicas de atalhos, os cartões de função e as outras ajudas Flow. Desligado: a interface clássica. Preferências → Geral muda cada um.',
+  'The Flow layout (the view first, the ribbon dropping from its tabs, the side panels folded) and its extras: the ViewCube, the selection toolbar, shortcut tips, the role cards and the other helpers. Off: the classic interface, Comfortable with no extras.': 'A disposição Flow (a vista primeiro, o friso que desce dos seus separadores, os painéis laterais recolhidos) e os seus extras: o ViewCube, a barra de seleção, as dicas de atalhos, os cartões de função e as outras ajudas. Desligado: a interface clássica, Confortável sem extras.',
   'On: untick for the classic interface': 'Ligados: desmarque para a interface clássica',
   'Off: the classic interface': 'Desligados: a interface clássica',
   'Turn all on': 'Ligar tudo',

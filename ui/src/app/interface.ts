@@ -152,7 +152,7 @@ export function withTabMoved(s: InterfaceSettings, tab: string, by: -1 | 1, avai
   return { ...s, workspace: 'mine', mine };
 }
 
-/** Where Lapin runs, for the first choice: the web build on a window under 800 px tall starts compact. */
+/** Where Lapin runs (kept for callers; since decision 881 every first start is Flow, whatever the window). */
 export interface InterfaceEnv { web: boolean; height: number }
 
 /** The settings from what was kept (anything unreadable left out), else the default for where Lapin runs. */
@@ -172,8 +172,9 @@ export function initialSettings(stored: unknown, env: InterfaceEnv): InterfaceSe
     if (o.rev !== INTERFACE_REV && parts.quickTools === 'floating') parts.quickTools = 'docked';
     return { preset: presetOf(parts), parts, chosen: true, ...tabs };
   }
-  const preset: InterfacePreset = env.web && env.height < 800 ? 'compact' : 'comfortable';
-  return { preset, parts: { ...PRESETS[preset] }, chosen: false, ...tabs };
+  // Until the user chooses, Lapin starts in Flow (decision 881); the start screen's Flow switch goes back to Comfortable.
+  void env;
+  return { preset: 'flow', parts: { ...PRESETS.flow }, chosen: false, ...tabs };
 }
 
 const KEY = 'lapin.interface';

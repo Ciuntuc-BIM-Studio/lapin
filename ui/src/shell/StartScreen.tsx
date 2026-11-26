@@ -14,6 +14,7 @@ import { thumbOf } from '../engine/recentThumbs';
 import { savedTemplatePicture, startFrom, templates } from './templates';
 import { ProjectTemplatesDialog } from './ProjectTemplatesDialog';
 import { defaultTemplateOf, refreshTemplates, startFromTemplate, useTemplates } from '../engine/templates';
+import { choosePreset, useInterface } from '../app/interface';
 import { FLOW_EXTRAS, turnOffFlowExtras, turnOnFlowExtras, usePrefs } from '../app/prefs';
 import { applyNewProjectStandard } from '../engine/newProjectStandard';
 import { MaterialStandardChoice } from './MaterialStandardChoice';
@@ -160,13 +161,20 @@ function LocalStart({ cde }: { cde: boolean }) {
   );
 }
 
-/** The Flow extras on or off in one click (on by default; Preferences → General → Flow extras switches each). */
+/** Flow on or off in one click (on by default, decisions 880–881): its layout and its extras, or the classic interface (Comfortable, no extras). */
 function FlowSwitch() {
-  const on = usePrefs((p) => FLOW_EXTRAS.some((k) => p[k]));
+  const extras = usePrefs((p) => FLOW_EXTRAS.some((k) => p[k]));
+  const layout = useInterface((s) => s.preset === 'flow');
+  const on = extras || layout;
+  const turn = (to: boolean) => {
+    if (to) { turnOnFlowExtras(); choosePreset('flow'); return; }
+    turnOffFlowExtras();
+    if (layout) choosePreset('comfortable');
+  };
   return (
-    <label className="start-flow" data-field="start-flow" title="The ViewCube, the selection toolbar, shortcut tips, the role cards and the other Flow helpers. Off: the classic interface. Preferences → General switches each.">
-      <input type="checkbox" checked={on} onChange={(e) => (e.target.checked ? turnOnFlowExtras() : turnOffFlowExtras())} />
-      <span>Flow extras</span>
+    <label className="start-flow" data-field="start-flow" title="The Flow layout (the view first, the ribbon dropping from its tabs, the side panels folded) and its extras: the ViewCube, the selection toolbar, shortcut tips, the role cards and the other helpers. Off: the classic interface, Comfortable with no extras.">
+      <input type="checkbox" checked={on} onChange={(e) => turn(e.target.checked)} />
+      <span>Flow</span>
       <span className="muted small">{on ? 'On: untick for the classic interface' : 'Off: the classic interface'}</span>
     </label>
   );

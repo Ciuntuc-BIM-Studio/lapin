@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { initialSettings, PRESETS, presetOf, visibleTabIds, withPart, withPreset, withTab, withTabMoved, withWorkspace } from './interface';
 
 describe('the interface modes', () => {
-  it('starts comfortable on the desktop, compact in the web build on a short window, until the user chooses', () => {
-    expect(initialSettings(null, { web: false, height: 600 })).toMatchObject({ preset: 'comfortable', chosen: false });
-    expect(initialSettings(null, { web: true, height: 1000 })).toMatchObject({ preset: 'comfortable', chosen: false });
-    expect(initialSettings(null, { web: true, height: 700 })).toMatchObject({ preset: 'compact', parts: PRESETS.compact, chosen: false });
+  it('starts in Flow, on the desktop and the web, whatever the window, until the user chooses (decision 881)', () => {
+    expect(initialSettings(null, { web: false, height: 600 })).toMatchObject({ preset: 'flow', parts: PRESETS.flow, chosen: false });
+    expect(initialSettings(null, { web: true, height: 1000 })).toMatchObject({ preset: 'flow', chosen: false });
+    expect(initialSettings(null, { web: true, height: 700 })).toMatchObject({ preset: 'flow', chosen: false });
+    expect(initialSettings({ chosen: false, workspace: 'mep' }, { web: false, height: 900 })).toMatchObject({ preset: 'flow', workspace: 'mep' });
     // Chosen once: kept, whatever the window.
     expect(initialSettings(withPreset('focus'), { web: true, height: 700 })).toMatchObject({ preset: 'focus', chosen: true });
     expect(initialSettings(withPreset('comfortable'), { web: true, height: 700 })).toMatchObject({ preset: 'comfortable' });
@@ -47,7 +48,7 @@ describe('the interface modes', () => {
     expect(s.parts.ribbon).toBe('large');
     expect(s.parts.quickTools).toBe('off');
     expect(s.preset).toBe('custom');
-    expect(initialSettings('garbage', { web: false, height: 900 }).preset).toBe('comfortable');
+    expect(initialSettings('garbage', { web: false, height: 900 }).preset).toBe('flow');
   });
 
   // The tabs of the full edition, as the modules give them.

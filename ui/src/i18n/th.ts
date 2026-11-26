@@ -13181,7 +13181,7 @@ export const TH: Record<string, string> = {
   'Mute tactile sounds': 'ปิดเสียงสัมผัส',
   'Flow extras': 'ส่วนเสริมของ Flow',
   'On by default. The start screen\'s Flow extras switch turns them all off or on; each can be switched here.': 'เปิดเป็นค่าเริ่มต้น สวิตช์ส่วนเสริม Flow ที่หน้าจอเริ่มต้นปิดหรือเปิดทั้งหมดในครั้งเดียว แต่ละรายการสลับได้ที่นี่.',
-  'The ViewCube, the selection toolbar, shortcut tips, the role cards and the other Flow helpers. Off: the classic interface. Preferences → General switches each.': 'ViewCube แถบการเลือก เคล็ดลับทางลัด การ์ดบทบาท และตัวช่วย Flow อื่น ๆ ปิด: อินเทอร์เฟซแบบคลาสสิก การตั้งค่า → ทั่วไป สลับได้ทีละรายการ.',
+  'The Flow layout (the view first, the ribbon dropping from its tabs, the side panels folded) and its extras: the ViewCube, the selection toolbar, shortcut tips, the role cards and the other helpers. Off: the classic interface, Comfortable with no extras.': 'เลย์เอาต์ Flow (มุมมองมาก่อน ริบบอนเลื่อนลงจากแท็บ แผงด้านข้างพับเก็บ) และส่วนเสริม: ViewCube แถบการเลือก เคล็ดลับทางลัด การ์ดบทบาท และตัวช่วยอื่น ๆ ปิด: อินเทอร์เฟซแบบคลาสสิก คือแบบสบายตาโดยไม่มีส่วนเสริม.',
   'On: untick for the classic interface': 'เปิด: เอาเครื่องหมายออกเพื่อใช้อินเทอร์เฟซแบบคลาสสิก',
   'Off: the classic interface': 'ปิด: อินเทอร์เฟซแบบคลาสสิก',
   'Turn all on': 'เปิดทั้งหมด',
