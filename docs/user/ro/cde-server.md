@@ -1,7 +1,7 @@
 ---
 title: Lucrul pe un server CDE
 order: 126
-summary: Te autentifici pe serverul CDE al biroului tău (Atrium Server, cum e cde.lapinbim.com), clonezi un proiect, salvezi lucrul pe server și îl iei pe al celorlalți, ții problemele la zi și, ca administrator, gestionezi conturile și proiectele.
+summary: Te autentifici pe serverul CDE al biroului tău (Atrium Server, cum e cde.lapinbim.com), clonezi un proiect, salvezi lucrul pe server și îl iei pe al celorlalți, ții problemele la zi, conectezi un client AI cu un token de acces și, ca administrator, gestionezi conturile și proiectele.
 ---
 
 Un server CDE ține proiectele biroului tău într-un singur loc: fiecare salvare cu autorul și nota ei, versiunile și etichetele de emitere, membrii fiecărui proiect și rolurile lor, și problemele (subiectele BCF) la care răspund toți. Lapin lucrează cu el din aplicația desktop și din browser. Serverul companiei e la **cde.lapinbim.com**; biroul tău își poate rula propriul server, Atrium Server, care e gratuit.
@@ -144,6 +144,28 @@ Cu un proiect deschis (Fișier → Colaborare → Colaborează…), proprietarii
 Verificările unei propuneri arată un grup **IDS** după documente: câte specificații trec și câte nu, apoi fiecare fișier IDS pe fiecare model, specificație cu specificație, **Trece**, **Nu trece** sau **Sărită** (scrisă pentru altă versiune IFC). Una care nu trece arată ce cere, elementele care nu trec (GlobalId, clasa și numele, cerința, ce are elementul și ce se așteaptă; primele 50 și câte mai sunt) și **GlobalId-uri care nu trec**, cu un buton care le copiază. Notele și avertismentele spun când commit-ul nu are copie IFC pe server sau un model nu a putut fi citit, era prea mare ori a durat prea mult.
 
 Înainte de a propune, **Gestionare → Emite… → Pe serverul CDE → Verifică pe server** (editorii și proprietarii) salvează proiectul pe server și rulează acolo fișierele IDS pe acel commit, cu același raport; nu se propune nimic. E verificarea serverului, cea pe care o socotește aprobarea; fișierele IDS proprii ale proiectului (Gestionare → IDS…) rulează în continuare aici înainte de Propune spre aprobare, ca până acum.
+
+## Tokenuri de acces și clienți AI
+
+Un client AI (Claude Code, Claude Desktop sau alt client al Model Context Protocol) poate lucra în proiectele serverului pentru tine: citește documentele de referință și textul fișierelor lor, registrul, containerele, propunerile și problemele, iar când îl lași să scrie, adaugă și completează documente de referință și comentează probleme. Se autentifică cu un **token de acces** pe care îl faci tu; are apoi rolul contului tău în fiecare proiect, nimic mai mult. Aprobarea și respingerea propunerilor, înlocuirea, retragerea sau ștergerea documentelor și schimbarea regulilor sau a membrilor rămân la oameni.
+
+**Tokenuri de acces…** (lângă **Schimbă parola…**, pe ecranul de start în browser, și în **Fișier → Colaborare → Colaborează…** pe desktop, autentificat la server) îți arată tokenurile: numele, accesul, când expiră și când au fost folosite ultima dată. Apare când serverul oferă tokenuri de acces.
+
+Ca să conectezi un client:
+
+1. Scrie un nume pentru client (*Claude Code pe laptopul de la birou*: apare în activitatea proiectului lângă ce a schimbat clientul), alege **Doar citire** sau **Citire și scriere**, alege cât durează tokenul (de la 30 de zile la un an; implicit 90 de zile) și apasă **Fă un token**.
+2. Tokenul e afișat **o singură dată**. Copiază-l cu butonul de lângă el; nu mai poate fi afișat (dacă îl pierzi, revocă-l și fă altul).
+3. Lipește-l **doar în configurația clientului AI**: niciodată într-un chat, un document, un e-mail sau un proiect. Cine îl are lucrează pe server în numele tău până expiră sau până îl revoci. Pentru Claude Code, panoul arată comanda de rulat, cu tokenul în ea:
+
+   ```sh
+   claude mcp add --transport http atrium https://cde.lapinbim.com/mcp --header "Authorization: Bearer <token>"
+   ```
+
+Butonul coș **revocă** un token: clienții care îl folosesc se opresc imediat. Schimbarea parolei sau dezactivarea contului de către un administrator îți revocă și toate tokenurile.
+
+Ce schimbă clientul apare în **Activitatea** proiectului ca orice altă schimbare, marcat ca făcut prin MCP, cu numele tokenului.
+
+Tot ce citește un client este trimis furnizorului modelului său: textul documentelor și persoanele numite în certificate, extrase de carte funciară și contracte. Folosește un client căruia biroul tău are voie să-i trimită asta, dă unui token **Doar citire** dacă nu trebuie să scrie și revocă-l când ai terminat. Pentru dezvoltatori, uneltele și un exemplu sunt în docs/mcp.md.
 
 ## Administrare
 
