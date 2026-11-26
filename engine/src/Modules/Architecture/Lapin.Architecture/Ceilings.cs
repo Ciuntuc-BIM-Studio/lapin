@@ -77,7 +77,9 @@ public static class Ceilings
         r.Command("createCeilingType", "New ceiling type", (ctx, a) =>
         {
             var spec = CeilingSpec.From(a["spec"]) ?? throw new CommandException("The ceiling type cannot be read.");
-            return new JsonObject { ["id"] = CreateType(ctx, spec).Id };
+            // `mark` and `params` (issues #146, #147): the new type's mark and parameters, in the same step.
+            var given = NewTypeArgs.Read(a, TypeClass);
+            return NewTypeArgs.Made(ctx, CreateType(ctx, spec), given);
         });
         r.Command("updateCeilingType", "Change ceiling type", (ctx, a) =>
         {

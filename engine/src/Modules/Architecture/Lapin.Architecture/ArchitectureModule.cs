@@ -392,9 +392,11 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         // A floor type; beamBlock (report #134): its beam-and-block rules (null: a layered floor), set in the same step.
         r.Command("createSlabType", "New floor type", (ctx, a) =>
         {
+            // `mark` and `params` (issues #146, #147): the new type's mark and parameters, in the same step.
+            var given = NewTypeArgs.Read(a, IfcClass.SlabType);
             var type = Slabs.CreateType(ctx, (string?)a["name"], LayerSets.Parse(a["layers"], "A floor type"));
             if (a["beamBlock"] is JsonObject bb) BeamBlock.Set(ctx, type, BeamBlockSpec.From(bb));
-            return new JsonObject { ["id"] = type.Id };
+            return NewTypeArgs.Made(ctx, type, given);
         });
 
         r.Command("updateSlabType", "Change floor type", (ctx, a) =>

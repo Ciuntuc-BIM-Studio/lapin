@@ -24,6 +24,7 @@ import { deleteType } from '../core/deleteType';
 import { SaveTypeToLibrary } from '../core/SaveTypeToLibrary';
 import { TypeListActions, endsOf } from '../../shell/TypeListActions';
 import { TypeMarkField } from '../core/MarkField';
+import { TypeParamsBlock, useNewTypeDraft } from '../../shell/TypeParamsBlock';
 import { typeToEdit } from '../../shell/typeToEdit';
 
 interface Rules { set: string; riserMin: number; riserMax: number; riserTarget: number; treadMin: number; treadMax: number; treadTarget: number; stepMin: number; stepMax: number; minWidth: number; maxRisers: number; headroom: number; maxSlope: number; minRisers?: number }
@@ -109,6 +110,8 @@ export function StairTypesDialog() {
   // Bumped by New stair type (or New ramp type), so the editor reloads the default even when no type was picked.
   const [freshTick, setFreshTick] = useState(0);
   const [freshKind, setFreshKind] = useState<'stair' | 'ramp'>('stair');
+  // A new type's mark and parameters (issues #146, #147), sent with it by Create type.
+  const draft = useNewTypeDraft();
   const modelRef = useRef(model);
   modelRef.current = model;
 
@@ -144,8 +147,8 @@ export function StairTypesDialog() {
   const save = async () => {
     if (editing) await execute('architecture.updateStairType', { id: editing, spec });
     else {
-      const r = await execute('architecture.createStairType', { spec }) as { id?: string } | null;
-      if (r?.id) { setEditing(r.id); placeWith(r.id); }
+      const r = await execute('architecture.createStairType', { spec, ...draft.args() }) as { id?: string } | null;
+      if (r?.id) { draft.reset(); setEditing(r.id); placeWith(r.id); }
     }
   };
 
@@ -183,7 +186,7 @@ export function StairTypesDialog() {
             <div className="joinery-form">
               <label className="field-line"><span className="eyebrow">Name</span><input value={spec.name} onChange={(e) => set({ name: e.target.value })} /></label>
               {/* The type's mark (forum topic 177), as a door's or window's type has it. */}
-              <TypeMarkField typeId={editing} />
+              <TypeMarkField typeId={editing} draft={draft} />
               {/* Duplicate, and the type's place in its list (forum #71): stairs and ramps each their own. */}
               <TypeListActions id={editing} onDuplicated={setEditing} {...endsOf(types.filter((x) => x.type === (editing ? model.nodes.get(editing)?.type : '')), editing)} />
               <div className="tabs-row small stair-tabs">
@@ -384,6 +387,7 @@ export function StairTypesDialog() {
                 </p>
               )}
               {preview && <ChecksList checks={preview.checks} />}
+              <TypeParamsBlock typeClass={ramp ? 'IfcRampType' : 'IfcStairType'} typeId={editing} draft={draft} />
             </div>
             <div className="row joinery-actions">
               <span className="grow" />

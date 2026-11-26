@@ -25,3 +25,27 @@ export const patchDraft = (list: Param[], key: string, patch: Partial<Param>): P
 export const draftJson = (list: Param[]) => list.map((p) => ({
   name: p.name, kind: p.kind, value: p.value ?? null, ...(p.pset ? { pset: p.pset } : {}), ...(p.options?.length ? { options: p.options } : {}), ...(p.instance ? { instance: true } : {}),
 }));
+
+/** A shared definition (docs/plan-user-extensibility.md §7.3) as the draft needs it: its name, kind, set and choices. */
+export interface DraftDef { name: string; kind: string; pset?: string | null; options?: string[] | null; classes?: string[] | null }
+
+/**
+ * The project's shared definitions a new type of `typeClass` may take (issue #146): those for every class, and those whose
+ * classes name it or its elements' class (IfcBeamType: IfcBeam); offered from the start, before any element uses one.
+ */
+export function defsFor<D extends DraftDef>(defs: D[], typeClass: string): D[] {
+  const element = typeClass.endsWith('Type') ? typeClass.slice(0, -4) : typeClass;
+  return defs.filter((d) => !d.classes?.length || d.classes.some((c) => c === typeClass || c === element));
+}
+
+/** The list with a shared definition's parameter added: its kind, set and choices are the definition's. */
+export const addDef = (list: Param[], def: DraftDef): Param[] => addDraft(list, def.name, def.kind, def.pset ?? undefined, def.options ?? undefined);
+
+/**
+ * What a type-making command takes besides its own arguments (issues #146, #147): the mark typed (none when empty) and the
+ * parameters chosen (none when there are none), so a dialog that sends neither makes its type as before.
+ */
+export const newTypeArgs = (mark: string, params: Param[]): { mark?: string; params?: ReturnType<typeof draftJson> } => ({
+  ...(mark.trim() ? { mark: mark.trim() } : {}),
+  ...(params.length ? { params: draftJson(params) } : {}),
+});

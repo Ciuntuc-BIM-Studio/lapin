@@ -20,6 +20,7 @@ import { PendingDialog } from '../core/PendingDialog';
 import { newElement, typedBy } from './NewElement';
 import { SlabThumb } from './Thumbs';
 import { TypeMarkField } from '../core/MarkField';
+import { TypeParamsBlock, useNewTypeDraft } from '../../shell/TypeParamsBlock';
 import { openTypeDialog, typeToEdit } from '../../shell/typeToEdit';
 
 export interface CeilingSpec {
@@ -81,6 +82,8 @@ export function CeilingTypesDialog() {
   const [spec, setSpec] = useState<CeilingSpec | null>(null);
   // What a new type starts from (a new object on each New…, so the editor reloads).
   const [fresh, setFresh] = useState<{ system: 'grid' | 'plain' }>({ system: 'grid' });
+  // A new type's mark and parameters (issues #146, #147), sent with it by Create type.
+  const draft = useNewTypeDraft();
   const modelRef = useRef(model);
   modelRef.current = model;
   useEffect(() => {
@@ -93,7 +96,7 @@ export function CeilingTypesDialog() {
   const close = () => useUi.setState({ dialog: null });
   const save = async () => {
     if (editing) await execute('architecture.updateCeilingType', { id: editing, spec });
-    else { const r = await execute('architecture.createCeilingType', { spec }) as { id?: string } | null; if (r?.id) setEditing(r.id); }
+    else { const r = await execute('architecture.createCeilingType', { spec, ...draft.args() }) as { id?: string } | null; if (r?.id) { draft.reset(); setEditing(r.id); } }
   };
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="Ceiling types">
@@ -113,7 +116,7 @@ export function CeilingTypesDialog() {
           <div className="type-edit">
             <label className="field-line"><span className="eyebrow">Name</span><input value={spec.name} onChange={(e) => set({ name: e.target.value })} /></label>
             {/* The type's mark (forum topic 177), as a door's or window's type has it. */}
-            <TypeMarkField typeId={editing} />
+            <TypeMarkField typeId={editing} draft={draft} />
             <label className="field-line"><span className="eyebrow">System</span>
               <select data-field="ceiling-system" value={spec.system} onChange={(e) => set({ system: e.target.value as CeilingSpec['system'] })}>
                 <option value="grid">Tiles on an exposed grid</option><option value="plain">Plasterboard, continuous</option>
@@ -136,6 +139,7 @@ export function CeilingTypesDialog() {
             <p className="eyebrow">In the cells</p>
             <label className="field-line"><span className="eyebrow">Light panels</span><ColourField value={spec.lightColor} onChange={(v) => set({ lightColor: v })} /></label>
             <label className="field-line"><span className="eyebrow">Air diffusers</span><ColourField value={spec.diffuserColor} onChange={(v) => set({ diffuserColor: v })} /></label>
+            <TypeParamsBlock typeClass="LapinCeilingType" typeId={editing} draft={draft} />
             <div className="row joinery-actions">
               <span className="grow" />
               {editing && <button type="button" className="btn" onClick={() => useUi.setState({ ceilingTypeId: editing })}>Place with it</button>}

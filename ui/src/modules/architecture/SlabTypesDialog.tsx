@@ -24,6 +24,7 @@ import { TypeListActions, endsOf } from '../../shell/TypeListActions';
 import { BeamBlockFields } from './BeamBlockFields';
 import { BEAM_BLOCK_DEFAULT, beamBlockDepth, beamBlockOf, withCoreDepth, type BeamBlockSpec } from './beamBlock';
 import { TypeMarkField } from '../core/MarkField';
+import { TypeParamsBlock, useNewTypeDraft } from '../../shell/TypeParamsBlock';
 import { TypeStructuralField } from '../core/StructuralSection';
 import { typeToEdit } from '../../shell/typeToEdit';
 
@@ -49,6 +50,8 @@ export function SlabTypesDialog() {
   const [rows, setRows] = useState<Row[]>(k0?.rows ?? blank());
   // Report #134: a layered floor, or one of beam and block (its core the structure).
   const [beamBlock, setBeamBlock] = useState<BeamBlockSpec | null>(() => beamBlockOf(k0?.editing ? model.nodes.get(k0.editing)?.props.beamBlock : types[0] ? types[0].props.beamBlock : null));
+  // A new type's mark and parameters (issues #146, #147), sent with it by Create type.
+  const draft = useNewTypeDraft();
   const restoredFor = useRef<string | null | undefined>(k0 ? k0.editing : undefined);
   // The editor loads when the picked type changes, not on every diff (which
   // would throw away what is being typed): it reads the model through a ref.
@@ -77,8 +80,8 @@ export function SlabTypesDialog() {
   const save = async () => {
     if (editing) await execute('architecture.updateSlabType', { id: editing, name, layers, beamBlock });
     else {
-      const r = await execute('architecture.createSlabType', { name, layers, ...(beamBlock ? { beamBlock } : {}) }) as { id?: string } | null;
-      if (r?.id) { setEditing(r.id); useUi.setState({ slabTypeId: r.id }); }
+      const r = await execute('architecture.createSlabType', { name, layers, ...(beamBlock ? { beamBlock } : {}), ...draft.args() }) as { id?: string } | null;
+      if (r?.id) { draft.reset(); setEditing(r.id); useUi.setState({ slabTypeId: r.id }); }
     }
   };
   return (
@@ -99,7 +102,7 @@ export function SlabTypesDialog() {
           <div className="type-edit">
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its core and thickness)" onChange={(e) => setName(e.target.value)} /></label>
             {/* The type's mark (forum topic 177), as a door's or window's type has it. */}
-            <TypeMarkField typeId={editing} />
+            <TypeMarkField typeId={editing} draft={draft} />
             {/* The Structural tick on the type (docs/plan-structural-usage.md): its elements that say nothing take it. */}
             <TypeStructuralField typeId={editing} />
             {/* Duplicate, and the type's place in every list of floor types (forum #71). */}
@@ -133,6 +136,7 @@ export function SlabTypesDialog() {
                 ))}
               </tbody>
             </table>
+            <TypeParamsBlock typeClass="IfcSlabType" typeId={editing} draft={draft} />
             <div className="row">
               <button type="button" className="btn" onClick={() => setRows([...rows, { material: 'Insulation', thickness: 0.05, core: false }])}><Plus size={14} />Layer</button>
               <button type="button" className="btn" data-testid="reverse-layers" title="Run the layers the other way: the top layer goes to the underside. Floors of the type follow once it is saved" disabled={rows.length < 2} onClick={reverse}><ArrowUpDown size={14} />Reverse layers</button>

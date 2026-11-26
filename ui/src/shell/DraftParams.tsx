@@ -1,7 +1,9 @@
 /**
  * A new type's parameters, chosen before the type is made (issue #32): the rows of a type's Parameters section (a name, a value as
  * its kind, Instance default), held by the dialog until Create type sends them with the type in one step. Once the type exists, its
- * parameters are edited in the type's own section (ParamsSection), as in the properties panel.
+ * parameters are edited in the type's own section (ParamsSection), as in the properties panel. The project's shared parameters
+ * (and IFC's standard ones) are offered from the start (issue #146), before any element uses them: a shared one's name typed or
+ * picked takes its kind, set and choices.
  */
 
 import { useState } from 'react';
@@ -11,7 +13,9 @@ import { parseNumber } from './cellKeys';
 import { promptText } from './prompts';
 import { paramKey, type Param } from './params';
 import { SUGGESTED, useStandardProps } from './ParamsSection';
-import { addDraft, patchDraft } from './typeParamDraft';
+import { addDef, addDraft, defsFor, patchDraft } from './typeParamDraft';
+import { useParamDefs } from '../modules/core/classifications/classifications';
+import { defNamed } from '../modules/core/classifications/classModel';
 
 const KINDS = ['text', 'number', 'length', 'area', 'angle', 'bool', 'choice'] as const;
 
@@ -19,9 +23,14 @@ export function DraftParams({ typeClass, params, onChange }: { typeClass: string
   const [name, setName] = useState('');
   const [kind, setKind] = useState<string>('text');
   const standard = useStandardProps(typeClass).filter(([set, n]) => !params.some((p) => p.pset === set && p.name === n));
+  const defs = defsFor(useParamDefs(), typeClass);
+  const shared = defs.filter((d) => !params.some((p) => (p.pset ?? null) === (d.pset ?? null) && p.name.toLowerCase() === d.name.toLowerCase()));
   const set = (p: Param, patch: Partial<Param>) => onChange(patchDraft(params, paramKey(p), patch));
   const add = () => {
     if (!name.trim()) return;
+    // A shared definition's name: its kind, property set and choices are its (as the type's own section does).
+    const def = defNamed(defs, name);
+    if (def) { onChange(addDef(params, def)); setName(''); return; }
     const options = kind === 'choice' ? (promptText('The choices, separated by commas') ?? '').split(',').map((x) => x.trim()).filter(Boolean) : undefined;
     onChange(addDraft(params, name, kind, undefined, options));
     setName('');
@@ -55,10 +64,18 @@ export function DraftParams({ typeClass, params, onChange }: { typeClass: string
       )}
       <div className="param-add">
         <input placeholder="New parameter" value={name} list="draft-param-suggestions" onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') add(); }} />
-        <datalist id="draft-param-suggestions">{SUGGESTED.map((x) => <option key={x} value={x} />)}</datalist>
+        <datalist id="draft-param-suggestions">{[...new Set([...defs.map((d) => d.name), ...SUGGESTED])].map((x) => <option key={x} value={x} />)}</datalist>
         <select value={kind} onChange={(e) => setKind(e.target.value)} title="Kind">{KINDS.map((k) => <option key={k} value={k}>{k}</option>)}</select>
         <button type="button" className="icon" title="Add the parameter" onClick={add} disabled={!name.trim()}><Plus size={14} /></button>
       </div>
+      {shared.length > 0 && (
+        <div className="param-add">
+          <select value="" data-draft-param-shared title="A shared parameter of the project: its kind, property set and choices come with it" onChange={(e) => { const d = shared.find((x) => x.id === e.target.value); if (d) onChange(addDef(params, d)); }}>
+            <option value="">Add a shared parameter…</option>
+            {shared.map((d) => <option key={d.id} value={d.id} data-no-i18n>{d.pset ? `${d.pset} · ${d.name}` : d.name}</option>)}
+          </select>
+        </div>
+      )}
       {standard.length > 0 && (
         <div className="param-add">
           <select value="" data-draft-param-standard title="A property of IFC's standard set for this class (FireRating, AcousticRating, ThermalTransmittance…): exported in that set, and a tag can show it" onChange={(e) => addStandard(e.target.value)}>

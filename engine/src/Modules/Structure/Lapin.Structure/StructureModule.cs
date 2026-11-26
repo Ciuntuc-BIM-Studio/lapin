@@ -55,6 +55,8 @@ public sealed class StructureModule : ILapinModule
         // ------------------------------------------------------------ columns
         r.Command("createColumnType", "New column type", (ctx, a) =>
         {
+            // `mark` and `params` (issues #146, #147): the new type's mark and parameters, in the same step (every type below takes them).
+            var given = NewTypeArgs.Read(a, IfcClass.ColumnType);
             var cs = Section.FromArgs(ctx, a, out var cm);
             var type = Columns.CreateType(ctx, (string?)a["name"], cs, Json.Number(a["height"]), StructureTypes.MaterialOr((string?)a["material"], cm ?? (cs.IsProfile ? "Steel" : "Reinforced concrete")));
             // Its finish layers round the core (decision 719).
@@ -64,7 +66,7 @@ public sealed class StructureModule : ILapinModule
                 attrs[ColumnLayers.Key] = ColumnLayers.Write(layers);
                 ctx.Replace(type.With(attrs: attrs));
             }
-            return new JsonObject { ["id"] = type.Id };
+            return NewTypeArgs.Made(ctx, type, given);
         });
 
         // A column, beam or footing type changed after it was made: its size, its name; its elements follow.
@@ -134,7 +136,11 @@ public sealed class StructureModule : ILapinModule
 
         // ------------------------------------------------------------ beams
         r.Command("createBeamType", "New beam type", (ctx, a) =>
-            Section.FromArgs(ctx, a, out var bm) is var bs ? new JsonObject { ["id"] = Beams.CreateType(ctx, (string?)a["name"], bs, StructureTypes.MaterialOr((string?)a["material"], bm ?? (bs.IsProfile ? "Steel" : "Reinforced concrete"))).Id } : null);
+        {
+            var given = NewTypeArgs.Read(a, IfcClass.BeamType);
+            var bs = Section.FromArgs(ctx, a, out var bm);
+            return NewTypeArgs.Made(ctx, Beams.CreateType(ctx, (string?)a["name"], bs, StructureTypes.MaterialOr((string?)a["material"], bm ?? (bs.IsProfile ? "Steel" : "Reinforced concrete"))), given);
+        });
 
         r.Command("addBeam", "Beam", (ctx, a) =>
         {
@@ -153,14 +159,15 @@ public sealed class StructureModule : ILapinModule
 
         // ------------------------------------------------------------ foundations
         r.Command("createStripType", "New strip foundation type", (ctx, a) =>
-            Profiles.FromArgs(ctx, a) is { } profile
-            ? new JsonObject { ["id"] = StripFootings.CreateProfileType(ctx, (string?)a["name"], profile.Shape, profile.Id, Json.Number(a["bottom"]) ?? -1.8, StructureTypes.MaterialOr((string?)a["material"], "Reinforced concrete")).Id }
-            : new JsonObject
-            {
-                ["id"] = StripFootings.CreateType(ctx, (string?)a["name"], LayerSets.Parse(a["layers"], "A strip foundation"),
+        {
+            var given = NewTypeArgs.Read(a, IfcClass.FootingType);
+            var type = Profiles.FromArgs(ctx, a) is { } profile
+                ? StripFootings.CreateProfileType(ctx, (string?)a["name"], profile.Shape, profile.Id, Json.Number(a["bottom"]) ?? -1.8, StructureTypes.MaterialOr((string?)a["material"], "Reinforced concrete"))
+                : StripFootings.CreateType(ctx, (string?)a["name"], LayerSets.Parse(a["layers"], "A strip foundation"),
                     Json.Number(a["stemHeight"]) ?? 1.4, Json.Number(a["footingWidth"]) ?? 0.6, Json.Number(a["footingHeight"]) ?? 0.4, Json.Number(a["bottom"]) ?? -1.8,
-                    StructureTypes.MaterialOr((string?)a["material"], "Reinforced concrete")).Id,
-            });
+                    StructureTypes.MaterialOr((string?)a["material"], "Reinforced concrete"));
+            return NewTypeArgs.Made(ctx, type, given);
+        });
 
         r.Command("addStripFooting", "Strip foundation", (ctx, a) =>
         {
@@ -178,10 +185,11 @@ public sealed class StructureModule : ILapinModule
 
         r.Command("createPadType", "New pad footing type", (ctx, a) =>
         {
+            var given = NewTypeArgs.Read(a, IfcClass.FootingType);
             var steps = a["steps"] is JsonArray arr
                 ? arr.OfType<JsonObject>().Select(s => new PadStep(Json.Number(s["length"]) ?? 0, Json.Number(s["width"]) ?? 0, Json.Number(s["height"]) ?? 0)).ToList()
                 : PadFootings.DefaultSteps;
-            return new JsonObject { ["id"] = PadFootings.CreateType(ctx, (string?)a["name"], steps, Json.Number(a["bottom"]) ?? -1.8, StructureTypes.MaterialOr((string?)a["material"], "Reinforced concrete")).Id };
+            return NewTypeArgs.Made(ctx, PadFootings.CreateType(ctx, (string?)a["name"], steps, Json.Number(a["bottom"]) ?? -1.8, StructureTypes.MaterialOr((string?)a["material"], "Reinforced concrete")), given);
         });
 
         r.Command("addPadFooting", "Pad footing", (ctx, a) =>
