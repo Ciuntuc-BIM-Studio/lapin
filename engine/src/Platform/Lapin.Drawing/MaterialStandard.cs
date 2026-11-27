@@ -139,10 +139,14 @@ public sealed class MaterialStandard
     /// (<see cref="RegexOptions.NonBacktracking"/>), so that no expression a user writes runs away and none needs a time limit. A limit
     /// is kept by the clock: on a loaded machine a match cut short by 50 ms was taken for no match, and a masonry was drawn as concrete
     /// (issue #122). An expression only the backtracking engine reads (a lookaround, a back-reference) keeps the 50 ms limit.
+    /// In the browser's engine the backtracking engine with its limit, as before: the non-backtracking engine's generic matchers
+    /// are not in the AOT-compiled code and Mono's interpreter stops the worker on them (interp.c assertion), so a project
+    /// opened in the browser never drew.
     /// </summary>
     public static Regex NameExpression(string pattern)
     {
         const RegexOptions options = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
+        if (OperatingSystem.IsBrowser()) return new Regex(pattern, options, TimeSpan.FromMilliseconds(50));
         try { return new Regex(pattern, options | RegexOptions.NonBacktracking); }
         catch (NotSupportedException) { return new Regex(pattern, options, TimeSpan.FromMilliseconds(50)); }
     }
