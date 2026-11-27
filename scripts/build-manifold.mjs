@@ -18,7 +18,7 @@
 // after ilammy/msvc-dev-cmd in CI), the C runtime linked in statically (/MT),
 // exporting the functions Lapin.Booleans imports (read from ManifoldBooleans.cs).
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir, platform, arch } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -30,10 +30,23 @@ const mac = platform() === 'darwin';
 const win = platform() === 'win32';
 const lib = mac ? 'libmanifoldc.dylib' : win ? 'manifoldc.dll' : 'libmanifoldc.so';
 // manifold's source is kept in this user's own cache, never in a folder every account can write to such as /tmp, where
-// another account could leave a tree of its own for CMake to run; and only while that folder is this user's alone.
-const work = join(win ? (process.env.LOCALAPPDATA || join(homedir(), 'AppData', 'Local')) : (process.env.XDG_CACHE_HOME || join(homedir(), '.cache')), 'lapin', `manifold-${TAG}`);
+// another account could leave a tree of its own for CMake to run; only while that folder is this user's alone, and only
+// while no folder above it lets another account replace it (a shared folder such as /tmp is fine: it is sticky, so only
+// the owner of a name there can rename it).
+let work = join(win ? (process.env.LOCALAPPDATA || join(homedir(), 'AppData', 'Local')) : (process.env.XDG_CACHE_HOME || join(homedir(), '.cache')), 'lapin', `manifold-${TAG}`);
 mkdirSync(work, { recursive: true, mode: 0o700 });
-if (!win) { const s = statSync(work); if (s.uid !== process.getuid() || s.mode & 0o022) throw new Error(`build-manifold: ${work} belongs to another account or others can write to it: remove it and run again.`); }
+if (!win) {
+  work = realpathSync(work);
+  const s = statSync(work);
+  if (s.uid !== process.getuid() || s.mode & 0o022) throw new Error(`build-manifold: ${work} belongs to another account or others can write to it: remove it and run again.`);
+  // Each folder above holds the one below by name, so one another account can write to could have the cache replaced in it.
+  for (let dir = dirname(work); ; dir = dirname(dir)) {
+    const a = statSync(dir), mine = a.uid === process.getuid();
+    if (a.uid !== 0 && !mine) throw new Error(`build-manifold: ${dir} belongs to another account, which could replace the cache under it: set XDG_CACHE_HOME to a folder only you and root can change, or give that folder to yourself.`);
+    if (!(a.mode & 0o1000) && (a.mode & 0o002 || (a.mode & 0o020 && !(mine && a.gid === process.getgid())))) throw new Error(`build-manifold: other accounts can write to ${dir}, so they could replace the cache under it: take that write access away (chmod go-w "${dir}"), or set XDG_CACHE_HOME to a folder only you can write to.`);
+    if (dir === dirname(dir)) break;
+  }
+}
 const sh = (cmd, args, cwd) => execFileSync(cmd, args, { cwd, stdio: 'inherit' });
 
 if (process.argv.includes('--browser-wasm')) {
