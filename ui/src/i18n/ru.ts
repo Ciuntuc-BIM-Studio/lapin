@@ -13504,6 +13504,10 @@ export const RU: Record<string, string> = {
   "Afterwards, File → Collaborate → Get latest from Archicad brings only what changed in Archicad since; the status bar says when it changed.": "Затем Файл → Совместная работа → Получить последнее из Archicad приносит только то, что изменилось в Archicad с тех пор; строка состояния сообщает, когда это произошло.",
   "From IFC": "Из IFC",
   "What the model's own project information says that no field above takes, kept as it said it (read-only; replaced when it is received again).": "То, что информация о проекте самой модели сообщает и что не подходит ни одному полю выше, сохранено как есть (только чтение; заменяется при повторном получении).",
+  // The catalogue's revocation list (docs/plan-extension-modules.md §4.3)
+  "Withdrawn by Lapin Extensions:": "Отозвано Lapin Extensions:",
+  "Withdrawn by Lapin Extensions; it is turned off when Lapin restarts:": "Отозвано Lapin Extensions; отключится при перезапуске Lapin:",
+  "Withdrawn by Lapin Extensions; what is installed stays:": "Отозвано Lapin Extensions; установленное остаётся:",
 };
 /** The Russian plural: one → n%10 = 1 and n%100 ≠ 11; few → n%10 in 2–4 and n%100 not in 12–14; many → the rest. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -13717,6 +13721,7 @@ const S5D_TAILS: Record<string, string> = {
   "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "Модель: сохраните копию и откройте её в Lapin как связь (Файл → Связать IFC…).",
 };
 export const RU_PATTERNS: Language['patterns'] = [
+  [/^„(.+)” (\S+) is not installed: Lapin Extensions withdrew this version on (\d{4}-\d{2}-\d{2}): (.+)$/, (m) => `«${m[1]}» ${m[2]} не устанавливается: Lapin Extensions отозвал эту версию ${m[3]}: ${m[4]}`],
   // Publish sets (forum topic 225)
   [/^Saved the publish set (.+)\.$/, (m) => `Набор публикации ${m[1]} сохранён.`],
   [/^Exported (\d+) files into (.+)\.$/, (m) => `Экспортировано ${n(m[1], 'файл', 'файла', 'файлов')} в ${m[2]}.`],

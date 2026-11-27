@@ -540,6 +540,150 @@ public sealed class ExtensionLoaderTests : IDisposable
         }
     }
 
+    // ------------------------------------------------------------------ the revocation list (§4.3)
+
+    /// <summary>A revocation list as tools/revoked.mjs publishes it, made at <paramref name="generated"/>, and its signature file by <paramref name="seed"/>.</summary>
+    static (byte[] Bytes, byte[] Sig) Revoked(string generated, string entries, byte[]? seed = null)
+    {
+        var bytes = Encoding.UTF8.GetBytes($"{{\n  \"format\": \"lapin-extensions-revoked\",\n  \"version\": 1,\n  \"generated\": \"{generated}\",\n  \"revoked\": [{entries}]\n}}\n");
+        return (bytes, SigFile(bytes, seed ?? Seed));
+    }
+
+    static byte[] SigFile(byte[] bytes, byte[] seed) => Encoding.UTF8.GetBytes(new JsonObject
+    {
+        ["format"] = "lapin-signature", ["version"] = 1, ["keyId"] = KeyOf(seed).Id, ["value"] = Convert.ToBase64String(Ed25519.Sign(seed, bytes)),
+    }.ToJsonString());
+
+    static string Entry(string id, string? versions = null, string? sha = null, string reason = "It deletes files it should not.") =>
+        "{\"id\": \"" + id + "\"" + (versions != null ? ", \"versions\": " + versions : "") + (sha != null ? ", \"sha256\": [\"" + sha + "\"]" : "") + ", \"reason\": \"" + reason + "\", \"date\": \"2026-11-27\"}";
+
+    JsonObject HandOver((byte[] Bytes, byte[] Sig) list, IReadOnlyList<ExtensionState>? started = null) =>
+        new ExtensionInstaller(Host(), started ?? []).Revocations(new JsonObject { ["data"] = Convert.ToBase64String(list.Bytes), ["sig"] = Convert.ToBase64String(list.Sig) });
+
+    /// <summary>The vector the interface's revoked.test.ts checks too: these bytes, signed by the test seed, give this signature.</summary>
+    public const string VectorText = "{\"format\":\"lapin-extensions-revoked\",\"version\":1,\"generated\":\"2026-11-27T10:00:00.000Z\",\"revoked\":[{\"id\":\"ro.test.fixture\",\"versions\":[\"1.0.0\"],\"reason\":\"Broken.\",\"date\":\"2026-11-27\"}]}\n";
+
+    [Fact]
+    public void Revocation_signature_good_bad_tampered_and_the_shared_vector()
+    {
+        var good = Revoked("2026-11-27T10:00:00.000Z", Entry("ro.test.fixture", "[\"1.0.0\"]"));
+        var list = ExtensionRevocations.Verify(good.Bytes, good.Sig, [TestKey]);
+        Assert.Single(list.Entries);
+        Assert.Equal(new DateTimeOffset(2026, 11, 27, 10, 0, 0, TimeSpan.Zero), list.Generated);
+        // Signed by a key Lapin does not trust, not signed, or changed after signing: refused.
+        var other = Revoked("2026-11-27T10:00:00.000Z", Entry("ro.test.fixture", "[\"1.0.0\"]"), OtherSeed);
+        Assert.Throws<ExtensionException>(() => ExtensionRevocations.Verify(other.Bytes, other.Sig, [TestKey]));
+        Assert.Throws<ExtensionException>(() => ExtensionRevocations.Verify(good.Bytes, null, [TestKey]));
+        Assert.Throws<ExtensionException>(() => ExtensionRevocations.Verify(good.Bytes, "{}"u8.ToArray(), [TestKey]));
+        var tampered = Encoding.UTF8.GetBytes(Encoding.UTF8.GetString(good.Bytes).Replace("1.0.0", "1.0.1"));
+        Assert.Throws<ExtensionException>(() => ExtensionRevocations.Verify(tampered, good.Sig, [TestKey]));
+        // A list signed well that is not one (no generated, no reason) is refused too.
+        var noTime = Encoding.UTF8.GetBytes("{\"format\":\"lapin-extensions-revoked\",\"version\":1,\"revoked\":[]}");
+        Assert.Throws<ExtensionException>(() => ExtensionRevocations.Verify(noTime, SigFile(noTime, Seed), [TestKey]));
+        var noReason = Encoding.UTF8.GetBytes("{\"format\":\"lapin-extensions-revoked\",\"version\":1,\"generated\":\"2026-11-27T10:00:00Z\",\"revoked\":[{\"id\":\"a.b\",\"versions\":[\"*\"],\"reason\":\" \",\"date\":\"2026-11-27\"}]}");
+        Assert.Throws<ExtensionException>(() => ExtensionRevocations.Verify(noReason, SigFile(noReason, Seed), [TestKey]));
+        // The vector shared with the interface.
+        var v = Encoding.UTF8.GetBytes(VectorText);
+        Assert.Equal(VectorSignature, Convert.ToBase64String(Ed25519.Sign(Seed, v)));
+        Assert.Single(ExtensionRevocations.Verify(v, SigFile(v, Seed), [TestKey]).Entries);
+    }
+
+    /// <summary>Ed25519 over <see cref="VectorText"/> by the test seed (deterministic); revoked.test.ts verifies the same.</summary>
+    public const string VectorSignature = "62Ys/HHjWfa6PvDytwzCAXxiR39+VO/ub7Kur7DJvmADskPnn3vEPzW0xGjSg5h+IPtdKYRBiLz4XQJRkN0qDw==";
+
+    [Fact]
+    public void Revocation_matches_a_version_every_version_or_a_package()
+    {
+        var sha = new string('c', 64);
+        var bytes = Revoked("2026-11-27T10:00:00Z", string.Join(",", Entry("a.one", "[\"1.0.0\"]"), Entry("a.all", "[\"*\"]"), Entry("a.sha", sha: sha))).Bytes;
+        var list = ExtensionRevocations.Parse(bytes);
+        Assert.NotNull(list.Match("a.one", "1.0.0", null));
+        Assert.Null(list.Match("a.one", "1.0.1", null));
+        Assert.Null(list.Match("a.other", "1.0.0", null));
+        Assert.NotNull(list.Match("a.all", "0.0.1", null));
+        Assert.NotNull(list.Match("a.all", "9.9.9", "d"));
+        Assert.NotNull(list.Match("a.sha", "2.0.0", sha));
+        Assert.Null(list.Match("a.sha", "2.0.0", new string('d', 64)));
+        Assert.Null(list.Match("a.sha", "2.0.0", null));
+        // The SHA-256 of another extension's package does not withdraw this one.
+        Assert.Null(list.Match("a.one", "3.0.0", sha));
+    }
+
+    [Fact]
+    public void The_engine_keeps_the_newest_verified_list_and_never_an_older_one()
+    {
+        var newer = Revoked("2026-11-27T10:00:00Z", Entry("ro.test.fixture", "[\"1.0.0\"]"));
+        var older = Revoked("2026-11-20T10:00:00Z", "");
+        var a = HandOver(newer);
+        Assert.True((bool)a["taken"]!);
+        Assert.Equal(1, (int)a["count"]!);
+        Assert.True(File.Exists(Path.Combine(_root, ExtensionRevocations.File)));
+        var b = HandOver(older);
+        Assert.False((bool)b["taken"]!);
+        Assert.True((bool)b["older"]!);
+        Assert.Equal(1, (int)b["count"]!);
+        Assert.Equal(newer.Bytes, File.ReadAllBytes(Path.Combine(_root, ExtensionRevocations.File)));
+        // A bad one is refused and nothing is written.
+        var bad = Revoked("2026-12-01T10:00:00Z", "", OtherSeed);
+        Assert.Throws<ExtensionException>(() => HandOver(bad));
+        Assert.Equal(newer.Bytes, File.ReadAllBytes(Path.Combine(_root, ExtensionRevocations.File)));
+        // A later one replaces it.
+        var later = Revoked("2026-12-01T10:00:00Z", "");
+        Assert.True((bool)HandOver(later)["taken"]!);
+        Assert.Equal(0, (int)new ExtensionInstaller(Host(), []).Revocations([])["count"]!);
+        // The kept copy changed on disk no longer verifies: it is not used (and a good list is taken again over it).
+        File.WriteAllText(Path.Combine(_root, ExtensionRevocations.File), Encoding.UTF8.GetString(later.Bytes).Replace("[]", "[" + Entry("x.y", "[\"*\"]") + "]"));
+        Assert.Null(ExtensionRevocations.ReadStored(_root, [TestKey]));
+        Assert.True((bool)HandOver(older)["taken"]!);
+    }
+
+    [Fact]
+    public void A_revoked_module_is_not_loaded_at_the_next_start_with_its_reason_and_offline_from_the_kept_copy()
+    {
+        var p = Pack();
+        Install(p);
+        var (first, _) = Start();
+        Assert.Equal("loaded", Assert.Single(first).Status);
+        // The list arrives while it runs: it says it is withdrawn and asks for a restart.
+        var answer = HandOver(Revoked("2026-11-27T10:00:00Z", Entry("ro.test.fixture", "[\"1.0.0\"]", reason: "It sends the project away.")), first);
+        Assert.Equal("ro.test.fixture", (string?)Assert.Single(answer["withdrawn"]!.AsArray())!["id"]);
+        var now = Assert.Single(new ExtensionInstaller(Host(), first).Modules([])["installed"]!.AsArray())!;
+        Assert.Equal("It sends the project away.", (string?)now["revoked"]!["reason"]);
+        Assert.True((bool)now["restart"]!);
+        // The next start (no network: the kept copy) refuses it before Verify, with the reason.
+        var (states, catalog) = Start();
+        var s = Assert.Single(states);
+        Assert.Equal("failed", s.Status);
+        Assert.Equal(ExtensionRevocations.Kind, s.ProblemKind);
+        Assert.Contains("It sends the project away.", s.Problem);
+        Assert.Null(s.Module);
+        Assert.Null(catalog.Command("fixture.ping"));
+        var listed = Assert.Single(new ExtensionInstaller(Host(), states).Modules([])["installed"]!.AsArray())!;
+        Assert.Equal("revoked", (string?)listed["problemKind"]);
+        Assert.Equal("Fixture fixture", (string?)listed["name"]);
+        Assert.Empty(new ExtensionInstaller(Host(), states).Modules([])["modules"]!.AsArray());
+    }
+
+    [Fact]
+    public void A_revoked_version_or_package_is_not_installed_and_another_version_is()
+    {
+        var p = Pack();
+        HandOver(Revoked("2026-11-27T10:00:00Z", Entry("ro.test.fixture", "[\"1.0.0\"]", reason: "Withdrawn for a test.")));
+        var e = Assert.Throws<ExtensionException>(() => Install(p));
+        Assert.Contains("Withdrawn for a test.", e.Message);
+        Assert.Throws<ExtensionException>(() => new ExtensionInstaller(Host(), []).Inspect(new JsonObject { ["manifest"] = p.Manifest.DeepClone(), ["data"] = Convert.ToBase64String(p.Zip) }));
+        Assert.False(Directory.Exists(VersionDir()));
+        Install(Pack(version: "1.0.1"));
+        Assert.Equal("loaded", Assert.Single(Start().States).Status);
+        // By its package's SHA-256, whatever version it says.
+        var q = Pack(version: "1.0.2");
+        HandOver(Revoked("2026-11-28T10:00:00Z", Entry("ro.test.fixture", sha: (string)q.Manifest["package"]!["sha256"]!)));
+        Assert.Throws<ExtensionException>(() => Install(q));
+        // Every version.
+        HandOver(Revoked("2026-11-29T10:00:00Z", Entry("ro.test.fixture", "[\"*\"]")));
+        Assert.Equal("revoked", Assert.Single(Start().States).ProblemKind);
+    }
+
     static string RepoRoot([System.Runtime.CompilerServices.CallerFilePath] string here = "") => Path.GetFullPath(Path.Combine(Path.GetDirectoryName(here)!, "..", "..", ".."));
 }
 

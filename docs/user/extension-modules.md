@@ -58,6 +58,6 @@ Lapin checks each installed module at every start, and one that fails a check is
 
 When its interface part cannot run (it needs a newer Lapin, or it fails while it loads), Lapin starts without that part, says *Extensions: their interfaces were not loaded:* with their names, and **Installed** shows *Its interface was left out:* with why.
 
-A version that Lapin Extensions withdraws after publishing it is no longer offered in the catalogue.
+A version that Lapin Extensions withdraws after publishing it is no longer offered in the catalogue, and Lapin will not install it. Lapin reads the list of withdrawn versions with the catalogue, checks that Lapin Extensions signed it, and keeps it on this computer, so it applies offline too. An extension module that is withdrawn says *Withdrawn by Lapin Extensions; it is turned off when Lapin restarts:* with the reason, and from the next start *Withdrawn by Lapin Extensions:* (it is no longer loaded). A content pack that is withdrawn stays installed and says so with the reason.
 
 See also [Extensions](extensions.md) for the catalogue, content packs, scripts and paid extensions.

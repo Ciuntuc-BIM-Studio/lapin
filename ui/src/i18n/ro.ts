@@ -7359,6 +7359,10 @@ export const RO: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Autentificarea prin browser are nevoie de aplicația desktop.",
   "This server offers no sign-in through the browser: sign in with your password.": "Acest server nu oferă autentificare prin browser: autentifică-te cu parola.",
   "The browser could not be opened here.": "Browserul nu a putut fi deschis aici.",
+  // The catalogue's revocation list (docs/plan-extension-modules.md §4.3)
+  "Withdrawn by Lapin Extensions:": "Retrasă de Lapin Extensions:",
+  "Withdrawn by Lapin Extensions; it is turned off when Lapin restarts:": "Retrasă de Lapin Extensions; se oprește când Lapin repornește:",
+  "Withdrawn by Lapin Extensions; what is installed stays:": "Retrasă de Lapin Extensions; ce e instalat rămâne:",
 };
 
 /** Phrases with a number or a name in them. */
@@ -7727,6 +7731,7 @@ const S5D_TAILS: Record<string, string> = {
   "Draws the interior and exterior sills seen under the plan's cut at LOD 200 as well: the detailed sills past the wall's faces, else the plain boards. At LOD 300 and up plans always draw them": "Desenează și la LOD 200 glafurile interioare și exterioare văzute sub tăietura planului: glafurile detaliate dincolo de fețele peretelui, altfel simplele plăci. De la LOD 300 în sus, planurile le desenează întotdeauna",
 };
 export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^„(.+)” (\S+) is not installed: Lapin Extensions withdrew this version on (\d{4}-\d{2}-\d{2}): (.+)$/, (m) => `„${m[1]}” ${m[2]} nu se instalează: Lapin Extensions a retras această versiune pe ${m[3]}: ${m[4]}`],
   // Publish sets (forum topic 225)
   [/^Saved the publish set (.+)\.$/, (m) => `Salvat setul de publicare ${m[1]}.`],
   [/^Exported (\d+) files into (.+)\.$/, (m) => `Exportate ${m[1]} fișiere în ${m[2]}.`],

@@ -17,6 +17,11 @@
  * settings: the page's storage, and on the desktop the user's settings.json too) with what its last conclusive check said;
  * sent to the store by POST (the desktop through its engine, `extensions.post`; the browser with fetch). It never goes into
  * a project, a report or an export.
+ *
+ * Revocation (docs/plan-extension-modules.md §4.3): the catalogue's `revoked.json` (+ `.sig`) is read beside its index, kept
+ * when it verifies against the store keys and is newer than the copy kept (`lapin.extensions.revoked`, verified again when
+ * read), and on the desktop handed to the engine (`extensions.revoked`), which verifies and keeps it too and refuses a withdrawn
+ * extension module at its next start. A withdrawn version is not installed; offline, the kept copies are used (revoked.ts).
  */
 
 import { confirmAction } from '../../shell/prompts';
@@ -28,15 +33,17 @@ import { hasModule } from '../brand';
 import { download, installExtension, uninstallExtension, type ContentInstaller, type InstalledExtension, type InstalledStore } from './install';
 import { readIndex, type AppFacts, type ExtensionKind, type Manifest } from './manifest';
 import { STORE_KEYS } from './keys';
-import { moduleInstaller } from './moduleKind';
+import { moduleInstaller, refreshEngineModules } from './moduleKind';
 import { afterCheck, checkLicenceKey, dueForCheck, LicenceError, type LicenceRecord, type StoreAnswer } from './licence';
 import { isPaid } from './manifest';
 import { catalogueTrust, trustProblem, type CatalogueTrust } from './signature';
+import { isNewer, revocationOf, revokedAddress, revokedProblem, verifyRevoked, type RevokedList } from './revoked';
 
 export const DEFAULT_INDEX = 'https://lapinbim.com/extensions/index.json';
 const INDEX_KEY = 'lapin.extensions.index';
 const INSTALLED_KEY = 'lapin.extensions';
 const LICENCES_KEY = 'lapin.extensions.licences';
+const REVOKED_KEY = 'lapin.extensions.revoked';
 
 // ------------------------------------------------------------ installers, by kind
 
@@ -133,11 +140,13 @@ export interface CatalogueState {
   trust: CatalogueTrust | null;
   /** The paid extensions' licence keys kept on this computer, by extension id (stage 2a). */
   licences: Record<string, LicenceRecord>;
+  /** The newest revocation list verified on this computer (null: none yet). */
+  revoked: RevokedList | null;
 }
 
 const storedIndex = (): string | null => { try { return localStorage.getItem(INDEX_KEY) || null; } catch { return null; } };
 
-export const useExtensions = create<CatalogueState>(() => ({ chosen: storedIndex(), from: null, list: [], problems: [], loading: false, error: null, installed: readInstalled(), busy: null, trust: null, licences: readLicences() }));
+export const useExtensions = create<CatalogueState>(() => ({ chosen: storedIndex(), from: null, list: [], problems: [], loading: false, error: null, installed: readInstalled(), busy: null, trust: null, licences: readLicences(), revoked: null }));
 
 /** The catalogue's address set (empty: back to the engine's or Lapin's own). */
 export function setCatalogueAddress(address: string): void {
@@ -173,6 +182,47 @@ export async function catalogueAddress(): Promise<string> {
 /** A catalogue on this computer (a path, a file:// or a localhost address) may name its packages by paths beside it. */
 export const isLocalAddress = (a: string) => !/^https:\/\//i.test(a) || /^https?:\/\/(localhost|127\.0\.0\.1)[:/]/i.test(a);
 
+// ------------------------------------------------------------ the revocation list (§4.3)
+
+/** The copy kept on this computer, verified again (a copy changed by hand counts as none). */
+let restored: Promise<void> | null = null;
+export function restoreRevoked(): Promise<void> {
+  restored ??= (async () => {
+    try {
+      const kept = JSON.parse(localStorage.getItem(REVOKED_KEY) ?? 'null') as { data?: string; sig?: string } | null;
+      if (!kept?.data || !kept.sig) return;
+      const list = await verifyRevoked(STORE_KEYS, fromBase64(kept.data), fromBase64(kept.sig));
+      if (list && isNewer(list, useExtensions.getState().revoked)) useExtensions.setState({ revoked: list });
+    } catch { /* none kept */ }
+  })();
+  return restored;
+}
+
+/**
+ * The revocation list read beside the catalogue's index: taken when it verifies and is newer than the one kept; on the desktop
+ * handed to the engine, which verifies it itself (and keeps the newest), and the Installed list read again. Never throws: a
+ * catalogue without one (a 404, offline) leaves the kept copies in force.
+ */
+export async function loadRevoked(from: string): Promise<void> {
+  await restoreRevoked();
+  let bytes: Uint8Array, sig: Uint8Array;
+  try {
+    const at = revokedAddress(from);
+    [bytes, sig] = await Promise.all([fetchBytes(at), fetchBytes(`${at}.sig`)]);
+  } catch { return; }
+  const list = await verifyRevoked(STORE_KEYS, bytes, sig);
+  if (!list) { console.info('The catalogue’s revocation list does not verify: it was not taken.'); return; }
+  if (isNewer(list, useExtensions.getState().revoked)) {
+    useExtensions.setState({ revoked: list });
+    try { localStorage.setItem(REVOKED_KEY, JSON.stringify({ data: toBase64(bytes), sig: toBase64(sig) })); } catch { /* this session only */ }
+  }
+  if (engineInBrowser) return;
+  try {
+    await engine.call('extensions.revoked', { data: toBase64(bytes), sig: toBase64(sig) });
+    await refreshEngineModules();
+  } catch { /* an engine without extension modules */ }
+}
+
 /** The catalogue read (again). */
 let reading = 0;
 
@@ -182,6 +232,8 @@ export async function loadCatalogue(): Promise<void> {
   useExtensions.setState({ loading: true, error: null });
   try {
     const from = await catalogueAddress();
+    // The revocation list beside it, on its own: it never holds the catalogue up, nor fails it.
+    void loadRevoked(from);
     const bytes = await fetchBytes(from);
     // Its signature beside it: none (a 404, an unsigned catalogue of one's own) reads as unsigned.
     const sig = await fetchBytes(`${from}.sig`).catch(() => null);
@@ -210,6 +262,9 @@ export function appFacts(): AppFacts {
  * key is kept, one its seller revoked is remembered as revoked (no more updates; nothing removed).
  */
 export async function install(m: Manifest, key?: string): Promise<InstalledExtension> {
+  await restoreRevoked();
+  const withdrawn = revocationOf(useExtensions.getState().revoked, m);
+  if (withdrawn) throw new Error(revokedProblem(m.name, m.version, withdrawn));
   useExtensions.setState({ busy: m.id });
   const kept = useExtensions.getState().licences[m.id];
   const useKey = key ?? kept?.key ?? null;

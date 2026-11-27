@@ -7366,6 +7366,10 @@ export const IT: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "L'accesso tramite browser richiede l'app desktop.",
   "This server offers no sign-in through the browser: sign in with your password.": "Questo server non offre l'accesso tramite browser: accedi con la password.",
   "The browser could not be opened here.": "Il browser non si è potuto aprire qui.",
+  // The catalogue's revocation list (docs/plan-extension-modules.md §4.3)
+  "Withdrawn by Lapin Extensions:": "Ritirata da Lapin Extensions:",
+  "Withdrawn by Lapin Extensions; it is turned off when Lapin restarts:": "Ritirata da Lapin Extensions; viene disattivata al riavvio di Lapin:",
+  "Withdrawn by Lapin Extensions; what is installed stays:": "Ritirata da Lapin Extensions; ciò che è installato resta:",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
@@ -7735,6 +7739,7 @@ const S5D_TAILS: Record<string, string> = {
   "Draws the interior and exterior sills seen under the plan's cut at LOD 200 as well: the detailed sills past the wall's faces, else the plain boards. At LOD 300 and up plans always draw them": "Disegna anche a LOD 200 i davanzali interni ed esterni visibili sotto il taglio della pianta: i davanzali dettagliati oltre le facce del muro, altrimenti le semplici tavole. Da LOD 300 in su le piante li disegnano sempre",
 };
 export const IT_PATTERNS: Language['patterns'] = [
+  [/^„(.+)” (\S+) is not installed: Lapin Extensions withdrew this version on (\d{4}-\d{2}-\d{2}): (.+)$/, (m) => `«${m[1]}» ${m[2]} non viene installata: Lapin Extensions ha ritirato questa versione il ${m[3]}: ${m[4]}`],
   // Publish sets (forum topic 225)
   [/^Saved the publish set (.+)\.$/, (m) => `Salvato il set di pubblicazione ${m[1]}.`],
   [/^Exported (\d+) files into (.+)\.$/, (m) => `Esportati ${m[1]} file in ${m[2]}.`],

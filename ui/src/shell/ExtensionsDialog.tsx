@@ -10,6 +10,8 @@
  * kept on this computer; a key its seller revoked gets no more updates, and says so.
  * Extension modules (docs/plan-extension-modules.md, S2): Installed shows each one's permission (it runs code with full access),
  * what the engine found at its start (refused, and why), an On switch, and Restart now when a change waits for the next start.
+ * Revocation (§4.3): a version the catalogue withdrew says so in Installed with its reason (a module is turned off at the next
+ * start; a content pack stays installed).
  */
 
 import { confirmAction } from './prompts';
@@ -22,6 +24,7 @@ import { compareVersions, compatibility, isNonCommercial, isPaid, isPermissive, 
 import { cleanKey, isRevoked, LICENCE_MESSAGES } from '../platform/extensions/licence';
 import { FULL_ACCESS, isModuleKind, moduleStatus, refreshEngineModules, restartNow, setModuleEnabled, useEngineModules } from '../platform/extensions/moduleKind';
 import { usePluginReport } from '../platform/extensions/plugins';
+import { revocationOf } from '../platform/extensions/revoked';
 import { saveProject } from '../engine/files';
 import { appFacts, contentInstallers, DEFAULT_INDEX, forgetLicence, install, loadCatalogue, setCatalogueAddress, uninstall, useExtensions } from '../platform/extensions/runtime';
 
@@ -222,7 +225,7 @@ function ModuleState({ x }: { x: InstalledExtension }) {
 }
 
 function Installed() {
-  const { installed, list, busy, licences } = useExtensions();
+  const { installed, list, busy, licences, revoked } = useExtensions();
   const restart = useEngineModules((s) => s.restart);
   const hasModules = installed.some((x) => isModuleKind(x.kind));
   useEffect(() => { if (hasModules && !engineInBrowser) void refreshEngineModules(); }, [hasModules]);
@@ -256,6 +259,10 @@ function Installed() {
               <span className="muted small"><span>{KIND_INFO[x.kind]?.label ?? x.kind}</span><span data-no-i18n> · {x.version} · {x.manifest.license} · {when(x.at)}</span></span>
               {isModuleKind(x.kind) && <ModuleState x={x} />}
               {KIND_INFO[x.kind]?.code && !isModuleKind(x.kind) && !runnable(x.manifest, app) && <span className="muted small">Runs once the Python console is in Lapin.</span>}
+              {!isModuleKind(x.kind) && (() => {
+                const r = revocationOf(revoked, { id: x.id, version: x.version, package: x.manifest.package });
+                return r && <span className="small ext-revoked" role="note" data-testid="installed-withdrawn">Withdrawn by Lapin Extensions; what is installed stays:<span data-no-i18n> {r.reason}</span></span>;
+              })()}
               {isRevoked(licences, x.id) && <span className="small ext-revoked" role="note" data-testid="installed-revoked">{REVOKED_NOTE}</span>}
             </span>
             {licences[x.id] && <button type="button" className="btn small" data-action="extension-forget-key" onClick={() => forget(x)}><KeyRound size={12} />Forget licence key</button>}

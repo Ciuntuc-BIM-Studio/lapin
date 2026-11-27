@@ -13522,6 +13522,10 @@ export const SV: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Inloggning via webbläsaren kräver skrivbordsappen.",
   "This server offers no sign-in through the browser: sign in with your password.": "Den här servern erbjuder ingen inloggning via webbläsaren: logga in med ditt lösenord.",
   "The browser could not be opened here.": "Webbläsaren kunde inte öppnas här.",
+  // The catalogue's revocation list (docs/plan-extension-modules.md §4.3)
+  "Withdrawn by Lapin Extensions:": "Återkallad av Lapin Extensions:",
+  "Withdrawn by Lapin Extensions; it is turned off when Lapin restarts:": "Återkallad av Lapin Extensions; stängs av när Lapin startas om:",
+  "Withdrawn by Lapin Extensions; what is installed stays:": "Återkallad av Lapin Extensions; det som är installerat finns kvar:",
 };
 
 /** Phrases with a number or a name in them. */
@@ -13890,6 +13894,7 @@ const S5D_TAILS: Record<string, string> = {
   "Draws the interior and exterior sills seen under the plan's cut at LOD 200 as well: the detailed sills past the wall's faces, else the plain boards. At LOD 300 and up plans always draw them": "Ritar även vid LOD 200 de inner- och ytterfönsterbänkar som syns under planens snitt: de detaljerade fönsterbänkarna utanför väggarnas ytor, annars de enkla brädorna. Från LOD 300 och uppåt ritar planer dem alltid",
 };
 export const SV_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^„(.+)” (\S+) is not installed: Lapin Extensions withdrew this version on (\d{4}-\d{2}-\d{2}): (.+)$/, (m) => `”${m[1]}” ${m[2]} installeras inte: Lapin Extensions återkallade den här versionen den ${m[3]}: ${m[4]}`],
   // Publish sets (forum topic 225)
   [/^Saved the publish set (.+)\.$/, (m) => `Sparade publiceringsuppsättningen ${m[1]}.`],
   [/^Exported (\d+) files into (.+)\.$/, (m) => `Exporterade ${m[1]} filer till ${m[2]}.`],

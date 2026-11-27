@@ -34,6 +34,10 @@ export interface EngineExtension {
   restart?: boolean;
   nextVersion?: string;
   problem?: string;
+  /** What kind of refusal `problem` is: "revoked" (the catalogue withdrew this version). */
+  problemKind?: string;
+  /** The revocation list in force withdraws this version (docs/plan-extension-modules.md §4.3): why, and since when. */
+  revoked?: { reason: string; date: string };
   license?: string;
   module?: string;
 }
@@ -63,6 +67,9 @@ export async function refreshEngineModules(): Promise<void> {
 export function moduleStatus(e: EngineExtension | undefined, leftReason?: string): { text: string; detail?: string; problem: boolean } | null {
   if (!e) return leftReason ? { text: 'Its interface was left out:', detail: leftReason, problem: true } : null;
   if (e.pendingRemoval) return { text: 'Removed when Lapin restarts.', problem: false };
+  // Withdrawn by the catalogue: refused at this start, or (the list read since) at the next one.
+  if (e.status === 'failed' && (e.problemKind === 'revoked' || e.revoked)) return { text: 'Withdrawn by Lapin Extensions:', detail: e.revoked?.reason ?? e.problem, problem: true };
+  if (e.revoked && e.status === 'loaded') return { text: 'Withdrawn by Lapin Extensions; it is turned off when Lapin restarts:', detail: e.revoked.reason, problem: true };
   if (e.status === 'failed') return { text: 'Not loaded:', detail: e.problem, problem: true };
   if (e.status === 'pending') return { text: 'Loads when Lapin restarts.', problem: false };
   if (e.nextVersion) return { text: 'The new version loads when Lapin restarts:', detail: e.nextVersion, problem: false };

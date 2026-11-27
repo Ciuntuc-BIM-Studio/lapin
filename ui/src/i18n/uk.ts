@@ -13504,6 +13504,10 @@ export const UK: Record<string, string> = {
   "Afterwards, File → Collaborate → Get latest from Archicad brings only what changed in Archicad since; the status bar says when it changed.": "Потім Файл → Спільна робота → Отримати останнє з Archicad приносить лише те, що змінилося в Archicad відтоді; рядок стану повідомляє, коли це сталося.",
   "From IFC": "З IFC",
   "What the model's own project information says that no field above takes, kept as it said it (read-only; replaced when it is received again).": "Те, що інформація про проєкт самої моделі повідомляє і що не підходить жодному полю вище, збережено як є (лише читання; замінюється під час повторного отримання).",
+  // The catalogue's revocation list (docs/plan-extension-modules.md §4.3)
+  "Withdrawn by Lapin Extensions:": "Відкликано Lapin Extensions:",
+  "Withdrawn by Lapin Extensions; it is turned off when Lapin restarts:": "Відкликано Lapin Extensions; вимкнеться під час перезапуску Lapin:",
+  "Withdrawn by Lapin Extensions; what is installed stays:": "Відкликано Lapin Extensions; встановлене залишається:",
 };
 /** The Ukrainian plural: 1 (not 11) → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -13719,6 +13723,7 @@ const S5D_TAILS: Record<string, string> = {
   "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "Модель: збережіть копію й відкрийте її в Lapin як зв'язок (Файл → Зв'язати IFC…).",
 };
 export const UK_PATTERNS: Language['patterns'] = [
+  [/^„(.+)” (\S+) is not installed: Lapin Extensions withdrew this version on (\d{4}-\d{2}-\d{2}): (.+)$/, (m) => `«${m[1]}» ${m[2]} не встановлюється: Lapin Extensions відкликав цю версію ${m[3]}: ${m[4]}`],
   // Publish sets (forum topic 225)
   [/^Saved the publish set (.+)\.$/, (m) => `Набір публікації ${m[1]} збережено.`],
   [/^Exported (\d+) files into (.+)\.$/, (m) => `Експортовано ${n(m[1], 'файл', 'файли', 'файлів')} до ${m[2]}.`],

@@ -16,6 +16,10 @@ public sealed class ExtensionState(ExtensionEntry entry)
     /// <summary>"loaded", "disabled" (the user's), "failed" (refused at this start: <see cref="Problem"/>).</summary>
     public string Status { get; internal set; } = "disabled";
     public string? Problem { get; internal set; }
+    /// <summary>What kind of refusal <see cref="Problem"/> is: "revoked" (the catalogue withdrew this version, <see cref="Revocation"/>), else null.</summary>
+    public string? ProblemKind { get; internal set; }
+    /// <summary>The revocation list's entry that refused it at this start.</summary>
+    public Revocation? Revocation { get; internal set; }
     public ExtensionManifest? Manifest { get; internal set; }
     /// <summary>Its engine module, while it is loaded (an interface half only has none).</summary>
     public ILapinModule? Module { get; internal set; }
@@ -29,7 +33,7 @@ public sealed class ExtensionState(ExtensionEntry entry)
     /// <summary>Its engine assemblies' checked bytes, by simple name (engine/&lt;name&gt;.dll and its .pdb).</summary>
     internal IReadOnlyDictionary<string, (byte[] Dll, byte[]? Pdb)>? Assemblies { get; set; }
 
-    internal void Fail(string why) { Status = "failed"; Problem = why; Module = null; Js = null; Css = null; Phrases.Clear(); Assemblies = null; }
+    internal void Fail(string why, string? kind = null) { Status = "failed"; Problem = why; ProblemKind = kind; Module = null; Js = null; Css = null; Phrases.Clear(); Assemblies = null; }
 }
 
 /// <summary>What the loader needs of the host: where extensions live, the keys it trusts and what the edition has.</summary>
@@ -120,12 +124,24 @@ public static class ExtensionLoader
     {
         var o = new List<ExtensionState>();
         var moduleIds = new HashSet<string>(host.Modules);
-        foreach (var entry in Sweep(host.Root))
+        var entries = Sweep(host.Root);
+        // The newest revocation list the engine verified (§4.3), kept from an earlier start: offline, it is the one used.
+        var revoked = entries.Count > 0 ? ExtensionRevocations.ReadStored(host.Root, host.Keys) : null;
+        foreach (var entry in entries)
         {
             var state = new ExtensionState(entry);
             o.Add(state);
             try
             {
+                // Withdrawn by the catalogue: refused before anything of it is read but its kept manifest (its name and SHA-256).
+                var kept = KeptManifest(host.Root, entry);
+                if (revoked?.Match(entry.Id, entry.Version, kept?.Sha256) is { } withdrawn)
+                {
+                    state.Manifest = kept;
+                    state.Revocation = withdrawn;
+                    state.Fail(ExtensionRevocations.Problem(withdrawn), ExtensionRevocations.Kind);
+                    continue;
+                }
                 var c = Verify(host, entry, state);
                 if (!entry.Enabled) { state.Status = "disabled"; continue; }
                 // Its module id (its id's last part) names its commands, its CSS and its interface module: one of a kind.
@@ -196,6 +212,17 @@ public static class ExtensionLoader
         state.Assemblies = bytes.Where(x => x.Key.StartsWith("engine/", StringComparison.Ordinal) && x.Key.Count(ch => ch == '/') == 1 && x.Key.EndsWith(".dll", StringComparison.Ordinal))
             .ToDictionary(x => x.Key["engine/".Length..^".dll".Length], x => (x.Value, bytes.GetValueOrDefault(x.Key[..^".dll".Length] + ".pdb")), StringComparer.OrdinalIgnoreCase);
         return c;
+    }
+
+    /// <summary>The catalogue manifest kept beside an installed version, read as it is (not checked: Verify does that); null when it cannot be read.</summary>
+    internal static ExtensionManifest? KeptManifest(string root, ExtensionEntry entry)
+    {
+        try
+        {
+            var path = Path.Combine(root, entry.Id, entry.Version, ExtensionPackage.KeptManifest);
+            return File.Exists(path) && JsonNode.Parse(File.ReadAllText(path)) is JsonObject j ? ExtensionManifest.Parse(j) : null;
+        }
+        catch (Exception x) when (x is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or ExtensionException or InvalidOperationException) { return null; }
     }
 
     [RequiresUnreferencedCode(Untrimmed)]

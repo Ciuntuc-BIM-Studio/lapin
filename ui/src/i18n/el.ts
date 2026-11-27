@@ -13524,6 +13524,10 @@ export const EL: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Η σύνδεση μέσω προγράμματος περιήγησης χρειάζεται την εφαρμογή υπολογιστή.",
   "This server offers no sign-in through the browser: sign in with your password.": "Αυτός ο διακομιστής δεν προσφέρει σύνδεση μέσω προγράμματος περιήγησης: συνδεθείτε με τον κωδικό σας.",
   "The browser could not be opened here.": "Δεν ήταν δυνατό να ανοίξει το πρόγραμμα περιήγησης εδώ.",
+  // The catalogue's revocation list (docs/plan-extension-modules.md §4.3)
+  "Withdrawn by Lapin Extensions:": "Αποσύρθηκε από το Lapin Extensions:",
+  "Withdrawn by Lapin Extensions; it is turned off when Lapin restarts:": "Αποσύρθηκε από το Lapin Extensions· απενεργοποιείται όταν το Lapin επανεκκινηθεί:",
+  "Withdrawn by Lapin Extensions; what is installed stays:": "Αποσύρθηκε από το Lapin Extensions· ό,τι είναι εγκατεστημένο μένει:",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
@@ -13862,6 +13866,7 @@ const S5D_TAILS_EL: Record<string, string> = {
 };
 
 export const EL_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^„(.+)” (\S+) is not installed: Lapin Extensions withdrew this version on (\d{4}-\d{2}-\d{2}): (.+)$/, (m) => `«${m[1]}» ${m[2]} δεν εγκαθίσταται: το Lapin Extensions απέσυρε αυτή την έκδοση στις ${m[3]}: ${m[4]}`],
   // Publish sets (forum topic 225)
   [/^Saved the publish set (.+)\.$/, (m) => `Αποθηκεύτηκε το σύνολο δημοσίευσης ${m[1]}.`],
   [/^Exported (\d+) files into (.+)\.$/, (m) => `Εξήχθησαν ${m[1]} αρχεία στο ${m[2]}.`],
