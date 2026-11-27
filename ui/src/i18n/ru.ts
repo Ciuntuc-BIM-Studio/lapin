@@ -13504,6 +13504,28 @@ export const RU: Record<string, string> = {
   "Afterwards, File → Collaborate → Get latest from Archicad brings only what changed in Archicad since; the status bar says when it changed.": "Затем Файл → Совместная работа → Получить последнее из Archicad приносит только то, что изменилось в Archicad с тех пор; строка состояния сообщает, когда это произошло.",
   "From IFC": "Из IFC",
   "What the model's own project information says that no field above takes, kept as it said it (read-only; replaced when it is received again).": "То, что информация о проекте самой модели сообщает и что не подходит ни одному полю выше, сохранено как есть (только чтение; заменяется при повторном получении).",
+  // The Converge IFC connector (docs/plan-converge-ifc.md).
+  "Converge IFC: Send…": "Converge IFC: Отправить…",
+  "Converge IFC: Get…": "Converge IFC: Получить…",
+  "Send to Converge IFC": "Отправить в Converge IFC",
+  "Get from Converge IFC": "Получить из Converge IFC",
+  "Looking for your account…": "Поиск вашей учётной записи…",
+  "The address of your firm's Converge IFC server": "Адрес сервера Converge IFC вашей организации",
+  "On the server: the account menu → API tokens": "На сервере: меню учётной записи → Токены API",
+  "Make a token on the server, in the account menu under API tokens. Lapin never writes it into the project, its settings or a report.": "Создайте токен на сервере, в меню учётной записи, в разделе «Токены API». Lapin никогда не записывает его в проект, настройки или отчёт.",
+  "no project on this server": "на этом сервере нет проектов",
+  "a new file…": "новый файл…",
+  "no IFC file in this project": "в этом проекте нет файлов IFC",
+  "Your roles in this project do not allow sending files.": "Ваши роли в этом проекте не позволяют отправлять файлы.",
+  "The whole project goes as one IFC file. On the server it is work in progress until it is shared or published there.": "Весь проект отправляется одним файлом IFC. На сервере он считается рабочим, пока там его не передадут в общий доступ или не опубликуют.",
+  "The file is saved on this computer, its checksum checked, then the Import IFC dialog opens: bring it in recognised, as references or linked. Saving a newer version over a linked file updates the link.": "Файл сохраняется на этом компьютере с проверкой контрольной суммы, затем открывается окно «Импорт IFC»: загрузите его с распознаванием, как ссылки или связью. Сохранение новой версии поверх связанного файла обновляет связь.",
+  "Get…": "Получить…",
+  "Getting…": "Получение…",
+  "Sending to Converge IFC": "Отправка в Converge IFC",
+  "Making the IFC": "Создание файла IFC",
+  "Getting from Converge IFC": "Получение из Converge IFC",
+  "Downloading from the server": "Загрузка с сервера",
+  "Uploading to the server": "Загрузка на сервер",
 };
 /** The Russian plural: one → n%10 = 1 and n%100 ≠ 11; few → n%10 in 2–4 and n%100 not in 12–14; many → the rest. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -14171,6 +14193,9 @@ export const RU_PATTERNS: Language['patterns'] = [
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `Получено из Speckle: ${n(m[1], 'объект', 'объекта', 'объектов')}.`],
   [/^Received (\d+) objects from Speckle: (\d+) native elements, (\d+) references\.$/, (m) => `Получено из Speckle: ${n(m[1], 'объект', 'объекта', 'объектов')}: нативных элементов ${m[2]}, ссылок ${m[3]}.`],
+  // The Converge IFC connector: what a send made (docs/plan-converge-ifc.md).
+  [/^Sent: (.+), now at (.+)\.$/, (m) => `Отправлено: ${m[1]}, теперь ${m[2]}.`],
+  [/^Nothing sent: (.+) is already like this on the server, at (.+)\.$/, (m) => `Ничего не отправлено: ${m[1]} на сервере уже такой же, ${m[2]}.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Эта версия отправлена из этого проекта: ${m[1]} её объектов являются его собственными элементами.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Отправлено: ${n(m[1], 'элемент', 'элемента', 'элементов')}, как новая версия.`],
   // CDE on the web, W3: issue sync, activity.

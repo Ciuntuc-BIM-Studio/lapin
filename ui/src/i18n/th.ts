@@ -13522,6 +13522,28 @@ export const TH: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "การลงชื่อเข้าใช้ผ่านเบราว์เซอร์ต้องใช้แอปเดสก์ท็อป.",
   "This server offers no sign-in through the browser: sign in with your password.": "เซิร์ฟเวอร์นี้ไม่มีการลงชื่อเข้าใช้ผ่านเบราว์เซอร์: ลงชื่อเข้าใช้ด้วยรหัสผ่าน.",
   "The browser could not be opened here.": "ไม่สามารถเปิดเบราว์เซอร์ที่นี่ได้.",
+  // The Converge IFC connector (docs/plan-converge-ifc.md).
+  "Converge IFC: Send…": "Converge IFC: ส่ง…",
+  "Converge IFC: Get…": "Converge IFC: รับ…",
+  "Send to Converge IFC": "ส่งไปยัง Converge IFC",
+  "Get from Converge IFC": "รับจาก Converge IFC",
+  "Looking for your account…": "กำลังค้นหาบัญชีของคุณ…",
+  "The address of your firm's Converge IFC server": "ที่อยู่ของเซิร์ฟเวอร์ Converge IFC ของบริษัทคุณ",
+  "On the server: the account menu → API tokens": "บนเซิร์ฟเวอร์: เมนูบัญชี → โทเค็น API",
+  "Make a token on the server, in the account menu under API tokens. Lapin never writes it into the project, its settings or a report.": "สร้างโทเค็นบนเซิร์ฟเวอร์ ในเมนูบัญชีที่โทเค็น API Lapin จะไม่เขียนโทเค็นลงในโครงการ การตั้งค่า หรือรายงาน.",
+  "no project on this server": "ไม่มีโครงการบนเซิร์ฟเวอร์นี้",
+  "a new file…": "ไฟล์ใหม่…",
+  "no IFC file in this project": "ไม่มีไฟล์ IFC ในโครงการนี้",
+  "Your roles in this project do not allow sending files.": "บทบาทของคุณในโครงการนี้ไม่อนุญาตให้ส่งไฟล์.",
+  "The whole project goes as one IFC file. On the server it is work in progress until it is shared or published there.": "ทั้งโครงการจะส่งเป็นไฟล์ IFC ไฟล์เดียว บนเซิร์ฟเวอร์จะเป็นงานที่กำลังดำเนินการจนกว่าจะถูกแชร์หรือเผยแพร่ที่นั่น.",
+  "The file is saved on this computer, its checksum checked, then the Import IFC dialog opens: bring it in recognised, as references or linked. Saving a newer version over a linked file updates the link.": "ไฟล์จะถูกบันทึกในคอมพิวเตอร์นี้พร้อมตรวจสอบ checksum แล้วกล่องนำเข้า IFC จะเปิดขึ้น: นำเข้าแบบรู้จำ เป็นไฟล์อ้างอิง หรือแบบลิงก์ การบันทึกเวอร์ชันใหม่กว่าทับไฟล์ที่ลิงก์ไว้จะอัปเดตลิงก์.",
+  "Get…": "รับ…",
+  "Getting…": "กำลังรับ…",
+  "Sending to Converge IFC": "กำลังส่งไปยัง Converge IFC",
+  "Making the IFC": "กำลังสร้างไฟล์ IFC",
+  "Getting from Converge IFC": "กำลังรับจาก Converge IFC",
+  "Downloading from the server": "กำลังดาวน์โหลดจากเซิร์ฟเวอร์",
+  "Uploading to the server": "กำลังอัปโหลดไปยังเซิร์ฟเวอร์",
 };
 
 /** Phrases with a number or a name in them. */
@@ -14344,6 +14366,9 @@ export const TH_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `ได้รับ ${m[1]} วัตถุจาก Speckle.`],
   [/^Received (\d+) objects from Speckle: (\d+) native elements, (\d+) references\.$/, (m) => `ได้รับ ${m[1]} วัตถุจาก Speckle: องค์ประกอบเนทีฟ ${m[2]} รายการ, ข้อมูลอ้างอิง ${m[3]} รายการ.`],
+  // The Converge IFC connector: what a send made (docs/plan-converge-ifc.md).
+  [/^Sent: (.+), now at (.+)\.$/, (m) => `ส่งแล้ว: ${m[1]} ขณะนี้อยู่ที่ ${m[2]}.`],
+  [/^Nothing sent: (.+) is already like this on the server, at (.+)\.$/, (m) => `ไม่ได้ส่งอะไร: ${m[1]} บนเซิร์ฟเวอร์เหมือนกันอยู่แล้ว ที่ ${m[2]}.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `เวอร์ชันนี้ถูกส่งจากโครงการนี้: ${m[1]} วัตถุเป็นองค์ประกอบของโครงการนี้เอง.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `ส่งแล้ว: ${m[1]} องค์ประกอบ เป็นเวอร์ชันใหม่.`],
   // CDE on the web, W3: issue sync, activity.

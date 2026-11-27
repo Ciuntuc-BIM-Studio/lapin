@@ -13504,6 +13504,28 @@ export const UK: Record<string, string> = {
   "Afterwards, File → Collaborate → Get latest from Archicad brings only what changed in Archicad since; the status bar says when it changed.": "Потім Файл → Спільна робота → Отримати останнє з Archicad приносить лише те, що змінилося в Archicad відтоді; рядок стану повідомляє, коли це сталося.",
   "From IFC": "З IFC",
   "What the model's own project information says that no field above takes, kept as it said it (read-only; replaced when it is received again).": "Те, що інформація про проєкт самої моделі повідомляє і що не підходить жодному полю вище, збережено як є (лише читання; замінюється під час повторного отримання).",
+  // The Converge IFC connector (docs/plan-converge-ifc.md).
+  "Converge IFC: Send…": "Converge IFC: Надіслати…",
+  "Converge IFC: Get…": "Converge IFC: Отримати…",
+  "Send to Converge IFC": "Надіслати до Converge IFC",
+  "Get from Converge IFC": "Отримати з Converge IFC",
+  "Looking for your account…": "Пошук вашого облікового запису…",
+  "The address of your firm's Converge IFC server": "Адреса сервера Converge IFC вашої організації",
+  "On the server: the account menu → API tokens": "На сервері: меню облікового запису → Токени API",
+  "Make a token on the server, in the account menu under API tokens. Lapin never writes it into the project, its settings or a report.": "Створіть токен на сервері, в меню облікового запису, у розділі «Токени API». Lapin ніколи не записує його в проєкт, налаштування чи звіт.",
+  "no project on this server": "на цьому сервері немає проєктів",
+  "a new file…": "новий файл…",
+  "no IFC file in this project": "у цьому проєкті немає файлів IFC",
+  "Your roles in this project do not allow sending files.": "Ваші ролі в цьому проєкті не дозволяють надсилати файли.",
+  "The whole project goes as one IFC file. On the server it is work in progress until it is shared or published there.": "Увесь проєкт надсилається одним файлом IFC. На сервері він вважається робочим, доки його там не відкриють для спільного доступу або не опублікують.",
+  "The file is saved on this computer, its checksum checked, then the Import IFC dialog opens: bring it in recognised, as references or linked. Saving a newer version over a linked file updates the link.": "Файл зберігається на цьому комп'ютері з перевіркою контрольної суми, потім відкривається вікно «Імпорт IFC»: завантажте його з розпізнаванням, як посилання або зв'язком. Збереження новішої версії поверх зв'язаного файла оновлює зв'язок.",
+  "Get…": "Отримати…",
+  "Getting…": "Отримання…",
+  "Sending to Converge IFC": "Надсилання до Converge IFC",
+  "Making the IFC": "Створення файла IFC",
+  "Getting from Converge IFC": "Отримання з Converge IFC",
+  "Downloading from the server": "Завантаження із сервера",
+  "Uploading to the server": "Завантаження на сервер",
 };
 /** The Ukrainian plural: 1 (not 11) → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -14173,6 +14195,9 @@ export const UK_PATTERNS: Language['patterns'] = [
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `Отримано ${n(m[1], "об'єкт", "об'єкти", "об'єктів")} зі Speckle.`],
   [/^Received (\d+) objects from Speckle: (\d+) native elements, (\d+) references\.$/, (m) => `Отримано ${n(m[1], "об'єкт", "об'єкти", "об'єктів")} зі Speckle: ${m[2]} нативних елементів, ${m[3]} посилань.`],
+  // The Converge IFC connector: what a send made (docs/plan-converge-ifc.md).
+  [/^Sent: (.+), now at (.+)\.$/, (m) => `Надіслано: ${m[1]}, тепер ${m[2]}.`],
+  [/^Nothing sent: (.+) is already like this on the server, at (.+)\.$/, (m) => `Нічого не надіслано: ${m[1]} на сервері вже такий самий, ${m[2]}.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Цю версію надіслано з цього проєкту: ${m[1]} її об'єктів — власні елементи проєкту.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Надіслано: ${n(m[1], 'елемент', 'елементи', 'елементів')}, як нову версію.`],
   // CDE on the web, W3: issue sync, activity.

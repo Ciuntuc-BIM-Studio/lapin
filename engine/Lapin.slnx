@@ -31,6 +31,7 @@
   </Folder>
   <Folder Name="/src/Modules/Exchange/">
     <Project Path="src/Modules/Exchange/Lapin.Archicad/Lapin.Archicad.csproj" />
+    <Project Path="src/Modules/Exchange/Lapin.ConvergeIfc/Lapin.ConvergeIfc.csproj" />
     <Project Path="src/Modules/Exchange/Lapin.Speckle/Lapin.Speckle.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Interior/">

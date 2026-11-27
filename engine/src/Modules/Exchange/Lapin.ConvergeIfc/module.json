@@ -1,0 +1,1 @@
+{ "id": "convergeifc", "name": "Converge IFC", "assembly": "Lapin.ConvergeIfc.dll", "requires": ["core"], "desktopOnly": true }

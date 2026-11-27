@@ -340,7 +340,7 @@ fn stop_engine(engine: State<'_, Arc<Engine>>) {
 
 const SECRET_SERVICE: &str = "Lapin";
 /// The kinds of secret kept: a key starts with one of these (`speckle:https://app.speckle.systems`).
-const SECRET_KINDS: &[&str] = &["speckle:"];
+const SECRET_KINDS: &[&str] = &["speckle:", "convergeifc:"];
 
 /// Whether the interface may keep a secret under `key`: one of SECRET_KINDS, short, printable.
 fn secret_key_allowed(key: &str) -> bool {
@@ -797,6 +797,8 @@ mod tests {
     fn keeps_only_the_kinds_of_secret_it_knows() {
         assert!(secret_key_allowed("speckle:https://app.speckle.systems"));
         assert!(secret_key_allowed("speckle:http://127.0.0.1:8090"));
+        assert!(secret_key_allowed("convergeifc:https://cde.example.com"));
+        assert!(!secret_key_allowed("convergeifc:"));
         assert!(!secret_key_allowed("speckle:"));
         assert!(!secret_key_allowed("github:token"));
         assert!(!secret_key_allowed(""));

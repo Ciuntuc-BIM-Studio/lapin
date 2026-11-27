@@ -7400,6 +7400,28 @@ export const DA: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Login gennem browseren kræver skrivebordsappen.",
   "This server offers no sign-in through the browser: sign in with your password.": "Denne server tilbyder ikke login gennem browseren: log ind med din adgangskode.",
   "The browser could not be opened here.": "Browseren kunne ikke åbnes her.",
+  // The Converge IFC connector (docs/plan-converge-ifc.md).
+  "Converge IFC: Send…": "Converge IFC: Send…",
+  "Converge IFC: Get…": "Converge IFC: Hent…",
+  "Send to Converge IFC": "Send til Converge IFC",
+  "Get from Converge IFC": "Hent fra Converge IFC",
+  "Looking for your account…": "Leder efter din konto…",
+  "The address of your firm's Converge IFC server": "Adressen på din virksomheds Converge IFC-server",
+  "On the server: the account menu → API tokens": "På serveren: kontomenuen → API-tokens",
+  "Make a token on the server, in the account menu under API tokens. Lapin never writes it into the project, its settings or a report.": "Lav et token på serveren, i kontomenuen under API-tokens. Lapin skriver det aldrig i projektet, dets indstillinger eller en rapport.",
+  "no project on this server": "intet projekt på denne server",
+  "a new file…": "en ny fil…",
+  "no IFC file in this project": "ingen IFC-fil i dette projekt",
+  "Your roles in this project do not allow sending files.": "Dine roller i dette projekt tillader ikke at sende filer.",
+  "The whole project goes as one IFC file. On the server it is work in progress until it is shared or published there.": "Hele projektet sendes som én IFC-fil. På serveren er den under arbejde, indtil den deles eller udgives dér.",
+  "The file is saved on this computer, its checksum checked, then the Import IFC dialog opens: bring it in recognised, as references or linked. Saving a newer version over a linked file updates the link.": "Filen gemmes på denne computer, og dens kontrolsum tjekkes, hvorefter dialogen Importér IFC åbnes: hent den ind genkendt, som referencer eller linket. Gemmer du en nyere version oven i en linket fil, opdateres linket.",
+  "Get…": "Hent…",
+  "Getting…": "Henter…",
+  "Sending to Converge IFC": "Sender til Converge IFC",
+  "Making the IFC": "Laver IFC-filen",
+  "Getting from Converge IFC": "Henter fra Converge IFC",
+  "Downloading from the server": "Henter fra serveren",
+  "Uploading to the server": "Uploader til serveren",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -8224,6 +8246,9 @@ export const DA_PATTERNS: Language['patterns'] = [
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `Modtog ${m[1]} objekter fra Speckle.`],
   [/^Received (\d+) objects from Speckle: (\d+) native elements, (\d+) references\.$/, (m) => `Modtog ${m[1]} objekter fra Speckle: ${m[2]} native elementer, ${m[3]} referencer.`],
+  // The Converge IFC connector: what a send made (docs/plan-converge-ifc.md).
+  [/^Sent: (.+), now at (.+)\.$/, (m) => `Sendt: ${m[1]}, nu på ${m[2]}.`],
+  [/^Nothing sent: (.+) is already like this on the server, at (.+)\.$/, (m) => `Intet sendt: ${m[1]} er allerede sådan på serveren, på ${m[2]}.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Denne version blev sendt fra dette projekt: ${m[1]} af dens objekter er projektets egne elementer.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Sendt: ${m[1]} elementer, som en ny version.`],
   // CDE on the web, W3: issue sync, activity.

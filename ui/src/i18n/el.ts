@@ -13524,6 +13524,28 @@ export const EL: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Η σύνδεση μέσω προγράμματος περιήγησης χρειάζεται την εφαρμογή υπολογιστή.",
   "This server offers no sign-in through the browser: sign in with your password.": "Αυτός ο διακομιστής δεν προσφέρει σύνδεση μέσω προγράμματος περιήγησης: συνδεθείτε με τον κωδικό σας.",
   "The browser could not be opened here.": "Δεν ήταν δυνατό να ανοίξει το πρόγραμμα περιήγησης εδώ.",
+  // The Converge IFC connector (docs/plan-converge-ifc.md).
+  "Converge IFC: Send…": "Converge IFC: Αποστολή…",
+  "Converge IFC: Get…": "Converge IFC: Λήψη…",
+  "Send to Converge IFC": "Αποστολή στο Converge IFC",
+  "Get from Converge IFC": "Λήψη από το Converge IFC",
+  "Looking for your account…": "Αναζήτηση του λογαριασμού σας…",
+  "The address of your firm's Converge IFC server": "Η διεύθυνση του διακομιστή Converge IFC της εταιρείας σας",
+  "On the server: the account menu → API tokens": "Στον διακομιστή: μενού λογαριασμού → Διακριτικά API",
+  "Make a token on the server, in the account menu under API tokens. Lapin never writes it into the project, its settings or a report.": "Δημιουργήστε ένα διακριτικό στον διακομιστή, στο μενού του λογαριασμού, στα Διακριτικά API. Το Lapin δεν το γράφει ποτέ στο έργο, στις ρυθμίσεις του ή σε αναφορά.",
+  "no project on this server": "κανένα έργο σε αυτόν τον διακομιστή",
+  "a new file…": "νέο αρχείο…",
+  "no IFC file in this project": "κανένα αρχείο IFC σε αυτό το έργο",
+  "Your roles in this project do not allow sending files.": "Οι ρόλοι σας σε αυτό το έργο δεν επιτρέπουν την αποστολή αρχείων.",
+  "The whole project goes as one IFC file. On the server it is work in progress until it is shared or published there.": "Ολόκληρο το έργο αποστέλλεται ως ένα αρχείο IFC. Στον διακομιστή θεωρείται εργασία σε εξέλιξη, ώσπου να κοινοποιηθεί ή να δημοσιευτεί εκεί.",
+  "The file is saved on this computer, its checksum checked, then the Import IFC dialog opens: bring it in recognised, as references or linked. Saving a newer version over a linked file updates the link.": "Το αρχείο αποθηκεύεται σε αυτόν τον υπολογιστή, με ελεγμένο άθροισμα ελέγχου, και ανοίγει ο διάλογος Εισαγωγή IFC: εισαγάγετέ το αναγνωρισμένο, ως αναφορές ή συνδεδεμένο. Η αποθήκευση νεότερης έκδοσης πάνω σε συνδεδεμένο αρχείο ενημερώνει τη σύνδεση.",
+  "Get…": "Λήψη…",
+  "Getting…": "Γίνεται λήψη…",
+  "Sending to Converge IFC": "Αποστολή στο Converge IFC",
+  "Making the IFC": "Δημιουργία του IFC",
+  "Getting from Converge IFC": "Λήψη από το Converge IFC",
+  "Downloading from the server": "Λήψη από τον διακομιστή",
+  "Uploading to the server": "Μεταφόρτωση στον διακομιστή",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
@@ -14287,6 +14309,9 @@ export const EL_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^„(.+)” is shorter now: the lining runs from ([\d.]+) to ([\d.]+) m, not ([\d.]+) to ([\d.]+) m as linked\.$/, (m) => `Το „${m[1]}” είναι πλέον πιο κοντό: η επένδυση εκτείνεται από ${m[2]} έως ${m[3]} m, όχι από ${m[4]} έως ${m[5]} m όπως ήταν συνδεδεμένη.`],
   [/^Received (\d+) objects from Speckle\.$/, (m) => `Ελήφθησαν ${m[1]} αντικείμενα από το Speckle.`],
   [/^Received (\d+) objects from Speckle: (\d+) native elements, (\d+) references\.$/, (m) => `Ελήφθησαν ${m[1]} αντικείμενα από το Speckle: ${m[2]} εγγενή στοιχεία, ${m[3]} αναφορές.`],
+  // The Converge IFC connector: what a send made (docs/plan-converge-ifc.md).
+  [/^Sent: (.+), now at (.+)\.$/, (m) => `Στάλθηκε: ${m[1]}, τώρα στην ${m[2]}.`],
+  [/^Nothing sent: (.+) is already like this on the server, at (.+)\.$/, (m) => `Δεν στάλθηκε τίποτα: το ${m[1]} είναι ήδη ίδιο στον διακομιστή, στην ${m[2]}.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Αυτή η έκδοση στάλθηκε από αυτό το έργο: ${m[1]} από τα αντικείμενά της είναι στοιχεία του.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Στάλθηκαν: ${m[1]} στοιχεία, ως νέα έκδοση.`],
   [/^(\d+) not sent$/, (m) => `${m[1]} δεν στάλθηκαν`],

@@ -68,6 +68,9 @@ export function baseFileActions(): FileAction[] {
     // A2: only what changed in Archicad since the last receive, in place (the module's "dialog" runs it and closes: no window of its own).
     { id: 'file.archicadUpdate', label: 'Get latest from Archicad', menu: 'archicad-update', shown: () => hasModule('archicad') && !engineInBrowser, run: dialog('archicadUpdate') },
     { id: 'file.archicadSend', label: 'Archicad: Send to Atrium…', menu: 'archicad-send', shown: () => hasModule('archicad') && !engineInBrowser, run: dialog('archicadSend') },
+    // Converge IFC (docs/plan-converge-ifc.md): the project sent as IFC to a common data environment, and a file fetched from it.
+    { id: 'file.convergeifcSend', label: 'Converge IFC: Send…', menu: 'convergeifc-send', shown: () => hasModule('convergeifc') && !engineInBrowser, run: dialog('convergeifcSend') },
+    { id: 'file.convergeifcGet', label: 'Converge IFC: Get…', menu: 'convergeifc-get', shown: () => hasModule('convergeifc') && !engineInBrowser, run: dialog('convergeifcGet') },
     // Lapin Extensions (docs/plan-extensions.md): content packs from the catalogue, into Lapin's own libraries.
     { id: 'file.extensions', label: 'Extensions…', menu: 'extensions', run: dialog('extensions') },
     // Server and collaboration (docs/remote.md): the project's history and its remote, a server or a folder.
@@ -97,7 +100,7 @@ export const HOST_SECTIONS: FileSection[] = [
     ids: [
       { sub: 'Import', ids: ['file.importProjectTypes', 'file.importIfc', 'file.importFragments', 'file.importBos', 'file.importSdnf', 'file.linkIfc', 'file.linkLapin', 'file.linkPointCloud', 'file.importDxf', 'file.importTrace', 'file.importMesh'] },
       { sub: 'Export', ids: ['file.exportExchange', 'file.exportJg', 'file.exportMesh', 'file.exportHtml', 'file.publish'] },
-      { sub: 'Collaborate', ids: ['file.speckleSend', 'file.speckleReceive', 'file.archicadReceive', 'file.archicadUpdate', 'file.archicadSend', 'file.cdeProjects', 'file.collaborate', 'file.saveServer', 'file.getLatest', 'file.openServer', 'file.share', 'file.join'] },
+      { sub: 'Collaborate', ids: ['file.speckleSend', 'file.speckleReceive', 'file.archicadReceive', 'file.archicadUpdate', 'file.archicadSend', 'file.convergeifcSend', 'file.convergeifcGet', 'file.cdeProjects', 'file.collaborate', 'file.saveServer', 'file.getLatest', 'file.openServer', 'file.share', 'file.join'] },
     ],
   },
   { ids: ['file.optimizeIfc', 'file.extensions'] },

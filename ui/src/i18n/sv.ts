@@ -13522,6 +13522,28 @@ export const SV: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Inloggning via webbläsaren kräver skrivbordsappen.",
   "This server offers no sign-in through the browser: sign in with your password.": "Den här servern erbjuder ingen inloggning via webbläsaren: logga in med ditt lösenord.",
   "The browser could not be opened here.": "Webbläsaren kunde inte öppnas här.",
+  // The Converge IFC connector (docs/plan-converge-ifc.md).
+  "Converge IFC: Send…": "Converge IFC: Skicka…",
+  "Converge IFC: Get…": "Converge IFC: Hämta…",
+  "Send to Converge IFC": "Skicka till Converge IFC",
+  "Get from Converge IFC": "Hämta från Converge IFC",
+  "Looking for your account…": "Söker efter ditt konto…",
+  "The address of your firm's Converge IFC server": "Adressen till ditt företags Converge IFC-server",
+  "On the server: the account menu → API tokens": "På servern: kontomenyn → API-token",
+  "Make a token on the server, in the account menu under API tokens. Lapin never writes it into the project, its settings or a report.": "Skapa en token på servern, i kontomenyn under API-token. Lapin skriver den aldrig i projektet, dess inställningar eller en rapport.",
+  "no project on this server": "inget projekt på den här servern",
+  "a new file…": "en ny fil…",
+  "no IFC file in this project": "ingen IFC-fil i det här projektet",
+  "Your roles in this project do not allow sending files.": "Dina roller i det här projektet tillåter inte att skicka filer.",
+  "The whole project goes as one IFC file. On the server it is work in progress until it is shared or published there.": "Hela projektet skickas som en IFC-fil. På servern är den pågående arbete tills den delas eller publiceras där.",
+  "The file is saved on this computer, its checksum checked, then the Import IFC dialog opens: bring it in recognised, as references or linked. Saving a newer version over a linked file updates the link.": "Filen sparas på den här datorn med kontrollerad kontrollsumma, sedan öppnas dialogen Importera IFC: ta in den igenkänd, som referenser eller länkad. Om en nyare version sparas över en länkad fil uppdateras länken.",
+  "Get…": "Hämta…",
+  "Getting…": "Hämtar…",
+  "Sending to Converge IFC": "Skickar till Converge IFC",
+  "Making the IFC": "Skapar IFC-filen",
+  "Getting from Converge IFC": "Hämtar från Converge IFC",
+  "Downloading from the server": "Laddar ner från servern",
+  "Uploading to the server": "Laddar upp till servern",
 };
 
 /** Phrases with a number or a name in them. */
@@ -14344,6 +14366,9 @@ export const SV_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `Tog emot ${m[1]} objekt från Speckle.`],
   [/^Received (\d+) objects from Speckle: (\d+) native elements, (\d+) references\.$/, (m) => `Tog emot ${m[1]} objekt från Speckle: ${m[2]} egna element, ${m[3]} referenser.`],
+  // The Converge IFC connector: what a send made (docs/plan-converge-ifc.md).
+  [/^Sent: (.+), now at (.+)\.$/, (m) => `Skickat: ${m[1]}, nu på ${m[2]}.`],
+  [/^Nothing sent: (.+) is already like this on the server, at (.+)\.$/, (m) => `Inget skickat: ${m[1]} är redan likadan på servern, på ${m[2]}.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Den här versionen skickades från det här projektet: ${m[1]} av dess objekt är projektets egna element.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Skickade: ${m[1]} element, som en ny version.`],
   // CDE on the web, W3: issue sync, activity.

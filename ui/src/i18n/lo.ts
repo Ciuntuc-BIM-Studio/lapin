@@ -7459,6 +7459,28 @@ export const LO: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "ການເຂົ້າສູ່ລະບົບຜ່ານບຣາວເຊີຕ້ອງການແອັບເດັສທັອບ.",
   "This server offers no sign-in through the browser: sign in with your password.": "ເຊີບເວີນີ້ບໍ່ມີການເຂົ້າສູ່ລະບົບຜ່ານບຣາວເຊີ: ເຂົ້າສູ່ລະບົບດ້ວຍລະຫັດຜ່ານ.",
   "The browser could not be opened here.": "ບໍ່ສາມາດເປີດບຣາວເຊີຢູ່ທີ່ນີ້ໄດ້.",
+  // The Converge IFC connector (docs/plan-converge-ifc.md).
+  "Converge IFC: Send…": "Converge IFC: ສົ່ງ…",
+  "Converge IFC: Get…": "Converge IFC: ເອົາ…",
+  "Send to Converge IFC": "ສົ່ງໄປ Converge IFC",
+  "Get from Converge IFC": "ເອົາຈາກ Converge IFC",
+  "Looking for your account…": "ກຳລັງຊອກຫາບັນຊີຂອງທ່ານ…",
+  "The address of your firm's Converge IFC server": "ທີ່ຢູ່ຂອງເຊີເວີ Converge IFC ຂອງບໍລິສັດທ່ານ",
+  "On the server: the account menu → API tokens": "ໃນເຊີເວີ: ເມນູບັນຊີ → ໂທເຄັນ API",
+  "Make a token on the server, in the account menu under API tokens. Lapin never writes it into the project, its settings or a report.": "ສ້າງໂທເຄັນໃນເຊີເວີ, ໃນເມນູບັນຊີ ທີ່ ໂທເຄັນ API. Lapin ບໍ່ເຄີຍຂຽນມັນລົງໃນໂຄງການ, ການຕັ້ງຄ່າ ຫຼື ລາຍງານ.",
+  "no project on this server": "ບໍ່ມີໂຄງການໃນເຊີເວີນີ້",
+  "a new file…": "ໄຟລ໌ໃໝ່…",
+  "no IFC file in this project": "ບໍ່ມີໄຟລ໌ IFC ໃນໂຄງການນີ້",
+  "Your roles in this project do not allow sending files.": "ບົດບາດຂອງທ່ານໃນໂຄງການນີ້ບໍ່ອະນຸຍາດໃຫ້ສົ່ງໄຟລ໌.",
+  "The whole project goes as one IFC file. On the server it is work in progress until it is shared or published there.": "ໂຄງການທັງໝົດຈະຖືກສົ່ງເປັນໄຟລ໌ IFC ດຽວ. ໃນເຊີເວີ ມັນເປັນວຽກທີ່ກຳລັງເຮັດ ຈົນກວ່າຈະຖືກແບ່ງປັນ ຫຼື ເຜີຍແຜ່ຢູ່ທີ່ນັ້ນ.",
+  "The file is saved on this computer, its checksum checked, then the Import IFC dialog opens: bring it in recognised, as references or linked. Saving a newer version over a linked file updates the link.": "ໄຟລ໌ຈະຖືກບັນທຶກໃນຄອມພິວເຕີນີ້ ພ້ອມກວດ checksum, ຈາກນັ້ນກ່ອງ ນຳເຂົ້າ IFC ຈະເປີດ: ນຳເຂົ້າແບບຮັບຮູ້, ເປັນຂໍ້ອ້າງອີງ ຫຼື ເຊື່ອມໂຍງ. ການບັນທຶກເວີຊັນໃໝ່ກວ່າທັບໄຟລ໌ທີ່ເຊື່ອມໂຍງ ຈະອັບເດດການເຊື່ອມໂຍງ.",
+  "Get…": "ເອົາ…",
+  "Getting…": "ກຳລັງເອົາ…",
+  "Sending to Converge IFC": "ກຳລັງສົ່ງໄປ Converge IFC",
+  "Making the IFC": "ກຳລັງສ້າງ IFC",
+  "Getting from Converge IFC": "ກຳລັງເອົາຈາກ Converge IFC",
+  "Downloading from the server": "ກຳລັງດາວໂຫຼດຈາກເຊີເວີ",
+  "Uploading to the server": "ກຳລັງອັບໂຫຼດໄປເຊີເວີ",
 };
 
 /** Phrases with a number or a name in them. */
@@ -8281,6 +8303,9 @@ export const LO_PATTERNS: Language['patterns'] = [
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `ຮັບ ${m[1]} ວັດຖຸຈາກ Speckle.`],
   [/^Received (\d+) objects from Speckle: (\d+) native elements, (\d+) references\.$/, (m) => `ຮັບ ${m[1]} ວັດຖຸຈາກ Speckle: ${m[2]} ອົງປະກອບແບບເດີມ, ${m[3]} ການອ້າງອີງ.`],
+  // The Converge IFC connector: what a send made (docs/plan-converge-ifc.md).
+  [/^Sent: (.+), now at (.+)\.$/, (m) => `ສົ່ງແລ້ວ: ${m[1]}, ປັດຈຸບັນຢູ່ ${m[2]}.`],
+  [/^Nothing sent: (.+) is already like this on the server, at (.+)\.$/, (m) => `ບໍ່ໄດ້ສົ່ງຫຍັງ: ${m[1]} ໃນເຊີເວີເປັນແບບນີ້ຢູ່ແລ້ວ, ທີ່ ${m[2]}.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `ລຸ້ນນີ້ຖືກສົ່ງຈາກໂຄງການນີ້: ${m[1]} ວັດຖຸຂອງມັນເປັນອົງປະກອບຂອງໂຄງການເອງ.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `ສົ່ງແລ້ວ: ${m[1]} ອົງປະກອບ, ເປັນເວີຊັນໃໝ່.`],
   // CDE on the web, W3: issue sync, activity.
