@@ -77,11 +77,7 @@ The catalogue also lists **Python scripts**. On the desktop you can install one 
 
 ## Extension modules
 
-An **extension module** adds tools to Lapin itself: ribbon tabs and buttons, views, dialogs, with the code behind them. It runs on the desktop only, never in the browser. Its interface is loaded when Lapin starts, from the files the engine has checked (the store's signature and each file's fingerprint), so a change to the extensions installed shows at the next start. If one cannot run in this version of Lapin (it needs a newer one) or fails while it loads, Lapin starts without it and says **Some extensions were left out:** with their names.
-
-An **extension module** adds tools to Lapin itself: engine code and its own part of the interface (tabs, panes, dialogs). Modules run in the **desktop app only**. Each is checked by Lapin every time it starts: it must be signed by Lapin Extensions and every file must be exactly the one signed, or it is not loaded. Its details and Installed say **Runs code with full access**: a module can do on your computer what you can, so it is published only after its full source has been reviewed.
-
-Installing one shows its licence, and its licence agreement when it has one, to accept (**I accept**). In **Installed**, each module has an **On** switch and says why it was not loaded when Lapin refused it (a file changed, a newer Lapin needed, a module this edition does not have). Installing, updating, turning a module on or off and uninstalling take effect when Lapin restarts: **Restart now** saves your work (or asks), then starts Lapin again.
+An **extension module** adds tools to Lapin itself (ribbon tabs, views, dialogs, with engine code behind them) and runs on the **desktop app only**, with full access to your computer: its source is reviewed and its package rebuilt and signed by Lapin Extensions, and Lapin checks every file at each start. Installing one shows its licence and its licence agreement to accept; installing, updating, turning it off and uninstalling take effect when Lapin restarts (**Restart now**). How to install one, what **Installed** shows and why Lapin may refuse to load one: [Extension modules](extension-modules.md).
 
 ## Paid extensions
 

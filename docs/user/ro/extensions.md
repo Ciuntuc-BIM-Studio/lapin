@@ -77,11 +77,7 @@ Catalogul are și **scripturi Python**. În aplicația desktop poți instala unu
 
 ## Module de extensie
 
-Un **modul de extensie** adaugă unelte în Lapin însuși: file și butoane în panglică, vederi, dialoguri, cu codul din spatele lor. Rulează doar în aplicația desktop, niciodată în browser. Interfața lui se încarcă la pornirea Lapin, din fișierele verificate de motor (semnătura magazinului și amprenta fiecărui fișier), așa că o schimbare a extensiilor instalate se vede la următoarea pornire. Dacă unul nu poate rula în această versiune de Lapin (cere una mai nouă) sau se oprește cu o eroare la încărcare, Lapin pornește fără el și spune **Unele extensii au fost lăsate deoparte:** cu numele lor.
-
-Un **modul de extensie** adaugă unelte în Lapin însuși: cod în motor și partea lui de interfață (file, panouri, dialoguri). Modulele rulează **doar în aplicația desktop**. Lapin verifică fiecare modul la fiecare pornire: trebuie să fie semnat de Lapin Extensions și fiecare fișier trebuie să fie exact cel semnat, altfel nu este încărcat. Detaliile lui și Instalate spun **Rulează cod cu acces complet**: un modul poate face pe calculatorul tău tot ce poți face tu, de aceea este publicat doar după ce întreaga lui sursă a fost verificată.
-
-La instalare apar licența lui și, dacă are, acordul de licență, de acceptat (**Accept**). În **Instalate**, fiecare modul are un comutator **Pornit** și spune de ce nu a fost încărcat când Lapin l-a refuzat (un fișier schimbat, nevoie de un Lapin mai nou, un modul pe care ediția nu îl are). Instalarea, actualizarea, pornirea sau oprirea unui modul și dezinstalarea au efect când Lapin repornește: **Repornește acum** îți salvează lucrul (sau întreabă), apoi pornește Lapin din nou.
+Un **modul de extensie** adaugă unelte în Lapin însuși (file în panglică, vederi, dialoguri, cu cod în motor în spatele lor) și rulează **doar în aplicația desktop**, cu acces complet la calculatorul tău: sursa lui este verificată, iar pachetul reconstruit și semnat de Lapin Extensions, și Lapin îi verifică fiecare fișier la fiecare pornire. La instalare apar licența și acordul de licență, de acceptat; instalarea, actualizarea, oprirea și dezinstalarea au efect când Lapin repornește (**Repornește acum**). Cum instalezi unul, ce arată **Instalate** și de ce Lapin poate refuza să încarce unul: [Module de extensie](extension-modules.md).
 
 ## Extensii plătite
 
