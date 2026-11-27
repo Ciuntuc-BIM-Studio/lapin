@@ -20,9 +20,10 @@ public partial class IfcRecognitionTests
     /// <summary>
     /// A floor 6 × 4 m, 200 mm, its top at the storey, x 0..6 and y 0..4, with the openings <paramref name="bodies"/> gives
     /// (each a key, its GlobalId from it, and its body; millimetres) voiding it. The opening <paramref name="filled"/> names
-    /// has a window in it; <paramref name="cut"/> makes the floor's body from its box.
+    /// has a window in it; <paramref name="cut"/> makes the floor's body from its box; <paramref name="retyped"/> writes the
+    /// void it names as another class than IfcOpeningElement.
     /// </summary>
-    string FloorWith(Func<Foreign, (string Key, string Body)[]> bodies, string? filled = null, Func<Foreign, string, string>? cut = null)
+    string FloorWith(Func<Foreign, (string Key, string Body)[]> bodies, string? filled = null, Func<Foreign, string, string>? cut = null, (string Key, string Type)? retyped = null)
     {
         var x = new Foreign();
         var box = x.Box(3000, 2000, -200, 6000, 4000, 200);
@@ -31,7 +32,7 @@ public partial class IfcRecognitionTests
         var n = 0;
         foreach (var (key, body) in bodies(x))
         {
-            var op = x.Element("IFCOPENINGELEMENT", key, "Stair opening", x.Place(0, 0, 0), x.Shape(body), E("OPENING"));
+            var op = x.Element(key == retyped?.Key ? retyped.Value.Type : "IFCOPENINGELEMENT", key, "Stair opening", x.Place(0, 0, 0), x.Shape(body), E("OPENING"));
             x.F.Add("IFCRELVOIDSELEMENT", x.G($"so-v{n++}"), Null, Null, Null, slab, op);
             if (key != filled) continue;
             var hatch = x.Element("IFCWINDOW", "so-hatch", "Hatch", x.Place(0, 0, 0), x.Shape(x.Box(600, 3500, -50, 500, 400, 50)), "400.", "500.", E("SKYLIGHT"), Null, Null);
@@ -54,6 +55,9 @@ public partial class IfcRecognitionTests
     static string CutAtMidDepth(Foreign x, string body) =>
         x.F.Add("IFCBOOLEANCLIPPINGRESULT", E("DIFFERENCE"), body,
             x.F.Add("IFCHALFSPACESOLID", x.F.Add("IFCPLANE", x.F.Add("IFCAXIS2PLACEMENT3D", x.F.Add("IFCCARTESIANPOINT", "(0.,0.,-100.)"), x.F.Add("IFCDIRECTION", "(0.,0.,1.)"), Null)), False));
+
+    /// <summary>The shallow recess's box as a triangulated face set, which no prism is read from.</summary>
+    static string FaceSetRecess(Foreign x) => TriangulatedPrism(x, Plan([(350, 3300), (850, 3300), (850, 3700), (350, 3700)], -100), (0, 0, 100));
 
     static string SoId(string key) => Lapin.Ifc.Step.Guid("foreign-test", key);
 
@@ -107,6 +111,7 @@ public partial class IfcRecognitionTests
     [InlineData("sloped")]
     [InlineData("holed")]
     [InlineData("clipped")]
+    [InlineData("partly read")]
     public void A_void_that_is_no_through_opening_keeps_the_floor_a_reference(string kind)
     {
         var path = FloorWith(x =>
@@ -122,6 +127,7 @@ public partial class IfcRecognitionTests
                 "holed" => Extruded(x, f.Add("IFCARBITRARYPROFILEDEFWITHVOIDS", E("AREA"), Null,
                     Ring("(1700.,1400.)", "(4300.,1400.)", "(4300.,2600.)", "(1700.,2600.)"),
                     L([Ring("(2500.,1700.)", "(3500.,1700.)", "(3500.,2300.)", "(2500.,2300.)")])), -200, "(0.,0.,1.)", 200),
+                "partly read" => $"{Stair(x)},{FaceSetRecess(x)}",
                 _ => CutAtMidDepth(x, Stair(x)),
             })];
         });
@@ -170,11 +176,24 @@ public partial class IfcRecognitionTests
     /// <summary>A 0.5 × 0.4 × 0.1 m recess in the top is 0.48 % of the floor's volume: within the gate's 0.5 %.</summary>
     static string ShallowRecess(Foreign x) => x.Box(600, 3500, -100, 500, 400, 100);
 
-    [Fact]
-    public void A_floor_with_a_stair_opening_and_a_shallow_recess_stays_a_reference_with_both()
+    [Theory]
+    [InlineData("IFCOPENINGELEMENT")]
+    [InlineData("IFCOPENINGSTANDARDCASE")]
+    [InlineData("IFCVOIDINGFEATURE")]
+    public void A_floor_with_a_stair_opening_and_a_shallow_recess_stays_a_reference_with_both(string type)
     {
         var f = Full();
-        var r = IfcImport.Run(f.Session, FloorWith(x => [("so-op", Stair(x)), ("so-recess", ShallowRecess(x))]), null, out _);
+        var r = IfcImport.Run(f.Session, FloorWith(x => [("so-op", Stair(x)), ("so-recess", ShallowRecess(x))], retyped: ("so-recess", type)), null, out _);
+        AssertReferenceFloor(f);
+        Assert.Equal(1, Assert.Single(r.Skipped!).Value);
+    }
+
+    /// <summary>One opening's body: a 0.2 m square shaft through the floor, and beside it the shallow recess as a face set.</summary>
+    [Fact]
+    public void A_floor_with_a_stair_opening_and_a_partly_read_one_stays_a_reference_with_both()
+    {
+        var f = Full();
+        var r = IfcImport.Run(f.Session, FloorWith(x => [("so-op", Stair(x)), ("so-partly", $"{x.Box(5200, 600, -200, 200, 200, 200)},{FaceSetRecess(x)}")]), null, out _);
         AssertReferenceFloor(f);
         Assert.Equal(1, Assert.Single(r.Skipped!).Value);
     }

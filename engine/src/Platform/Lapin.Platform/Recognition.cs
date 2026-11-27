@@ -31,8 +31,11 @@ public sealed record ForeignFill(string GlobalId, string IfcClass, string? Name,
     // Its material per part (report #76): its IfcMaterialConstituentSet's constituents (or its type's), each its name and its material's.
     IReadOnlyList<(string Name, string Material)>? Constituents = null);
 
-/// <summary>An opening that voids a foreign element: its body as prisms, and its fill when it has one.</summary>
-public sealed record ForeignOpening(string GlobalId, string? Name, IReadOnlyList<ShapePrism> Prisms, ForeignFill? Fill);
+/// <summary>
+/// An opening that voids a foreign element: its body as prisms, and its fill when it has one.
+/// <see cref="Partial"/>: the prisms are not all of its body (an item of it gives none).
+/// </summary>
+public sealed record ForeignOpening(string GlobalId, string? Name, IReadOnlyList<ShapePrism> Prisms, ForeignFill? Fill, bool Partial = false);
 
 /// <summary>
 /// A foreign IFC element offered to the modules, with everything the file
@@ -63,7 +66,9 @@ public sealed record ForeignElement(
     /// A space's outline in plan from its triangles, when its body is no prism; a wall's, when a boolean cuts its prism (its
     /// ends trimmed or mitred): the outline first, then its holes.
     /// </summary>
-    IReadOnlyList<IReadOnlyList<Vec2>>? Footprint = null);
+    IReadOnlyList<IReadOnlyList<Vec2>>? Footprint = null,
+    /// <summary>The file also voids it with what <see cref="Openings"/> does not hold (an IfcVoidingFeature, an IfcOpeningStandardCase).</summary>
+    bool OtherVoids = false);
 
 /// <summary>A part aggregated under a foreign element: its body as prisms, its material, its extents and its profile (<see cref="PartProfile"/>) in the whole's axis frame.</summary>
 public sealed record ForeignPart(string GlobalId, string? Name, IReadOnlyList<ShapePrism> Prisms, string? Material, AxisExtents? Extents = null, PartProfile? Profile = null);

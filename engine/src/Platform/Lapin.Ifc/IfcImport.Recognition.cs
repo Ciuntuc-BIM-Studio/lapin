@@ -24,6 +24,7 @@ public static partial class IfcImport
         Dictionary<int, StepEntity>? fillOf;            // opening → its door or window
         Dictionary<string, int>? fillIdOf;              // a door's or window's GlobalId → its file id
         Dictionary<int, List<StepEntity>>? openingsOf;  // element → its openings
+        readonly HashSet<int> otherVoided = [];         // elements voided by anything but an IfcOpeningElement
         Dictionary<int, StepEntity>? typeOf;            // object → its type (IfcRelDefinesByType)
         Dictionary<int, StepEntity>? materialOf;        // object → what IfcRelAssociatesMaterial relates
         Dictionary<int, List<StepEntity>>? partsOf;     // element → the parts aggregated under it
@@ -37,7 +38,11 @@ public static partial class IfcImport
             foreach (var r in f.OfType("IFCRELFILLSELEMENT")) if (f.Get(r[5]) is { } filler) { fillOf[Ref(r[4])] = filler; if (Str(filler[0]) is { } fg) fillIdOf[fg] = filler.Id; }
             openingsOf = [];
             foreach (var r in f.OfType("IFCRELVOIDSELEMENT"))
-                if (f.Get(r[5]) is { Type: "IFCOPENINGELEMENT" } op) (openingsOf.TryGetValue(Ref(r[4]), out var l) ? l : openingsOf[Ref(r[4])] = []).Add(op);
+                if (f.Get(r[5]) is { } op)
+                {
+                    if (op.Type == "IFCOPENINGELEMENT") (openingsOf.TryGetValue(Ref(r[4]), out var l) ? l : openingsOf[Ref(r[4])] = []).Add(op);
+                    else otherVoided.Add(Ref(r[4]));
+                }
             typeOf = [];
             foreach (var r in f.OfType("IFCRELDEFINESBYTYPE")) if (f.Get(r[5]) is { } t) foreach (var obj in Refs(r[4])) typeOf[obj] = t;
             materialOf = [];
@@ -370,7 +375,7 @@ public static partial class IfcImport
             var openings = new List<ForeignOpening>();
             foreach (var op in openingsOf?.GetValueOrDefault(e.Id) ?? [])
             {
-                var opPrisms = model.Prisms(op.Id, out _);
+                var opPrisms = model.Prisms(op.Id, out var unread);
                 ForeignFill? fill = null;
                 if (fillOf != null && fillOf.TryGetValue(op.Id, out var filler) && filler.Type is "IFCDOOR" or "IFCWINDOW" or "IFCDOORSTANDARDCASE" or "IFCWINDOWSTANDARDCASE" && Takes(filler))
                 {
@@ -383,7 +388,7 @@ public static partial class IfcImport
                     fill = new ForeignFill(Str(filler[0]) ?? "", ClassName(filler.Type), Str(filler[2]), w is > 0 ? w : null, h is > 0 ? h : null, operation, style == null ? null : Str(style[2]), style == null ? null : Str(style[0]), PropertiesJson(filler.Id),
                         UserDefined: userDefined, Panels: Panels(filler, style), OpensTowards: opens, Constituents: Constituents(filler.Id, style?.Id));
                 }
-                openings.Add(new ForeignOpening(Str(op[0]) ?? "", Str(op[2]), opPrisms, fill));
+                openings.Add(new ForeignOpening(Str(op[0]) ?? "", Str(op[2]), opPrisms, fill, Partial: unread != null));
             }
             var type = typeOf?.GetValueOrDefault(e.Id);
             var (layers, material, usage) = MaterialOf(e.Id, type?.Id);
@@ -414,7 +419,8 @@ public static partial class IfcImport
                 LongName: space && e.Args.Count > 7 ? Str(e[7]) : null,
                 Footprint: unswept ? model.FootprintLoops(e.Id) ?? Footprint(e.Id)
                     // A wall whose body is not one plain prism (a boolean cuts it, its ends trimmed or its top under a roof; several bodies, no prism): its footprint as cut, for its joins.
-                    : cls is IfcClass.Wall or "IfcWallStandardCase" && !(prisms.Count == 1 && prisms[0].Vertical && !prisms[0].Clipped) ? Footprint(e.Id, s.Catalog.Get<ISolidBooleans>()) : null);
+                    : cls is IfcClass.Wall or "IfcWallStandardCase" && !(prisms.Count == 1 && prisms[0].Vertical && !prisms[0].Clipped) ? Footprint(e.Id, s.Catalog.Get<ISolidBooleans>()) : null,
+                OtherVoids: otherVoided.Contains(e.Id));
         }
 
         /// <summary>
