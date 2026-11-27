@@ -58,7 +58,7 @@ Lapin verifică fiecare modul instalat la fiecare pornire, iar unul care nu trec
 
 Când partea lui de interfață nu poate rula (cere un Lapin mai nou sau se oprește cu o eroare la încărcare), Lapin pornește fără acea parte, spune *Extensii: interfețele lor nu au fost încărcate:* cu numele lor, iar **Instalate** arată *Interfața lui a fost lăsată deoparte:* cu motivul.
 
-O versiune pe care Lapin Extensions o retrage după ce a publicat-o nu mai este oferită în catalog.
+O versiune pe care Lapin Extensions o retrage după ce a publicat-o nu mai este oferită în catalog, iar Lapin nu o instalează. Lapin citește lista versiunilor retrase odată cu catalogul, verifică faptul că e semnată de Lapin Extensions și o păstrează pe acest calculator, așa că se aplică și fără internet. Un modul de extensie retras arată *Retrasă de Lapin Extensions; se oprește când Lapin repornește:* cu motivul, iar de la următoarea pornire *Retrasă de Lapin Extensions:* (nu mai este încărcat). Un pachet de conținut retras rămâne instalat și spune asta, cu motivul.
 
 Dacă deschizi un proiect care ține datele unei extensii pe care nu ai instalat-o (sau ai oprit-o), Lapin spune asta o dată: *Acest proiect folosește … (extensie), care nu este instalată. Datele ei sunt păstrate neatinse.* Datele rămân în proiect și se salvează înapoi cum erau; **Deschide Extensii** te duce la catalog (sau la **Instalate**, dacă ai oprit-o doar) ca s-o instalezi sau s-o pornești. Închide notificarea cu ✕.
 

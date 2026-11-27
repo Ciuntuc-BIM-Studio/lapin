@@ -7525,6 +7525,10 @@ export const DA: Record<string, string> = {
   "Open Extensions": "Åbn Udvidelser",
   "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "Dette projekt bruger {name} (udvidelse), som ikke er installeret. Dens data bevares urørt.",
   "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "Dette projekt bruger {names} (udvidelser), som ikke er installeret. Deres data bevares urørt.",
+  // The catalogue's revocation list (docs/plan-extension-modules.md §4.3)
+  "Withdrawn by Lapin Extensions:": "Trukket tilbage af Lapin Extensions:",
+  "Withdrawn by Lapin Extensions; it is turned off when Lapin restarts:": "Trukket tilbage af Lapin Extensions; slås fra, når Lapin genstarter:",
+  "Withdrawn by Lapin Extensions; what is installed stays:": "Trukket tilbage af Lapin Extensions; det installerede bliver:",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -7895,6 +7899,7 @@ const S5D_TAILS: Record<string, string> = {
   "Draws the interior and exterior sills seen under the plan's cut at LOD 200 as well: the detailed sills past the wall's faces, else the plain boards. At LOD 300 and up plans always draw them": "Tegner også ved LOD 200 de indvendige og udvendige sålbænke, der ses under planens snit: de detaljerede sålbænke ud over væggenes flader, ellers de almindelige brædder. Fra LOD 300 og opefter tegner planer dem altid",
 };
 export const DA_PATTERNS: Language['patterns'] = [
+  [/^„(.+)” (\S+) is not installed: Lapin Extensions withdrew this version on (\d{4}-\d{2}-\d{2}): (.+)$/, (m) => `„${m[1]}” ${m[2]} installeres ikke: Lapin Extensions trak denne version tilbage den ${m[3]}: ${m[4]}`],
   // Publish sets (forum topic 225)
   [/^Saved the publish set (.+)\.$/, (m) => `Gemte publiceringssættet ${m[1]}.`],
   [/^Exported (\d+) files into (.+)\.$/, (m) => `Eksporterede ${m[1]} filer til ${m[2]}.`],

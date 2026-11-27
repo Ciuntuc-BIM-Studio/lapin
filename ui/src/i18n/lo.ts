@@ -7584,6 +7584,10 @@ export const LO: Record<string, string> = {
   "Open Extensions": "ເປີດສ່ວນຂະຫຍາຍ",
   "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "ໂຄງການນີ້ໃຊ້ {name} (ສ່ວນຂະຫຍາຍ) ທີ່ຍັງບໍ່ໄດ້ຕິດຕັ້ງ. ຂໍ້ມູນຂອງມັນຖືກເກັບໄວ້ຢ່າງຄົບຖ້ວນ.",
   "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "ໂຄງການນີ້ໃຊ້ {names} (ສ່ວນຂະຫຍາຍ) ທີ່ຍັງບໍ່ໄດ້ຕິດຕັ້ງ. ຂໍ້ມູນຂອງພວກມັນຖືກເກັບໄວ້ຢ່າງຄົບຖ້ວນ.",
+  // The catalogue's revocation list (docs/plan-extension-modules.md §4.3)
+  "Withdrawn by Lapin Extensions:": "ຖືກຖອນໂດຍ Lapin Extensions:",
+  "Withdrawn by Lapin Extensions; it is turned off when Lapin restarts:": "ຖືກຖອນໂດຍ Lapin Extensions; ຈະຖືກປິດເມື່ອ Lapin ເລີ່ມໃໝ່:",
+  "Withdrawn by Lapin Extensions; what is installed stays:": "ຖືກຖອນໂດຍ Lapin Extensions; ສິ່ງທີ່ຕິດຕັ້ງແລ້ວຍັງຢູ່:",
 };
 
 /** Phrases with a number or a name in them. */
@@ -7952,6 +7956,7 @@ const S5D_TAILS: Record<string, string> = {
   "Draws the interior and exterior sills seen under the plan's cut at LOD 200 as well: the detailed sills past the wall's faces, else the plain boards. At LOD 300 and up plans always draw them": "ແຕ້ມຕັ່ງປ່ອງຢ້ຽມດ້ານໃນ ແລະ ດ້ານນອກທີ່ເຫັນໃຕ້ເສັ້ນຕັດຂອງແປນທີ່ LOD 200 ດ້ວຍ: ຕັ່ງລາຍລະອຽດທີ່ຍື່ນເກີນໜ້າຝາ, ບໍ່ດັ່ງນັ້ນເປັນແຜ່ນທຳມະດາ. ຕັ້ງແຕ່ LOD 300 ຂຶ້ນໄປ ແປນແຕ້ມພວກມັນສະເໝີ",
 };
 export const LO_PATTERNS: Language['patterns'] = [
+  [/^„(.+)” (\S+) is not installed: Lapin Extensions withdrew this version on (\d{4}-\d{2}-\d{2}): (.+)$/, (m) => `„${m[1]}” ${m[2]} ບໍ່ຖືກຕິດຕັ້ງ: Lapin Extensions ໄດ້ຖອນເວີຊັນນີ້ໃນວັນທີ ${m[3]}: ${m[4]}`],
   // Publish sets (forum topic 225)
   [/^Saved the publish set (.+)\.$/, (m) => `ບັນທຶກຊຸດເຜີຍແຜ່ ${m[1]} ແລ້ວ.`],
   [/^Exported (\d+) files into (.+)\.$/, (m) => `ສົ່ງອອກ ${m[1]} ຟາຍໄປຍັງ ${m[2]} ແລ້ວ.`],

@@ -7488,6 +7488,10 @@ export const DE: Record<string, string> = {
   "Open Extensions": "Erweiterungen öffnen",
   "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "Dieses Projekt verwendet {name} (Erweiterung), die nicht installiert ist. Ihre Daten bleiben erhalten und unverändert.",
   "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "Dieses Projekt verwendet {names} (Erweiterungen), die nicht installiert sind. Ihre Daten bleiben erhalten und unverändert.",
+  // The catalogue's revocation list (docs/plan-extension-modules.md §4.3)
+  "Withdrawn by Lapin Extensions:": "Von Lapin Extensions zurückgezogen:",
+  "Withdrawn by Lapin Extensions; it is turned off when Lapin restarts:": "Von Lapin Extensions zurückgezogen; wird beim Neustart von Lapin ausgeschaltet:",
+  "Withdrawn by Lapin Extensions; what is installed stays:": "Von Lapin Extensions zurückgezogen; was installiert ist, bleibt:",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -7858,6 +7862,7 @@ const S5D_TAILS: Record<string, string> = {
   "Draws the interior and exterior sills seen under the plan's cut at LOD 200 as well: the detailed sills past the wall's faces, else the plain boards. At LOD 300 and up plans always draw them": "Zeichnet die unter dem Schnitt des Grundrisses sichtbaren Innen- und Außenfensterbänke auch in LOD 200: die detaillierten Fensterbänke über die Wandflächen hinaus, sonst die einfachen Bretter. Ab LOD 300 zeichnen Grundrisse sie immer",
 };
 export const DE_PATTERNS: Language['patterns'] = [
+  [/^„(.+)” (\S+) is not installed: Lapin Extensions withdrew this version on (\d{4}-\d{2}-\d{2}): (.+)$/, (m) => `„${m[1]}“ ${m[2]} wird nicht installiert: Lapin Extensions hat diese Version am ${m[3]} zurückgezogen: ${m[4]}`],
   // Publish sets (forum topic 225)
   [/^Saved the publish set (.+)\.$/, (m) => `Veröffentlichungssatz ${m[1]} gespeichert.`],
   [/^Exported (\d+) files into (.+)\.$/, (m) => `${m[1]} Dateien nach ${m[2]} exportiert.`],

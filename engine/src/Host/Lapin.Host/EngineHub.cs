@@ -541,8 +541,9 @@ public sealed class EngineHub
                     break;
                 }
                 // Extension modules (docs/plan-extension-modules.md §1.2, §4.3): installed, removed, turned on and off for the next start,
-                // and listed with what this start loaded. The host's own, never a guest's; the desktop's only (the browser engine has none).
-                case "extensions.install" or "extensions.inspect" or "extensions.uninstall" or "extensions.enable" or "extensions.disable" or "extensions.modules":
+                // and listed with what this start loaded; the catalogue's revocation list verified and kept (extensions.revoked). The host's
+                // own, never a guest's; the desktop's only (the browser engine has none).
+                case "extensions.install" or "extensions.inspect" or "extensions.uninstall" or "extensions.enable" or "extensions.disable" or "extensions.modules" or "extensions.revoked":
                 {
                     if (caller.Remote) throw new CommandException("Only the host can do that.");
                     var installer = Extensions ?? throw new CommandException("Extension modules are installed in the desktop app only.");
@@ -555,6 +556,7 @@ public sealed class EngineHub
                             "extensions.uninstall" => installer.Uninstall(p),
                             "extensions.enable" => installer.Enable(p),
                             "extensions.disable" => installer.Disable(p),
+                            "extensions.revoked" => await Task.Run(() => installer.Revocations(p)),
                             _ => installer.Modules(p),
                         };
                     }

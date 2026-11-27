@@ -15,6 +15,50 @@ public sealed class ExtensionInstaller(ExtensionHostInfo host, IReadOnlyList<Ext
     public ExtensionHostInfo Host => host;
     public IReadOnlyList<ExtensionState> Started => started;
 
+    RevocationList? _revoked = ExtensionRevocations.ReadStored(host.Root, host.Keys);
+    /// <summary>The revocation list in force: the newest the engine verified, kept under the extensions' folder (§4.3).</summary>
+    public RevocationList? Revoked => _revoked;
+
+    /// <summary>A version the list in force withdraws is not installed: why.</summary>
+    void RefuseRevoked(ExtensionManifest m)
+    {
+        if (_revoked?.Match(m.Id, m.Version, m.Sha256) is { } r)
+            throw new ExtensionException($"„{m.Name}” {m.Version} is not installed: {ExtensionRevocations.Problem(r)}");
+    }
+
+    /// <summary>
+    /// <c>{data?, sig?}</c>: the catalogue's revocation list and its signature file, each in base64, as the interface read them beside
+    /// the index. The engine verifies the signature itself with the store keys it carries (never trusting the interface) and keeps
+    /// the list when it is newer than the one kept; an older one is left. Without <c>data</c>: the list in force, as it is.
+    /// Answers when the list in force was made, how many entries it has, whether the one given was taken (or was older), and the
+    /// installed extension modules it withdraws (each turned off at the next start).
+    /// </summary>
+    public JsonObject Revocations(JsonObject p)
+    {
+        bool taken = false, older = false;
+        if (Str(p, "data") is { Length: > 0 } data)
+        {
+            byte[] bytes, sig;
+            try { bytes = Convert.FromBase64String(data); sig = Convert.FromBase64String(Str(p, "sig")); }
+            catch (FormatException) { throw new ExtensionException("The revocation list is not base64."); }
+            var outcome = ExtensionRevocations.Accept(host.Root, host.Keys, bytes, sig);
+            _revoked = outcome.Current;
+            taken = outcome.Taken;
+            older = outcome.Older;
+        }
+        var o = ExtensionRevocations.Describe(_revoked);
+        o["taken"] = taken;
+        o["older"] = older;
+        var withdrawn = new JsonArray();
+        foreach (var e in ExtensionLoader.ReadList(host.Root))
+        {
+            var sha = started.FirstOrDefault(x => x.Id == e.Id && x.Version == e.Version)?.Manifest?.Sha256 ?? ExtensionLoader.KeptManifest(host.Root, e)?.Sha256;
+            if (_revoked?.Match(e.Id, e.Version, sha) is { } r) withdrawn.Add((JsonNode)new JsonObject { ["id"] = e.Id, ["version"] = e.Version, ["reason"] = r.Reason, ["date"] = r.Date });
+        }
+        o["withdrawn"] = withdrawn;
+        return o;
+    }
+
     static string Str(JsonObject p, string key) => p[key] is JsonValue v && v.TryGetValue<string>(out var s) ? s : "";
 
     /// <summary>
@@ -28,6 +72,7 @@ public sealed class ExtensionInstaller(ExtensionHostInfo host, IReadOnlyList<Ext
         try { zip = Convert.FromBase64String(Str(p, "data")); }
         catch (FormatException) { throw new ExtensionException("The package is not base64."); }
         var manifest = ExtensionManifest.Parse(manifestJson);
+        RefuseRevoked(manifest);
         var c = ExtensionPackage.Check(zip, manifest, host.Keys);
         if (manifest.EulaVersion is { Length: > 0 } eula && Str(p, "eulaAccepted") != eula)
             throw new ExtensionException($"„{manifest.Name}” is installed only once its licence agreement ({eula}) is accepted.");
@@ -74,7 +119,9 @@ public sealed class ExtensionInstaller(ExtensionHostInfo host, IReadOnlyList<Ext
         byte[] zip;
         try { zip = Convert.FromBase64String(Str(p, "data")); }
         catch (FormatException) { throw new ExtensionException("The package is not base64."); }
-        var c = ExtensionPackage.Check(zip, ExtensionManifest.Parse(manifestJson), host.Keys);
+        var inspected = ExtensionManifest.Parse(manifestJson);
+        RefuseRevoked(inspected);
+        var c = ExtensionPackage.Check(zip, inspected, host.Keys);
         string? Text(string? rel) => rel != null && c.Entries.TryGetValue(rel, out var t) ? System.Text.Encoding.UTF8.GetString(t) : null;
         var o = new JsonObject
         {
@@ -145,6 +192,7 @@ public sealed class ExtensionInstaller(ExtensionHostInfo host, IReadOnlyList<Ext
             if (changes) { o["restart"] = true; restart = true; }
             if (e != null && s != null && e.Version != s.Version) o["nextVersion"] = e.Version;
             if (s?.Problem is { } problem) o["problem"] = problem;
+            if (s?.ProblemKind is { } kind) o["problemKind"] = kind;
             // Installed since this start: its name from the manifest it was installed with (checked at the next start).
             var shown = s?.Manifest;
             if (shown == null && e != null)
@@ -158,6 +206,15 @@ public sealed class ExtensionInstaller(ExtensionHostInfo host, IReadOnlyList<Ext
                 o["license"] = m.License;
                 o["permissions"] = new JsonArray([.. m.Permissions.Select(x => (JsonNode)JsonValue.Create(x)!)]);
                 if (m.EulaVersion != null) o["eula"] = new JsonObject { ["file"] = m.EulaFile, ["version"] = m.EulaVersion };
+            }
+            // Withdrawn by the list in force: refused at this start already, or (a list taken since) at the next.
+            var revocation = e != null
+                ? _revoked?.Match(e.Id, e.Version, (s?.Version == e.Version ? s.Manifest?.Sha256 : null) ?? ExtensionLoader.KeptManifest(host.Root, e)?.Sha256)
+                : s?.Revocation;
+            if (revocation != null)
+            {
+                o["revoked"] = revocation.ToJson();
+                if (s?.Status == "loaded" && e is { PendingRemoval: false }) { o["restart"] = true; restart = true; }
             }
             if (s?.ModuleId is { } moduleId) o["module"] = moduleId;
             if (s?.Contract is { } contract) o["contract"] = contract;

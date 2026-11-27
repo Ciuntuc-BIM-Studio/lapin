@@ -7527,6 +7527,10 @@ export const ZH: Record<string, string> = {
   "Open Extensions": "打开扩展",
   "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "此项目使用 {name} (扩展)，但它尚未安装。其数据原样保留。",
   "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "此项目使用 {names} (扩展)，但它们尚未安装。其数据原样保留。",
+  // The catalogue's revocation list (docs/plan-extension-modules.md §4.3)
+  "Withdrawn by Lapin Extensions:": "已被 Lapin Extensions 撤回：",
+  "Withdrawn by Lapin Extensions; it is turned off when Lapin restarts:": "已被 Lapin Extensions 撤回；Lapin 重启时将停用：",
+  "Withdrawn by Lapin Extensions; what is installed stays:": "已被 Lapin Extensions 撤回；已安装的内容保留：",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
@@ -7894,6 +7898,7 @@ const S5D_TAILS: Record<string, string> = {
   "Draws the interior and exterior sills seen under the plan's cut at LOD 200 as well: the detailed sills past the wall's faces, else the plain boards. At LOD 300 and up plans always draw them": "在 LOD 200 时也绘制平面剖切线以下可见的内、外窗台：超出墙面的详细窗台，否则为简单的板。LOD 300 及以上的平面始终绘制它们",
 };
 export const ZH_PATTERNS: Language['patterns'] = [
+  [/^„(.+)” (\S+) is not installed: Lapin Extensions withdrew this version on (\d{4}-\d{2}-\d{2}): (.+)$/, (m) => `“${m[1]}” ${m[2]} 未安装：Lapin Extensions 已于 ${m[3]} 撤回此版本：${m[4]}`],
   // Publish sets (forum topic 225)
   [/^Saved the publish set (.+)\.$/, (m) => `已保存出图集 ${m[1]}。`],
   [/^Exported (\d+) files into (.+)\.$/, (m) => `已导出 ${m[1]} 个文件到 ${m[2]}。`],

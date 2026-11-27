@@ -12,6 +12,15 @@ describe('an extension module in Installed', () => {
     expect(moduleStatus(undefined)).toBeNull();
   });
 
+  it('says when the catalogue withdrew it, with its reason: refused at this start, or turned off at the next', () => {
+    const revoked = { reason: 'It sends the project away.', date: '2026-11-27' };
+    expect(moduleStatus(e({ status: 'failed', problemKind: 'revoked', problem: 'Lapin Extensions withdrew this version on 2026-11-27: It sends the project away.', revoked })))
+      .toEqual({ text: 'Withdrawn by Lapin Extensions:', detail: 'It sends the project away.', problem: true });
+    expect(moduleStatus(e({ status: 'failed', problemKind: 'revoked', problem: 'Gone.' }))).toEqual({ text: 'Withdrawn by Lapin Extensions:', detail: 'Gone.', problem: true });
+    expect(moduleStatus(e({ revoked }))).toEqual({ text: 'Withdrawn by Lapin Extensions; it is turned off when Lapin restarts:', detail: 'It sends the project away.', problem: true });
+    expect(moduleStatus(e({ revoked, pendingRemoval: true }))?.text).toBe('Removed when Lapin restarts.');
+  });
+
   it('says what the next start changes', () => {
     expect(moduleStatus(e({ pendingRemoval: true }))?.text).toBe('Removed when Lapin restarts.');
     expect(moduleStatus(e({ status: 'pending' }))?.text).toBe('Loads when Lapin restarts.');

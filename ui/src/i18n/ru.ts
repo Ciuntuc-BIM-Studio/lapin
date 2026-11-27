@@ -13628,6 +13628,10 @@ export const RU: Record<string, string> = {
   "Open Extensions": "Открыть Расширения",
   "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "Этот проект использует {name} (расширение), которое не установлено. Его данные сохранены нетронутыми.",
   "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "Этот проект использует {names} (расширения), которые не установлены. Их данные сохранены нетронутыми.",
+  // The catalogue's revocation list (docs/plan-extension-modules.md §4.3)
+  "Withdrawn by Lapin Extensions:": "Отозвано Lapin Extensions:",
+  "Withdrawn by Lapin Extensions; it is turned off when Lapin restarts:": "Отозвано Lapin Extensions; отключится при перезапуске Lapin:",
+  "Withdrawn by Lapin Extensions; what is installed stays:": "Отозвано Lapin Extensions; установленное остаётся:",
 };
 /** The Russian plural: one → n%10 = 1 and n%100 ≠ 11; few → n%10 in 2–4 and n%100 not in 12–14; many → the rest. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -13841,6 +13845,7 @@ const S5D_TAILS: Record<string, string> = {
   "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "Модель: сохраните копию и откройте её в Lapin как связь (Файл → Связать IFC…).",
 };
 export const RU_PATTERNS: Language['patterns'] = [
+  [/^„(.+)” (\S+) is not installed: Lapin Extensions withdrew this version on (\d{4}-\d{2}-\d{2}): (.+)$/, (m) => `«${m[1]}» ${m[2]} не устанавливается: Lapin Extensions отозвал эту версию ${m[3]}: ${m[4]}`],
   // Publish sets (forum topic 225)
   [/^Saved the publish set (.+)\.$/, (m) => `Набор публикации ${m[1]} сохранён.`],
   [/^Exported (\d+) files into (.+)\.$/, (m) => `Экспортировано ${n(m[1], 'файл', 'файла', 'файлов')} в ${m[2]}.`],

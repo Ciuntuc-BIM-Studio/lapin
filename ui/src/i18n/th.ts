@@ -13647,6 +13647,10 @@ export const TH: Record<string, string> = {
   "Open Extensions": "เปิดส่วนขยาย",
   "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "โครงการนี้ใช้ {name} (ส่วนขยาย) ซึ่งยังไม่ได้ติดตั้ง ข้อมูลของส่วนขยายถูกเก็บไว้ครบถ้วน.",
   "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "โครงการนี้ใช้ {names} (ส่วนขยาย) ซึ่งยังไม่ได้ติดตั้ง ข้อมูลของส่วนขยายถูกเก็บไว้ครบถ้วน.",
+  // The catalogue's revocation list (docs/plan-extension-modules.md §4.3)
+  "Withdrawn by Lapin Extensions:": "ถูกถอนโดย Lapin Extensions:",
+  "Withdrawn by Lapin Extensions; it is turned off when Lapin restarts:": "ถูกถอนโดย Lapin Extensions; จะถูกปิดเมื่อ Lapin เริ่มใหม่:",
+  "Withdrawn by Lapin Extensions; what is installed stays:": "ถูกถอนโดย Lapin Extensions; สิ่งที่ติดตั้งไว้ยังคงอยู่:",
 };
 
 /** Phrases with a number or a name in them. */
@@ -14015,6 +14019,7 @@ const S5D_TAILS: Record<string, string> = {
   "Draws the interior and exterior sills seen under the plan's cut at LOD 200 as well: the detailed sills past the wall's faces, else the plain boards. At LOD 300 and up plans always draw them": "วาดธรณีหน้าต่างด้านในและด้านนอกที่เห็นใต้แนวตัดของแปลนที่ LOD 200 ด้วย: ธรณีแบบละเอียดที่ยื่นเลยผิวผนัง มิฉะนั้นเป็นแผ่นเรียบ ตั้งแต่ LOD 300 ขึ้นไป แปลนจะวาดเสมอ",
 };
 export const TH_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^„(.+)” (\S+) is not installed: Lapin Extensions withdrew this version on (\d{4}-\d{2}-\d{2}): (.+)$/, (m) => `„${m[1]}” ${m[2]} ไม่ได้ติดตั้ง: Lapin Extensions ถอนเวอร์ชันนี้เมื่อ ${m[3]}: ${m[4]}`],
   // Publish sets (forum topic 225)
   [/^Saved the publish set (.+)\.$/, (m) => `บันทึกชุดเผยแพร่ ${m[1]} แล้ว.`],
   [/^Exported (\d+) files into (.+)\.$/, (m) => `ส่งออก ${m[1]} ไฟล์ไปยัง ${m[2]} แล้ว.`],

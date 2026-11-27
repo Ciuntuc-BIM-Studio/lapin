@@ -7528,6 +7528,10 @@ export const PT: Record<string, string> = {
   "Open Extensions": "Abrir Extensões",
   "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "Este projeto usa {name} (extensão), que não está instalada. Os seus dados são mantidos intactos.",
   "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "Este projeto usa {names} (extensões), que não estão instaladas. Os seus dados são mantidos intactos.",
+  // The catalogue's revocation list (docs/plan-extension-modules.md §4.3)
+  "Withdrawn by Lapin Extensions:": "Retirada pelo Lapin Extensions:",
+  "Withdrawn by Lapin Extensions; it is turned off when Lapin restarts:": "Retirada pelo Lapin Extensions; é desligada quando o Lapin reiniciar:",
+  "Withdrawn by Lapin Extensions; what is installed stays:": "Retirada pelo Lapin Extensions; o que está instalado permanece:",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
@@ -7897,6 +7901,7 @@ const S5D_TAILS: Record<string, string> = {
   "Draws the interior and exterior sills seen under the plan's cut at LOD 200 as well: the detailed sills past the wall's faces, else the plain boards. At LOD 300 and up plans always draw them": "Desenha também em LOD 200 os peitoris internos e externos vistos sob o corte da planta: os peitoris detalhados além das faces da parede, senão as tábuas simples. De LOD 300 em diante as plantas sempre os desenham",
 };
 export const PT_PATTERNS: Language['patterns'] = [
+  [/^„(.+)” (\S+) is not installed: Lapin Extensions withdrew this version on (\d{4}-\d{2}-\d{2}): (.+)$/, (m) => `“${m[1]}” ${m[2]} não é instalada: o Lapin Extensions retirou esta versão em ${m[3]}: ${m[4]}`],
   // Publish sets (forum topic 225)
   [/^Saved the publish set (.+)\.$/, (m) => `Conjunto de publicação ${m[1]} salvo.`],
   [/^Exported (\d+) files into (.+)\.$/, (m) => `${m[1]} arquivos exportados para ${m[2]}.`],

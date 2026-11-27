@@ -7531,6 +7531,10 @@ export const PL: Record<string, string> = {
   "Open Extensions": "Otwórz Rozszerzenia",
   "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "Ten projekt używa {name} (rozszerzenie), które nie jest zainstalowane. Jego dane są zachowane bez zmian.",
   "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "Ten projekt używa {names} (rozszerzenia), które nie są zainstalowane. Ich dane są zachowane bez zmian.",
+  // The catalogue's revocation list (docs/plan-extension-modules.md §4.3)
+  "Withdrawn by Lapin Extensions:": "Wycofane przez Lapin Extensions:",
+  "Withdrawn by Lapin Extensions; it is turned off when Lapin restarts:": "Wycofane przez Lapin Extensions; zostanie wyłączone po ponownym uruchomieniu Lapin:",
+  "Withdrawn by Lapin Extensions; what is installed stays:": "Wycofane przez Lapin Extensions; to, co zainstalowane, zostaje:",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -7906,6 +7910,7 @@ const S5D_TAILS: Record<string, string> = {
   "Draws the interior and exterior sills seen under the plan's cut at LOD 200 as well: the detailed sills past the wall's faces, else the plain boards. At LOD 300 and up plans always draw them": "Rysuje na LOD 200 także parapety wewnętrzne i zewnętrzne widoczne pod cięciem rzutu: szczegółowe parapety wystające poza lico ściany, w przeciwnym razie zwykłe deski. Od LOD 300 rzuty zawsze je rysują",
 };
 export const PL_PATTERNS: Language['patterns'] = [
+  [/^„(.+)” (\S+) is not installed: Lapin Extensions withdrew this version on (\d{4}-\d{2}-\d{2}): (.+)$/, (m) => `„${m[1]}” ${m[2]} nie zostanie zainstalowane: Lapin Extensions wycofało tę wersję dnia ${m[3]}: ${m[4]}`],
   // Publish sets (forum topic 225)
   [/^Saved the publish set (.+)\.$/, (m) => `Zapisano zestaw publikacji ${m[1]}.`],
   [/^Exported (\d+) files into (.+)\.$/, (m) => `Wyeksportowano ${m[1]} plików do ${m[2]}.`],
