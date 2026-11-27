@@ -13226,8 +13226,14 @@ export const scenes = [
         await panel.locator('[data-action=script-tab-recorder]').click();
         await panel.locator('[data-action=script-record]').click();
         await t.until(async () => (await panel.locator('[data-action=script-record-stop]').count()) > 0, 'the recorder records');
-        // The panel closed while drawing (it would cover the plan): the recorder goes on.
-        await page.evaluate(async () => (await import('/src/modules/scripting/store.ts')).closePanel());
+        // The panel closed while drawing (it would cover the plan): the recorder goes on. The notebook is a pane beside the
+        // view (0a8709915), so its pane closes too and the plan has the whole width again.
+        await page.evaluate(async () => {
+          const ui = await import('/src/app/store.ts');
+          const at = ui.useUi.getState().panes.findIndex((p) => p.view === 'scripting');
+          if (at >= 0) ui.closePane(at);
+          (await import('/src/modules/scripting/store.ts')).closePanel();
+        });
         await t.wait(300);
         // Two walls drawn in the plan, as a user draws them: start, a corner, the end.
         await t.tool('architecture.wall');
