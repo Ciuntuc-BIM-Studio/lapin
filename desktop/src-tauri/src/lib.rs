@@ -19,6 +19,9 @@
 //! Updates (the updater plugin) are checked and installed by the interface; it
 //! stops the engine with `stop_engine` once the update is downloaded, so the
 //! installer never meets a running engine, then restarts the app.
+//!
+//! The main window opens maximised the first time, and after that as it was
+//! closed: size, position, maximised (tauri-plugin-window-state; forum topic 257).
 
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
@@ -27,7 +30,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
-use tauri::{AppHandle, Emitter, Manager, RunEvent, State, WindowEvent};
+use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, RunEvent, State, WebviewWindow, WindowEvent};
+use tauri_plugin_window_state::StateFlags;
 
 /// How many times in a row a stopped engine is started again before giving up.
 const RESTARTS: u32 = 3;
@@ -677,13 +681,91 @@ fn start_engine(app: &AppHandle, engine: Arc<Engine>) {
     });
 }
 
+/// The one window whose size, position and maximised state are kept between runs. The detached view windows
+/// (`view-<time>-<n>`, ui/src/app/windows.ts) are left out: their labels are new each time, so a kept state would never
+/// be found again and the state file would only grow; they open where windows.ts places them, as before.
+const KEPT_WINDOW: &str = "main";
+
+/// What is kept: not VISIBLE (a main window hidden at exit would start hidden), nor decorations or full screen.
+fn kept_window_state() -> StateFlags {
+    StateFlags::SIZE | StateFlags::POSITION | StateFlags::MAXIMIZED
+}
+
+/// Whether a previous run left the main window's state. Without it this is the first start, and the window is
+/// maximised. tauri.conf.json's window is not `"maximized": true` for that: the plugin restores a size and a position
+/// but never un-maximises, so a window created maximised would stay so even when it was closed smaller.
+fn window_state_kept(app: &AppHandle) -> bool {
+    let Ok(dir) = app.path().app_config_dir() else { return false };
+    let Ok(text) = std::fs::read_to_string(dir.join(tauri_plugin_window_state::DEFAULT_FILENAME)) else { return false };
+    serde_json::from_str::<serde_json::Value>(&text)
+        .ok()
+        .and_then(|states| states.get(KEPT_WINDOW)?.get("width")?.as_u64())
+        .is_some_and(|width| width > 0)
+}
+
+/// A window restored where it can no longer be reached (its monitor gone, or a smaller one now) comes back centred on
+/// the primary monitor, no larger than it. The plugin only places a window when one of its corners lands on a monitor,
+/// so a window whose title bar is off the top or whose only visible corner is a few pixels wide stays unreachable
+/// without this. On Wayland a window has no position of its own (the compositor places it) and nothing is done.
+fn keep_on_screen(window: &WebviewWindow) -> tauri::Result<()> {
+    if window.is_maximized()? {
+        return Ok(());
+    }
+    let (pos, outer) = (window.outer_position()?, window.outer_size()?);
+    let monitors = window.available_monitors()?;
+    // The middle of the title bar: where the window is grabbed to move it.
+    let (gx, gy) = (pos.x + outer.width as i32 / 2, pos.y + 16);
+    let on = |m: &tauri::Monitor| {
+        let (p, s) = (m.position(), m.size());
+        gx >= p.x && gx < p.x + s.width as i32 && gy >= p.y && gy < p.y + s.height as i32
+    };
+    if monitors.is_empty() || monitors.iter().any(on) {
+        return Ok(());
+    }
+    let Some(monitor) = window.primary_monitor()?.or_else(|| monitors.into_iter().next()) else { return Ok(()) };
+    let (mp, ms) = (*monitor.position(), *monitor.size());
+    let inner = window.inner_size()?;
+    let (w, h) = (inner.width.min(ms.width * 9 / 10), inner.height.min(ms.height * 9 / 10));
+    if (w, h) != (inner.width, inner.height) {
+        window.set_size(PhysicalSize::new(w, h))?;
+    }
+    let outer = window.outer_size()?;
+    window.set_position(PhysicalPosition::new(
+        mp.x + (ms.width.saturating_sub(outer.width) / 2) as i32,
+        mp.y + (ms.height.saturating_sub(outer.height) / 2) as i32,
+    ))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let context = tauri::generate_context!();
+    // Linux: GTK gives the window the program name as its Wayland app_id (and X11 WM_CLASS). GNOME, KDE and the other
+    // docks find the app's .desktop entry, and so its icon, by that name: through the entry's StartupWMClass, or an
+    // entry named <app_id>.desktop. Left alone, the name was not the entry's and Fedora's dock showed Wayland's generic
+    // icon (forum topic 257). Tauri's bundler names the entry after the edition's productName
+    // (/usr/share/applications/<productName>.desktop in the .deb and the .rpm; the AppImage's comes from the same data),
+    // and linux/app.desktop.hbs writes StartupWMClass={{name}}, the same productName; the edition's build passes its
+    // productName in tauri.product.json, so the context's product name is that edition's. Not the binary's name: every
+    // edition's binary is lapin-desktop. Not tauri's enableGTKAppId: it would use the identifier, which names no
+    // installed entry, and register the app on the session bus, so a second Lapin could not start.
+    // It has to be set before the event loop initialises GTK.
+    #[cfg(target_os = "linux")]
+    {
+        let name = context.config().product_name.clone().unwrap_or_else(|| "Lapin".into());
+        glib::set_prgname(Some(name.as_str()));
+        glib::set_application_name(&name);
+    }
     let engine = Arc::new(Engine::default());
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(
+            tauri_plugin_window_state::Builder::new()
+                .with_state_flags(kept_window_state())
+                .with_filter(|label| label == KEPT_WINDOW)
+                .build(),
+        )
         .manage(engine.clone())
         .manage(Arc::new(OllamaCalls::default()))
         .manage(Arc::new(SettingsFile::default()))
@@ -692,11 +774,19 @@ pub fn run() {
         .setup({
             let engine = engine.clone();
             move |app| {
+                // The plugin has restored the main window by now (config windows are made before this runs).
+                if let Some(main) = app.get_webview_window(KEPT_WINDOW) {
+                    if !window_state_kept(app.handle()) {
+                        let _ = main.maximize();
+                    } else {
+                        let _ = keep_on_screen(&main);
+                    }
+                }
                 start_engine(app.handle(), engine);
                 Ok(())
             }
         })
-        .build(tauri::generate_context!())
+        .build(context)
         .expect("error while building Lapin");
 
     app.run(move |app, event| match event {
