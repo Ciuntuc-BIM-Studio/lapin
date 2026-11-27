@@ -7490,6 +7490,16 @@ export const LO: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "ການເຂົ້າສູ່ລະບົບຜ່ານບຣາວເຊີຕ້ອງການແອັບເດັສທັອບ.",
   "This server offers no sign-in through the browser: sign in with your password.": "ເຊີບເວີນີ້ບໍ່ມີການເຂົ້າສູ່ລະບົບຜ່ານບຣາວເຊີ: ເຂົ້າສູ່ລະບົບດ້ວຍລະຫັດຜ່ານ.",
   "The browser could not be opened here.": "ບໍ່ສາມາດເປີດບຣາວເຊີຢູ່ທີ່ນີ້ໄດ້.",
+  // Help → Connect an AI agent (the MCP bridge of the installed app)
+  "Connect an AI agent…": "ເຊື່ອມຕໍ່ເອເຈນ AI…",
+  "Connect an AI agent": "ເຊື່ອມຕໍ່ເອເຈນ AI",
+  "Connect an AI agent (Claude Code, Claude Desktop, Gemini CLI or any other MCP client) to the Lapin that is open now. The agent drives the model through the same commands as the interface: its edits show at once, and each one is one undo step.": "ເຊື່ອມຕໍ່ເອເຈນ AI (Claude Code, Claude Desktop, Gemini CLI ຫຼື MCP client ອື່ນ) ກັບ Lapin ທີ່ເປີດຢູ່ດຽວນີ້. ເອເຈນຄວບຄຸມໂມເດນດ້ວຍຄຳສັ່ງດຽວກັນກັບໜ້າຕາໂປຣແກຣມ: ການແກ້ໄຂຂອງມັນສະແດງທັນທີ ແລະ ແຕ່ລະຄັ້ງແມ່ນການຍົກເລີກໜຶ່ງຂັ້ນຕອນ.",
+  "It needs Node.js 22 or newer on this computer (nodejs.org), and Lapin open while the agent works.": "ຕ້ອງມີ Node.js 22 ຫຼືໃໝ່ກວ່າໃນຄອມພິວເຕີເຄື່ອງນີ້ (nodejs.org) ແລະ ເປີດ Lapin ໄວ້ຂະນະທີ່ເອເຈນເຮັດວຽກ.",
+  "Use scripts/lapin-mcp.mjs from the source folder instead.": "ໃຫ້ໃຊ້ scripts/lapin-mcp.mjs ຈາກໂຟນເດີ source ແທນ.",
+  "The bridge script": "ສະຄຣິບຂົວເຊື່ອມ",
+  "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI ແລະ client ອື່ນທີ່ມີການຕັ້ງຄ່າ mcpServers",
+  "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "ເພີ່ມສິ່ງນີ້ໃສ່ໄຟລ໌ການຕັ້ງຄ່າຂອງ client (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json) ແລ້ວເລີ່ມ client ໃໝ່.",
+  "User guide: Connect an AI agent": "ຄູ່ມືຜູ້ໃຊ້: ເຊື່ອມຕໍ່ເອເຈນ AI",
 };
 
 /** Phrases with a number or a name in them. */

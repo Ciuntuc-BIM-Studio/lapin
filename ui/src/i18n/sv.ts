@@ -13553,6 +13553,16 @@ export const SV: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Inloggning via webbläsaren kräver skrivbordsappen.",
   "This server offers no sign-in through the browser: sign in with your password.": "Den här servern erbjuder ingen inloggning via webbläsaren: logga in med ditt lösenord.",
   "The browser could not be opened here.": "Webbläsaren kunde inte öppnas här.",
+  // Help → Connect an AI agent (the MCP bridge of the installed app)
+  "Connect an AI agent…": "Anslut en AI-agent…",
+  "Connect an AI agent": "Anslut en AI-agent",
+  "Connect an AI agent (Claude Code, Claude Desktop, Gemini CLI or any other MCP client) to the Lapin that is open now. The agent drives the model through the same commands as the interface: its edits show at once, and each one is one undo step.": "Anslut en AI-agent (Claude Code, Claude Desktop, Gemini CLI eller en annan MCP-klient) till den Lapin som är öppen nu. Agenten styr modellen med samma kommandon som gränssnittet: ändringarna syns direkt och varje ändring är ett ångra-steg.",
+  "It needs Node.js 22 or newer on this computer (nodejs.org), and Lapin open while the agent works.": "Det kräver Node.js 22 eller senare på den här datorn (nodejs.org) och en öppen Lapin medan agenten arbetar.",
+  "Use scripts/lapin-mcp.mjs from the source folder instead.": "Använd i stället scripts/lapin-mcp.mjs från källmappen.",
+  "The bridge script": "Brygg-skriptet",
+  "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI och andra klienter med inställningen mcpServers",
+  "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "Lägg till detta i klientens inställningsfil (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json) och starta sedan om klienten.",
+  "User guide: Connect an AI agent": "Användarguide: Anslut en AI-agent",
 };
 
 /** Phrases with a number or a name in them. */

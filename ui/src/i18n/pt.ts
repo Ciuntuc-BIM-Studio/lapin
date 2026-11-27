@@ -7434,6 +7434,16 @@ export const PT: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Entrar pelo navegador precisa do aplicativo para desktop.",
   "This server offers no sign-in through the browser: sign in with your password.": "Este servidor não oferece entrada pelo navegador: entre com sua senha.",
   "The browser could not be opened here.": "Não foi possível abrir o navegador aqui.",
+  // Help → Connect an AI agent (the MCP bridge of the installed app)
+  "Connect an AI agent…": "Conectar um agente de IA…",
+  "Connect an AI agent": "Conectar um agente de IA",
+  "Connect an AI agent (Claude Code, Claude Desktop, Gemini CLI or any other MCP client) to the Lapin that is open now. The agent drives the model through the same commands as the interface: its edits show at once, and each one is one undo step.": "Conecte um agente de IA (Claude Code, Claude Desktop, Gemini CLI ou qualquer outro cliente MCP) ao Lapin que está aberto agora. O agente conduz o modelo pelos mesmos comandos da interface: as alterações aparecem na hora e cada uma é um único passo de desfazer.",
+  "It needs Node.js 22 or newer on this computer (nodejs.org), and Lapin open while the agent works.": "É preciso ter o Node.js 22 ou mais recente neste computador (nodejs.org) e o Lapin aberto enquanto o agente trabalha.",
+  "Use scripts/lapin-mcp.mjs from the source folder instead.": "Use, em vez disso, scripts/lapin-mcp.mjs da pasta do código-fonte.",
+  "The bridge script": "O script-ponte",
+  "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI e outros clientes com a configuração mcpServers",
+  "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "Adicione isto ao arquivo de configurações do cliente (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json) e reinicie o cliente.",
+  "User guide: Connect an AI agent": "Guia do usuário: Conectar um agente de IA",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

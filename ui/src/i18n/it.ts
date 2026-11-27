@@ -7397,6 +7397,16 @@ export const IT: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "L'accesso tramite browser richiede l'app desktop.",
   "This server offers no sign-in through the browser: sign in with your password.": "Questo server non offre l'accesso tramite browser: accedi con la password.",
   "The browser could not be opened here.": "Il browser non si è potuto aprire qui.",
+  // Help → Connect an AI agent (the MCP bridge of the installed app)
+  "Connect an AI agent…": "Collega un agente IA…",
+  "Connect an AI agent": "Collega un agente IA",
+  "Connect an AI agent (Claude Code, Claude Desktop, Gemini CLI or any other MCP client) to the Lapin that is open now. The agent drives the model through the same commands as the interface: its edits show at once, and each one is one undo step.": "Collega un agente IA (Claude Code, Claude Desktop, Gemini CLI o un altro client MCP) al Lapin aperto in questo momento. L’agente guida il modello con gli stessi comandi dell’interfaccia: le sue modifiche appaiono subito e ciascuna è un solo passo di annullamento.",
+  "It needs Node.js 22 or newer on this computer (nodejs.org), and Lapin open while the agent works.": "Serve Node.js 22 o successivo su questo computer (nodejs.org) e Lapin aperto mentre l’agente lavora.",
+  "Use scripts/lapin-mcp.mjs from the source folder instead.": "Usa invece scripts/lapin-mcp.mjs dalla cartella dei sorgenti.",
+  "The bridge script": "Lo script ponte",
+  "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI e altri client con un’impostazione mcpServers",
+  "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "Aggiungi questo al file di impostazioni del client (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), poi riavvia il client.",
+  "User guide: Connect an AI agent": "Guida utente: Collega un agente IA",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

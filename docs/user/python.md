@@ -194,3 +194,16 @@ A guest of a shared session cannot run scripts on your computer, nor put one in 
 What `lapin` offers (the commands, queries, batches, the model, events) is described in the developer guide, *Lapin from Python* (`docs/python.md` in Lapin's repository); the package is on PyPI as `lapinbim`.
 
 A program on your computer finds Lapin on port **14912**; a second Lapin open at the same time takes 14913, and so on. With several open, the program asks which one (`lapin.connect(project="House")`); to force one, set `LAPIN_PORT`.
+
+### Jupyter notebooks
+
+A notebook outside Lapin can drive the Lapin that is open, with no Script panel: `pip install lapinbim` in the notebook's Python (3.11 or newer), then
+
+```python
+import lapinbim as lapin
+lapin.info().product.name
+with lapin.batch("From the notebook"):
+    lapin.execute("architecture.addWall", {"x1": 0, "y1": 0, "x2": 3, "y2": 0})
+```
+
+The walls show at once in the window and the batch is one undo step. It works in a Jupyter kernel as in any program (tested with ipykernel). It works with the desktop app only, not Lapin in the browser, and the notebook's Python has your rights, as the safety note above says.

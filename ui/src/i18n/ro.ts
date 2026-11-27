@@ -7390,6 +7390,16 @@ export const RO: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Autentificarea prin browser are nevoie de aplicația desktop.",
   "This server offers no sign-in through the browser: sign in with your password.": "Acest server nu oferă autentificare prin browser: autentifică-te cu parola.",
   "The browser could not be opened here.": "Browserul nu a putut fi deschis aici.",
+  // Help → Connect an AI agent (the MCP bridge of the installed app)
+  "Connect an AI agent…": "Conectează un agent AI…",
+  "Connect an AI agent": "Conectează un agent AI",
+  "Connect an AI agent (Claude Code, Claude Desktop, Gemini CLI or any other MCP client) to the Lapin that is open now. The agent drives the model through the same commands as the interface: its edits show at once, and each one is one undo step.": "Conectează un agent AI (Claude Code, Claude Desktop, Gemini CLI sau orice alt client MCP) la Lapin-ul deschis acum. Agentul conduce modelul prin aceleași comenzi ca interfața: modificările lui apar imediat, iar fiecare este un singur pas de anulare.",
+  "It needs Node.js 22 or newer on this computer (nodejs.org), and Lapin open while the agent works.": "Are nevoie de Node.js 22 sau mai nou pe acest calculator (nodejs.org) și de Lapin deschis cât lucrează agentul.",
+  "Use scripts/lapin-mcp.mjs from the source folder instead.": "Folosește în schimb scripts/lapin-mcp.mjs din folderul sursă.",
+  "The bridge script": "Scriptul-punte",
+  "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI și alți clienți cu setarea mcpServers",
+  "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "Adaugă asta în fișierul de setări al clientului (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), apoi repornește clientul.",
+  "User guide: Connect an AI agent": "Ghidul utilizatorului: Conectează un agent AI",
 };
 
 /** Phrases with a number or a name in them. */

@@ -14,7 +14,7 @@ There are **two bridges** (below, *Two bridges: the open project and the CDE*): 
 claude mcp add lapin -- node /path/to/lapin-pro/scripts/lapin-mcp.mjs
 ```
 
-Any MCP client that runs a stdio server works the same way. The bridge needs Node 22 and nothing else.
+The installed desktop app carries a copy of this script (`resources/lapin-mcp.mjs`, copied by `scripts/build-product.mjs`): Help (?) → Connect an AI agent… shows its path and the commands to copy (docs/user/mcp.md). Any MCP client that runs a stdio server works the same way. The bridge needs Node 22 and nothing else.
 
 ## Finding the engine
 

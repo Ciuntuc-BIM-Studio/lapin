@@ -7436,6 +7436,16 @@ export const ES: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Iniciar sesión con el navegador necesita la aplicación de escritorio.",
   "This server offers no sign-in through the browser: sign in with your password.": "Este servidor no ofrece inicio de sesión con el navegador: entra con tu contraseña.",
   "The browser could not be opened here.": "No se pudo abrir el navegador aquí.",
+  // Help → Connect an AI agent (the MCP bridge of the installed app)
+  "Connect an AI agent…": "Conectar un agente de IA…",
+  "Connect an AI agent": "Conectar un agente de IA",
+  "Connect an AI agent (Claude Code, Claude Desktop, Gemini CLI or any other MCP client) to the Lapin that is open now. The agent drives the model through the same commands as the interface: its edits show at once, and each one is one undo step.": "Conecte un agente de IA (Claude Code, Claude Desktop, Gemini CLI o cualquier otro cliente MCP) al Lapin que está abierto ahora. El agente maneja el modelo con los mismos comandos que la interfaz: sus cambios se ven al instante y cada uno es un solo paso de deshacer.",
+  "It needs Node.js 22 or newer on this computer (nodejs.org), and Lapin open while the agent works.": "Necesita Node.js 22 o posterior en este ordenador (nodejs.org) y Lapin abierto mientras trabaja el agente.",
+  "Use scripts/lapin-mcp.mjs from the source folder instead.": "Use en su lugar scripts/lapin-mcp.mjs de la carpeta de código fuente.",
+  "The bridge script": "El script puente",
+  "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI y otros clientes con un ajuste mcpServers",
+  "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "Añada esto al archivo de ajustes del cliente (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json) y reinicie el cliente.",
+  "User guide: Connect an AI agent": "Guía del usuario: Conectar un agente de IA",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

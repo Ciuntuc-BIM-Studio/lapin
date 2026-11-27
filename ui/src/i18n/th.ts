@@ -13553,6 +13553,16 @@ export const TH: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "การลงชื่อเข้าใช้ผ่านเบราว์เซอร์ต้องใช้แอปเดสก์ท็อป.",
   "This server offers no sign-in through the browser: sign in with your password.": "เซิร์ฟเวอร์นี้ไม่มีการลงชื่อเข้าใช้ผ่านเบราว์เซอร์: ลงชื่อเข้าใช้ด้วยรหัสผ่าน.",
   "The browser could not be opened here.": "ไม่สามารถเปิดเบราว์เซอร์ที่นี่ได้.",
+  // Help → Connect an AI agent (the MCP bridge of the installed app)
+  "Connect an AI agent…": "เชื่อมต่อเอเจนต์ AI…",
+  "Connect an AI agent": "เชื่อมต่อเอเจนต์ AI",
+  "Connect an AI agent (Claude Code, Claude Desktop, Gemini CLI or any other MCP client) to the Lapin that is open now. The agent drives the model through the same commands as the interface: its edits show at once, and each one is one undo step.": "เชื่อมต่อเอเจนต์ AI (Claude Code, Claude Desktop, Gemini CLI หรือไคลเอนต์ MCP อื่น) กับ Lapin ที่เปิดอยู่ในขณะนี้ เอเจนต์ควบคุมโมเดลด้วยคำสั่งเดียวกับส่วนติดต่อผู้ใช้ การแก้ไขของเอเจนต์จะแสดงทันที และแต่ละครั้งเป็นการเลิกทำหนึ่งขั้น.",
+  "It needs Node.js 22 or newer on this computer (nodejs.org), and Lapin open while the agent works.": "ต้องมี Node.js 22 ขึ้นไปในคอมพิวเตอร์เครื่องนี้ (nodejs.org) และต้องเปิด Lapin ไว้ขณะที่เอเจนต์ทำงาน.",
+  "Use scripts/lapin-mcp.mjs from the source folder instead.": "ให้ใช้ scripts/lapin-mcp.mjs จากโฟลเดอร์ซอร์สโค้ดแทน.",
+  "The bridge script": "สคริปต์สะพานเชื่อม",
+  "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI และไคลเอนต์อื่นที่มีการตั้งค่า mcpServers",
+  "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "เพิ่มข้อความนี้ลงในไฟล์การตั้งค่าของไคลเอนต์ (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json) แล้วรีสตาร์ตไคลเอนต์.",
+  "User guide: Connect an AI agent": "คู่มือผู้ใช้: เชื่อมต่อเอเจนต์ AI",
 };
 
 /** Phrases with a number or a name in them. */

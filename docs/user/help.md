@@ -25,6 +25,7 @@ The **?** button next to Ask Me opens the help menu:
 - **Forum** opens Lapin's forum (forum.lapinbim.com), where users and fans talk, show their work and help each other. The forum is in English, but you can write in your own language.
 - **Ask on the forum…** opens a new topic on the forum, in Lapin's category, with the app's version filled in below your text. Nothing else about your computer or your project goes with it. You sign in on the forum and post the topic there.
 - **Community (Skool)** is where the courses and the team's other material are.
+- **Connect an AI agent…** (desktop app only) gives the commands that connect Claude Code, Claude Desktop, Gemini CLI or another MCP client to the open Lapin: see [Connect an AI agent](mcp.md).
 - **Check for updates…** is in the desktop app only.
 - **About Lapin…** shows the version, the licence, a link to the source code, and what helpware means.
 

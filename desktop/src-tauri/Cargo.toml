@@ -24,6 +24,13 @@ tauri-plugin-process = "2"
 # The system's secure store for the secrets the interface keeps (a Speckle token, docs/plan-speckle.md): macOS Keychain,
 # Windows Credential Manager, the Secret Service on Linux (through zbus, pure Rust: no libdbus). MIT OR Apache-2.0.
 keyring = { version = "3.6", default-features = false, features = ["apple-native", "windows-native", "async-secret-service", "async-io", "crypto-rust"] }
+# The main window's size, position and maximised state kept between runs (forum topic 257). Apache-2.0 OR MIT.
+tauri-plugin-window-state = "2"
+
+# Linux: the program name GTK gives the window as its Wayland app_id / X11 WM_CLASS (run() in lib.rs). Already in the
+# tree through tauri (gtk 0.18); MIT.
+[target.'cfg(target_os = "linux")'.dependencies]
+glib = "0.18"
 
 [features]
 default = ["custom-protocol"]
