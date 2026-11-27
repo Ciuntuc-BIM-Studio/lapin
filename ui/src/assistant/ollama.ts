@@ -15,8 +15,11 @@ import { create } from 'zustand';
 const DEFAULT_URL = 'http://127.0.0.1:11434';
 /** The models measured on the assistant's two-step tool test, best first (qwen3-coder:30b 66 tok/s, gemma4:12b 26 tok/s; qwen3.8:27b failed it). */
 const PREFERRED_MODELS = ['qwen3-coder:30b', 'gemma4:12b'];
-/** Preferred models for Python notebook code generation, best first. */
-const PREFERRED_CODE_MODELS = ['qwen3-coder:30b', 'qwen2.5-coder:32b', 'qwen2.5-coder:14b', 'qwen2.5-coder:7b', 'qwen2.5-coder:latest', 'deepseek-coder-v2:latest', 'gemma4:12b'];
+/**
+ * The models the Python notebook's AI cells prefer, best first: the built-in default of a list the user can change
+ * (the assistant's settings, Coding models; decision 897). Empty or unset: this list.
+ */
+export const DEFAULT_CODE_MODELS = ['qwen3-coder:30b', 'qwen2.5-coder:32b', 'qwen2.5-coder:14b', 'qwen2.5-coder:7b', 'qwen2.5-coder:latest', 'deepseek-coder-v2:latest', 'gemma4:12b'];
 
 /** One message of an Ollama chat. */
 export interface OllamaToolCall { id?: string; function: { name: string; arguments: Record<string, unknown> | string } }
@@ -53,9 +56,19 @@ export function defaultModel(installed: string[]): string | null {
   return installed[0] ?? null;
 }
 
-/** The model to start with for Python code generation: the first coding model installed, else defaultModel. */
-export function defaultCodeModel(installed: string[]): string | null {
-  for (const m of PREFERRED_CODE_MODELS) if (installed.includes(m)) return m;
+/** The coding models preferred, best first: the user's list, else the built-in one. */
+export function codeModelsOf(s: Pick<AssistantSettings, 'codeModels'> = useAssistantSettings.getState()): string[] {
+  return s.codeModels?.length ? s.codeModels : DEFAULT_CODE_MODELS;
+}
+
+/** A list of models typed by the user (commas, spaces or new lines between them): the names, each once. */
+export function parseModelList(text: string): string[] {
+  return [...new Set(text.split(/[\s,;]+/).map((x) => x.trim()).filter(Boolean))];
+}
+
+/** The model to start with for Python code generation: the first preferred coding model installed, else any coder, else defaultModel. */
+export function defaultCodeModel(installed: string[], preferred: string[] = codeModelsOf()): string | null {
+  for (const m of preferred) if (installed.includes(m)) return m;
   const anyCoder = installed.find((m) => /coder|code/i.test(m));
   return anyCoder ?? defaultModel(installed);
 }
@@ -190,7 +203,8 @@ export async function checkStatus(t: OllamaTransport, base: string, model: strin
 
 // ─── Settings (this computer's: kept in the browser storage) ────────────────
 
-export interface AssistantSettings { url: string; model: string | null; codeModel?: string | null }
+/** The assistant's settings; `codeModel` is the notebook's AI cells' model, `codeModels` the user's preferred coding models (null: the built-in list). */
+export interface AssistantSettings { url: string; model: string | null; codeModel?: string | null; codeModels?: string[] | null }
 const KEY = 'lapin.assistant';
 
 function load(): AssistantSettings {
@@ -200,8 +214,9 @@ function load(): AssistantSettings {
       url: loopbackUrl(raw.url ?? DEFAULT_URL) ?? DEFAULT_URL,
       model: typeof raw.model === 'string' ? raw.model : null,
       codeModel: typeof raw.codeModel === 'string' ? raw.codeModel : null,
+      codeModels: Array.isArray(raw.codeModels) ? raw.codeModels.filter((m): m is string => typeof m === 'string' && !!m.trim()) : null,
     };
-  } catch { return { url: DEFAULT_URL, model: null, codeModel: null }; }
+  } catch { return { url: DEFAULT_URL, model: null, codeModel: null, codeModels: null }; }
 }
 
 export const useAssistantSettings = create<AssistantSettings>(() => load());

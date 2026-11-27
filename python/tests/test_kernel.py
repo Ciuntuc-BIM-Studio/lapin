@@ -56,10 +56,10 @@ class Kernel:
             if kind is None or msg.get("type") == kind:
                 return msg
 
-    def run(self, code: str, name: str = "test.py", console: bool = False, timeout: float = 30):
+    def run(self, code: str, name: str = "test.py", console: bool = False, timeout: float = 30, echo: bool = False):
         """Runs code: (what it printed, its done message)."""
         self.n += 1
-        self.send({"op": "run", "id": self.n, "code": code, "name": name, "console": console})
+        self.send({"op": "run", "id": self.n, "code": code, "name": name, "console": console, "echo": echo})
         out = []
         deadline = time.time() + timeout
         while True:
@@ -116,6 +116,30 @@ class KernelTests(unittest.TestCase):
         # A script's last expression is not echoed.
         out, _ = self.k.run("kept + 2")
         self.assertEqual(out, "")
+
+    def test_a_notebook_cell_shows_its_last_expressions_value(self):
+        # Decision 897: a notebook cell runs as a script (a step of its own) with echo, its last value shown as in Jupyter.
+        out, done = self.k.run("cell = 20\ncell * 2", echo=True)
+        self.assertEqual(out, "40\n")
+        self.assertTrue(done["ok"])
+        out, _ = self.k.run("cell = 1", echo=True)
+        self.assertEqual(out, "")
+
+    def test_inspect_lists_the_names_kept_without_running_anything(self):
+        # Decision 897: the AI cells' context, the user's names with their type and a short preview (no modules, no _names).
+        self.k.run("import math\nseen = [1, 2, 3]\n_hidden = 1\nlong_text = 'x' * 200", console=True)
+        self.k.n += 1
+        self.k.send({"op": "inspect", "id": self.k.n})
+        msg = self.k.next("inspect")
+        self.assertEqual(msg["id"], self.k.n)
+        names = {v["name"]: v for v in msg["vars"]}
+        self.assertEqual(names["seen"]["type"], "list")
+        self.assertEqual(names["seen"]["len"], 3)
+        self.assertEqual(names["seen"]["preview"], "[1, 2, 3]")
+        self.assertNotIn("_hidden", names)
+        self.assertNotIn("math", names)
+        self.assertNotIn("lapin", names)
+        self.assertLessEqual(len(names["long_text"]["preview"]), 80)
 
     def test_lapin_is_the_package(self):
         out, _ = self.k.run("print(lapin.__name__, lapin.__version__ == __import__('lapinbim').__version__)")

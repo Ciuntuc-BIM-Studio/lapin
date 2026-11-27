@@ -281,7 +281,7 @@ export async function refreshOllama(): Promise<void> {
       if (picked) saveSettings({ codeModel: picked });
     }
   } catch {
-    set({ ollama: { running: false, models: [], tools: null, error: 'Ollama is not running' } });
+    set({ ollama: { running: false, models: [], tools: null, error: 'Ollama is not running: start it with `ollama serve` or the Ollama app.' } });
   }
 }
 
@@ -519,7 +519,7 @@ export async function runPromptCell(promptCellId: string): Promise<void> {
   const contextAbove = codeContextAbove(get().cells, promptCellId);
 
   aiAbort = new AbortController();
-  set({ aiBusyCellId: promptCellId, aiStatus: 'Building context & calling Ollama…', activeCellId: targetId });
+  set({ aiBusyCellId: promptCellId, aiStatus: 'Asking Ollama…', activeCellId: targetId });
   try {
     const res = await generateCellCode({
       prompt: promptCell.source,
@@ -533,9 +533,10 @@ export async function runPromptCell(promptCellId: string): Promise<void> {
       onStatus: (aiStatus) => set({ aiStatus }),
     });
     if (res.code) updateCell(targetId, res.code);
-    const stats = res.tokens && res.seconds ? ` (${res.tokens} tok, ${res.seconds.toFixed(1)} s)` : '';
-    const fixNote = res.repaired ? ` • auto-repaired ${res.repaired} API call(s)` : '';
-    say('info', `AI generated cell with ${res.model}${stats}${fixNote}. Review and press Shift+Enter to run.`);
+    // Lapin's own lines, each one phrase the interface translates (its patterns): the model and the numbers in them.
+    const stats = res.tokens && res.seconds ? ` in ${res.seconds.toFixed(1)} s (${res.tokens} tokens)` : '';
+    say('info', `Cell written by ${res.model}${stats}: review it, then Shift+Enter runs it.`);
+    if (res.repaired) say('info', `${res.repaired} call(s) to Lapin repaired against the catalogue.`);
   } catch (e) {
     if (!aiAbort?.signal.aborted) say('err', `Ollama: ${message(e)}`);
   } finally {
@@ -554,7 +555,7 @@ export async function fixCellWithAi(codeCellId: string): Promise<void> {
   const [catalogue, kernelVars] = await Promise.all([readCatalogue(), inspectKernel()]);
   const contextAbove = codeContextAbove(s.cells, codeCellId);
   aiAbort = new AbortController();
-  set({ aiBusyCellId: codeCellId, aiStatus: 'Fixing error with Ollama…', activeCellId: codeCellId });
+  set({ aiBusyCellId: codeCellId, aiStatus: 'Asking Ollama for a fix…', activeCellId: codeCellId });
   try {
     const res = await generateCellCode({
       prompt: '',
@@ -569,7 +570,7 @@ export async function fixCellWithAi(codeCellId: string): Promise<void> {
       onStatus: (aiStatus) => set({ aiStatus }),
     });
     if (res.code) updateCell(codeCellId, res.code);
-    say('info', `AI proposed a fix (${res.model}). Press Shift+Enter to re-run.`);
+    say('info', `Fix proposed by ${res.model}: Shift+Enter runs the cell again.`);
   } catch (e) {
     if (!aiAbort?.signal.aborted) say('err', `Ollama: ${message(e)}`);
   } finally {
@@ -591,7 +592,7 @@ export async function openConvertedGraph(graph: GraphJson, baseName = 'From scri
     set({ graphWarning: null });
     openGraphsPanel();
     openGraph(r.id);
-    notify(`Graph „${name}” created from Python cell.`);
+    notify(`Graph „${name}” made from the Python cell.`);
   }
 }
 
@@ -612,7 +613,7 @@ export async function cellToGraph(cellId: string): Promise<void> {
     return;
   }
   if (res.graph.nodes.length === 0 && res.unsupported.length === 0) {
-    notify('Nothing to convert: add parameters or lapin.* commands in this cell.');
+    notify('Nothing to convert: the cell has no parameters or lapin.* commands.');
     return;
   }
   set({ graphWarning: { cellId, unsupported: res.unsupported, graph: res.graph } });
@@ -628,7 +629,7 @@ export async function cellToGraphWithOllama(cellId: string): Promise<void> {
 
   const catalogue = await readCatalogue();
   aiAbort = new AbortController();
-  set({ aiBusyCellId: cellId, aiStatus: 'Converting cell to Graph with Ollama…' });
+  set({ aiBusyCellId: cellId, aiStatus: 'Converting the cell to a graph with Ollama…' });
   try {
     const graph = await convertCellToGraphWithAi(cell.source, catalogue, aiAbort.signal);
     // Validate the generated graph against the engine before saving.
@@ -636,7 +637,7 @@ export async function cellToGraphWithOllama(cellId: string): Promise<void> {
     const base = (s.projectId ? projectScript(s.projectId)?.name : s.file)?.replace(/\.py$/i, '') || 'Notebook';
     await openConvertedGraph(graph, `${base} cell ${idx + 1}`);
   } catch (e) {
-    if (!aiAbort?.signal.aborted) say('err', `Graph conversion failed: ${message(e)}`);
+    if (!aiAbort?.signal.aborted) say('err', `The graph could not be made: ${message(e)}`);
   } finally {
     aiAbort = null;
     set({ aiBusyCellId: null, aiStatus: null });

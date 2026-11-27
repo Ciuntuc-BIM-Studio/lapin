@@ -368,9 +368,9 @@ export async function convertCellToGraphWithAi(code: string, catalogue: Catalogu
   let model = settings.codeModel ?? settings.model;
   if (!model) {
     const status = await checkStatus(transport, settings.url, null);
-    if (!status.running) throw new Error(status.error || 'Ollama is not running.');
+    if (!status.running) throw new Error(status.error || 'Ollama is not running: start it with `ollama serve` or the Ollama app.');
     model = defaultCodeModel(status.models);
-    if (!model) throw new Error('No Ollama models installed.');
+    if (!model) throw new Error('Ollama has no model: install one with `ollama pull qwen3-coder:30b`.');
   }
 
   const sampleCommands = (catalogue?.commands ?? [])
@@ -403,10 +403,10 @@ ${code}
 
   const cleaned = cleanText(text).trim();
   const match = /\{[\s\S]*\}/.exec(cleaned);
-  if (!match) throw new Error('Ollama did not return valid Graph JSON.');
+  if (!match) throw new Error('Ollama\'s answer is not a graph\'s JSON.');
   const parsed = JSON.parse(match[0]) as Partial<GraphJson>;
   if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.wires)) {
-    throw new Error('Returned JSON is missing nodes or wires.');
+    throw new Error('Ollama\'s graph has no nodes or no wires.');
   }
   const graph: GraphJson = { format: GRAPH_FORMAT, nodes: parsed.nodes, wires: parsed.wires };
   layoutNodes(graph.nodes, graph.wires);

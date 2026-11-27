@@ -8,7 +8,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { Bot, Check, ChevronRight, Download, MessageSquarePlus, RefreshCw, Send, Settings2, Square, TriangleAlert, Wrench } from 'lucide-react';
 import { applyChanges, newChat, rejectChanges, send, stop, toggleAll, toggleChange, useAssistant, type ChatEntry } from './store';
-import { checkStatus, defaultModel, fetchTransport, loopbackUrl, saveSettings, shellTransport, transportFor, useAssistantSettings, type OllamaStatus } from './ollama';
+import { checkStatus, DEFAULT_CODE_MODELS, defaultModel, fetchTransport, loopbackUrl, parseModelList, saveSettings, shellTransport, transportFor, useAssistantSettings, type OllamaStatus } from './ollama';
 import { tableCsv, type Table } from './tools';
 import { cleanText } from './loop';
 import { Markdown } from './Markdown';
@@ -59,8 +59,24 @@ function Settings({ status, recheck }: { status: OllamaStatus | null; recheck: (
         </select>
       </label>
       <p className="muted small">qwen3-coder:30b is the best tested (fast, reliable with tools); gemma4:12b runs on less memory. Install one with: ollama pull qwen3-coder:30b</p>
+      <CodeModels />
       <div className="assistant-status-row"><Status status={status} /><button type="button" className="icon mini" title="Check again" onClick={recheck}><RefreshCw size={12} /></button></div>
     </div>
+  );
+}
+
+/** The Python notebook's coding models, best first (decision 897): the user's list, or the built-in one when left empty. */
+function CodeModels() {
+  const codeModels = useAssistantSettings((s) => s.codeModels);
+  const [text, setText] = useState((codeModels ?? []).join(', '));
+  return (
+    <label className="assistant-field" title="The models the Python notebook's AI cells look for, best first: the first one installed is used. Empty: Lapin's own list">
+      <span>Coding models</span>
+      <input value={text} placeholder={DEFAULT_CODE_MODELS.join(', ')} spellCheck={false} data-field="assistant-code-models"
+        onChange={(e) => setText(e.target.value)}
+        onBlur={() => { const list = parseModelList(text); setText(list.join(', ')); saveSettings({ codeModels: list.length ? list : null }); }}
+        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+    </label>
   );
 }
 

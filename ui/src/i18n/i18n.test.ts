@@ -215,6 +215,21 @@ describe('the languages', () => {
     // The project information (A1b).
     'Project information synced: 2 changed here, 3 sent.',
     'Project information: 2 open proposals on the server (File → Collaborate → Publishing → Project information).',
+    // The Python notebook (decision 897).
+    'Generating with qwen3-coder:30b…',
+    'Refining with qwen3-coder:30b…',
+    'Looking up search_catalogue…',
+    'Repairing 2 call(s) to Lapin…',
+    'Cell written by qwen3-coder:30b in 4.2 s (180 tokens): review it, then Shift+Enter runs it.',
+    'Cell written by qwen3-coder:30b: review it, then Shift+Enter runs it.',
+    '2 call(s) to Lapin repaired against the catalogue.',
+    'Fix proposed by gemma4:12b: Shift+Enter runs the cell again.',
+    'Ollama: Ollama is not running: start it with `ollama serve` or the Ollama app.',
+    "The graph could not be made: Ollama's graph has no nodes or no wires.",
+    'Graph „Walls cell 2” made from the Python cell.',
+    '3 line(s) have no graph node, the first at line 5:',
+    'Open the partial graph (4 nodes)',
+    'Python cell 3',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 

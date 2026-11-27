@@ -121,6 +121,29 @@ public sealed class ScriptHostTests(ITestOutputHelper log) : IDisposable
     }
 
     [Fact]
+    public async Task A_notebook_cell_echoes_its_last_value_and_inspect_lists_the_names_kept()
+    {
+        // Decision 897: script.run {echo} shows a cell's last expression; script.inspect gives the AI cells the kernel's names.
+        if (!HasPython()) return;
+        var h = Host();
+        var none = (JsonObject)(await h.Handle("script.inspect", []))!;
+        Assert.False((bool)none["alive"]!);   // no Python started for it
+        var a = (int)(await h.Handle("script.run", Args(("code", "walls = [1, 2]\nlen(walls) * 10"), ("name", "nb.py"), ("echo", true))))!["run"]!;
+        Assert.True((bool)(await Done(a))["ok"]!);
+        Assert.Equal("20\n", Printed(a));
+        var r = (JsonObject)(await h.Handle("script.inspect", []))!;
+        Assert.True((bool)r["alive"]!);
+        Assert.False((bool)r["busy"]!);
+        var walls = r["vars"]!.AsArray().OfType<JsonObject>().Single(v => (string?)v["name"] == "walls");
+        Assert.Equal("list", (string?)walls["type"]);
+        Assert.Equal(2, (int?)walls["len"]);
+        // Without echo a script's last value is not shown.
+        var b = await Run(h, "len(walls)");
+        await Done(b);
+        Assert.Equal("", Printed(b));
+    }
+
+    [Fact]
     public async Task Only_one_run_at_a_time_and_stop_interrupts_it()
     {
         if (!HasPython()) return;

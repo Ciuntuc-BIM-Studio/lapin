@@ -162,9 +162,9 @@ export async function generateCellCode(opts: GenerateCodeOptions): Promise<Gener
 
   if (!model) {
     const status = await checkStatus(transport, url, null);
-    if (!status.running) throw new Error(status.error || 'Ollama is not running.');
+    if (!status.running) throw new Error(status.error || 'Ollama is not running: start it with `ollama serve` or the Ollama app.');
     model = defaultCodeModel(status.models);
-    if (!model) throw new Error('No Ollama models installed. Run `ollama pull qwen2.5-coder` or `ollama pull gemma4:12b`.');
+    if (!model) throw new Error('Ollama has no model: install one with `ollama pull qwen3-coder:30b`.');
     if (supportsTools === undefined) supportsTools = status.tools;
   }
 
@@ -288,7 +288,7 @@ export async function generateCellCode(opts: GenerateCodeOptions): Promise<Gener
   if (!opts.signal?.aborted && finalCode && opts.catalogue) {
     const issues = validateLapinCode(finalCode, opts.catalogue);
     if (issues.length > 0) {
-      opts.onStatus?.(`Auto-repairing ${issues.length} API issue(s)…`);
+      opts.onStatus?.(`Repairing ${issues.length} call(s) to Lapin…`);
       let repairedContent = '';
       const repairMessages: OllamaMessage[] = [
         { role: 'system', content: NOTEBOOK_SYSTEM_PROMPT },

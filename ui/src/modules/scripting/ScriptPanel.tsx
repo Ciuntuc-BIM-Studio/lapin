@@ -37,6 +37,7 @@ import {
 import { engineInBrowser, useSession } from '../../engine/session';
 import { MessageStrip } from '../../shell/MessageStrip';
 import { Markdown } from '../../assistant/Markdown';
+import { t, useLang } from '../../i18n';
 import { saveSettings, useAssistantSettings } from '../../assistant/ollama';
 import { CodeEditor } from './CodeEditor';
 import { namespaces, scriptName, walk, type Completion } from './logic';
@@ -111,7 +112,7 @@ function OllamaPicker() {
   if (engineInBrowser) return null;
   const models = ollama?.models ?? [];
   return (
-    <div className="nb-ollama" title={ollama?.running ? 'Local Ollama model for AI prompt cells' : (ollama?.error || 'Ollama not running')}>
+    <div className="nb-ollama" title={ollama?.running ? "The Ollama model on this computer that writes the AI cells' Python" : (ollama?.error || 'Ollama is not running: start it with `ollama serve` or the Ollama app.')}>
       <Sparkles size={13} className={ollama?.running ? 'nb-ollama-on' : 'muted'} />
       {ollama?.running && models.length > 0 ? (
         <select
@@ -124,9 +125,9 @@ function OllamaPicker() {
           {models.map((m) => <option key={m} value={m}>{m}</option>)}
         </select>
       ) : (
-        <span className="muted small">{ollama?.running ? 'No models' : 'Ollama offline'}</span>
+        <span className="muted small">{ollama?.running ? 'No model' : 'Ollama offline'}</span>
       )}
-      <button type="button" className="icon" title="Refresh Ollama models" onClick={() => void refreshOllama()}><RefreshCw size={12} /></button>
+      <button type="button" className="icon" title="Look for the Ollama models again" onClick={() => void refreshOllama()}><RefreshCw size={12} /></button>
     </div>
   );
 }
@@ -142,7 +143,7 @@ function Library() {
       <div className="script-library-head"><span className="panel-title">Mine</span>
         <button type="button" className="icon" title="New notebook" data-action="script-new" onClick={() => newScript()}><FilePlus size={14} /></button></div>
       <div className="script-files">
-        {files.length === 0 && <p className="muted small">Saved scripts &amp; notebooks show here (.py files).</p>}
+        {files.length === 0 && <p className="muted small">Saved scripts and notebooks show here: plain .py files in your folder.</p>}
         {files.map((f) => (
           <button type="button" key={f.name} className={`script-file${f.name === file ? ' on' : ''}`} data-script={f.name} title={f.name} onClick={() => void openScript(f.name)}>
             <span data-no-i18n>{f.name.replace(/\.py$/, '')}</span>
@@ -199,7 +200,7 @@ function ConsoleTab() {
       <div className="script-input">
         <span className="script-prompt" aria-hidden>{'>>>'}</span>
         <textarea rows={Math.min(5, draft.split('\n').length)} value={draft} spellCheck={false} data-field="script-console-input"
-          placeholder={running ? 'A script is running…' : 'Python REPL: lapin.model.walls'} aria-label="Python console"
+          placeholder={running ? 'A script is running…' : 'Python: lapin.model.walls'} aria-label="Python console"
           onChange={(e) => setDraft(e.target.value)} onKeyDown={key} />
       </div>
     </>
@@ -216,16 +217,16 @@ function RecorderTab() {
     <>
       <div className="script-recorder-bar">
         {recording
-          ? <button type="button" className="btn" data-action="script-record-stop" onClick={stopRecording}><Square size={13} /> Stop</button>
-          : <button type="button" className="btn primary" data-action="script-record" onClick={() => void startRecording()}><Circle size={13} /> Record</button>}
-        <button type="button" className="btn" data-action="script-record-insert" disabled={!recorded.length} onClick={insertRecordingAsCell} title="Insert recorded steps as a new code cell"><Code2 size={13} /> Insert as cell</button>
-        <button type="button" className="btn" data-action="script-record-copy" disabled={!recorded.length} onClick={() => void copyRecording()}><Copy size={13} /> Copy</button>
-        <button type="button" className="btn" data-action="script-record-save" disabled={!recorded.length} onClick={() => void saveRecording()}><Save size={13} /> Save as script</button>
+          ? <button type="button" className="btn" data-action="script-record-stop" onClick={stopRecording} title="Stop recording: the script is kept here to copy, save or insert as a cell"><Square size={13} /> Stop</button>
+          : <button type="button" className="btn primary" data-action="script-record" onClick={() => void startRecording()} title="Record: each step you do in the window becomes a line of Python"><Circle size={13} /> Record</button>}
+        <button type="button" className="btn" data-action="script-record-insert" disabled={!recorded.length} onClick={insertRecordingAsCell} title="Insert the recorded steps as a new code cell"><Code2 size={13} /> Insert as cell</button>
+        <button type="button" className="btn" data-action="script-record-copy" disabled={!recorded.length} onClick={() => void copyRecording()} title="Copy the recorded script"><Copy size={13} /> Copy</button>
+        <button type="button" className="btn" data-action="script-record-save" disabled={!recorded.length} onClick={() => void saveRecording()} title="Save the recorded script in Mine and open it in the editor"><Save size={13} /> Save as script</button>
         <span className="grow" />
-        <label className="script-check">
+        <label className="script-check" title="A command on the window's selection is written lapin.selection(), so the script works on what is selected when it runs">
           <input type="checkbox" checked={useSelection} onChange={(e) => useScripting.setState({ recordSelection: e.target.checked })} /> <span>Selection as lapin.selection()</span>
         </label>
-        <button type="button" className="icon" title="Clear recording" disabled={!recorded.length} onClick={clearRecording}><Eraser size={14} /></button>
+        <button type="button" className="icon" title="Clear the recording" disabled={!recorded.length} onClick={clearRecording}><Eraser size={14} /></button>
       </div>
       <div className="script-output" data-field="script-recorder">
         {recorded.length === 0
@@ -250,7 +251,7 @@ function TerminalPane() {
   };
   return (
     <div className="nb-terminal" style={{ height }}>
-      <div className="nb-term-resize" onPointerDown={drag} title="Drag to resize terminal" />
+      <div className="nb-term-resize" onPointerDown={drag} title="Drag to resize" />
       <div className="script-console-head">
         <div className="script-tabs" role="tablist">
           <button type="button" role="tab" aria-selected={tab === 'console'} className={tab === 'console' ? 'on' : ''} data-action="script-tab-console" onClick={() => useScripting.setState({ tab: 'console' })}>Terminal</button>
@@ -258,8 +259,8 @@ function TerminalPane() {
             {recording && <span className="script-rec-dot" aria-hidden />}Recorder</button>
         </div>
         <div className="nb-term-actions">
-          {tab === 'console' && <button type="button" className="icon" title="Clear terminal" onClick={clearConsole}><Eraser size={14} /></button>}
-          <button type="button" className="icon" title="Hide terminal" onClick={() => useScripting.setState({ terminalOpen: false })}><X size={14} /></button>
+          {tab === 'console' && <button type="button" className="icon" title="Clear the terminal" onClick={clearConsole}><Eraser size={14} /></button>}
+          <button type="button" className="icon" title="Hide the terminal" onClick={() => useScripting.setState({ terminalOpen: false })}><X size={14} /></button>
         </div>
       </div>
       {tab === 'console' ? <ConsoleTab /> : <RecorderTab />}
@@ -296,6 +297,7 @@ function CellCard({ cell, index, total, active, spaces }: {
   const runningCellId = useScripting((s) => s.runningCellId);
   const aiBusyCellId = useScripting((s) => s.aiBusyCellId);
   const graphWarning = useScripting((s) => s.graphWarning);
+  useLang((x) => x.lang);   // the placeholders (t) redrawn in a new language
   const [editingMd, setEditingMd] = useState(cell.kind === 'markdown' && !cell.source.trim());
 
   const isRunningThis = runningCellId === cell.id;
@@ -315,16 +317,16 @@ function CellCard({ cell, index, total, active, spaces }: {
     >
       <div className="nb-cell-bar">
         <span className="nb-badge" data-no-i18n>{badge}</span>
-        <span className="nb-kind-label">{cell.kind === 'code' ? 'Python' : cell.kind === 'prompt' ? 'AI Prompt → Python' : 'Markdown'}</span>
+        <span className="nb-kind-label">{cell.kind === 'code' ? 'Python' : cell.kind === 'prompt' ? 'AI prompt → Python' : 'Markdown'}</span>
         <span className="grow" />
 
         {cell.kind === 'code' && (
           <>
-            <button type="button" className="btn nb-btn-sm primary" disabled={running} onClick={() => void runCell(cell.id)} title="Run cell (Shift+Enter): one undo step">
+            <button type="button" className="btn nb-btn-sm primary" disabled={running} onClick={() => void runCell(cell.id)} title="Run the cell (Shift+Enter): one undo step">
               <Play size={12} /> Run
             </button>
-            <button type="button" className="btn nb-btn-sm" disabled={running || aiBusyCellId != null} onClick={() => void cellToGraph(cell.id)} title="Convert this Python cell into a Visual Graph">
-              <Workflow size={12} /> To Graph
+            <button type="button" className="btn nb-btn-sm" disabled={running || aiBusyCellId != null} onClick={() => void cellToGraph(cell.id)} title="Convert this Python cell into a visual graph">
+              <Workflow size={12} /> To graph
             </button>
             {cell.lastError && !engineInBrowser && (
               <button type="button" className="btn nb-btn-sm" disabled={aiBusyCellId != null} onClick={() => void fixCellWithAi(cell.id)} title="Ask Ollama to fix this cell's error">
@@ -350,9 +352,9 @@ function CellCard({ cell, index, total, active, spaces }: {
           </button>
         )}
 
-        <button type="button" className="icon" disabled={index === 0} title="Move cell up" onClick={() => moveCellBy(index, -1)}><ArrowUp size={13} /></button>
-        <button type="button" className="icon" disabled={index === total - 1} title="Move cell down" onClick={() => moveCellBy(index, 1)}><ArrowDown size={13} /></button>
-        <button type="button" className="icon" title="Delete cell" onClick={() => deleteCell(cell.id)}><Trash2 size={13} /></button>
+        <button type="button" className="icon" disabled={index === 0} title="Move the cell up" onClick={() => moveCellBy(index, -1)}><ArrowUp size={13} /></button>
+        <button type="button" className="icon" disabled={index === total - 1} title="Move the cell down" onClick={() => moveCellBy(index, 1)}><ArrowDown size={13} /></button>
+        <button type="button" className="icon" title="Delete the cell" onClick={() => deleteCell(cell.id)}><Trash2 size={13} /></button>
       </div>
 
       <div className="nb-cell-body">
@@ -367,8 +369,8 @@ function CellCard({ cell, index, total, active, spaces }: {
               label={`Python cell ${index + 1}`}
             />
           ) : (
-            <pre className="nb-code-static" data-no-i18n onClick={() => setActiveCell(cell.id)}>
-              {cell.source || <span className="muted"># Click to edit Python code…</span>}
+            <pre className="nb-code-static" {...(cell.source ? { 'data-no-i18n': '' } : {})} onClick={() => setActiveCell(cell.id)}>
+              {cell.source || <span className="muted">Click to write Python…</span>}
             </pre>
           )
         )}
@@ -379,7 +381,7 @@ function CellCard({ cell, index, total, active, spaces }: {
               className="nb-md-input"
               rows={Math.max(2, cell.source.split('\n').length + 1)}
               value={cell.source}
-              placeholder="Write Markdown notes (# Heading, **bold**, lists, tables, ```code```)…"
+              placeholder={t('Notes in Markdown: # a heading, **bold**, lists, tables, ```code```…')}
               onChange={(e) => updateCell(cell.id, e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); setEditingMd(false); } }}
               onBlur={() => { if (cell.source.trim()) setEditingMd(false); }}
@@ -397,7 +399,7 @@ function CellCard({ cell, index, total, active, spaces }: {
             className="nb-prompt-input"
             rows={Math.max(2, Math.min(8, cell.source.split('\n').length + 1))}
             value={cell.source}
-            placeholder="Describe what Python code Ollama should generate in the cell below (e.g. 'Create 6 columns spaced every 4m along X on Ground Floor')…"
+            placeholder={t('Say what the Python in the cell below should do (for example: six columns 4 m apart along X on the ground floor)…')}
             onChange={(e) => updateCell(cell.id, e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.shiftKey || e.metaKey || e.ctrlKey)) {
@@ -412,13 +414,14 @@ function CellCard({ cell, index, total, active, spaces }: {
       {hasGraphWarning && graphWarning && (
         <div className="nb-graph-warn">
           <div className="nb-graph-warn-text">
-            <b>Partial graph conversion:</b> {graphWarning.unsupported.length} line(s) cannot map directly to native graph nodes
-            (e.g. line {graphWarning.unsupported[0]?.line}: <code>{graphWarning.unsupported[0]?.text}</code>).
+            <b>Partial graph conversion:</b>{' '}
+            <span>{`${graphWarning.unsupported.length} line(s) have no graph node, the first at line ${graphWarning.unsupported[0]?.line ?? 0}:`}</span>{' '}
+            <code data-no-i18n>{graphWarning.unsupported[0]?.text}</code>
           </div>
           <div className="nb-graph-warn-actions">
             {graphWarning.graph.nodes.length > 0 && (
               <button type="button" className="btn nb-btn-sm" onClick={() => void openConvertedGraph(graphWarning.graph, `Cell ${index + 1}`)}>
-                Open partial graph ({graphWarning.graph.nodes.length} nodes)
+                {`Open the partial graph (${graphWarning.graph.nodes.length} nodes)`}
               </button>
             )}
             {!engineInBrowser && (
@@ -426,7 +429,7 @@ function CellCard({ cell, index, total, active, spaces }: {
                 <Sparkles size={12} /> Convert with Ollama
               </button>
             )}
-            <button type="button" className="icon" onClick={dismissGraphWarning}><X size={13} /></button>
+            <button type="button" className="icon" title="Close" onClick={dismissGraphWarning}><X size={13} /></button>
           </div>
         </div>
       )}
@@ -435,7 +438,7 @@ function CellCard({ cell, index, total, active, spaces }: {
         <div className="nb-cell-outputs">
           <div className="nb-cell-outputs-head">
             <span className="muted small">Output</span>
-            <button type="button" className="icon" title="Clear cell output" onClick={() => clearCellOutputs(cell.id)}><Eraser size={12} /></button>
+            <button type="button" className="icon" title="Clear the cell's output" onClick={() => clearCellOutputs(cell.id)}><Eraser size={12} /></button>
           </div>
           {cell.outputs.map((o, i) => (
             <pre key={i} className={`script-line ${o.kind}`} data-no-i18n>{o.text}</pre>
@@ -483,9 +486,9 @@ export function ScriptPanel() {
   const keepKeys = (e: React.KeyboardEvent) => { e.stopPropagation(); };
 
   return (
-    <section className="nb-view" aria-label="Python Notebook" data-field="script-panel" onKeyDown={keepKeys}>
+    <section className="nb-view" aria-label="Python notebook" data-panel="script" data-field="script-panel" onKeyDown={keepKeys}>
       <div className="nb-head">
-        <button type="button" className={`icon${s.libraryOpen ? ' on' : ''}`} title="Toggle script library" onClick={() => useScripting.setState({ libraryOpen: !s.libraryOpen })}><PanelLeft size={14} /></button>
+        <button type="button" className={`icon${s.libraryOpen ? ' on' : ''}`} title="Show or hide the library" onClick={() => useScripting.setState({ libraryOpen: !s.libraryOpen })}><PanelLeft size={14} /></button>
         <SquareTerminal size={14} />
         <input
           type="text"
@@ -498,21 +501,21 @@ export function ScriptPanel() {
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') void (project ? keep() : save()); }}
         />
-        <span className="muted small" title={project ? 'Project script' : undefined}>{project ? '◆' : ''}{changed ? '•' : ''}</span>
+        <span className="muted small" title={project ? 'The project’s script' : undefined}>{project ? '◆' : ''}{changed ? '•' : ''}</span>
 
         {!engineInBrowser && (
           <>
-            <button type="button" className="btn primary" data-action="script-run" disabled={running} onClick={() => void runAllCells()} title="Run all code cells in one undo step">
-              <PlayCircle size={13} /> Run All
+            <button type="button" className="btn primary" data-action="script-run" disabled={running} onClick={() => void runAllCells()} title="Run all the code cells: one undo step">
+              <PlayCircle size={13} /> Run all
             </button>
-            <button type="button" className="btn" data-action="script-stop" disabled={!running && !s.aiBusyCellId} onClick={() => { if (s.aiBusyCellId) stopAi(); else void stop(); }} title="Stop execution">
+            <button type="button" className="btn" data-action="script-stop" disabled={!running && !s.aiBusyCellId} onClick={() => { if (s.aiBusyCellId) stopAi(); else void stop(); }} title="Stop: nothing the script did is kept">
               <Square size={13} /> Stop
             </button>
-            <button type="button" className="btn" data-action="script-restart" disabled={running} onClick={() => void restart()} title="Restart Python kernel">
+            <button type="button" className="btn" data-action="script-restart" disabled={running} onClick={() => void restart()} title="Restart Python: the notebook’s variables are forgotten">
               <RotateCcw size={13} /> Restart
             </button>
             <button type="button" className="btn" disabled={running} onClick={() => void restartAndRunAll()} title="Restart Python and run all cells from top to bottom">
-              Restart &amp; Run All
+              Restart and run all
             </button>
           </>
         )}
@@ -521,27 +524,27 @@ export function ScriptPanel() {
         <OllamaPicker />
         <Status />
 
-        {header?.tool && <span className="muted small script-tool-name" data-field="script-tool"><span>Tool:</span> <b data-no-i18n>{header.tool}</b></span>}
+        {header?.tool && <span className="muted small script-tool-name" title="Its tool in My tools (the script's header)" data-field="script-tool"><span>Tool:</span> <b data-no-i18n>{header.tool}</b></span>}
         {project && trusted && (
-          <button type="button" className="icon" data-action="script-untrust" title="Forget trust" onClick={() => void forgetTrust(project.sha256)}>
+          <button type="button" className="icon" data-action="script-untrust" title="Forget trust: this script asks again before it runs, and its tools leave My tools" onClick={() => void forgetTrust(project.sha256)}>
             <ShieldOff size={14} />
           </button>
         )}
         {!engineInBrowser && (
           <>
             <button type="button" className="icon" data-action="script-save" title="Save in Mine" onClick={() => void save()}><Save size={14} /></button>
-            <button type="button" className="icon" data-action="script-save-project" title="Save in the project (one undo step)" onClick={() => void keep()}><FolderInput size={14} /></button>
+            <button type="button" className="icon" data-action="script-save-project" title="Save in the project (one undo step; it goes with the file)" onClick={() => void keep()}><FolderInput size={14} /></button>
             <button type="button" className="icon" data-action="script-reveal" title="Open in external editor" disabled={!s.file} onClick={() => void reveal()}><ExternalLink size={14} /></button>
-            <button type="button" className="icon" data-action="script-delete" title={project ? 'Delete from project' : 'Delete from Mine'} disabled={!s.file && !project} onClick={() => void (project ? deleteFromProject() : deleteScript())}><Trash2 size={14} /></button>
-            <button type="button" className={`icon${s.terminalOpen ? ' on' : ''}`} title="Toggle Terminal" onClick={() => useScripting.setState({ terminalOpen: !s.terminalOpen })}><PanelBottom size={14} /></button>
+            <button type="button" className="icon" data-action="script-delete" title={project ? 'Delete from the project (Undo brings it back)' : 'Delete from Mine'} disabled={!s.file && !project} onClick={() => void (project ? deleteFromProject() : deleteScript())}><Trash2 size={14} /></button>
+            <button type="button" className={`icon${s.terminalOpen ? ' on' : ''}`} title="Show or hide the terminal" onClick={() => useScripting.setState({ terminalOpen: !s.terminalOpen })}><PanelBottom size={14} /></button>
           </>
         )}
       </div>
 
       {engineInBrowser ? (
         <div className="script-browser-note">
-          <p>Python notebooks and local Ollama models run in the <b>desktop app</b>, using your own Python (3.11+) and Ollama server.</p>
-          <p className="muted">Visual Graphs generated from Python cells run natively in both the desktop and web editions.</p>
+          <p>Python runs in the desktop app.</p>
+          <p className="muted small">Lapin for the desktop runs the notebook with your own Python (3.11 or newer) and its AI cells with your own Ollama; in the browser there is none. A graph made from a Python cell runs in both.</p>
         </div>
       ) : (
         <div className="nb-workspace">
@@ -562,7 +565,7 @@ export function ScriptPanel() {
               <div className="nb-add-bar">
                 <button type="button" className="btn" data-action="nb-add-code" onClick={() => addCell('code')}><Code2 size={13} /> + Code</button>
                 <button type="button" className="btn" data-action="nb-add-markdown" onClick={() => addCell('markdown')}><FileText size={13} /> + Text</button>
-                <button type="button" className="btn" data-action="nb-add-prompt" onClick={() => addCell('prompt')}><Sparkles size={13} /> + AI Prompt</button>
+                <button type="button" className="btn" data-action="nb-add-prompt" onClick={() => addCell('prompt')}><Sparkles size={13} /> + AI prompt</button>
               </div>
             </div>
             {s.terminalOpen && <TerminalPane />}
