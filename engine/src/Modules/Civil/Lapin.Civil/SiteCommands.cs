@@ -634,7 +634,7 @@ public static class SiteCommands
             var n = ctx.Model.OfClass(RetainingWalls.Class).Count() + 1;
             var attrs = RetainingWalls.Attrs(path, spec, concrete.Id);
             // Its batters, toe, heel and key, when given (docs/plan-wing-walls.md).
-            foreach (var k in BatteredWalls.WallKeys) if (Json.Number(a[k]) is { } v) attrs[k] = Math.Max(0, v);
+            foreach (var k in BatteredWalls.WallKeys) if (Json.Number(a[k]) is { } v) attrs[k] = k is "frontBatter" or "backBatter" ? v : Math.Max(0, v);
             var e = new Entity(ctx.NewId(), RetainingWalls.Class, ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"Retaining wall {n}", attrs, "RETAININGWALL");
             ctx.Add(e);
             Spatial.Contain(ctx, storeyId, e.Id);
@@ -652,7 +652,7 @@ public static class SiteCommands
             if ((string?)a["material"] is { } name) attrs["material"] = Materials.Ensure(ctx, name).Id;
             // Its batters (n:1, 0 upright), the thickness at its base, its toe, heel and key: null clears one.
             foreach (var k in BatteredWalls.WallKeys)
-                if (a.ContainsKey(k)) { if (Json.Number(a[k]) is { } v) attrs[k] = Math.Max(0, v); else attrs.Remove(k); }
+                if (a.ContainsKey(k)) { if (Json.Number(a[k]) is { } v) attrs[k] = k is "frontBatter" or "backBatter" ? v : Math.Max(0, v); else attrs.Remove(k); }
             ctx.Replace(e.With(attrs: attrs));
             return null;
         });
@@ -677,6 +677,8 @@ public static class SiteCommands
                     else o.Remove(k);
                 }
             if (a.ContainsKey("warp")) { if (a["warp"] is JsonValue w && w.TryGetValue<bool>(out var on) && on) o["warp"] = true; else o.Remove("warp"); }
+            // The back face parallel to the front (constant thickness, leaning with it).
+            if (a.ContainsKey("parallelBack")) { if (a["parallelBack"] is JsonValue pb && pb.TryGetValue<bool>(out var on) && on) o["parallelBack"] = true; else o.Remove("parallelBack"); }
             // A warped face's twist along its slope (by default) or along the whole segment; the segment's name (its part's, as an assembly).
             if (a.ContainsKey("twist")) { if ((string?)a["twist"] == "segment") o["twist"] = "segment"; else o.Remove("twist"); }
             if (a.ContainsKey("name")) { if (((string?)a["name"])?.Trim() is { Length: > 0 } nm) o["name"] = nm; else o.Remove("name"); }

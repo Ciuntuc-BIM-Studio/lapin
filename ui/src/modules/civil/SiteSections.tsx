@@ -150,13 +150,13 @@ function BatterFields({ node }: { node: NodeDto }) {
   const thickness = typeof node.props.thickness === 'number' ? node.props.thickness : 0.3;
   return (
     <>
-      <dt>Front batter</dt><dd><NumberField value={num(node.props.frontBatter)} min={0} blank placeholder="upright" suffix=":1" onCommit={(v) => set({ frontBatter: v })} /></dd>
+      <dt>Front batter</dt><dd><NumberField value={num(node.props.frontBatter)} min={-100} blank placeholder="upright" suffix=":1" onCommit={(v) => set({ frontBatter: v })} /></dd>
       <dt>Back face</dt>
       <dd><select value={byBase ? 'base' : 'batter'} onChange={(e) => set(e.target.value === 'base' ? { baseThickness: thickness + 0.2, backBatter: null } : { baseThickness: null })}>
         <option value="batter">by its batter</option><option value="base">by its thickness at the base</option></select></dd>
       {byBase
         ? <><dt>Thickness at the base</dt><dd><LengthField metres={num(node.props.baseThickness)} min={0.05} blank onCommit={(m) => set({ baseThickness: m })} /></dd></>
-        : <><dt>Back batter</dt><dd><NumberField value={num(node.props.backBatter)} min={0} blank placeholder="upright" suffix=":1" onCommit={(v) => set({ backBatter: v })} /></dd></>}
+        : <><dt>Back batter</dt><dd><NumberField value={num(node.props.backBatter)} min={-100} blank placeholder="upright" suffix=":1" onCommit={(v) => set({ backBatter: v })} /></dd></>}
       <dt>Toe</dt><dd><LengthField metres={num(node.props.toe)} min={0} blank placeholder="auto" title="from the footing width" onCommit={(m) => set({ toe: m })} /></dd>
       <dt>Heel</dt><dd><LengthField metres={num(node.props.heel)} min={0} blank placeholder="auto" title="from the footing width" onCommit={(m) => set({ heel: m })} /></dd>
       <dt>Key width</dt><dd><LengthField metres={num(node.props.keyWidth)} min={0} blank placeholder="no key" onCommit={(m) => set({ keyWidth: m })} /></dd>
@@ -197,8 +197,12 @@ export function RetainingWallSegments({ node }: { node: NodeDto }) {
                 <dt>Crown at its start</dt><dd><LengthField metres={own('topStart')} blank placeholder="the wall's" onCommit={(m) => set(r.index, { topStart: m })} /></dd>
                 <dt>Crown at its end</dt><dd><LengthField metres={own('topEnd')} blank placeholder="the wall's" onCommit={(m) => set(r.index, { topEnd: m })} /></dd>
                 <dt>Thickness at the crown</dt><dd><LengthField metres={own('thickness')} min={0.05} blank placeholder="the wall's" onCommit={(m) => set(r.index, { thickness: m })} /></dd>
-                <dt>Front batter</dt><dd><NumberField value={own('frontBatter')} min={0} blank placeholder="the wall's" suffix=":1" onCommit={(v) => set(r.index, { frontBatter: v })} /></dd>
-                <dt>Back batter</dt><dd><NumberField value={own('backBatter')} min={0} blank placeholder="the wall's" suffix=":1" onCommit={(v) => set(r.index, { backBatter: v })} /></dd>
+                <dt>Front batter</dt><dd><NumberField value={own('frontBatter')} min={-100} blank placeholder="the wall's" suffix=":1" onCommit={(v) => set(r.index, { frontBatter: v })} /></dd>
+                <dt>Parallel back</dt>
+                <dd><label><input type="checkbox" checked={r.own.parallelBack === true} onChange={(e) => set(r.index, { parallelBack: e.target.checked })} /> <span className="muted small">back face parallel to the front (constant thickness)</span></label></dd>
+                {r.own.parallelBack !== true && <>
+                  <dt>Back batter</dt><dd><NumberField value={own('backBatter')} min={-100} blank placeholder="the wall's" suffix=":1" onCommit={(v) => set(r.index, { backBatter: v })} /></dd>
+                </>}
                 <dt>Footing level</dt><dd><LengthField metres={own('footingLevel')} blank placeholder="the wall's" onCommit={(m) => set(r.index, { footingLevel: m })} /></dd>
                 <dt>Footing thickness</dt><dd><LengthField metres={own('footingThickness')} min={0} blank placeholder="the wall's" onCommit={(m) => set(r.index, { footingThickness: m })} /></dd>
                 <dt>Toe</dt><dd><LengthField metres={own('toe')} min={0} blank placeholder="the wall's" onCommit={(m) => set(r.index, { toe: m })} /></dd>

@@ -49,8 +49,11 @@ public static class Portals
         new("wingAngleRight", "Right wing angle (°)", "angle", "Wings", "{= wingAngle}", Min: 0, Max: 90, ShowIf: When("mirror", "false")),
         new("endCrownRight", "Right crown at the free end", "length", "Wings", "{= endCrown}", ShowIf: When("mirror", "false")),
         new("thickness", "Crown thickness", "length", "Section", 0.6, Min: 0.1, Max: 5),
-        new("frontBatter", "Front batter n:1 (0: upright)", "number", "Section", 10.0, Min: 0, Max: 100),
-        new("backBatter", "Back batter n:1 (0: upright)", "number", "Section", 0.0, Min: 0, Max: 100),
+        new("frontBatter", "Front batter n:1 (0: upright)", "number", "Section", 10.0, Min: -100, Max: 100),
+        new("backBatter", "Back batter n:1 (0: upright)", "number", "Section", 0.0, Min: -100, Max: 100),
+        new("wingFrontBatter", "Wing front batter n:1", "number", "Section", "{= frontBatter}", Min: -100, Max: 100),
+        new("wingParallelBack", "Parallel wing back face", "bool", "Section", false, Formula: false),
+        new("wingBackBatter", "Wing back batter n:1", "number", "Section", "{= backBatter}", Min: -100, Max: 100, ShowIf: When("wingParallelBack", "false")),
         new("footingThickness", "Footing thickness", "length", "Section", 1.0, Min: 0, Max: 5),
         new("toe", "Toe", "length", "Section", 0.6, Min: 0, Max: 10),
         new("heel", "Heel", "length", "Section", 1.2, Min: 0, Max: 10),
@@ -214,12 +217,16 @@ public static class Portals
         var endR = mirror ? endL : v.Maybe("endCrownRight") ?? endL;
         var warp = v.Flag("warp");
         var fb = v["frontBatter"];
+        var bb = v["backBatter"];
+        var wfb = v.Maybe("wingFrontBatter") ?? fb;
+        var wbb = v.Maybe("wingBackBatter") ?? bb;
+        var wpb = v.Flag("wingParallelBack");
         var warpN = v.Maybe("warpBatter") ?? 1 / Math.Max(0.2, v["slope"]);
         var style = v.Text("endStyle", "square");
         var spec = new RetainingWalls.Spec(v["thickness"], 1.0, crown, 0.3, v["thickness"] + v["toe"] + v["heel"], tf, lay.HighOnLeft);
         var attrs = RetainingWalls.Attrs(path, spec, materialId);
-        attrs["frontBatter"] = Math.Max(0, fb);
-        attrs["backBatter"] = Math.Max(0, v["backBatter"]);
+        attrs["frontBatter"] = fb;
+        attrs["backBatter"] = bb;
         attrs["toe"] = Math.Max(0, v["toe"]);
         attrs["heel"] = Math.Max(0, v["heel"]);
         var segs = new JsonArray();
@@ -234,11 +241,15 @@ public static class Portals
             if (wing && warp)
             {
                 o["warp"] = true;
-                // The face goes from the face wall's batter at the corner to the embankment's at the free end.
-                if (i == 0) { o["frontBatter"] = warpN; o["frontBatterEnd"] = fb; }
-                else { o["frontBatter"] = fb; o["frontBatterEnd"] = warpN; }
+                // The face goes from the wing's batter at the corner to the embankment's at the free end.
+                if (i == 0) { o["frontBatter"] = warpN; o["frontBatterEnd"] = wfb; }
+                else { o["frontBatter"] = wfb; o["frontBatterEnd"] = warpN; }
                 if (v.Text("twist", "slope") == "segment") o["twist"] = "segment";
             }
+            else if (wing && Math.Abs(wfb - fb) > 1e-12) o["frontBatter"] = wfb;
+            // The wings' back: parallel to their front (constant thickness), or their own batter where it differs from the face wall's.
+            if (wing && wpb) o["parallelBack"] = true;
+            else if (wing && Math.Abs(wbb - bb) > 1e-12) o["backBatter"] = wbb;
             if (i == 0 || i == n - 1)
             {
                 var d = (path[i + 1] - path[i]).Normalized();

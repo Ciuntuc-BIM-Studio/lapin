@@ -350,4 +350,48 @@ public class PortalTests(ITestOutputHelper output)
         Assert.Equal(9.0 * 10 + 2 * 1.0 * 6.0 * 9.75, v, 3);
         Assert.True(Q(f, withProfile, "FormworkArea") > 0);
     }
+
+    [Fact]
+    public void Wings_take_their_own_front_and_back_batters_independent_of_the_face_wall()
+    {
+        var f = Site();
+        var id = Portal(f, Spec("flared", new JsonObject { ["frontBatter"] = 0.0, ["backBatter"] = 0.0, ["wingFrontBatter"] = 5.0, ["wingBackBatter"] = 10.0 }));
+        var (legs, _, _) = BatteredWalls.Resolve(f.Model, f.Model.Get(id)!);
+        Assert.Equal(3, legs.Count);
+        // Face wall upright; both wings lean 5:1 in front and 10:1 in back.
+        Assert.Equal(0.0, legs[1].Kf0, 9);
+        Assert.Equal(0.0, legs[1].Kb0, 9);
+        Assert.Equal(0.2, legs[0].Kf0, 9);
+        Assert.Equal(0.1, legs[0].Kb0, 9);
+        Assert.Equal(0.2, legs[2].Kf0, 9);
+        Assert.Equal(0.1, legs[2].Kb0, 9);
+        var parts = Parts(f, id);
+        Assert.Equal(3, parts.Count);
+        foreach (var p in parts) Closed(p.Solid);
+    }
+
+    [Fact]
+    public void Wing_parallel_back_face_keeps_constant_thickness_and_planar_faces_on_both_wings()
+    {
+        var f = Site();
+        var id = Portal(f, Spec("flared", new JsonObject { ["frontBatter"] = 0.0, ["backBatter"] = 0.0, ["wingFrontBatter"] = 3.0, ["wingParallelBack"] = true }));
+        var (legs, _, _) = BatteredWalls.Resolve(f.Model, f.Model.Get(id)!);
+        Assert.Equal(3, legs.Count);
+        Assert.Equal(0.0, legs[1].Kf0, 9);
+        Assert.Equal(0.0, legs[1].Kb0, 9);
+        foreach (var i in new[] { 0, 2 })
+        {
+            Assert.Equal(1.0 / 3.0, legs[i].Kf0, 9);
+            Assert.Equal(-1.0 / 3.0, legs[i].Kb0, 9);
+            Assert.Equal(legs[i].T, legs[i].WB(0, legs[i].Zf) - legs[i].WF(0, legs[i].Zf), 9);
+            Assert.Equal(legs[i].T, legs[i].WB(legs[i].L, legs[i].Zf) - legs[i].WF(legs[i].L, legs[i].Zf), 9);
+        }
+        var parts = Parts(f, id);
+        Assert.Equal(3, parts.Count);
+        foreach (var p in parts)
+        {
+            Closed(p.Solid);
+            Assert.All(Enumerable.Range(0, p.Solid.Faces.Length), fi => Assert.True(Measure.FacePlanarity(p.Solid, fi) < 1e-9));
+        }
+    }
 }

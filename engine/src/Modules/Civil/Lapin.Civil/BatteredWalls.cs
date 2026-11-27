@@ -27,12 +27,12 @@ public static class BatteredWalls
     /// <summary>A segment's numbers (null or absent: the wall's).</summary>
     public static readonly string[] SegmentKeys = ["frontBatter", "backBatter", "frontBatterEnd", "backBatterEnd", "thickness", "baseThickness", "topStart", "topEnd", "footingLevel", "endBatter", "endTurn", "toe", "heel", "footingThickness"];
 
-    /// <summary>A segment's numbers that may be negative (elevations, an end's turn); the rest are kept at 0 or more.</summary>
-    public static readonly string[] SignedSegmentKeys = ["topStart", "topEnd", "footingLevel", "endTurn"];
+    /// <summary>A segment's numbers that may be negative (elevations, an end's turn, signed batters); the rest are kept at 0 or more.</summary>
+    public static readonly string[] SignedSegmentKeys = ["topStart", "topEnd", "footingLevel", "endTurn", "frontBatter", "frontBatterEnd", "backBatter", "backBatterEnd"];
 
     public static bool Is(Entity e)
     {
-        if (e.Num("frontBatter") > 0 || e.Num("backBatter") > 0) return true;
+        if (Math.Abs(e.Num("frontBatter")) > 0 || Math.Abs(e.Num("backBatter")) > 0) return true;
         foreach (var k in new[] { "baseThickness", "toe", "heel" }) if (e.NumOrNull(k) != null) return true;
         if (e.Num("keyDepth") > 0 && e.Num("keyWidth") > 0) return true;
         return e.Attrs["segments"] is JsonArray a && a.Any(x => x is JsonObject o && o.Count > 0);
@@ -48,7 +48,7 @@ public static class BatteredWalls
     public sealed record SegmentSpec(double? FrontBatter, double? BackBatter, double? FrontBatterEnd, double? BackBatterEnd, bool Warp,
         double? Thickness, double? BaseThickness, double? TopStart, double? TopEnd, double? FootingLevel,
         bool TwistAll = false, double? EndBatter = null, double? EndTurn = null, string? Name = null,
-        double? Toe = null, double? Heel = null, double? FootingThickness = null)
+        double? Toe = null, double? Heel = null, double? FootingThickness = null, bool ParallelBack = false)
     {
         public static readonly SegmentSpec None = new(null, null, null, null, false, null, null, null, null, null);
     }
@@ -58,13 +58,14 @@ public static class BatteredWalls
         if (e.Attrs["segments"] is not JsonArray a || i < 0 || i >= a.Count || a[i] is not JsonObject o) return SegmentSpec.None;
         double? N(string k) => Json.Number(o[k]);
         var warp = o["warp"] is JsonValue v && v.TryGetValue<bool>(out var w) && w;
+        var parallelBack = o["parallelBack"] is JsonValue pv && pv.TryGetValue<bool>(out var pb) && pb;
         return new(N("frontBatter"), N("backBatter"), N("frontBatterEnd"), N("backBatterEnd"), warp, N("thickness"), N("baseThickness"), N("topStart"), N("topEnd"), N("footingLevel"),
             (string?)o["twist"] == "segment", N("endBatter"), N("endTurn"), (string?)o["name"] is { Length: > 0 } nm ? nm : null,
-            N("toe"), N("heel"), N("footingThickness"));
+            N("toe"), N("heel"), N("footingThickness"), parallelBack);
     }
 
-    /// <summary>A batter n:1 (n up for one across) as the run across per unit of height; 0 or none is upright. Kept to 1:5 at the flattest.</summary>
-    public static double Run(double? n) => n is > 0 ? 1 / Math.Max(0.2, n.Value) : 0;
+    /// <summary>A batter n:1 (n up for one across) as the run across per unit of height; 0 or none is upright, negative leans inward. Kept to 1:5 at the flattest.</summary>
+    public static double Run(double? n) => n is > 0 ? 1 / Math.Max(0.2, n.Value) : n is < 0 ? -1 / Math.Max(0.2, -n.Value) : 0;
 
     /// <summary>
     /// One segment, resolved: its line (from <see cref="A"/> along <see cref="D"/>, <see cref="H"/> the side of the high ground), its
@@ -153,16 +154,30 @@ public static class BatteredWalls
             leg.Warp = g.Warp;
             leg.Kf0 = Run(g.FrontBatter ?? wFront);
             leg.Kf1 = g.Warp && g.FrontBatterEnd != null ? Run(g.FrontBatterEnd) : leg.Kf0;
-            // The back: its batter, or the thickness at the base where the stem is tallest (its batter worked out from it).
-            var baseT = g.BaseThickness ?? (g.BackBatter == null ? wBase : null);
-            if (baseT is { } tb)
+            // The back: parallel to the front (constant thickness, leaning with it), its batter, or the thickness at the base where the
+            // stem is tallest (its batter worked out from it).
+            if (g.ParallelBack)
             {
-                var tallStart = leg.Z0 >= leg.Z1;
-                var h = (tallStart ? leg.Z0 : leg.Z1) - leg.Zf;
-                leg.Kb0 = Math.Max(0, (tb - leg.T) / Math.Max(h, 1e-6) - (tallStart ? leg.Kf0 : leg.Kf1));
+                leg.Kb0 = -leg.Kf0;
+                leg.Kb1 = -leg.Kf1;
             }
-            else leg.Kb0 = Run(g.BackBatter ?? wBack);
-            leg.Kb1 = g.Warp && g.BackBatterEnd != null ? Run(g.BackBatterEnd) : leg.Kb0;
+            else
+            {
+                var baseT = g.BaseThickness ?? (g.BackBatter == null ? wBase : null);
+                if (baseT is { } tb)
+                {
+                    var tallStart = leg.Z0 >= leg.Z1;
+                    var h = (tallStart ? leg.Z0 : leg.Z1) - leg.Zf;
+                    leg.Kb0 = Math.Max(0, (tb - leg.T) / Math.Max(h, 1e-6) - (tallStart ? leg.Kf0 : leg.Kf1));
+                }
+                else leg.Kb0 = Run(g.BackBatter ?? wBack);
+                leg.Kb1 = g.Warp && g.BackBatterEnd != null ? Run(g.BackBatterEnd) : leg.Kb0;
+                // Keep at least 5 cm of stem at the base when the batters lean inward (negative).
+                var minSum0 = -(leg.T - 0.05) / Math.Max(leg.Z0 - leg.Zf, 1e-6);
+                var minSum1 = -(leg.T - 0.05) / Math.Max(leg.Z1 - leg.Zf, 1e-6);
+                if (leg.Kf0 + leg.Kb0 < minSum0) leg.Kb0 = minSum0 - leg.Kf0;
+                if (leg.Kf1 + leg.Kb1 < minSum1) leg.Kb1 = minSum1 - leg.Kf1;
+            }
             leg.TwistAll = g.Warp && g.TwistAll;
             leg.Name = g.Name;
             leg.S0 = 0;
@@ -984,8 +999,8 @@ public static class BatteredWalls
         var crown = front.Concat(Enumerable.Reverse(back)).ToList();
         var plan = new List<PlanItem> { new("cut", true, crown) };
         // A leaning front is seen from above down to its foot; a leaning back is under the high ground; the footing under both.
-        if (b.Legs.Any(g => g.Kf0 > 0 || g.Kf1 > 0)) plan.Add(new("outline", false, Along(b, "baseF", (g, x) => g.WF(x, g.Zf), "base")));
-        if (b.Legs.Any(g => g.Kb0 > 0 || g.Kb1 > 0)) plan.Add(new("dashed", false, Along(b, "baseB", (g, x) => g.WB(x, g.Zf), "base")));
+        if (b.Legs.Any(g => Math.Abs(g.Kf0) > 1e-12 || Math.Abs(g.Kf1) > 1e-12)) plan.Add(new("outline", false, Along(b, "baseF", (g, x) => g.WF(x, g.Zf), "base")));
+        if (b.Legs.Any(g => Math.Abs(g.Kb0) > 1e-12 || Math.Abs(g.Kb1) > 1e-12)) plan.Add(new("dashed", false, Along(b, "baseB", (g, x) => g.WB(x, g.Zf), "base")));
         if (b.Legs.Any(g => g.Footing))
         {
             var fa = Along(b, "footF", (g, _) => g.Fa, "foot");

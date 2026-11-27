@@ -339,4 +339,58 @@ public class WingWallTests(ITestOutputHelper output)
         Assert.True((path[3] - (path[2] + new Vec2(4 * r, -4 * r))).Length < 1e-9);
         Assert.Throws<CommandException>(() => f.Run("civil.setRetainingWallSegment", new JsonObject { ["id"] = w, ["index"] = 3, ["topEnd"] = 1 }));
     }
+
+    [Fact]
+    public void Setting_only_topStart_slopes_to_the_walls_crown_at_the_end()
+    {
+        var f = Site();
+        Flat(f);
+        var w = Wall(f, new JsonObject { ["frontBatter"] = 10 }, (0, 6), (0, 0), (10, 0), (10, 6));
+        f.Run("civil.setRetainingWallSegment", new JsonObject { ["id"] = w, ["index"] = 0, ["topStart"] = 1.0 });
+        f.Run("civil.setRetainingWallSegment", new JsonObject { ["id"] = w, ["index"] = 2, ["topEnd"] = 1.0 });
+        var (legs, _, _) = BatteredWalls.Resolve(f.Model, f.Model.Get(w)!);
+        Assert.Equal(1.0, legs[0].Z0, 9);
+        Assert.Equal(legs[1].Z0, legs[0].Z1, 9);
+        Assert.Equal(legs[1].Z1, legs[2].Z0, 9);
+        Assert.Equal(1.0, legs[2].Z1, 9);
+        Closed(Body(f, w));
+    }
+
+    [Fact]
+    public void Parallel_back_face_keeps_constant_thickness_on_a_sloping_inclined_wing()
+    {
+        var f = Site();
+        Flat(f);
+        var w = Wall(f, new JsonObject { ["thickness"] = 0.6, ["footingThickness"] = 0.0 }, (0, 6), (0, 0), (10, 0), (10, 6));
+        f.Run("civil.setRetainingWallSegment", new JsonObject { ["id"] = w, ["index"] = 0, ["topStart"] = 1.0, ["frontBatter"] = 3.0, ["parallelBack"] = true });
+        var (legs, _, _) = BatteredWalls.Resolve(f.Model, f.Model.Get(w)!);
+        var wing = legs[0];
+        Assert.Equal(1.0 / 3.0, wing.Kf0, 9);
+        Assert.Equal(-1.0 / 3.0, wing.Kb0, 9);
+        Assert.Equal(0.6, wing.WB(0, wing.Zf) - wing.WF(0, wing.Zf), 9);
+        Assert.Equal(0.6, wing.WB(wing.L, wing.Zf) - wing.WF(wing.L, wing.Zf), 9);
+        var body = Body(f, w);
+        Closed(body);
+        Assert.All(Enumerable.Range(0, body.Faces.Length), i => Assert.True(Measure.FacePlanarity(body, i) < 1e-9));
+    }
+
+    [Fact]
+    public void A_negative_batter_leans_the_face_the_other_way_and_is_kept()
+    {
+        var f = Site();
+        Flat(f);
+        var w = Wall(f, new JsonObject { ["frontBatter"] = -20, ["backBatter"] = -20 }, (0, 0), (10, 0));
+        Assert.Equal(-20.0, f.Model.Get(w)!.Num("frontBatter"), 9);
+        Assert.Equal(-20.0, f.Model.Get(w)!.Num("backBatter"), 9);
+        var (legs, _, _) = BatteredWalls.Resolve(f.Model, f.Model.Get(w)!);
+        Assert.Equal(-0.05, legs[0].Kf0, 9);
+        Assert.Equal(-0.05, legs[0].Kb0, 9);
+        Closed(Body(f, w));
+        // Leaning in so far that the stem would vanish at its base: the back keeps 5 cm of it.
+        f.Run("civil.setRetainingWallSegment", new JsonObject { ["id"] = w, ["index"] = 0, ["frontBatter"] = -2.0 });
+        var g = BatteredWalls.Resolve(f.Model, f.Model.Get(w)!).Legs[0];
+        Assert.Equal(-0.5, g.Kf0, 9);
+        Assert.Equal(0.05, g.WB(0, g.Zf) - g.WF(0, g.Zf), 9);
+        Closed(Body(f, w));
+    }
 }
