@@ -101,7 +101,7 @@ Un standard e o listă de reguli; fiecare potrivește nume de materiale (în mai
 
 ![Standardele: cel al Lapin și patru norme](shots/material-standards.webp)
 
-- **Incluse:** *Lapin* (1.1, aspectul implicit; 1.0 e ce păstrează proiectele făcute înainte de 18.11.2026), *ISO 128-50*, *DIN 1356*, *România (SR ISO 128-50)* și *BS 8888 / BS 1192*. Normele sunt desenate de Lapin din principiile lor generale și marcate **Orientativ**: verifică-le față de standardul pe care trebuie să-l urmeze desenele tale. Un standard nu e ales niciodată pentru tine după limba sau țara ta.
+- **Incluse:** *Lapin* (1.2, aspectul implicit, care citește și nume în italiană și nu mai desenează ca membrană sau ca beton asfaltul și reazemele din elastomer numite în italiană, spaniolă, franceză, germană, portugheză sau poloneză; 1.0 e ce păstrează proiectele făcute înainte de 18.11.2026), *ISO 128-50*, *DIN 1356*, *România (SR ISO 128-50)* și *BS 8888 / BS 1192*. Normele sunt desenate de Lapin din principiile lor generale și marcate **Orientativ**: verifică-le față de standardul pe care trebuie să-l urmeze desenele tale. Un standard nu e ales niciodată pentru tine după limba sau țara ta.
 - **Alegerea la un proiect nou:** **Standard de materiale** pe ecranul de start și în **Preferințe → General → Proiecte noi** pentru fiecare proiect nou. Un proiect făcut înainte desenează ca până acum.
 
 ![Alegerea standardului pe ecranul de start](shots/material-standard-start.webp)

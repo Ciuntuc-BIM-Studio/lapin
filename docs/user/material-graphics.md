@@ -101,7 +101,7 @@ A standard is a list of rules, each matching material names (in several language
 
 ![The standards: Lapin's own and four norms](shots/material-standards.webp)
 
-- **Built in:** *Lapin* (1.1, the default look; 1.0 is what projects made before 18.11.2026 keep), *ISO 128-50*, *DIN 1356*, *România (SR ISO 128-50)* and *BS 8888 / BS 1192*. The norms are drawn by Lapin from their general principles and marked **Indicative**: check them against the standard your drawings must follow. A standard is never chosen for you by your language or country.
+- **Built in:** *Lapin* (1.2, the default look, which reads Italian names too and keeps asphalt and elastomer bearings named in Italian, Spanish, French, German, Portuguese or Polish from being drawn as a membrane or as concrete; 1.0 is what projects made before 18.11.2026 keep), *ISO 128-50*, *DIN 1356*, *România (SR ISO 128-50)* and *BS 8888 / BS 1192*. The norms are drawn by Lapin from their general principles and marked **Indicative**: check them against the standard your drawings must follow. A standard is never chosen for you by your language or country.
 - **Choose at a new project:** **Material standard** on the start screen, and in **Preferences → General → New projects** for every new project. A project made before draws as it did.
 
 ![Choosing the standard on the start screen](shots/material-standard-start.webp)

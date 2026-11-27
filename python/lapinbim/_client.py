@@ -383,23 +383,34 @@ class Lapin:
     # ------------------------------------------------------------------ bodies an external program computes (L1)
 
     def create_body(self, ifc_class: str, body: Any, *, storey: str | Element | None = None, name: str | None = None,
-                    type: str | Element | None = None, material: str | None = None, global_id: str | None = None,
-                    owner: str | None = None, placement: Any = None, attrs: dict | None = None, units: str | None = None) -> Any:
+                    type: str | Element | None = None, material: str | dict | None = None, global_id: str | None = None,
+                    owner: str | None = None, placement: Any = None, attrs: dict | None = None, units: str | None = None,
+                    predefined_type: str | None = None, object_type: str | None = None, ifc_bridge_part: str | None = None,
+                    ifc_bridge_part_name: str | None = None) -> Any:
         """An element whose body this program computes (``element.createBody``; docs/plan-external-geometry.md): one undo
         step, its id (its GlobalId) in the result as ``r.id``.
 
         ``body`` is ``{"positions": [x, y, z, …], "indices": [a, b, c, …]}`` (a triangle mesh, metres; numpy arrays are
         fine), ``{"faces": [{"outer": [[x, y, z], …], "holes": [...]}, …]}`` (planar polygons), or ``{"parts": [...]}``
-        of either with a ``name`` and ``color`` each. ``placement``: a 4×4 matrix or ``{"at": [x, y, z], "angle": deg}``.
+        of either with a ``name``, ``color`` and ``material`` each (a part with no material is of the element's
+        ``material``). ``placement``: a 4×4 matrix or ``{"at": [x, y, z], "angle": deg}``.
         ``global_id`` pins the element's IFC GlobalId (refused when the model has it); ``owner`` names the program
         (``"script:<id>"``); ``attrs`` are the program's own values, kept with the element and in its IFC. ``units``:
         ``"m"`` (the default) or ``"mm"`` for a body and placement in millimetres. A mesh's lists may be flat or rows of
         three (``vertices`` N×3, ``faces``/``triangles`` M×3, as manifold3d or trimesh give them).
+        ``material`` (the element's, or a part's): a material's id or name, or ``{"name", "color", "category", "drawsAs"}``;
+        ``drawsAs`` (``"concrete"``, ``"steel"``, ``"asphalt"``, ``"elastomer"``…) says what it draws as whatever its name's language.
+        ``predefined_type`` and ``object_type``: its IFC PredefinedType and ObjectType (a type its class lacks is written
+        USERDEFINED, named by the object type). ``ifc_bridge_part``: the IFC 4.3 bridge part it stands in (``"PIER"``,
+        ``"DECK"``…); elements with the same ``ifc_bridge_part_name`` stand in one part. These four alone can be changed
+        later with ``element.update``.
         ``lapinbim.global_id(name)`` makes a GlobalId that is the same each time for the same name.
         """
         a: dict[str, Any] = {"ifcClass": ifc_class, "body": body}
         for key, value in (("storey", storey), ("name", name), ("type", type), ("material", material), ("globalId", global_id),
-                           ("owner", owner), ("placement", placement), ("attrs", attrs), ("units", units)):
+                           ("owner", owner), ("placement", placement), ("attrs", attrs), ("units", units),
+                           ("predefinedType", predefined_type), ("objectType", object_type), ("ifcBridgePart", ifc_bridge_part),
+                           ("ifcBridgePartName", ifc_bridge_part_name)):
             if value is not None:
                 a[key] = value
         return self.execute("element.createBody", a)
