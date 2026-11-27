@@ -34,7 +34,7 @@ public sealed class StudioPlacement : IElementPlacement
     public IEnumerable<string> Dependents(IModelView m, Entity e) => OnPlan(m, e) ? Sketch(m, e).Select(x => x.Id) : [];
 
     /// <summary>Whether the solid is drawn from a sketch on a plan (it then moves with its sketch).</summary>
-    static bool OnPlan(IModelView m, Entity e)
+    internal static bool OnPlan(IModelView m, Entity e)
     {
         if (!FromSketch(e)) return false;
         var profile = m.Get(e.Str("profile") ?? "");
@@ -42,7 +42,7 @@ public sealed class StudioPlacement : IElementPlacement
         return view?.Str("kind") is null or "plan";
     }
 
-    static bool FromSketch(Entity e) => e.Str("operation") is "extrude" or "sweep" or "revolve" or "loft" or "followMe" or Thick.Ring or Thick.Box or Thick.Wall;
+    internal static bool FromSketch(Entity e) => e.Str("operation") is "extrude" or "sweep" or "revolve" or "loft" or "followMe" or Thick.Ring or Thick.Box or Thick.Wall;
 
     /// <summary>A thick solid (docs/plan-studio-thick.md) is drawn from its shape where it lies: one off a plan moves with its plane.</summary>
     static void ThickOnPlan(IModelView m, Entity e)
@@ -141,6 +141,32 @@ public sealed class StudioStoreyShift : IStoreyShift
         attrs["at"] = Features.J(new Vec3(at.X, at.Y, at.Z + dz));
         return attrs;
     }
+
+    /// <summary>
+    /// Besides a primitive's point: a pushed face's outline (in the world, on its host's face), and a solid sketched on a
+    /// reference plane, a section or an elevation (placed in the world): each goes up with the storey, as its host does.
+    /// </summary>
+    public JsonObject? Shifted(IModelView m, Entity e, double dz)
+    {
+        if (Shifted(e, dz) is { } own) return own;
+        if (Math.Abs(dz) < 1e-12) return null;
+        static JsonNode Up(JsonNode? p, double dz) => Features.P(p) is { } q ? Features.J(new Vec3(q.X, q.Y, q.Z + dz)) : p!.DeepClone();
+        if (e.Str("operation") == "prism")
+        {
+            var attrs = e.CloneAttrs();
+            if (attrs["outline"] is JsonArray outline) attrs["outline"] = new JsonArray(outline.Select(p => Up(p, dz)).ToArray());
+            if (attrs["holes"] is JsonArray holes) attrs["holes"] = new JsonArray(holes.OfType<JsonArray>().Select(h => (JsonNode)new JsonArray(h.Select(p => Up(p, dz)).ToArray())).ToArray());
+            return attrs;
+        }
+        if (StudioPlacement.FromSketch(e) && !StudioPlacement.OnPlan(m, e))
+        {
+            var x = StudioModule.Placed(e) ?? [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
+            var attrs = e.CloneAttrs();
+            attrs["placed"] = StoredBodies.WriteXf([x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11] + dz]);
+            return attrs;
+        }
+        return null;
+    }
 }
 
 public sealed class StudioRise : IElementRise
@@ -163,5 +189,53 @@ public sealed class StudioRise : IElementRise
         else attrs["features"] = new JsonArray(list.Select(f => (JsonNode)f).ToArray());
         ctx.Replace(e.With(attrs: attrs));
         return true;
+    }
+}
+
+/// <summary>
+/// What goes with a solid or an element carried whole (a user's report: a group moved left the void cut into its member's
+/// face where it was): the Studio voids cutting it (a shape drawn on its face and pushed in, a face pushed into a wall, a
+/// solid made to cut), when everything they cut goes too; a union's or an intersection's tools (drawn inside their target);
+/// and a face pushed or pulled out of it (its <c>host</c>). Each is in world coordinates, so it is carried as the element
+/// is (<see cref="StudioPlacement"/>), keeping its id; copied together, the copy of a void cuts the copy of what it cut.
+/// </summary>
+public sealed class StudioAttached : IAttachedElements, ITransformFollowers
+{
+    static string TypeOf(Relation r) => (string?)r.Attrs?["interferenceType"] ?? "Subtract";
+
+    public IEnumerable<string> Attached(IModelView m, IReadOnlySet<string> carried)
+    {
+        var o = new HashSet<string>();
+        foreach (var id in carried)
+            foreach (var r in m.RelationsOf(id, IfcClass.RelInterferesElements).Where(x => x.Relating == id))
+                foreach (var t in r.Related)
+                {
+                    if (carried.Contains(t) || m.Get(t) is not { } tool || tool.Str("operation") == null) continue;
+                    // A plain solid subtracted stays the user's own; a void or a union's tool is the target's.
+                    if (!StudioModule.IsVoid(tool) && TypeOf(r) == "Subtract") continue;
+                    // A cut into more than one goes only when all of them go.
+                    if (m.RelationsOf(t, IfcClass.RelInterferesElements).Where(x => x.Related.Contains(t)).All(x => carried.Contains(x.Relating))) o.Add(t);
+                }
+        foreach (var e in StudioModule.Classes.SelectMany(m.OfClass))
+            if (e.Str("operation") == "prism" && e.Str("host") is { } host && carried.Contains(host) && !carried.Contains(e.Id)) o.Add(e.Id);
+        return o;
+    }
+
+    public object? Before(ICommandContext ctx, IReadOnlySet<string> moving, IReadOnlySet<string> selected) => null;
+
+    /// <summary>Copied together, a boolean between copies: the copy of a void cuts the copy of its target.</summary>
+    public void After(ICommandContext ctx, object? state, Placement2D t, Placement2D plan, IReadOnlySet<string> moving, IReadOnlySet<string> selected, IReadOnlyDictionary<string, string> copies)
+    {
+        if (copies.Count == 0) return;
+        var m = ctx.Model;
+        string? CopyOf(string id) => copies.TryGetValue(id, out var c) && c != id && m.Get(c) != null ? c : null;
+        var rels = copies.Keys.SelectMany(id => m.RelationsOf(id, IfcClass.RelInterferesElements)).DistinctBy(r => r.Id)
+            .Where(r => CopyOf(r.Relating) != null && r.Related.All(x => CopyOf(x) != null)).ToList();
+        foreach (var r in rels)
+        {
+            var (target, tools) = (CopyOf(r.Relating)!, r.Related.Select(x => CopyOf(x)!).ToList());
+            if (m.RelationsOf(target, IfcClass.RelInterferesElements).Any(x => x.Relating == target && tools.All(x.Related.Contains))) continue;
+            ctx.AddRelation(new Relation(ctx.NewId(), r.Class, target, tools, r.Attrs?.DeepClone() as JsonObject));
+        }
     }
 }

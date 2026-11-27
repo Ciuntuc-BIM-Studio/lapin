@@ -29,6 +29,9 @@ public interface IStoreyShift
 {
     /// <summary>The element's attributes raised by <paramref name="dz"/>; null when it reads its height from its storey.</summary>
     JsonObject? Shifted(Entity e, double dz);
+
+    /// <summary>The same, knowing the model (a solid sketched on a reference plane, not on its storey's plan, holds its height in the world).</summary>
+    JsonObject? Shifted(IModelView m, Entity e, double dz) => Shifted(e, dz);
 }
 
 /// <summary>
@@ -174,7 +177,7 @@ public static class StoreyMove
         }
         // Kept with the storey: what holds a height in the world goes with it.
         foreach (var s in ctx.Services.All<IStoreyShift>())
-            if (s.Shifted(e, target.Num("elevation") - from.Num("elevation")) is { } shifted) return shifted;
+            if (s.Shifted(ctx.Model, e, target.Num("elevation") - from.Num("elevation")) is { } shifted) return shifted;
         if (ctx.Services.All<IStoreyDatum>().SelectMany(d => d.DatumsOf(e)).Distinct().ToList() is { Count: > 0 } datums)
         {
             var attrs = e.CloneAttrs();

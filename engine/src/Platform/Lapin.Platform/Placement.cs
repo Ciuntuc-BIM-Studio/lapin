@@ -71,6 +71,17 @@ public interface IHostedPlacement
 }
 
 /// <summary>
+/// What is attached to elements element.transform carries whole and goes with them as one of them, moved, turned,
+/// mirrored, raised or copied (a Studio void cutting a solid's face, a face pushed into a wall): it is not a group's member
+/// nor selected itself, yet it is in the solid's world coordinates, so left behind it would cut where the solid was.
+/// </summary>
+public interface IAttachedElements
+{
+    /// <summary>The ids attached to <paramref name="carried"/> (not among them) that go with them.</summary>
+    IEnumerable<string> Attached(IModelView m, IReadOnlySet<string> carried);
+}
+
+/// <summary>
 /// What follows elements element.transform carries without being selected itself (a tag on its element, tester's
 /// report #93): told before anything moves and after, in the same undo step.
 /// </summary>
