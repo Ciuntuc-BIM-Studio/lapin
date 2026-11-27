@@ -316,9 +316,11 @@ public static class RoofParts
             var lens = c.Select(j => (s.Outline[(j + 1) % n] - s.Outline[j]).Length).ToList();
             var total = lens.Sum();
             double lo = closed ? 0 : rw / 2, hi = closed ? total : total - rw / 2;
-            int count = Math.Max(1, (int)Math.Round((hi - lo) / spacing));
+            // At most the spacing apart along the eave (decision 900: up the slope a fan only closes in).
+            int count = Math.Max(1, (int)Math.Ceiling((hi - lo) / spacing - 1e-9));
             var plans = cf.OfType<Frame>().ToList();
             var holes = plans.SelectMany(f => HolesOn(f, openings)).ToList();
+            var stations = new List<(Vec2 P, Frame F, double T0, double T1)>();
             for (int j = 0; j <= (closed ? count - 1 : count); j++)
             {
                 var st = hi > lo ? lo + (hi - lo) * j / count : total / 2;
@@ -330,8 +332,14 @@ public static class RoofParts
                 var near = plans.Where(x => Vec2.Dot(x.N, f.N) >= Math.Cos(Drainage.SmoothTurn * Math.PI / 180));
                 var runs = Merge(near.SelectMany(x => Crossings(x.Plan, p, f.N)));
                 if (runs.Where(x => x.T0 <= 1e-6 && x.T1 > 1e-6).Cast<(double T0, double T1)?>().FirstOrDefault() is not { } run) continue;
+                stations.Add((p, f, run.T0, run.T1));
+            }
+            var ends = FanEnds(stations.Select(x => (x.P, x.F.N, x.T0, x.T1)).ToList(), closed, FanShare * spacing);
+            for (var j = 0; j < stations.Count; j++)
+            {
+                var (p, f, r0, _) = stations[j];
                 var cuts = holes.SelectMany(h => Crossings(h, p, f.N)).ToList();
-                foreach (var (t0, t1) in Minus([run], cuts))
+                foreach (var (t0, t1) in Minus([(r0, ends[j])], cuts))
                     o.Add(Rafter("rafter", p, f.N, t0, t1, q => f.Z(p + f.N * q), cut, t0 < 0 && t1 > 0 ? 0 : null));
             }
         }
@@ -372,6 +380,40 @@ public static class RoofParts
             o.Add(Level("plate", [.. c.Select(j => s.Outline[j].At(plateZ)), s.Outline[(c[^1] + 1) % s.Outline.Count].At(plateZ)], wpw, wpd));
         }
         return o.Where(m => m.Length > 0.05).ToList();
+    }
+
+    /// <summary>How close, as a share of the spacing, two rafters of a fan may come before one of them ends.</summary>
+    public const double FanShare = 0.6;
+
+    /// <summary>
+    /// Where each rafter of a fan ends (decision 900): rafters square to a convex curve close in up the slope. Every other one
+    /// ends (a jack rafter) where it comes <paramref name="limit"/> from the line of a neighbour that goes on; of those that
+    /// go on, every other one again, and so on, so none stands closer than the limit to another. Rafters that do not close in
+    /// (a straight edge, a concave curve) are not touched.
+    /// Each rafter: its foot, its direction up the slope and its run along it (from <c>T0</c> to <c>T1</c>).
+    /// </summary>
+    public static double[] FanEnds(IReadOnlyList<(Vec2 P, Vec2 N, double T0, double T1)> rafters, bool closed, double limit)
+    {
+        var n = rafters.Count;
+        var ends = rafters.Select(x => x.T1).ToArray();
+        for (var step = 1; step < n; step *= 2)
+            for (var i = step; i < n; i += 2 * step)
+            {
+                var (p, dir, t0, _) = rafters[i];
+                foreach (var j in new[] { i - step, i + step })
+                {
+                    var nb = closed ? ((j % n) + n) % n : j;
+                    if (nb < 0 || nb >= n || nb == i) continue;
+                    var (q, m, _, _) = rafters[nb];
+                    // The signed distance from the point k up this rafter to the neighbour's line: c0 + c1·k.
+                    var c0 = Vec2.Cross(m, p - q);
+                    var c1 = Vec2.Cross(m, dir);
+                    if (Math.Abs(c0) <= limit || c0 * c1 >= 0) continue;
+                    var k = (Math.Sign(c0) * limit - c0) / c1;
+                    if (k > t0 && k < ends[i]) ends[i] = k;
+                }
+            }
+        return ends;
     }
 
     /// <summary>Intervals joined where they meet or overlap.</summary>
@@ -507,6 +549,9 @@ public static class RoofParts
         public double Length => (B - A).Length;
     }
 
+    /// <summary>The longest mitre two gutters take at their corner, along the run per unit width (tan of half the turn).</summary>
+    public const double MaxMiter = 8;
+
     /// <summary>
     /// Gutters under the eave lines (none when the roof has none, nor on an eave edge whose gutter is off): just below the
     /// covering's edge, set out from it by the gutter's offset and down by its drop (decision 235). Adjacent eave gutters at
@@ -518,17 +563,25 @@ public static class RoofParts
         var spec = Drainage.Spec.Of(r.Roof);
         var inside = s.Outline;
         // Only where the water goes: an eave line that is its slope's lowest edge (a shed roof's high edge is drawn as an eave too, but takes no gutter).
-        bool Low(RoofLine l) => s.Planes.FirstOrDefault(p => p.Points.Any(q => (q - l.A).Length < 1e-6) && p.Points.Any(q => (q - l.B).Length < 1e-6)) is not { } plane
-            || Math.Max(l.A.Z, l.B.Z) <= plane.Points.Min(q => q.Z) + 1e-6;
+        RoofPlane? PlaneOf(RoofLine l) => s.Planes.FirstOrDefault(p => p.Points.Any(q => (q - l.A).Length < 1e-6) && p.Points.Any(q => (q - l.B).Length < 1e-6));
+        bool Low(RoofLine l) => PlaneOf(l) is not { } plane || Math.Max(l.A.Z, l.B.Z) <= plane.Points.Min(q => q.Z) + 1e-6;
         var items = s.Lines.Where(l => l.Kind == LineKind.Eave && Low(l)).Select(l =>
         {
             var d = (l.B - l.A).Xy.Normalized();
             var outward = d.Perp;
             var mid = ((l.A + l.B) * 0.5).Xy;
-            // Outward: away from the walls (the eave line stands its overhang out of them, so look that far past it).
             var edge = Drainage.EdgeOf(r, l);
-            var reach = (edge >= 0 ? r.Rules[edge].Overhang : 0) + 0.05;
-            if (Polygon2.Contains(inside, mid + outward * reach)) outward = -outward;
+            // Outward: away from the slope the eave ends (its plane lies all on the inner side; decision 900). Looking a
+            // little past the overhang for the walls' outline misread a short chord of a curved eave by a corner: the point
+            // fell past the side wall, outside, the chord's gutter faced in, and its mitre with the next chord's ran metres long.
+            var far = PlaneOf(l)?.Points.Select(q => Vec2.Dot(q.Xy - mid, outward)).MaxBy(Math.Abs) ?? 0;
+            if (Math.Abs(far) > 1e-6) { if (far > 0) outward = -outward; }
+            else
+            {
+                // No slope to ask: away from the walls (the eave line stands its overhang out of them, so look that far past it).
+                var reach = (edge >= 0 ? r.Rules[edge].Overhang : 0) + 0.05;
+                if (Polygon2.Contains(inside, mid + outward * reach)) outward = -outward;
+            }
             var shift = new Vec3(outward.X, outward.Y, 0) * spec.Offset + new Vec3(0, 0, r.StructureDepth - spec.Drop);
             return (G: new Gutter(l.A + shift, l.B + shift, outward, edge), RawA: l.A, RawB: l.B);
         }).Where(x => x.G.Length > (r.EdgeOf != null ? 0.02 : 0.3) && Drainage.HasGutter(r.Roof, r.LogicalEdge(x.G.Edge))).ToList();
@@ -559,6 +612,9 @@ public static class RoofParts
                 {
                     mi = Vec2.Cross(gj.Out - gi.Out, dj) / den;
                     mj = Vec2.Cross(gi.Out - gj.Out, di) / -den;
+                    // A mitre longer than eight widths (a corner sharper than about 14°, or two gutters facing apart) is not
+                    // made: the two keep their square ends and caps, never a sliver running metres past the corner.
+                    if (Math.Abs(mi) > MaxMiter || Math.Abs(mj) > MaxMiter) continue;
                 }
 
                 var shiftI = new Vec3(di.X, di.Y, 0) * (spec.Offset * mi);

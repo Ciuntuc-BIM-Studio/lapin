@@ -13,13 +13,13 @@ namespace Lapin.Engine.Tests;
 /// </summary>
 public class RoofCurvedEdgeTests
 {
-    static (Fixture F, string Id) FilmRoof(JsonObject? attrs = null)
+    static (Fixture F, string Id) FilmRoof(JsonObject? attrs = null, double bulge = -1.5)
     {
         var f = new Fixture(new ArchitectureModule());
         var id = (string)f.Run("architecture.addRoof", new JsonObject
         {
             ["points"] = new JsonArray(new JsonArray(-0.125, -0.125), new JsonArray(10.125, -0.125), new JsonArray(10.125, 7.125), new JsonArray(-0.125, 7.125)),
-            ["arcs"] = new JsonArray(-1.5, 0, 0, 0),
+            ["arcs"] = new JsonArray(bulge, 0, 0, 0),
         })!["id"]!;
         f.Run("architecture.roundCorner", new JsonObject { ["id"] = id, ["index"] = 2, ["radius"] = 1.5 });
         if (attrs != null) f.Run("architecture.updateRoof", new JsonObject { ["id"] = id, ["attrs"] = attrs });
@@ -60,6 +60,34 @@ public class RoofCurvedEdgeTests
                 Assert.Contains(points, p => (p - end).Length < 1);
         for (var i = 0; i < points.Count; i++)
             for (var j = i + 1; j < points.Count; j++) Assert.True((points[i] - points[j]).Length > 1);
+    }
+
+    // The film's arc as its grip left it (-1.28125): the first short chord of the curve, where it meets the straight side,
+    // faced the roof (its outward found by a point that landed just past the outline's corner), and its miters with the next
+    // chord (75.5 instead of 0.013) ran the gutter metres out from the roof: the "X" under the eave in the film (decision 900).
+    [Theory]
+    [InlineData(-0.5)]
+    [InlineData(-1.0)]
+    [InlineData(-1.28125)]
+    [InlineData(-1.5)]
+    [InlineData(-2.0)]
+    public void Every_gutter_faces_away_from_the_roof_and_its_miters_stay_short(double bulge)
+    {
+        var (f, id) = FilmRoof(bulge: bulge);
+        var (r, s) = Solved(f, id);
+        var gutters = RoofParts.Gutters(r, s);
+        Assert.All(gutters, g => Assert.True(Math.Abs(g.StartMiter) < 2 && Math.Abs(g.EndMiter) < 2, $"miters {g.StartMiter:0.###} / {g.EndMiter:0.###}"));
+        // Outward: away from the roof's middle (a convex-ish 10 x 7 m house).
+        var middle = new Vec2(5, 3.5);
+        Assert.All(gutters, g => Assert.True(Vec2.Dot(g.Out, ((g.A + g.B) * 0.5).Xy - middle) > 0));
+        // No gutter part further out than the bulge, its overhang and the gutter itself.
+        var geom = f.Session.Geometry(id)!;
+        foreach (var p in geom.Parts.Where(p => p.Key!.StartsWith("gutter:")))
+        {
+            var v = p.Solid!.Vertices;
+            Assert.True(v.Min(q => q.X) > -1.2 && v.Max(q => q.X) < 11.2, $"{p.Key} runs x {v.Min(q => q.X):0.00}..{v.Max(q => q.X):0.00}");
+            Assert.True(v.Min(q => q.Y) > -0.125 + bulge - 1.2, $"{p.Key} reaches y {v.Min(q => q.Y):0.00}");
+        }
     }
 
     [Fact]
@@ -120,6 +148,74 @@ public class RoofCurvedEdgeTests
         // spread along the arc, a spacing apart, not crowded at its apex.
         var round = feet.Where(p => p.X > 8.6 && p.Y > 5.6 && (p - new Vec2(8.625, 5.625)).Length > 1.5).ToList();
         Assert.InRange(round.Count, 2, 4);
+    }
+
+    /// <summary>
+    /// A fan of rafters (decision 900): square to a convex curve they close in up the slope (on the film's roof, to 0.45 m at
+    /// the ridge with a spacing of 0.8; round the fillet to 3 mm). Every other one ends where it comes 0.6 of the spacing from a
+    /// neighbour that goes on; along the eave they stand at most the spacing apart.
+    /// </summary>
+    [Theory]
+    [InlineData(-1.5, true)]
+    [InlineData(-1.281, true)]
+    [InlineData(-2.5, false)]
+    [InlineData(1.0, true)]
+    public void A_fan_of_rafters_never_closes_in_past_a_share_of_the_spacing(double rise, bool fillet)
+    {
+        var f = new Fixture(new ArchitectureModule());
+        var id = (string)f.Run("architecture.addRoof", new JsonObject
+        {
+            ["points"] = new JsonArray(new JsonArray(-0.125, -0.125), new JsonArray(10.125, -0.125), new JsonArray(10.125, 7.125), new JsonArray(-0.125, 7.125)),
+            ["arcs"] = new JsonArray(rise, 0, 0, 0),
+        })!["id"]!;
+        if (fillet) f.Run("architecture.roundCorner", new JsonObject { ["id"] = id, ["index"] = 2, ["radius"] = 1.5 });
+        var (r, s) = Solved(f, id);
+        const double spacing = 0.8;
+        var rafters = RoofParts.Framing(r, s).Where(m => m.Role == "rafter").ToList();
+        // Away from the sharp corners, where jack rafters from two slopes meet their hip, as on any hip roof.
+        List<Vec2> sharp = [new(-0.125, -0.125), new(10.125, -0.125), new(-0.125, 7.125)];
+        if (!fillet) sharp.Add(new(10.125, 7.125));
+        var axes = rafters.Select(m => m.A.Z < m.B.Z ? (Foot: m.A.Xy, Head: m.B.Xy) : (Foot: m.B.Xy, Head: m.A.Xy))
+            .Where(x => sharp.All(c => (x.Foot - c).Length > 1)).ToList();
+        Assert.True(axes.Count > 25);
+        static double ToSegment(Vec2 p, Vec2 a, Vec2 b)
+        {
+            var ab = b - a;
+            var t = Math.Clamp(Vec2.Dot(p - a, ab) / Vec2.Dot(ab, ab), 0, 1);
+            return (p - (a + ab * t)).Length;
+        }
+        // Where each stands on the walls' line (its station): the crossing of its axis with the outline nearest its foot.
+        Vec2? Station(Vec2 foot, Vec2 head)
+        {
+            var d = head - foot;
+            (double T, Vec2 P)? best = null;
+            for (var k = 0; k < r.Outline.Count; k++)
+            {
+                var (a, b) = (r.Outline[k], r.Outline[(k + 1) % r.Outline.Count]);
+                var den = Vec2.Cross(d, b - a);
+                if (Math.Abs(den) < 1e-12) continue;
+                var t = Vec2.Cross(a - foot, b - a) / den;
+                var u = Vec2.Cross(a - foot, d) / den;
+                if (t >= 0 && u >= -1e-9 && u <= 1 + 1e-9 && (best == null || t < best.Value.T)) best = (t, foot + d * t);
+            }
+            return best?.P;
+        }
+        var stations = axes.Select(x => Station(x.Foot, x.Head)).OfType<Vec2>().ToList();
+        for (var i = 0; i < axes.Count; i++)
+        {
+            // Along a curved eave (the straight sides as before): the nearest neighbour at most the spacing away.
+            var p0 = stations[i];
+            var straight = Math.Abs(p0.X + 0.125) < 1e-6 || Math.Abs(p0.X - 10.125) < 1e-6 || Math.Abs(p0.Y + 0.125) < 1e-6 || Math.Abs(p0.Y - 7.125) < 1e-6;
+            if (!straight)
+                Assert.True(stations.Where((_, j) => j != i).Min(p => (p - p0).Length) <= spacing + 1e-6, $"rafter at {p0} stands alone");
+            for (var j = i + 1; j < axes.Count; j++)
+            {
+                if ((axes[i].Foot - axes[j].Foot).Length > 1.5 * spacing) continue;
+                var (a, b) = (axes[i], axes[j]);
+                var gap = new[] { ToSegment(a.Foot, b.Foot, b.Head), ToSegment(a.Head, b.Foot, b.Head), ToSegment(b.Foot, a.Foot, a.Head), ToSegment(b.Head, a.Foot, a.Head) }.Min();
+                Assert.True(gap >= RoofParts.FanShare * spacing - 1e-6, $"rafters from {a.Foot} and {b.Foot} close in to {gap:0.000} m");
+            }
+        }
     }
 
     [Fact]
@@ -210,6 +306,73 @@ public class RoofCurvedEdgeTests
         Assert.Equal(6.3, layer.Planes.Single(p => p.Edge == backEdge).Points.Max(q => q.Y), 6);
         Assert.Equal(shape.Planes.Min(p => p.Points.Min(q => q.Y)), layer.Planes.Min(p => p.Points.Min(q => q.Y)), 6);
     }
+    /// <summary>
+    /// The film's roof as filmed (decision 900): the bulge's grip left it at 1.281 m, where the gutter of the bulge's first
+    /// chord faced in (its short eave line by the corner looked past the side wall) and its mitre with the next chord's ran
+    /// 75 widths long: two slivers of gutter crossing in front of the house, 5 m out. Every gutter piece stays by its eave.
+    /// </summary>
+    [Theory]
+    [InlineData(0.0, false, 0.0, "auto")]
+    [InlineData(0.0, false, 5.0, "auto")]
+    [InlineData(0.0, true, 0.0, "auto")]
+    [InlineData(0.0, true, 5.0, "none")]
+    [InlineData(-1.281, false, 0.0, "auto")]
+    [InlineData(-1.281, true, 0.0, "auto")]
+    [InlineData(-1.281, true, 5.0, "auto")]
+    [InlineData(-1.281, true, 0.0, "none")]
+    [InlineData(-1.281, true, 5.0, "none")]
+    [InlineData(-0.5, true, 5.0, "auto")]
+    [InlineData(-0.8, false, 0.0, "auto")]
+    [InlineData(-1.0, true, 5.0, "auto")]
+    [InlineData(-1.5, true, 5.0, "auto")]
+    [InlineData(-2.5, true, 0.0, "auto")]
+    [InlineData(1.0, true, 5.0, "auto")]
+    public void Every_gutter_piece_stays_by_its_eave_on_arcs_and_fillets(double rise, bool fillet, double fall, string downpipes)
+    {
+        var f = new Fixture(new ArchitectureModule());
+        var id = (string)f.Run("architecture.addRoof", new JsonObject
+        {
+            ["points"] = new JsonArray(new JsonArray(-0.125, -0.125), new JsonArray(10.125, -0.125), new JsonArray(10.125, 7.125), new JsonArray(-0.125, 7.125)),
+            ["arcs"] = new JsonArray(rise, 0, 0, 0),
+        })!["id"]!;
+        if (fillet) f.Run("architecture.roundCorner", new JsonObject { ["id"] = id, ["index"] = 2, ["radius"] = 1.5 });
+        f.Run("architecture.updateRoof", new JsonObject { ["id"] = id, ["attrs"] = new JsonObject { ["gutterFall"] = fall, ["downpipes"] = downpipes } });
+        var (r, s) = Solved(f, id);
+        var gutters = RoofParts.Gutters(r, s);
+        Assert.NotEmpty(gutters);
+        var spec = Drainage.Spec.Of(f.Model.Get(id)!);
+        var eaves = Roof.EaveOutline(r);
+        var width = 2 * spec.R + spec.Offset + 0.01;
+        // At a sharp corner the mitre's outer point stands out further: as far as the roof's longest mitre has it.
+        var miter = gutters.Max(g => Math.Max(Math.Abs(g.StartMiter), Math.Abs(g.EndMiter)));
+        var pad = width * Math.Sqrt(1 + Math.Min(miter, RoofParts.MaxMiter) * Math.Min(miter, RoofParts.MaxMiter));
+        var (x0, x1) = (eaves.Min(p => p.X) - pad, eaves.Max(p => p.X) + pad);
+        var (y0, y1) = (eaves.Min(p => p.Y) - pad, eaves.Max(p => p.Y) + pad);
+        var top = gutters.Max(g => Math.Max(g.A.Z, g.B.Z));
+        var bottom = gutters.Min(g => Math.Min(g.A.Z, g.B.Z)) - 0.1 - spec.Fall * gutters.Sum(g => g.Length);
+        var places = Drainage.RunPlaces(gutters, r, Drainage.Outlets(f.Model, r, gutters).Select(x => (x.Gutter, x.Station)));
+        for (var i = 0; i < gutters.Count; i++)
+        {
+            var g = gutters[i];
+            Assert.True(Math.Abs(g.StartMiter) <= RoofParts.MaxMiter && Math.Abs(g.EndMiter) <= RoofParts.MaxMiter, $"gutter {i}: mitres {g.StartMiter:0.00} / {g.EndMiter:0.00}");
+            foreach (var solid in Drainage.Gutter(g, spec, places[i], "gutter"))
+            {
+                var b = Measure.Bounds(solid)!.Value;
+                var plan = Math.Max(b.Max.X - b.Min.X, b.Max.Y - b.Min.Y);
+                // Its length, its width either side, and its mitres.
+                Assert.True(plan <= g.Length + 2 * width + 2 * spec.R * (Math.Abs(g.StartMiter) + Math.Abs(g.EndMiter)) + 1e-6, $"gutter {i} ({g.Length:0.000} m) has a piece {plan:0.000} m across");
+                Assert.True(b.Min.X >= x0 && b.Max.X <= x1 && b.Min.Y >= y0 && b.Max.Y <= y1, $"gutter {i}: piece {b.Min} {b.Max} past the eaves");
+                Assert.True(b.Max.Z <= top + 1e-6 && b.Min.Z >= bottom, $"gutter {i}: piece from {b.Min.Z:0.000} to {b.Max.Z:0.000} m");
+            }
+        }
+        // The parts in 3D likewise.
+        foreach (var p in f.Session.Geometry(id)!.Parts.Where(p => p.Key!.StartsWith("gutter:")))
+        {
+            var b = Measure.Bounds(p.Solid)!.Value;
+            Assert.True(b.Min.X >= x0 && b.Max.X <= x1 && b.Min.Y >= y0 && b.Max.Y <= y1 && b.Min.Z >= bottom, $"{p.Key}: {b.Min} {b.Max}");
+        }
+    }
+
     [Theory]
     [InlineData("hip", "rafters", -1.5)]
     [InlineData("hip", "rafters", 1.0)]
