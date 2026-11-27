@@ -977,9 +977,13 @@ public static class Views
                 if (vg.LinesOf(el) is { } lines && !(elementLines?.ContainsKey(id) ?? false)) (elementLines ??= [])[id] = lines;
             }
         var lineTypes = DraftingResources.Book(m).LineTypes;
-        var styles = LineStyles.For(project?.Attrs["objectStyles"] as JsonObject, graphics?["categories"] as JsonObject, elementLines, table, scale, lineTypes);
+        // The diagram look (decision 885): its own thin light pens in place of the project's Object styles (the technical drawing's);
+        // the view's own Visibility / Graphics lines, line edits and elements' colours still win.
+        var diagram = viewMaterials.Diagram != null;
+        var styles = LineStyles.For(diagram ? null : project?.Attrs["objectStyles"] as JsonObject, graphics?["categories"] as JsonObject, elementLines, table, scale, lineTypes);
         var penOptions = new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m), ElementColors: colors, Table: table, LineTypes: lineTypes,
-            MinHatchSpacing: ViewStyles.Of(m, view).MinHatchSpacing, TextHeight: Standards.TextOf(DraftingResources.Book(m), Standards.Standard).Height);
+            MinHatchSpacing: ViewStyles.Of(m, view).MinHatchSpacing, TextHeight: Standards.TextOf(DraftingResources.Book(m), Standards.Standard).Height,
+            Diagram: diagram ? new Pens.DiagramLines(DiagramLook.CutColor, DiagramLook.CutWidth, DiagramLook.SeenColor, DiagramLook.SeenWidth) : null);
         var pens = Pens.Of(drawing, materials, penOptions);
         // The faces the drawing sees, worked out once for its shadows and its surface hatches: a developed section's on each
         // piece (its own cut areas hiding what is behind them), the parts' faces gathered once for all of them.

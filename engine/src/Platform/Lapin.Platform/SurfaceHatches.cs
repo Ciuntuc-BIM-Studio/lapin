@@ -43,7 +43,7 @@ public static class SurfaceHatches
     public const int MaxSegments = 300_000;
 
     /// <summary>Whether a view of this kind hatches its surfaces: an elevation or a section, by its style.</summary>
-    public static bool Allowed(IModelView m, Entity view, ViewSpec spec) => spec.Kind is "elevation" or "section" && ViewStyles.Of(m, view).SurfaceHatch;
+    public static bool Allowed(IModelView m, Entity view, ViewSpec spec) => spec.Kind is "elevation" or "section" && ViewStyles.Of(m, view) is { SurfaceHatch: true } or { IsDiagram: true };
 
     // Each view's visible faces kept between its drawings (by its id): unchanged elements hatch again without the sweep.
     static readonly Dictionary<string, ViewFaces.VisibilityCache> Caches = [];
@@ -79,7 +79,7 @@ public static class SurfaceHatches
 
     /// <summary>Whether a plan hatches the floors it sees (forum topic 259): seen from above, not a site plan, by its style.</summary>
     public static bool FloorsAllowed(IModelView m, Entity view, ViewSpec spec) =>
-        spec.Kind == "plan" && !spec.Up && view.Str("look") != "up" && SitePlans.Of(view) == null && ViewStyles.Of(m, view).FloorHatch;
+        spec.Kind == "plan" && !spec.Up && view.Str("look") != "up" && SitePlans.Of(view) == null && ViewStyles.Of(m, view) is { FloorHatch: true } or { IsDiagram: true };
 
     /// <summary>Whether a part is a floor's (a slab's that is not a roof's): what a plan hatches from above.</summary>
     static bool IsFloor(IModelView m, DrawPart p) => p.Class == IfcClass.Slab && m.Get(p.Element) is { } e && e.PredefinedType != "ROOF";
@@ -91,7 +91,11 @@ public static class SurfaceHatches
     /// </summary>
     public static List<Pen> PlanPensOf(IModelView m, Entity view, ViewSpec spec, ViewDrawing drawing, IReadOnlyList<DrawPart> parts, Pens.Options options)
     {
-        if (!FloorsAllowed(m, view, spec) || !parts.Any(p => IsFloor(m, p))) return [];
+        if (!FloorsAllowed(m, view, spec)) return [];
+        // A diagram plan (decision 885) fills every face of a category it sees from above below its cut, not the floors alone.
+        var diagram = ViewStyles.Of(m, view).IsDiagram ? new DiagramLook.View(m, ViewStyles.Of(m, view).Diagram) : null;
+        bool Takes(DrawPart p) => IsFloor(m, p) || diagram != null && !Generator.SymbolicInPlan.Contains(p.Class) && diagram.ColourOf(p.Element, p.Class) != null;
+        if (!parts.Any(Takes)) return [];
         var solids = new List<(Solid, int)>();
         for (var i = 0; i < parts.Count; i++)
             if (!Generator.SymbolicInPlan.Contains(parts[i].Class)) solids.Add((parts[i].Solid, i));
@@ -116,7 +120,7 @@ public static class SurfaceHatches
         }
         ViewFaces? scene = null;
         var piece = new Piece(spec, 0, () => scene ??= new ViewFaces(ViewFaces.FacesOf(solids), spec.Frame, true, spec.Below, caps));
-        return PensOf(m, view, view.Id + "#floors", [piece], parts, options, [], p => IsFloor(m, p));
+        return PensOf(m, view, view.Id + "#floors", [piece], parts, options, [], Takes);
     }
 
     /// <param name="floors">A plan's floors only (<see cref="PlanPensOf"/>): the parts it picks, lines only, on <see cref="FloorLayer"/>; null: an elevation's or a section's faces.</param>
@@ -137,7 +141,30 @@ public static class SurfaceHatches
             return resolved[id] = viewMaterials.Material(id);
         }
         static ResolvedMaterial? Drawn(ResolvedMaterial? r) => r is { Membrane: false } && (r.Hatch != null || r.Fill != null || r.Background != null) ? r : null;
-        var graphics = parts.Select(p => floors != null && !floors(p) ? null : Drawn(viewMaterials.Surface(p.Element, p.Class, Material(p.Material)))).ToArray();
+        var style = ViewStyles.Of(m, view);
+        var diagram = DiagramLook.View.Of(m, style);
+        // Whether the faces keep their materials' hatches: by the style's switch (a diagram's off, unless the view turns it on).
+        var hatches = floors != null ? style.FloorHatch : style.SurfaceHatch;
+        CategoryGraphics? Cat(string cls) => LineStyles.CategoryOf(cls) is { } c && options.Categories != null && options.Categories.TryGetValue(c, out var cg) ? cg : null;
+        ResolvedMaterial? GraphicsOf(DrawPart p)
+        {
+            if (floors != null && !floors(p)) return null;
+            var colour = diagram?.ColourOf(p.Element, p.Class);
+            if (colour == null) return hatches ? Drawn(viewMaterials.Surface(p.Element, p.Class, Material(p.Material))) : null;
+            // The diagram look (decision 885): the face filled with its category's colour, its hatch only when the view keeps them; the
+            // view's filters and the element's own surface fill over it, then a Visibility / Graphics category fill, or the element's colour paled.
+            var under = hatches ? Material(p.Material) : null;
+            var g = (under ?? new ResolvedMaterial("", null, 1, null, null, false, false, null, "diagram")) with { Fill = colour, FillOpacity = null, Membrane = false };
+            if (!hatches) g = g with { Hatch = null, Background = null };
+            g = viewMaterials.Surface(p.Element, p.Class, g) ?? g;
+            if (!g.FilterFill)
+            {
+                if (Cat(p.Class)?.FillColor is { } cf) g = g with { Fill = cf };
+                else if (options.ElementColors?.GetValueOrDefault(p.Element) is { } ec) g = g with { Fill = HexColor.Mix(ec, 0.6) };
+            }
+            return Drawn(g);
+        }
+        var graphics = parts.Select(GraphicsOf).ToArray();
         if (graphics.All(g => g == null)) return [];
         var joins = ViewStyles.Of(m, view).Joins;
         var pens = new Dictionary<string, Pen>();
@@ -145,7 +172,7 @@ public static class SurfaceHatches
         foreach (var piece in pieces)
         {
             if (budget <= 0) break;
-            Hatch(m, cacheKey + (pieces.Count > 1 ? "#" + piece.Index : ""), piece, parts, graphics, joins, options, seamKeys, pens, ref budget, floors != null);
+            Hatch(m, cacheKey + (pieces.Count > 1 ? "#" + piece.Index : ""), piece, parts, graphics, joins, options, seamKeys, pens, ref budget, floors != null, diagram != null);
         }
         // Fills, solid hatches, then line hatches: a material's background hatch (decision 678) under its hatch.
         return pens.Where(kv => kv.Value.Loops.Count > 0 || kv.Value.Segments.Count > 0)
@@ -154,7 +181,7 @@ public static class SurfaceHatches
     }
 
     static void Hatch(IModelView m, string cacheKey, Piece piece, IReadOnlyList<DrawPart> parts, ResolvedMaterial?[] graphics, bool joins,
-        Pens.Options options, Dictionary<string, string?> seamKeys, Dictionary<string, Pen> pens, ref int left, bool floors = false)
+        Pens.Options options, Dictionary<string, string?> seamKeys, Dictionary<string, Pen> pens, ref int left, bool floors = false, bool fills = false)
     {
         // A plan's floors: their own layer, lines only (a fill or a solid pattern would cover the plan's floors in ink).
         var layer = floors ? FloorLayer : Layer;
@@ -223,7 +250,8 @@ public static class SurfaceHatches
                 var g = graphics[s.Face.Owner]!;
                 if (Cat(part.Class)?.Hidden == true) continue;
                 var loops = cells.Select(c => (IReadOnlyList<Vec2>)c).ToList();
-                if (!floors && MaterialGraphics.FillInk(g) is { } fillInk) Get("fill:" + fillInk, () => new Pen(FillLayer, null, 0, fillInk, null)).Loops.AddRange(cells.Select(c => c.Select(Laid).ToArray()));
+                // A diagram plan's faces are filled (decision 885): soft colours, not ink.
+                if ((!floors || fills) && MaterialGraphics.FillInk(g) is { } fillInk) Get("fill:" + fillInk, () => new Pen(FillLayer, null, 0, fillInk, null)).Loops.AddRange(cells.Select(c => c.Select(Laid).ToArray()));
                 var category = Cat(part.Class)?.LineColor ?? "#000000";
                 var elementColor = options.ElementColors?.GetValueOrDefault(part.Element);
                 // The background hatch under the hatch (decision 678), then the hatch: each its own colour and weight.

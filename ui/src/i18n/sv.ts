@@ -12800,6 +12800,8 @@ export const SV: Record<string, string> = {
   "White model": "Vit modell",
   "Every element a light white-grey.": "Varje element i en ljus vitgrå ton.",
   "Pastel by category": "Pastell per kategori",
+  // The diagram look in 2D views (decision 885, forum topic 283).
+  "off: technical drawing": "av: teknisk ritning", "Draws the view as the 3D Diagram display: what it cuts and sees filled white or pastel by category (Preferences → Display → Diagram colours, kept in the project), thin light outlines, no hatches unless the view turns them on itself. Sheets and the PDF print it.": "Ritar vyn som 3D-visningen Diagram: det den skär och ser fyllt vitt eller i pastell per kategori (Preferences → Display → Diagram colours, sparade i projektet), tunna ljusa konturer, inga skrafferingar om inte vyn själv slår på dem. Ritningsblad och PDF skriver ut den.", "The pastel of each category in the Diagram display (View → Display quality) and in the views drawn as diagrams (View settings → Diagram). Kept in the project, so its sheets print the same colours.": "Pastellen för varje kategori i visningen Diagram (View → Display quality) och i vyerna som ritas som diagram (View settings → Diagram). Sparad i projektet, så att dess ritningsblad skriver ut samma färger.",
   "Walls, floors, roofs, structure, doors and windows, site, greenery each a muted pastel (Preferences → Display edits them).": "Väggar, golv, tak, stomme, dörrar och fönster, tomt, grönska, var och en i en dämpad pastell (Inställningar → Visning redigerar dem).",
   "Only on screen: drawings, sheets and exports keep their colours. A colour set in Visibility/Graphics still wins.": "Endast på skärmen: ritningar, ritningsblad och exporter behåller sina färger. En färg satt i Synlighet/Grafik gäller fortfarande före.",
   "Diagram colours": "Diagramfärger",
@@ -13957,6 +13959,10 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "Appen registrerade sig själv hos servern och valde det här namnet: ingen har kontrollerat det.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "Återkalla {name}? Den slutar genast och fungerar igen bara om du ansluter den på nytt.",
   "App revoked.": "App återkallad.",
+  // Curtain walls from lines (forum topic 282).
+  "Curtain walls from lines": "Glasfasader från linjer",
+  "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Välj först ritade linjer, polylinjer eller bågar på en plan och klicka sedan på Glasfasader från linjer.",
+  "A curtain wall along each segment of a line, polyline, arc or circle, of the type chosen.": "En glasfasad längs varje segment av en linje, polylinje, båge eller cirkel, av den valda typen.",
   "Give the token a name.": "Ge tokenet ett namn.",
   "Personal access tokens for AI clients (MCP)": "Personliga åtkomsttoken för AI-klienter (MCP)",
   "You have a token of that name: choose another, or revoke it first.": "Du har redan ett token med det namnet: välj ett annat eller återkalla det först.",
@@ -14633,4 +14639,7 @@ export const SV_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Den behöver „${m[1]}”, som denna utgåva inte har.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Dess fil „${m[1]}” saknas: installera den igen.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Dess fil „${m[1]}” har ändrats: den lästes inte in. Installera den igen.`],
+  // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `${m[1]} glasfasader skapade från linjerna.`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `${m[1]} glasfasader skapade från linjerna, ${m[2]} bitar under 100 mm utelämnade.`],
 ];

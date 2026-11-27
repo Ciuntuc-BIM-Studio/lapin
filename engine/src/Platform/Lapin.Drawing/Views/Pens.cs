@@ -252,7 +252,13 @@ public static class Pens
     public sealed record Options(double Scale = 100, bool HiddenLines = true, LineStyles.Resolver? LineStyle = null,
         IReadOnlyDictionary<string, CategoryGraphics>? Categories = null, IReadOnlyList<HatchPattern>? Patterns = null, int MaxHatchSegments = 60_000,
         IReadOnlyDictionary<string, string>? ElementColors = null, LineStyles.PenTable? Table = null, IReadOnlyList<LineTypeDef>? LineTypes = null,
-        double MinHatchSpacing = HatchScale.DefaultMinSpacing, double TextHeight = 2.5);
+        double MinHatchSpacing = HatchScale.DefaultMinSpacing, double TextHeight = 2.5, DiagramLines? Diagram = null);
+
+    /// <summary>
+    /// A diagram drawing's cut and seen lines (decision 885): the colour and weight they take where nothing more particular gives
+    /// one (a Visibility / Graphics category's, a line edit's, an element's colour); hidden, overhead and beyond lines as before.
+    /// </summary>
+    public sealed record DiagramLines(string CutColor, double CutWidth, string SeenColor, double SeenWidth);
 
     /// <summary>A colour washed out towards white (a cut filled with a phase's colour stays readable under its hatch).</summary>
     static string Pale(string css) => HexColor.Mix(css, 0.6);
@@ -417,8 +423,9 @@ public static class Pens
                 default:
                 {
                     var cut = l.Role == LineRole.Cut;
-                    var c = color ?? "#000000";
-                    var w = styled?.WidthMm ?? (WeightMm(g?.LineWeight) is { } mm ? (separation ? SeenWeight(mm) : cut ? mm : SeenWeight(mm)) : separation ? Separation : cut ? Default.Cut : Default.Seen);
+                    var c = color ?? (o.Diagram is { } dl ? (cut ? dl.CutColor : dl.SeenColor) : "#000000");
+                    var w = styled?.WidthMm ?? (WeightMm(g?.LineWeight) is { } mm ? (separation ? SeenWeight(mm) : cut ? mm : SeenWeight(mm))
+                        : o.Diagram is { } dw ? (cut && !separation ? dw.CutWidth : dw.SeenWidth) : separation ? Separation : cut ? Default.Cut : Default.Seen);
                     var dash = styled?.Dash is { Length: > 0 } sd ? sd : null;
                     pen = Get($"{(cut ? "cut" : "seen")}:{c}:{w}:{DashKey(dash)}", () => new Pen(cut ? PenLayer.Cut : PenLayer.Seen, c, w, null, dash));
                     break;

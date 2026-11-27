@@ -11,7 +11,8 @@ export interface ConverterList { converters: Converter[]; layers: DraftLayer[] }
 /** A shape's row; joined: the shape whose element this one is part of (a terrain of many contours, a road of lines end to end). */
 export interface ShapePreview { id: string; converter: string; error: string | null; steps: string[]; joined?: string | null }
 export interface ConvertPreview { shapes: ShapePreview[]; ok: number; left: number; steps: number }
-export interface ConvertOutcome { ids: string[]; converted: number; left: number }
+/** skipped: the pieces a target left out (curtain walls' segments under 100 mm). */
+export interface ConvertOutcome { ids: string[]; converted: number; left: number; skipped?: number }
 
 export type ConvertSelection = { ids: string[] } | { layers: string[] } | { map: { layer: string; converter: string; options: Record<string, unknown> }[] };
 
@@ -39,19 +40,27 @@ export function openConvertLayers(viewId: string): void { useConvert.setState({ 
 export const convertible = (ids: string[], nodes: Map<string, { type: string; props: Record<string, unknown> }>): string[] =>
   ids.filter((id) => { const n = nodes.get(id); return !!n && n.type === 'IfcAnnotation' && typeof n.props.viewId === 'string' && !!n.props.shape && n.props.predefinedType !== 'SYMBOL'; });
 
-/** Convert to… on the selection in the view in front; `converter`: the target it opens on (Steel's Convert to member, …). */
-export async function convertSelection(converter: string | null = null): Promise<void> {
+/**
+ * The drafted shapes selected and the view they are drawn on: the one in front, else (picked in 3D, on a plane) the first shape's
+ * own; null, with a notice saying what to do (`none`: when nothing drafted is selected on it), when there are none.
+ */
+export async function selectedDrafting(none = 'Select drafted lines, polylines, arcs or circles to convert.'): Promise<{ viewId: string; ids: string[] } | null> {
   const nodes = useSession.getState().nodes;
   const ids = convertible(useUi.getState().selected, nodes);
   const { frontView } = await import('../../../viewport/frontView');
   const front = await frontView();
-  // The view the shapes are drawn on: the one in front, else (picked in 3D, on a plane) the first shape's own.
   const own = ids.length ? nodes.get(ids[0])?.props.viewId as string | undefined : undefined;
   const viewId = front && front !== '3d' && (!own || ids.some((id) => nodes.get(id)?.props.viewId === front)) ? front : own ?? null;
-  if (!viewId) { notifyText('Open a plan, a section or an elevation to convert its drafting.'); return; }
+  if (!viewId) { notifyText('Open a plan, a section or an elevation to convert its drafting.'); return null; }
   const onView = ids.filter((id) => nodes.get(id)?.props.viewId === viewId);
-  if (!onView.length) { notifyText('Select drafted lines, polylines, arcs or circles to convert.'); return; }
-  openConvert(viewId, onView, converter);
+  if (!onView.length) { notifyText(none); return null; }
+  return { viewId, ids: onView };
+}
+
+/** Convert to… on the selection in the view in front; `converter`: the target it opens on (Steel's Convert to member, …). */
+export async function convertSelection(converter: string | null = null): Promise<void> {
+  const chosen = await selectedDrafting();
+  if (chosen) openConvert(chosen.viewId, chosen.ids, converter);
 }
 
 /** Convert to… on one shape picked (a tool's pick gesture), on its own view, opened on `converter`. */

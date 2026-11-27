@@ -239,8 +239,63 @@ public static class LineworkConverters
         return [new("architecture.addRailing", args, $"A railing along {pts.Count} points on {storey.Name}")];
     }, "A railing along each line, arc or polyline; those meeting end to end make one.");
 
+    /// <summary>
+    /// Curtain walls along drafted lines, polylines, arcs and circles (forum topic 282): one per straight segment and one per arc
+    /// (an arc past a half turn in two, a circle in four quarters), in the shape's order, of the type chosen (else the project's
+    /// first); a segment under 100 mm is left out and counted. Through <c>architecture.curtainWallsAlong</c>, so each wall is
+    /// checked as the Curtain wall tool's.
+    /// </summary>
+    public static readonly LineworkConverter CurtainWallsAlong = new("curtainWalls", "Curtain walls", "architecture", "any", Plan,
+    [
+        new("typeId", "Curtain wall type", "type", TypeClass: CurtainWalls.TypeClass),
+        new("height", "Height", "length", JsonValue.Create(Lapin.Architecture.Walls.DefaultHeight)),
+        new("baseOffset", "Base offset", "length", JsonValue.Create(0.0)),
+    ],
+    (q, view, s, o) =>
+    {
+        var storey = LineworkConversion.PlanStorey(q.Model, view);
+        if (s.Kind == "ellipse") LineworkConversion.Straight(s, "A curtain wall");
+        var (pts, rises, closed) = CurtainPath(s);
+        var args = new JsonObject { ["storeyId"] = storey.Id, ["points"] = LineworkConversion.Points(pts), ["closed"] = closed };
+        if (rises.Any(r => r != 0)) args["arcs"] = new JsonArray([.. rises.Select(r => (JsonNode)Math.Round(r, 9))]);
+        if ((string?)o["typeId"] is { Length: > 0 } t) args["typeId"] = t;
+        if (LineworkConversion.Num(o, "height") is { } h) args["height"] = h;
+        if (LineworkConversion.Num(o, "baseOffset") is { } b) args["baseOffset"] = b;
+        var n = closed ? pts.Count : pts.Count - 1;
+        return [new("architecture.curtainWallsAlong", args, n == 1 ? $"A curtain wall along the {s.Kind} on {storey.Name}" : $"{n} curtain walls along the {s.Kind} on {storey.Name}")];
+    }, "A curtain wall along each segment of a line, polyline, arc or circle, of the type chosen.");
+
+    /// <summary>
+    /// A shape as a curtain wall path: its points, each segment's rise (0 straight) and whether it closes. A polyline's edges are
+    /// straight; an arc is one segment, or as many as keep each under a half turn; a circle four quarter arcs.
+    /// </summary>
+    internal static (List<Vec2> Points, List<double> Rises, bool Closed) CurtainPath(LineworkShape s)
+    {
+        if (s.Kind == "circle" && s.Centre is { } cc && s.Radius is { } cr)
+        {
+            var (corners, r4) = ArcOutline.Circle(cc, cr);
+            return (corners, [.. r4], true);
+        }
+        if (s.Kind == "arc" && s.Centre is { } c && s.Radius is { } r && s.Mid is { } mid && s.Points.Count >= 2)
+        {
+            var (p0, p1) = (s.Points[0], s.Points[^1]);
+            double Angle(Vec2 p) => Math.Atan2(p.Y - c.Y, p.X - c.X);
+            static double Ccw(double from, double to) { var d = (to - from) % (2 * Math.PI); return d < 0 ? d + 2 * Math.PI : d; }
+            var (a0, sweep) = (Angle(p0), Ccw(Angle(p0), Angle(p1)));
+            // Clockwise when its middle is not on the anticlockwise way from start to end.
+            if (Ccw(a0, Angle(mid)) > sweep) sweep -= 2 * Math.PI;
+            var n = Math.Max(1, (int)Math.Ceiling(Math.Abs(sweep) / Math.PI - 1e-9));
+            Vec2 At(double t) => c + new Vec2(Math.Cos(a0 + sweep * t), Math.Sin(a0 + sweep * t)) * r;
+            var pts = Enumerable.Range(0, n + 1).Select(k => k == 0 ? p0 : k == n ? p1 : At((double)k / n)).ToList();
+            var rises = Enumerable.Range(0, n).Select(k => PathCurve.RiseThrough(pts[k], pts[k + 1], At((k + 0.5) / n))).ToList();
+            return (pts, rises, false);
+        }
+        var closed = s.Closed && s.Points.Count > 2;
+        return ([.. s.Points], [.. Enumerable.Repeat(0.0, closed ? s.Points.Count : Math.Max(0, s.Points.Count - 1))], closed);
+    }
+
     public static void Register(IModuleRegistry r)
     {
-        foreach (var c in new[] { Walls, Floors, FloorOpenings, Ceilings, Rooms, RoofsFromOutlines, Balconies, StairsAlong, Railings, SkirtingsAlong, WallOpenings }) r.Service<LineworkConverter>(c);
+        foreach (var c in new[] { Walls, Floors, FloorOpenings, Ceilings, Rooms, RoofsFromOutlines, Balconies, StairsAlong, Railings, SkirtingsAlong, WallOpenings, CurtainWallsAlong }) r.Service<LineworkConverter>(c);
     }
 }

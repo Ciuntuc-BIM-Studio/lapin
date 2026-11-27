@@ -158,6 +158,8 @@ public sealed class ViewMaterialGraphics
     readonly SmallScaleCut? _small;
     readonly MaterialGraphicsSets.Set? _set;
     readonly VisibilityGraphics? _vg;
+    // The view's diagram look (decision 885): its cut bands one area each in their category's colour; null: none.
+    readonly DiagramLook.View? _diagram;
     readonly Dictionary<string, ResolvedMaterial?> _base = [];
     readonly Dictionary<string, ResolvedMaterial?> _materials = [];
     readonly Dictionary<string, IReadOnlyList<LayerBand>?> _bands = [];
@@ -185,6 +187,8 @@ public sealed class ViewMaterialGraphics
         _set = style?.MaterialGraphicsSet is { } setId ? MaterialGraphicsSets.Find(m, setId) : null;
         _vg = visibility is { HasSubGraphics: true } or { HasFilterGraphics: true } or { HasElementGraphics: true } ? visibility : null;
         _layerLooks = LayerGraphics.Any(m);
+        // A legend shows a material as it is: no diagram (as no small-scale cut).
+        _diagram = smallScale && style != null ? DiagramLook.View.Of(m, style) : null;
     }
 
     public static ViewMaterialGraphics For(IModelView m, Entity view, string kind, double scale) => new(m, kind, scale, ViewStyles.Of(m, view), VisibilityGraphics.Of(m, view));
@@ -196,7 +200,10 @@ public sealed class ViewMaterialGraphics
     public SmallScaleCut? SmallScale => _small;
 
     /// <summary>Whether an element's bands draw as one area (solid, outline), as a coarse view's.</summary>
-    public bool MergesBands => _small?.Mode is SmallScaleCut.Solid or SmallScaleCut.Outline;
+    public bool MergesBands => _diagram != null || _small?.Mode is SmallScaleCut.Solid or SmallScaleCut.Outline;
+
+    /// <summary>The view's diagram look (decision 885); null: none.</summary>
+    public DiagramLook.View? Diagram => _diagram;
 
     /// <summary>
     /// A material in the view (an id the project keeps, or a name its look is guessed from): its tiers up to its step by scale.
@@ -237,6 +244,8 @@ public sealed class ViewMaterialGraphics
         // The small-scale cut (tier 4) under the set (tier 3).
         if (_small != null && SmallScaleCut.Takes(p.Class)) g = SetOver(SmallScaled(p.Material == null ? null : LayerGraphics.Over(Base(p.Material), layer, _scale), p, _small), p.Material);
         else g = layer == null ? Material(p.Material) : SetOver(LayerGraphics.Over(Base(p.Material!), layer, _scale), p.Material);
+        // The diagram look (decision 885), over the style's tiers and under the view's own Visibility / Graphics: one soft area.
+        if (_diagram?.ColourOf(p.Element, p.Class) is { } colour) g = Diagrammed(g, colour, p.Class);
         // Tier 2.5: the view's subcategory graphics. Tier 2: the view's filters (stage 5). Then an element's own override.
         if (_vg != null && _m.Get(p.Element) is { } el)
         {
@@ -359,6 +368,21 @@ public sealed class ViewMaterialGraphics
             };
         }
         return o;
+    }
+
+    /// <summary>
+    /// A band as the diagram look draws it (decision 885): its category's colour, no hatch, no membrane, no lines of its material
+    /// (the diagram's thin light pens draw it); the bands of one category and colour read as one area. A category's fill or cut
+    /// hatch in Visibility / Graphics still lays itself over it in the pens.
+    /// </summary>
+    static ResolvedMaterial Diagrammed(ResolvedMaterial? g, string colour, string cls)
+    {
+        var plain = g ?? new ResolvedMaterial("", null, 1, null, null, false, false, null, "diagram");
+        return plain with
+        {
+            Hatch = null, Background = null, Fill = colour, FillOpacity = null, Membrane = false, CutLine = null, SeparatorLine = null,
+            KeepsHatch = false, KeepsFill = false, FilterFill = false, JoinAs = "\u0001diagram:" + DiagramLook.CategoryOf(cls) + ":" + colour,
+        };
     }
 
     /// <summary>A band as the small-scale cut draws it.</summary>

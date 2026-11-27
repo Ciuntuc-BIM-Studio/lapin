@@ -6769,6 +6769,8 @@ export const LO: Record<string, string> = {
   "Skip: only the project's materials change. Create: a row whose material the project lacks makes it.": "ຂ້າມ: ມີແຕ່ວັດສະດຸຂອງໂຄງການທີ່ປ່ຽນ. ສ້າງ: ແຖວທີ່ວັດສະດຸບໍ່ມີໃນໂຄງການຈະສ້າງມັນ.",
   // The diagram display (View → Display quality).
   'Diagram': 'ແຜນພາບ', 'Soft volumes like a card model, with the sun’s soft shadows and thin light edges: for massing and volume studies.': 'ປະລິມານນຸ່ມນວນຄືແບບຈຳລອງກະດາດແຂງ ມີເງົາອ່ອນຂອງດວງຕາເວັນ ແລະ ຂອບບາງສີອ່ອນ: ສຳລັບການສຶກສາມວນປະລິມານ.', 'White model': 'ແບບຈຳລອງສີຂາວ', 'Every element a light white-grey.': 'ທຸກອົງປະກອບເປັນສີຂາວເທົາອ່ອນ.', 'Pastel by category': 'ສີພາສເຕວຕາມໝວດ', 'Walls, floors, roofs, structure, doors and windows, site, greenery each a muted pastel (Preferences → Display edits them).': 'ຝາ, ພື້ນ, ຫຼັງຄາ, ໂຄງສ້າງ, ປະຕູ ແລະ ປ່ອງຢ້ຽມ, ພື້ນທີ່ ແລະ ພືດພັນ ແຕ່ລະອັນມີສີພາສເຕວອ່ອນໆ (Preferences → Display ແກ້ໄຂໄດ້).', 'Only on screen: drawings, sheets and exports keep their colours. A colour set in Visibility/Graphics still wins.': 'ສະເພາະໃນໜ້າຈໍ: ແບບແປນ, ແຜ່ນ ແລະ ການສົ່ງອອກຍັງຄົງສີເດີມ. ສີທີ່ຕັ້ງໃນ Visibility/Graphics ຍັງມີຄວາມສຳຄັນກວ່າ.', 'Diagram colours': 'ສີຂອງແຜນພາບ', 'The pastel of each category in the Diagram display (View → Display quality). On screen only.': 'ສີພາສເຕວຂອງແຕ່ລະໝວດໃນການສະແດງແຜນພາບ (View → Display quality). ສະເພາະໃນໜ້າຈໍ.', 'Slabs and floors': 'ພື້ນຊັ້ນ ແລະ ພື້ນເຮືອນ', 'Columns and beams': 'ເສົາ ແລະ ຄານ', 'Terrain and site': 'ພື້ນທີ່ດິນ ແລະ ສະຖານທີ່', 'Vegetation and furniture': 'ພືດພັນ ແລະ ເຄື່ອງເຮືອນ', 'Everything else': 'ທຸກຢ່າງອື່ນ',
+  // The diagram look in 2D views (decision 885, forum topic 283).
+  "off: technical drawing": "ປິດ: ແບບແຕ້ມທາງເທັກນິກ", "Draws the view as the 3D Diagram display: what it cuts and sees filled white or pastel by category (Preferences → Display → Diagram colours, kept in the project), thin light outlines, no hatches unless the view turns them on itself. Sheets and the PDF print it.": "ແຕ້ມມຸມມອງຄືກັບການສະແດງ Diagram ຂອງ 3D: ສິ່ງທີ່ມັນຕັດ ແລະ ເຫັນ ຖືກຕື່ມດ້ວຍສີຂາວ ຫຼື ສີພາສະເທວຕາມໝວດ (Preferences → Display → Diagram colours, ເກັບໄວ້ໃນໂຄງການ), ເສັ້ນຂອບບາງ ແລະ ອ່ອນ, ບໍ່ມີລາຍຂີດ ເວັ້ນເສຍແຕ່ມຸມມອງເປີດມັນເອງ. ແຜ່ນແບບ ແລະ PDF ພິມມັນ.", "The pastel of each category in the Diagram display (View → Display quality) and in the views drawn as diagrams (View settings → Diagram). Kept in the project, so its sheets print the same colours.": "ສີພາສະເທວຂອງແຕ່ລະໝວດ ໃນການສະແດງ Diagram (View → Display quality) ແລະ ໃນມຸມມອງທີ່ແຕ້ມເປັນແຜນພາບ (View settings → Diagram). ເກັບໄວ້ໃນໂຄງການ, ດັ່ງນັ້ນແຜ່ນແບບຂອງມັນພິມສີດຽວກັນ.",
   'Press WA to draw walls; every element is native IFC.': 'ກົດ WA ເພື່ອແຕ້ມຝາ; ທຸກອົງປະກອບເປັນ IFC ແບບເນທີຟ.',
   // Roof panel layout (docs/plan-roof-panels.md, S2).
   'Panel layout…': 'ການວາງແຜ່ນຫຼັງຄາ…',
@@ -7894,6 +7896,10 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "ແອັບໄດ້ລົງທະບຽນກັບເຊີບເວີເອງ ແລະ ເລືອກຊື່ນີ້: ບໍ່ມີໃຜກວດສອບມັນ.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "ຖອນ {name}? ມັນຈະຢຸດທັນທີ, ແລະ ຈະເຮັດວຽກອີກກໍຕໍ່ເມື່ອທ່ານເຊື່ອມຕໍ່ມັນອີກ.",
   "App revoked.": "ຖອນແອັບແລ້ວ.",
+  // Curtain walls from lines (forum topic 282).
+  "Curtain walls from lines": "ຝາຜ້າມ່ານຈາກເສັ້ນ",
+  "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "ເລືອກເສັ້ນ, ເສັ້ນຫຼາຍທ່ອນ ຫຼື ເສັ້ນໂຄ້ງທີ່ແຕ້ມໄວ້ໃນແຜນຜັງກ່ອນ, ແລ້ວກົດ ຝາຜ້າມ່ານຈາກເສັ້ນ.",
+  "A curtain wall along each segment of a line, polyline, arc or circle, of the type chosen.": "ຝາຜ້າມ່ານໜຶ່ງຕາມແຕ່ລະທ່ອນຂອງເສັ້ນ, ເສັ້ນຫຼາຍທ່ອນ, ເສັ້ນໂຄ້ງ ຫຼື ວົງມົນ, ຕາມປະເພດທີ່ເລືອກ.",
   "Give the token a name.": "ຕັ້ງຊື່ໃຫ້ໂທເຄັນ.",
   "Personal access tokens for AI clients (MCP)": "ໂທເຄັນການເຂົ້າເຖິງສ່ວນຕົວສຳລັບລູກຂ່າຍ AI (MCP)",
   "You have a token of that name: choose another, or revoke it first.": "ທ່ານມີໂທເຄັນຊື່ນີ້ແລ້ວ: ເລືອກຊື່ອື່ນ ຫຼື ຖອນມັນກ່ອນ.",
@@ -8571,4 +8577,7 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `ມັນຕ້ອງການ „${m[1]}”, ເຊິ່ງລຸ້ນນີ້ບໍ່ມີ.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `ໄຟລ໌ „${m[1]}” ຂອງມັນຂາດ: ຕິດຕັ້ງມັນໃໝ່.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `ໄຟລ໌ „${m[1]}” ຂອງມັນຖືກປ່ຽນ: ມັນບໍ່ໄດ້ໂຫຼດ. ຕິດຕັ້ງມັນໃໝ່.`],
+  // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `ສ້າງຝາຜ້າມ່ານ ${m[1]} ອັນຈາກເສັ້ນແລ້ວ.`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `ສ້າງຝາຜ້າມ່ານ ${m[1]} ອັນຈາກເສັ້ນແລ້ວ, ຂ້າມ ${m[2]} ທ່ອນທີ່ສັ້ນກວ່າ 100 mm.`],
 ];

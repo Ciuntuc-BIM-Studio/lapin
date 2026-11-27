@@ -250,7 +250,19 @@ Choose **Diagram** in View → **Display quality**, then how it colours:
 
 ![Pastel by category at noon](shots/view-diagram-noon.webp)
 
-The colours are on screen only: drawings, sheets, the PDF, exports and the model keep their own. A colour you set for an element in **Visibility/Graphics** still wins, so you can accent a few things (the site in green, one building highlighted); glass stays see-through and the selection is still lit. Edit the pastels in **Preferences → Display → Diagram colours** (one colour a category, **Default colours** puts them back). The choice is kept on this computer. The light is neutral and even, so a face turned from the sun stays light and the shadows stay soft; the display has no textures (a terrain’s photo, a material’s picture), only the flat colours, and a cut-out figure keeps its outline in its colour. It has no lamps and no night, and it does not offer Render.
+The 3D display changes the screen only: drawings, sheets, the PDF, exports and the model keep their own colours, unless a view is drawn as a diagram itself (below). A colour you set for an element in **Visibility/Graphics** still wins, so you can accent a few things (the site in green, one building highlighted); glass stays see-through and the selection is still lit. Edit the pastels in **Preferences → Display → Diagram colours** (one colour a category, **Default colours** puts them back; each change is one step to undo). The pastels are kept in the project, so plans, sections and elevations drawn as diagrams (below) print the same colours on any computer; the choice of White model or Pastel for the 3D is kept on this computer. The light is neutral and even, so a face turned from the sun stays light and the shadows stay soft; the display has no textures (a terrain’s photo, a material’s picture), only the flat colours, and a cut-out figure keeps its outline in its colour. It has no lamps and no night, and it does not offer Render.
+
+#### The diagram look in plans, sections and elevations
+
+A plan, a section or an elevation can be drawn in the same look, for presentations and client documents that match the 3D: in **View → View settings** (or the view's properties), set **Diagram** to **White model** or **Pastel by category**. It is chosen view by view, so a plan can stay a technical drawing while its elevations are diagrams; a view style can say it for all its views (**Manage → View styles**, the **Diagram** column), and the button beside the field puts a view back on its style.
+
+- What the view cuts is filled with its category's colour (the white model's light grey, or the pastel), each element one soft area: its layers merged, no hatch, no membrane line.
+- What it sees is filled the same way: an elevation's or a section's faces beyond the cut, and the floors, terrain and other elements a plan sees below its cut, where nothing nearer hides them.
+- The outlines are thin and light: the cut 0.25 mm in mid grey, what is seen 0.13 mm in light grey. The project's **Object styles** (the technical drawing's pens) do not apply.
+- The surface hatches, the floors' hatches and the rooms' floor finish hatches are off: the fills replace them. Tick them in the view's own settings to draw them over the fills.
+- A colour you set for the view in **Visibility/Graphics** wins over the palette: a category's fill or line colour, a filter's colour, an element's own graphics, a phase's colour. Rooms, annotations, dimensions and tags are drawn as before.
+
+Sheets, the PDF, SVG and DXF print exactly what the view shows. A view set to **off** (the default) draws exactly as before.
 
 The sun is the project’s: where it stands for the project’s place (Manage → **Location**) on a day at an hour. View → **Sun and shadows** sets the day (the equinox and the solstices are a click away) and the hour, plays the day through, and turns the sun on in the drawing view too. Without a coordinate system and a survey point, the place is Bucharest. The time zone follows the place’s longitude, with European summer time in Europe.
 

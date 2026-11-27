@@ -1,6 +1,6 @@
 /** Architecture: layered walls and their types, doors and windows, floors, roofs, rooms and their colours. */
 
-import { Armchair, PenTool, ArrowLeftRight, ArrowRightToLine, CornerDownRight, CornerUpRight, Layers3, Link2, Scissors, Settings2, Slash, Spline, Table2 } from 'lucide-react';
+import { Armchair, PenTool, ArrowLeftRight, ArrowRightToLine, CornerDownRight, CornerUpRight, Layers3, Link2, Replace, Scissors, Settings2, Slash, Spline, Table2 } from 'lucide-react';
 import { AttachRoofIcon, CurtainWallIcon, CurvedWallIcon, DetachRoofIcon, DoorIcon, DormerIcon, RoofIcon, RampIcon, RoofWindowIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
 import type { Grip, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { flipAcross, frameAt, holeGrips, holeRefs, outlineGrips, outlineRef, pathGrips, pathRef, toPairs, withEllipses } from '../../viewport/gripKit';
@@ -9,7 +9,7 @@ import { arcOf, project, type Arc } from '../../viewport/arc';
 import { arcsOf, fromPairs } from '../../viewport/contour';
 import { FloorShapeBar, EllipseShapeBar, loopOf, toggleOutlineArcs, type EllipseEdgeJson } from '../../viewport/outlineShape';
 import type { NodeDto } from '../../engine/protocol';
-import { notify, useUi } from '../../app/store';
+import { notify, notifyProblem, useUi } from '../../app/store';
 import { createScheduleOf } from '../../shell/fieldSchedule';
 import { activeStorey, execute, query, useSession } from '../../engine/session';
 import { cadLog, registerCommand, startCommand, type Step } from '../../viewport/cad/session';
@@ -205,15 +205,35 @@ function WallLineOption() {
 
 /** The old Curved wall: the Wall tool, in Arc. */
 const curvedWall: ToolDef = arcAlias({ id: 'architecture.curvedWall', label: 'Curved wall', icon: CurvedWallIcon, shortcut: 'WC' }, wall);
-/** A curtain wall: two points (chained), of the type picked in the configurator, else the project's first. */
-const curtainWall: ToolDef = {
+/** A curtain wall: two points (chained), or an arc (its start, its end, a point it passes through), of the type picked in the configurator, else the project's first. */
+const curtainWall: ToolDef = chainTool({
   id: 'architecture.curtainWall', label: 'Curtain wall', icon: CurtainWallIcon, shortcut: 'CW', properties: newElement('IfcCurtainWallType', 'curtainTypeId', 'curtainWalls'), typed: typedBy('IfcCurtainWallType', 'curtainTypeId', 'curtainWalls'),
-  gesture: { kind: 'twoPoints', repeat: true },
-  complete: async ({ points: [a, b] }, ctx) => {
+  line: async (a, b, ctx) => {
     const typeId = useUi.getState().curtainTypeId;
     await ctx.execute('architecture.addCurtainWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, ...(typeId ? { typeId } : {}) });
   },
-};
+  arc: async (a, b, p, ctx) => {
+    const typeId = useUi.getState().curtainTypeId;
+    await ctx.execute('architecture.addCurtainWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y, ...(typeId ? { typeId } : {}) });
+  },
+});
+/**
+ * Curtain walls from the drafted lines, polylines, arcs and circles selected on a plan, in one click (forum topic 282): Convert
+ * to… → Curtain walls, one per segment and one per arc, of the type picked in the configurator, on the plan's storey; the lines go.
+ */
+export async function curtainWallsFromLines(): Promise<void> {
+  const { selectedDrafting, convertDrafting } = await import('../drafting/convert/convert');
+  const chosen = await selectedDrafting('Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.');
+  if (!chosen) return;
+  const typeId = useUi.getState().curtainTypeId;
+  const r = await convertDrafting(chosen.viewId, { ids: chosen.ids, converter: 'curtainWalls', options: typeId ? { typeId } : {} }, false);
+  if ('error' in r) { notifyProblem(r.error); return; }
+  notify(curtainWallsMadeMessage(r.ids.length, r.skipped ?? 0));
+}
+/** What Curtain walls from lines made, in words. */
+export const curtainWallsMadeMessage = (made: number, skipped: number): string =>
+  skipped ? `${made} curtain walls made from the lines, ${skipped} pieces under 100 mm left out.` : `${made} curtain walls made from the lines.`;
+const curtainFromLines: ToolDef = { id: 'architecture.curtainFromLines', label: 'Curtain walls from lines', icon: Replace, run: () => void curtainWallsFromLines() };
 const curtainTypes: ToolDef = { id: 'architecture.curtainTypes', label: 'Curtain walls', icon: Settings2, run: () => useUi.setState({ dialog: 'curtainWalls' }) };
 
 /** The selected walls. */
@@ -765,7 +785,7 @@ const architecture: LapinModule = {
   tabs: [{
     id: 'architecture', label: 'Architecture', order: 20, include: ['modify', 'groups', 'joins'],
     groups: [
-      { label: 'Build', tools: [wall, opening, slab, roof], small: [wallFromSolids, curtainWall, roofConfigurator, downpipe, railing] },
+      { label: 'Build', tools: [wall, opening, slab, roof], small: [wallFromSolids, curtainWall, curtainFromLines, roofConfigurator, downpipe, railing] },
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes, sunshadeTypes, windowSillSchedule] },
       // Sunshades (report #56): on a window, along a facade; their schedule.
       { label: 'Sunshades', tools: [sunshade], small: [sunshadeAlong, sunshadeSchedule] },

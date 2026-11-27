@@ -12825,6 +12825,8 @@ export const EL: Record<string, string> = {
   'White model': 'Λευκό μοντέλο',
   'Every element a light white-grey.': 'Κάθε στοιχείο σε ανοιχτό λευκό-γκρι.',
   'Pastel by category': 'Παστέλ ανά κατηγορία',
+  // The diagram look in 2D views (decision 885, forum topic 283).
+  "off: technical drawing": "ανενεργό: τεχνικό σχέδιο", "Draws the view as the 3D Diagram display: what it cuts and sees filled white or pastel by category (Preferences → Display → Diagram colours, kept in the project), thin light outlines, no hatches unless the view turns them on itself. Sheets and the PDF print it.": "Σχεδιάζει την όψη όπως την προβολή Διάγραμμα του 3D: ό,τι τέμνει και ό,τι βλέπει γεμισμένο λευκό ή παστέλ ανά κατηγορία (Preferences → Display → Diagram colours, αποθηκευμένα στο έργο), λεπτά ανοιχτόχρωμα περιγράμματα, χωρίς διαγραμμίσεις εκτός αν η όψη τις ενεργοποιήσει η ίδια. Οι πινακίδες και το PDF την τυπώνουν.", "The pastel of each category in the Diagram display (View → Display quality) and in the views drawn as diagrams (View settings → Diagram). Kept in the project, so its sheets print the same colours.": "Το παστέλ κάθε κατηγορίας στην προβολή Διάγραμμα (View → Display quality) και στις όψεις που σχεδιάζονται ως διάγραμμα (View settings → Diagram). Αποθηκεύεται στο έργο, ώστε οι πινακίδες του να τυπώνουν τα ίδια χρώματα.",
   'Walls, floors, roofs, structure, doors and windows, site, greenery each a muted pastel (Preferences → Display edits them).': 'Τοίχοι, πλάκες, οροφές, φέρων οργανισμός, πόρτες και παράθυρα, περιβάλλων χώρος, πρασίνο, το καθένα σε αποχρωματισμένο παστέλ (το Προτιμήσεις → Εμφάνιση τα επεξεργάζεται).',
   'Only on screen: drawings, sheets and exports keep their colours. A colour set in Visibility/Graphics still wins.': 'Μόνο στην οθόνη: τα σχέδια, τα φύλλα και οι εξαγωγές κρατούν τα χρώματά τους. Ένα χρώμα που ορίζεται στο Ορατότητα/Γραφικά υπερισχύει και πάλι.',
   'Diagram colours': 'Χρώματα διαγράμματος',
@@ -13928,6 +13930,10 @@ const S5D_TAILS_EL: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "Η εφαρμογή εγγράφηκε μόνη της στον διακομιστή και επέλεξε αυτό το όνομα: κανείς δεν το έλεγξε.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "Ανάκληση της {name}; Σταματά αμέσως και λειτουργεί ξανά μόνο αν τη συνδέσετε ξανά.",
   "App revoked.": "Η εφαρμογή ανακλήθηκε.",
+  // Curtain walls from lines (forum topic 282).
+  "Curtain walls from lines": "Υαλοπετάσματα από γραμμές",
+  "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Επιλέξτε πρώτα σχεδιασμένες γραμμές, πολυγραμμές ή τόξα σε μια κάτοψη και έπειτα πατήστε Υαλοπετάσματα από γραμμές.",
+  "A curtain wall along each segment of a line, polyline, arc or circle, of the type chosen.": "Ένα υαλοπέτασμα κατά μήκος κάθε τμήματος γραμμής, πολυγραμμής, τόξου ή κύκλου, του τύπου που επιλέχθηκε.",
   "Give the token a name.": "Δώστε ένα όνομα στο διακριτικό.",
   "Personal access tokens for AI clients (MCP)": "Προσωπικά διακριτικά πρόσβασης για πελάτες ΤΝ (MCP)",
   "You have a token of that name: choose another, or revoke it first.": "Έχετε ήδη διακριτικό με αυτό το όνομα: επιλέξτε άλλο ή ανακαλέστε το πρώτα.",
@@ -14575,4 +14581,7 @@ export const EL_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Χρειάζεται „${m[1]}”, που αυτή η έκδοση δεν έχει.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Λείπει το αρχείο του „${m[1]}”: εγκαταστήστε το ξανά.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Το αρχείο του „${m[1]}” άλλαξε: δεν φορτώθηκε. Εγκαταστήστε το ξανά.`],
+  // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `${m[1]} υαλοπετάσματα δημιουργήθηκαν από τις γραμμές.`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `${m[1]} υαλοπετάσματα δημιουργήθηκαν από τις γραμμές, ${m[2]} τμήματα κάτω από 100 mm παραλείφθηκαν.`],
 ];

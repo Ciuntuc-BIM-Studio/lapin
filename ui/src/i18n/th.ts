@@ -12800,6 +12800,8 @@ export const TH: Record<string, string> = {
   "White model": "แบบจำลองสีขาว",
   "Every element a light white-grey.": "ทุกองค์ประกอบเป็นสีขาวเทาอ่อน.",
   "Pastel by category": "พาสเทลตามหมวดหมู่",
+  // The diagram look in 2D views (decision 885, forum topic 283).
+  "off: technical drawing": "ปิด: แบบเขียนทางเทคนิค", "Draws the view as the 3D Diagram display: what it cuts and sees filled white or pastel by category (Preferences → Display → Diagram colours, kept in the project), thin light outlines, no hatches unless the view turns them on itself. Sheets and the PDF print it.": "วาดมุมมองแบบการแสดงผล Diagram ของ 3D: สิ่งที่ตัดและมองเห็นถูกเติมด้วยสีขาวหรือสีพาสเทลตามหมวดหมู่ (Preferences → Display → Diagram colours เก็บไว้ในโครงการ) เส้นขอบบางและอ่อน ไม่มีลายแรเงาเว้นแต่มุมมองจะเปิดเอง แผ่นงานและ PDF พิมพ์ตามนี้.", "The pastel of each category in the Diagram display (View → Display quality) and in the views drawn as diagrams (View settings → Diagram). Kept in the project, so its sheets print the same colours.": "สีพาสเทลของแต่ละหมวดหมู่ในการแสดงผล Diagram (View → Display quality) และในมุมมองที่วาดเป็นแผนภาพ (View settings → Diagram) เก็บไว้ในโครงการ แผ่นงานจึงพิมพ์สีเดียวกัน.",
   "Walls, floors, roofs, structure, doors and windows, site, greenery each a muted pastel (Preferences → Display edits them).": "ผนัง พื้น หลังคา โครงสร้าง ประตูและหน้าต่าง ที่ดิน พืชพรรณ แต่ละอย่างเป็นสีพาสเทลอ่อน (ค่ากำหนด → การแสดงผล แก้ไขได้).",
   "Only on screen: drawings, sheets and exports keep their colours. A colour set in Visibility/Graphics still wins.": "เฉพาะบนหน้าจอ: แบบ แผ่นแบบ และการส่งออกคงสีของมัน สีที่กำหนดใน มองเห็น/กราฟิก ยังคงมีผลเหนือกว่า.",
   "Diagram colours": "สีแผนภาพ",
@@ -13957,6 +13959,10 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "แอปลงทะเบียนกับเซิร์ฟเวอร์เองและเลือกชื่อนี้: ไม่มีใครตรวจสอบ.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "เพิกถอน {name}? แอปจะหยุดทันที และจะทำงานอีกครั้งเมื่อคุณเชื่อมต่อใหม่เท่านั้น.",
   "App revoked.": "เพิกถอนแอปแล้ว.",
+  // Curtain walls from lines (forum topic 282).
+  "Curtain walls from lines": "ผนังม่านจากเส้น",
+  "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "เลือกเส้น เส้นหลายส่วน หรือส่วนโค้งที่วาดไว้บนแปลนก่อน แล้วคลิก ผนังม่านจากเส้น.",
+  "A curtain wall along each segment of a line, polyline, arc or circle, of the type chosen.": "ผนังม่านหนึ่งแผงตามแต่ละช่วงของเส้น เส้นหลายส่วน ส่วนโค้ง หรือวงกลม ตามประเภทที่เลือก.",
   "Give the token a name.": "ตั้งชื่อให้โทเค็น.",
   "Personal access tokens for AI clients (MCP)": "โทเค็นการเข้าถึงส่วนบุคคลสำหรับไคลเอนต์ AI (MCP)",
   "You have a token of that name: choose another, or revoke it first.": "คุณมีโทเค็นชื่อนี้อยู่แล้ว: เลือกชื่ออื่น หรือเพิกถอนโทเค็นนั้นก่อน.",
@@ -14633,4 +14639,7 @@ export const TH_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `ต้องใช้ „${m[1]}” ซึ่งรุ่นนี้ไม่มี.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `ไฟล์ „${m[1]}” ของมันหายไป: ติดตั้งใหม่อีกครั้ง.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `ไฟล์ „${m[1]}” ของมันถูกเปลี่ยน: ไม่ได้โหลด ติดตั้งใหม่อีกครั้ง.`],
+  // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `สร้างผนังม่าน ${m[1]} แผงจากเส้นแล้ว.`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `สร้างผนังม่าน ${m[1]} แผงจากเส้นแล้ว ข้าม ${m[2]} ช่วงที่สั้นกว่า 100 mm.`],
 ];

@@ -6712,6 +6712,8 @@ export const ZH: Record<string, string> = {
   "Skip: only the project's materials change. Create: a row whose material the project lacks makes it.": "跳过：只更改项目中的材料。创建：项目中缺少其材料的行会创建该材料。",
   // The diagram display (View → Display quality).
   'Diagram': '图解', 'Soft volumes like a card model, with the sun’s soft shadows and thin light edges: for massing and volume studies.': '像卡纸模型一样柔和的体量，带有太阳的柔和阴影和细而浅的边线：用于体量研究。', 'White model': '白模', 'Every element a light white-grey.': '每个构件都是浅白灰色。', 'Pastel by category': '按类别柔和色', 'Walls, floors, roofs, structure, doors and windows, site, greenery each a muted pastel (Preferences → Display edits them).': '墙、楼板、屋顶、结构、门窗、场地和绿化各用一种柔和的淡色（Preferences → Display 可修改）。', 'Only on screen: drawings, sheets and exports keep their colours. A colour set in Visibility/Graphics still wins.': '仅在屏幕上：图纸、图幅和导出仍保持原有颜色。在 Visibility/Graphics 中设置的颜色仍然优先。', 'Diagram colours': '图解颜色', 'The pastel of each category in the Diagram display (View → Display quality). On screen only.': '“图解”显示中每个类别的柔和色（View → Display quality）。仅在屏幕上。', 'Slabs and floors': '楼板和地面', 'Columns and beams': '柱和梁', 'Terrain and site': '地形和场地', 'Vegetation and furniture': '植被和家具', 'Everything else': '其他所有',
+  // The diagram look in 2D views (decision 885, forum topic 283).
+  "off: technical drawing": "关：技术图纸", "Draws the view as the 3D Diagram display: what it cuts and sees filled white or pastel by category (Preferences → Display → Diagram colours, kept in the project), thin light outlines, no hatches unless the view turns them on itself. Sheets and the PDF print it.": "按 3D 的示意图显示绘制视图：剖切到和看到的部分按类别填充白色或粉彩色（Preferences → Display → Diagram colours，保存在项目中），轮廓线细而浅，不绘制填充图案，除非视图自行开启。图纸和 PDF 照此打印。", "The pastel of each category in the Diagram display (View → Display quality) and in the views drawn as diagrams (View settings → Diagram). Kept in the project, so its sheets print the same colours.": "示意图显示（View → Display quality）以及按示意图绘制的视图（View settings → Diagram）中各类别的粉彩色。保存在项目中，因此其图纸打印相同的颜色。",
   'Press WA to draw walls; every element is native IFC.': '按 WA 绘制墙体；每个元素都是原生 IFC。',
   // Roof panel layout (docs/plan-roof-panels.md, S2).
   'Panel layout…': '屋面板排布…',
@@ -7836,6 +7838,10 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "该应用自行在服务器上注册并选择了这个名称：没有人核实过。",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "撤销 {name}？它会立即停止，只有再次连接后才能重新工作。",
   "App revoked.": "应用已撤销。",
+  // Curtain walls from lines (forum topic 282).
+  "Curtain walls from lines": "由线生成幕墙",
+  "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "请先在平面图上选择绘制的直线、多段线或圆弧，然后点击“由线生成幕墙”。",
+  "A curtain wall along each segment of a line, polyline, arc or circle, of the type chosen.": "沿直线、多段线、圆弧或圆的每一段生成一面所选类型的幕墙。",
   "Give the token a name.": "请为令牌命名。",
   "Personal access tokens for AI clients (MCP)": "供 AI 客户端使用的个人访问令牌（MCP）",
   "You have a token of that name: choose another, or revoke it first.": "你已有同名令牌：请换一个名称，或先将其撤销。",
@@ -8513,4 +8519,7 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `它需要“${m[1]}”，此版本没有该模块.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `其文件“${m[1]}”缺失：请重新安装.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `其文件“${m[1]}”已被更改：未加载。请重新安装.`],
+  // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `已由线生成 ${m[1]} 面幕墙。`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `已由线生成 ${m[1]} 面幕墙，跳过 ${m[2]} 段短于 100 mm 的线段。`],
 ];

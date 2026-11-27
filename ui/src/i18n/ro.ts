@@ -6669,6 +6669,8 @@ export const RO: Record<string, string> = {
   "Skip: only the project's materials change. Create: a row whose material the project lacks makes it.": "Sari peste: se schimbă doar materialele proiectului. Creează: un rând al cărui material lipsește din proiect îl creează.",
   // The diagram display (View → Display quality).
   'Diagram': 'Diagramă', 'Soft volumes like a card model, with the sun’s soft shadows and thin light edges: for massing and volume studies.': 'Volume moi, ca o machetă din carton, cu umbrele line ale soarelui și muchii subțiri, deschise: pentru studii de volumetrie.', 'White model': 'Model alb', 'Every element a light white-grey.': 'Fiecare element într-un alb-gri deschis.', 'Pastel by category': 'Pastel pe categorii', 'Walls, floors, roofs, structure, doors and windows, site, greenery each a muted pastel (Preferences → Display edits them).': 'Pereți, planșee, acoperișuri, structură, uși și ferestre, teren, vegetație câte un pastel estompat (Preferences → Display le modifică).', 'Only on screen: drawings, sheets and exports keep their colours. A colour set in Visibility/Graphics still wins.': 'Doar pe ecran: desenele, planșele și exporturile își păstrează culorile. O culoare stabilită în Visibility/Graphics rămâne cea care contează.', 'Diagram colours': 'Culorile diagramei', 'The pastel of each category in the Diagram display (View → Display quality). On screen only.': 'Pastelul fiecărei categorii în afișarea Diagramă (View → Display quality). Doar pe ecran.', 'Slabs and floors': 'Planșee și pardoseli', 'Columns and beams': 'Stâlpi și grinzi', 'Terrain and site': 'Teren și amplasament', 'Vegetation and furniture': 'Vegetație și mobilier', 'Everything else': 'Tot restul',
+  // The diagram look in 2D views (decision 885, forum topic 283).
+  "off: technical drawing": "oprit: desen tehnic", "Draws the view as the 3D Diagram display: what it cuts and sees filled white or pastel by category (Preferences → Display → Diagram colours, kept in the project), thin light outlines, no hatches unless the view turns them on itself. Sheets and the PDF print it.": "Desenează vederea ca afișarea Diagramă din 3D: ce taie și ce vede, umplut alb sau pastel pe categorii (Preferences → Display → Diagram colours, păstrate în proiect), contururi subțiri și deschise, fără hașuri, dacă vederea nu le pornește ea însăși. Planșele și PDF-ul o tipăresc.", "The pastel of each category in the Diagram display (View → Display quality) and in the views drawn as diagrams (View settings → Diagram). Kept in the project, so its sheets print the same colours.": "Pastelul fiecărei categorii în afișarea Diagramă (View → Display quality) și în vederile desenate ca diagramă (View settings → Diagram). Păstrat în proiect, deci planșele lui tipăresc aceleași culori.",
   'Press WA to draw walls; every element is native IFC.': 'Apasă WA pentru a desena pereți; fiecare element este IFC nativ.',
   // Roof panel layout (docs/plan-roof-panels.md, S2).
   'Panel layout…': 'Panotaj…',
@@ -7794,6 +7796,10 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "Aplicația s-a înregistrat singură la server și și-a ales acest nume: nimeni nu l-a verificat.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "Revoci {name}? Se oprește imediat și funcționează din nou doar dacă o conectezi din nou.",
   "App revoked.": "Aplicație revocată.",
+  // Curtain walls from lines (forum topic 282).
+  "Curtain walls from lines": "Pereți cortină din linii",
+  "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Selectează mai întâi linii, polilinii sau arce desenate pe un plan, apoi apasă Pereți cortină din linii.",
+  "A curtain wall along each segment of a line, polyline, arc or circle, of the type chosen.": "Un perete cortină de-a lungul fiecărui segment al unei linii, polilinii, al unui arc sau cerc, de tipul ales.",
   "Give the token a name.": "Dă un nume tokenului.",
   "Personal access tokens for AI clients (MCP)": "Tokenuri personale de acces pentru clienți AI (MCP)",
   "You have a token of that name: choose another, or revoke it first.": "Ai deja un token cu acest nume: alege altul sau revocă-l mai întâi.",
@@ -8471,4 +8477,7 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Are nevoie de „${m[1]}”, pe care această ediție nu îl are.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Îi lipsește fișierul „${m[1]}”: instalează-l din nou.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Fișierul lui „${m[1]}” a fost modificat: nu a fost încărcat. Instalează-l din nou.`],
+  // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `${m[1]} pereți cortină creați din linii.`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `${m[1]} pereți cortină creați din linii, ${m[2]} bucăți sub 100 mm lăsate deoparte.`],
 ];

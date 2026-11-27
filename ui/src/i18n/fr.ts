@@ -6677,6 +6677,8 @@ export const FR: Record<string, string> = {
   "Skip: only the project's materials change. Create: a row whose material the project lacks makes it.": "Ignorer : seuls les matériaux du projet changent. Créer : une ligne dont le matériau manque au projet le crée.",
   // The diagram display (View → Display quality).
   'Diagram': 'Diagramme', 'Soft volumes like a card model, with the sun’s soft shadows and thin light edges: for massing and volume studies.': 'Des volumes doux comme une maquette en carton, avec les ombres douces du soleil et des arêtes fines et claires : pour les études de volumétrie.', 'White model': 'Maquette blanche', 'Every element a light white-grey.': 'Chaque élément dans un blanc grisé clair.', 'Pastel by category': 'Pastel par catégorie', 'Walls, floors, roofs, structure, doors and windows, site, greenery each a muted pastel (Preferences → Display edits them).': 'Murs, dalles, toitures, structure, portes et fenêtres, terrain et végétation chacun dans un pastel atténué (Preferences → Display les modifie).', 'Only on screen: drawings, sheets and exports keep their colours. A colour set in Visibility/Graphics still wins.': 'À l’écran seulement : les dessins, les planches et les exports gardent leurs couleurs. Une couleur définie dans Visibility/Graphics l’emporte toujours.', 'Diagram colours': 'Couleurs du diagramme', 'The pastel of each category in the Diagram display (View → Display quality). On screen only.': 'Le pastel de chaque catégorie dans l’affichage Diagramme (View → Display quality). À l’écran seulement.', 'Slabs and floors': 'Dalles et planchers', 'Columns and beams': 'Poteaux et poutres', 'Terrain and site': 'Terrain et site', 'Vegetation and furniture': 'Végétation et mobilier', 'Everything else': 'Tout le reste',
+  // The diagram look in 2D views (decision 885, forum topic 283).
+  "off: technical drawing": "désactivé : dessin technique", "Draws the view as the 3D Diagram display: what it cuts and sees filled white or pastel by category (Preferences → Display → Diagram colours, kept in the project), thin light outlines, no hatches unless the view turns them on itself. Sheets and the PDF print it.": "Dessine la vue comme l’affichage Diagramme de la 3D : ce qu’elle coupe et ce qu’elle voit rempli en blanc ou en pastel par catégorie (Preferences → Display → Diagram colours, gardées dans le projet), contours fins et clairs, sans hachures sauf si la vue les active elle-même. Les planches et le PDF l’impriment.", "The pastel of each category in the Diagram display (View → Display quality) and in the views drawn as diagrams (View settings → Diagram). Kept in the project, so its sheets print the same colours.": "Le pastel de chaque catégorie dans l’affichage Diagramme (View → Display quality) et dans les vues dessinées en diagramme (View settings → Diagram). Gardé dans le projet, ses planches impriment donc les mêmes couleurs.",
   'Press WA to draw walls; every element is native IFC.': 'Tapez WA pour dessiner des murs ; chaque élément est de l\'IFC natif.',
   // Roof panel layout (docs/plan-roof-panels.md, S2).
   'Panel layout…': 'Calepinage des panneaux…',
@@ -7804,6 +7806,10 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "L'application s'est enregistrée elle-même auprès du serveur et a choisi ce nom : personne ne l'a vérifié.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "Révoquer {name} ? Elle s'arrête aussitôt et ne fonctionne de nouveau que si vous la reconnectez.",
   "App revoked.": "Application révoquée.",
+  // Curtain walls from lines (forum topic 282).
+  "Curtain walls from lines": "Murs-rideaux depuis des lignes",
+  "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Sélectionnez d’abord des lignes, polylignes ou arcs dessinés sur un plan, puis cliquez sur Murs-rideaux depuis des lignes.",
+  "A curtain wall along each segment of a line, polyline, arc or circle, of the type chosen.": "Un mur-rideau le long de chaque segment d’une ligne, d’une polyligne, d’un arc ou d’un cercle, du type choisi.",
   "Give the token a name.": "Donnez un nom au jeton.",
   "Personal access tokens for AI clients (MCP)": "Jetons d'accès personnels pour les clients d'IA (MCP)",
   "You have a token of that name: choose another, or revoke it first.": "Vous avez déjà un jeton de ce nom : choisissez-en un autre ou révoquez-le d'abord.",
@@ -8481,4 +8487,7 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Il lui faut „${m[1]}”, que cette édition n’a pas.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Son fichier „${m[1]}” manque : installez-le à nouveau.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Son fichier „${m[1]}” a été modifié : il n’a pas été chargé. Installez-le à nouveau.`],
+  // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `${m[1]} murs-rideaux créés à partir des lignes.`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `${m[1]} murs-rideaux créés à partir des lignes, ${m[2]} tronçons de moins de 100 mm laissés de côté.`],
 ];

@@ -6713,6 +6713,8 @@ export const PT: Record<string, string> = {
   "Skip: only the project's materials change. Create: a row whose material the project lacks makes it.": "Ignorar: só os materiais do projeto mudam. Criar: uma linha cujo material falta no projeto o cria.",
   // The diagram display (View → Display quality).
   'Diagram': 'Diagrama', 'Soft volumes like a card model, with the sun’s soft shadows and thin light edges: for massing and volume studies.': 'Volumes suaves como uma maquete de cartão, com as sombras suaves do sol e arestas finas e claras: para estudos volumétricos.', 'White model': 'Modelo branco', 'Every element a light white-grey.': 'Cada elemento num branco acinzentado claro.', 'Pastel by category': 'Pastel por categoria', 'Walls, floors, roofs, structure, doors and windows, site, greenery each a muted pastel (Preferences → Display edits them).': 'Paredes, lajes, coberturas, estrutura, portas e janelas, terreno e vegetação, cada um num pastel suave (Preferences → Display altera-os).', 'Only on screen: drawings, sheets and exports keep their colours. A colour set in Visibility/Graphics still wins.': 'Só no ecrã: os desenhos, as pranchas e as exportações mantêm as suas cores. Uma cor definida em Visibility/Graphics continua a valer.', 'Diagram colours': 'Cores do diagrama', 'The pastel of each category in the Diagram display (View → Display quality). On screen only.': 'O pastel de cada categoria na visualização Diagrama (View → Display quality). Só no ecrã.', 'Slabs and floors': 'Lajes e pavimentos', 'Columns and beams': 'Pilares e vigas', 'Terrain and site': 'Terreno e local', 'Vegetation and furniture': 'Vegetação e mobiliário', 'Everything else': 'Tudo o resto',
+  // The diagram look in 2D views (decision 885, forum topic 283).
+  "off: technical drawing": "desligado: desenho técnico", "Draws the view as the 3D Diagram display: what it cuts and sees filled white or pastel by category (Preferences → Display → Diagram colours, kept in the project), thin light outlines, no hatches unless the view turns them on itself. Sheets and the PDF print it.": "Desenha a vista como a exibição Diagrama do 3D: o que ela corta e vê preenchido de branco ou pastel por categoria (Preferences → Display → Diagram colours, guardadas no projeto), contornos finos e claros, sem hachuras, a menos que a própria vista as ative. As folhas e o PDF a imprimem.", "The pastel of each category in the Diagram display (View → Display quality) and in the views drawn as diagrams (View settings → Diagram). Kept in the project, so its sheets print the same colours.": "O pastel de cada categoria na exibição Diagrama (View → Display quality) e nas vistas desenhadas como diagrama (View settings → Diagram). Guardado no projeto, para que suas folhas imprimam as mesmas cores.",
   'Press WA to draw walls; every element is native IFC.': 'Pressione WA para desenhar paredes; cada elemento é IFC nativo.',
   // Roof panel layout (docs/plan-roof-panels.md, S2).
   'Panel layout…': 'Paginação de painéis…',
@@ -7839,6 +7841,10 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "O aplicativo se registrou sozinho no servidor e escolheu este nome: ninguém o verificou.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "Revogar {name}? Ele para de imediato e só volta a funcionar se você o conectar de novo.",
   "App revoked.": "Aplicativo revogado.",
+  // Curtain walls from lines (forum topic 282).
+  "Curtain walls from lines": "Paredes-cortina a partir de linhas",
+  "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Selecione primeiro linhas, polilinhas ou arcos desenhados numa planta e clique em Paredes-cortina a partir de linhas.",
+  "A curtain wall along each segment of a line, polyline, arc or circle, of the type chosen.": "Uma parede-cortina ao longo de cada segmento de uma linha, polilinha, arco ou círculo, do tipo escolhido.",
   "Give the token a name.": "Dê um nome ao token.",
   "Personal access tokens for AI clients (MCP)": "Tokens de acesso pessoais para clientes de IA (MCP)",
   "You have a token of that name: choose another, or revoke it first.": "Já tem um token com esse nome: escolha outro ou revogue-o primeiro.",
@@ -8516,4 +8522,7 @@ export const PT_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Precisa de „${m[1]}”, que esta edição não tem.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Falta o seu ficheiro „${m[1]}”: instale-o de novo.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `O seu ficheiro „${m[1]}” foi alterado: não foi carregado. Instale-o de novo.`],
+  // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `${m[1]} paredes-cortina criadas a partir das linhas.`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `${m[1]} paredes-cortina criadas a partir das linhas, ${m[2]} trechos com menos de 100 mm deixados de fora.`],
 ];

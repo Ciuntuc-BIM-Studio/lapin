@@ -6710,6 +6710,8 @@ export const DA: Record<string, string> = {
   "Skip: only the project's materials change. Create: a row whose material the project lacks makes it.": "Spring over: kun projektets materialer ændres. Opret: en række, hvis materiale mangler i projektet, opretter det.",
   // The diagram display (View → Display quality).
   'Diagram': 'Diagram', 'Soft volumes like a card model, with the sun’s soft shadows and thin light edges: for massing and volume studies.': 'Bløde rumfang som en kartonmodel, med solens bløde skygger og tynde lyse kanter: til volumenstudier.', 'White model': 'Hvid model', 'Every element a light white-grey.': 'Hvert element i en lys hvidgrå.', 'Pastel by category': 'Pastel efter kategori', 'Walls, floors, roofs, structure, doors and windows, site, greenery each a muted pastel (Preferences → Display edits them).': 'Vægge, etagedæk, tage, konstruktion, døre og vinduer, terræn og grønt hver i en dæmpet pastel (Preferences → Display ændrer dem).', 'Only on screen: drawings, sheets and exports keep their colours. A colour set in Visibility/Graphics still wins.': 'Kun på skærmen: tegninger, plancher og eksporter beholder deres farver. En farve sat i Visibility/Graphics gælder stadig.', 'Diagram colours': 'Diagramfarver', 'The pastel of each category in the Diagram display (View → Display quality). On screen only.': 'Pastelfarven for hver kategori i Diagram-visningen (View → Display quality). Kun på skærmen.', 'Slabs and floors': 'Dæk og gulve', 'Columns and beams': 'Søjler og bjælker', 'Terrain and site': 'Terræn og grund', 'Vegetation and furniture': 'Beplantning og møbler', 'Everything else': 'Alt andet',
+  // The diagram look in 2D views (decision 885, forum topic 283).
+  "off: technical drawing": "fra: teknisk tegning", "Draws the view as the 3D Diagram display: what it cuts and sees filled white or pastel by category (Preferences → Display → Diagram colours, kept in the project), thin light outlines, no hatches unless the view turns them on itself. Sheets and the PDF print it.": "Tegner visningen som 3D-visningen Diagram: det, den skærer og ser, udfyldt hvidt eller i pastel efter kategori (Preferences → Display → Diagram colours, gemt i projektet), tynde lyse konturer, ingen skraveringer, medmindre visningen selv slår dem til. Tegningsark og PDF udskriver den.", "The pastel of each category in the Diagram display (View → Display quality) and in the views drawn as diagrams (View settings → Diagram). Kept in the project, so its sheets print the same colours.": "Pastelfarven for hver kategori i visningen Diagram (View → Display quality) og i de visninger, der tegnes som diagram (View settings → Diagram). Gemt i projektet, så dets tegningsark udskriver de samme farver.",
   'Press WA to draw walls; every element is native IFC.': 'Tryk WA for at tegne vægge; hvert element er nativt IFC.',
   // Roof panel layout (docs/plan-roof-panels.md, S2).
   'Panel layout…': 'Pladeudlægning…',
@@ -7837,6 +7839,10 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "Appen registrerede sig selv hos serveren og valgte dette navn: ingen har kontrolleret det.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "Tilbagekald {name}? Den stopper med det samme og virker kun igen, hvis du forbinder den igen.",
   "App revoked.": "App tilbagekaldt.",
+  // Curtain walls from lines (forum topic 282).
+  "Curtain walls from lines": "Facadeglasvægge fra linjer",
+  "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Vælg først tegnede linjer, polylinjer eller buer på en plan, og klik derefter på Facadeglasvægge fra linjer.",
+  "A curtain wall along each segment of a line, polyline, arc or circle, of the type chosen.": "En facadeglasvæg langs hvert segment af en linje, polylinje, bue eller cirkel, af den valgte type.",
   "Give the token a name.": "Giv tokenet et navn.",
   "Personal access tokens for AI clients (MCP)": "Personlige adgangstokens til AI-klienter (MCP)",
   "You have a token of that name: choose another, or revoke it first.": "Du har allerede et token med det navn: vælg et andet, eller tilbagekald det først.",
@@ -8514,4 +8520,7 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Det kræver „${m[1]}”, som denne udgave ikke har.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Dets fil „${m[1]}” mangler: installer det igen.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Dets fil „${m[1]}” er ændret: det blev ikke indlæst. Installer det igen.`],
+  // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
+  [/^(\d+) curtain walls made from the lines\.$/, (m) => `${m[1]} facadeglasvægge lavet ud fra linjerne.`],
+  [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `${m[1]} facadeglasvægge lavet ud fra linjerne, ${m[2]} stykker under 100 mm udeladt.`],
 ];
