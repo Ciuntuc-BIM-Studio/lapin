@@ -11,6 +11,8 @@ import { createPortal } from 'react-dom';
 import { ArrowLeft, ArrowRight, ChevronDown, Plus, Trash2, X } from 'lucide-react';
 import { addColour, addColours, coloursOfMaterials, createPalette, deletePalette, moveColour, movePalette, normalise, removeColour, renamePalette, rememberColour, setPalettes, splitAlpha, useColours, cleanColours } from '../app/colours';
 import { execute, query, useSession } from '../engine/session';
+import { parseColourFile } from '../app/colourBooks';
+import { notify } from '../app/store';
 import type { NodeDto } from '../engine/protocol';
 
 /** The project's palette, as the engine keeps it on the project (a list of #rrggbb). */
@@ -151,8 +153,19 @@ function PaletteEditor({ colours, onChange, current, materials }: { colours: str
     const rows = await query<{ color?: string; inUse?: boolean }[]>('material.list') ?? [];
     onChange(addColours(colours, coloursOfMaterials(rows)));
   };
+  const file = useRef<HTMLInputElement>(null);
+  // A colour book, swatch file or text dropped on the palette, or chosen with the button (forum report 196).
+  const fromFile = async (f: File | undefined) => {
+    if (!f) return;
+    const found = parseColourFile(await f.arrayBuffer());
+    if (!found.length) { notify(`No colours found in ${f.name}.`); return; }
+    const next = addColours(colours, found);
+    onChange(next);
+    notify(`${next.length - colours.length} colours added from ${f.name}.`);
+  };
   return (
-    <div className="cp-editor">
+    <div className="cp-editor" onDragOver={(e) => { if (e.dataTransfer.types.includes('Files')) e.preventDefault(); }}
+      onDrop={(e) => { if (e.dataTransfer.files.length) { e.preventDefault(); e.stopPropagation(); void fromFile(e.dataTransfer.files[0]); } }}>
       <span className="cp-row">
         {colours.map((c, i) => <button type="button" key={c} className={`cp-swatch${sel === i ? ' on' : ''}`} style={{ background: c }} title={c} aria-label={c} onClick={() => setSel(sel === i ? null : i)} />)}
         {!colours.length && <span className="muted small">None yet</span>}
@@ -168,6 +181,10 @@ function PaletteEditor({ colours, onChange, current, materials }: { colours: str
         <input type="color" aria-label="Colour to add" value={adding} onChange={(e) => setAdding(e.target.value)} />
         <button type="button" className="btn compact" onClick={() => onChange(addColours(colours, [adding]))}><Plus size={12} />Add</button>
         {materials && <button type="button" className="btn compact" onClick={() => void fromMaterials()}>Add the colours of the materials in use</button>}
+        {materials && <>
+          <button type="button" className="btn compact" title="A colour book (.acb), a swatch file (.ase) or a text file (.csv, .txt) of #rrggbb or R,G,B values; or drop the file here" onClick={() => file.current?.click()}>Import colours from a file…</button>
+          <input ref={file} type="file" accept=".acb,.ase,.csv,.txt,.tsv" hidden onChange={(e) => { void fromFile(e.target.files?.[0]); e.target.value = ''; }} />
+        </>}
       </span>
     </div>
   );

@@ -65,12 +65,15 @@ export function poseOf(position: Vec3, target: Vec3): CameraPose {
   return { azimuth: h > 1e-9 ? Math.atan2(dy, dx) : 0, pitch: Math.atan2(dz, h), distance: Math.hypot(h, dz), target };
 }
 
+/** How far the top and bottom views stand from the pole: the camera's up is +Z, so looking exactly along it would turn the view over; 0.0001 rad is a verticals-3-m-high-drawn-0.3-mm tilt, invisible even in an orthogonal view (reports 197, 198: 0.01 showed them). */
+export const POLE = 1e-4;
+
 /** The standard views: from the compass points (elevations), the four isometrics and the plan. */
 export const STANDARD = {
   /** Seen from the north: looking south. */
   N: { azimuth: -Math.PI / 2, pitch: 0 }, E: { azimuth: Math.PI, pitch: 0 }, S: { azimuth: Math.PI / 2, pitch: 0 }, W: { azimuth: 0, pitch: 0 },
   NE: { azimuth: (-3 * Math.PI) / 4, pitch: -Math.PI / 6 }, SE: { azimuth: (3 * Math.PI) / 4, pitch: -Math.PI / 6 }, SW: { azimuth: Math.PI / 4, pitch: -Math.PI / 6 }, NW: { azimuth: -Math.PI / 4, pitch: -Math.PI / 6 },
-  plan: { azimuth: Math.PI / 2, pitch: -Math.PI / 2 + 0.01 },
+  plan: { azimuth: Math.PI / 2, pitch: -Math.PI / 2 + POLE },
 } as const;
 
 /** The camera's pose as a key (millimetre, milliradian), to tell whether it moved. */

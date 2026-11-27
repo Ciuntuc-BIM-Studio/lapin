@@ -6,7 +6,7 @@
  * it sits left of the key plan (or its button) so both stay reachable.
  */
 
-import { STANDARD, useCamera } from './camera';
+import { POLE, STANDARD, useCamera } from './camera';
 import { playSound } from '../app/sounds';
 import { usePrefs } from '../app/prefs';
 
@@ -36,7 +36,7 @@ export function ViewCube3D() {
       <div className="viewcube-scene">
         <div className="viewcube" style={{ transform: cubeTransform(azimuth, pitch) }}>
           <button type="button" className="vc-face vc-top" title="Top view" onClick={() => go(STANDARD.plan)}>TOP</button>
-          <button type="button" className="vc-face vc-bottom" title="Bottom view" onClick={() => go({ azimuth: Math.PI / 2, pitch: Math.PI / 2 - 0.01 })}>BTM</button>
+          <button type="button" className="vc-face vc-bottom" title="Bottom view" onClick={() => go({ azimuth: Math.PI / 2, pitch: Math.PI / 2 - POLE })}>BTM</button>
           <button type="button" className="vc-face vc-front" title="Front (South)" onClick={() => go(STANDARD.S)}>S</button>
           <button type="button" className="vc-face vc-back" title="Back (North)" onClick={() => go(STANDARD.N)}>N</button>
           <button type="button" className="vc-face vc-right" title="Right (East)" onClick={() => go(STANDARD.E)}>E</button>

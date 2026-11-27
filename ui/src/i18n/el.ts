@@ -13930,6 +13930,9 @@ const S5D_TAILS_EL: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "Η εφαρμογή εγγράφηκε μόνη της στον διακομιστή και επέλεξε αυτό το όνομα: κανείς δεν το έλεγξε.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "Ανάκληση της {name}; Σταματά αμέσως και λειτουργεί ξανά μόνο αν τη συνδέσετε ξανά.",
   "App revoked.": "Η εφαρμογή ανακλήθηκε.",
+  // Colours imported into a palette from a file.
+  "Import colours from a file…": "Εισαγωγή χρωμάτων από αρχείο…",
+  "A colour book (.acb), a swatch file (.ase) or a text file (.csv, .txt) of #rrggbb or R,G,B values; or drop the file here": "Ένα βιβλίο χρωμάτων (.acb), ένα αρχείο δειγμάτων (.ase) ή ένα αρχείο κειμένου (.csv, .txt) με τιμές #rrggbb ή R,G,B· ή αφήστε το αρχείο εδώ",
   // Curtain walls from lines (forum topic 282).
   "Curtain walls from lines": "Υαλοπετάσματα από γραμμές",
   "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Επιλέξτε πρώτα σχεδιασμένες γραμμές, πολυγραμμές ή τόξα σε μια κάτοψη και έπειτα πατήστε Υαλοπετάσματα από γραμμές.",
@@ -14581,6 +14584,9 @@ export const EL_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Χρειάζεται „${m[1]}”, που αυτή η έκδοση δεν έχει.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Λείπει το αρχείο του „${m[1]}”: εγκαταστήστε το ξανά.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Το αρχείο του „${m[1]}” άλλαξε: δεν φορτώθηκε. Εγκαταστήστε το ξανά.`],
+  // Colours imported into a palette from a file.
+  [/^No colours found in (.+)\.$/, (m) => `Δεν βρέθηκαν χρώματα στο ${m[1]}.`],
+  [/^(\d+) colours added from (.+)\.$/, (m) => `Προστέθηκαν ${m[1]} χρώματα από το ${m[2]}.`],
   // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
   [/^(\d+) curtain walls made from the lines\.$/, (m) => `${m[1]} υαλοπετάσματα δημιουργήθηκαν από τις γραμμές.`],
   [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `${m[1]} υαλοπετάσματα δημιουργήθηκαν από τις γραμμές, ${m[2]} τμήματα κάτω από 100 mm παραλείφθηκαν.`],

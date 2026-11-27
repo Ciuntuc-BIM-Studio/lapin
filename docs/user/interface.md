@@ -233,6 +233,8 @@ Every colour field in Lapin (materials, layers, room colours, hatches, view shad
 
 The **+** beside a palette adds the colour in the field to it. **Edit palettes…** (also **File → Preferences → Colours**) creates, renames, moves and deletes your palettes, adds or removes a colour in a palette and reorders its colours (select a swatch, then the arrows), and **Add the colours of the materials in use** puts every colour of the materials the project uses into a palette. Palettes of your own are not part of the standards file (`.lapinstandards`); to share a set of colours with a team, put them in the project palette.
 
+A palette can also be filled from a file: an Autodesk or Adobe colour book (`.acb`), an Adobe swatch file (`.ase`), or a `.csv` or `.txt` file of `#rrggbb` or `R,G,B` values. Click **Import colours from a file…** in **Edit palettes…**, or drop the file on the palette; the colours are added to the end of it.
+
 ![The colour swatches: recent colours, the project palette and a palette of your own](shots/colour-swatches.webp)
 
 ![File → Preferences → Display: the selection and preselection colours](shots/preferences-highlight.webp)

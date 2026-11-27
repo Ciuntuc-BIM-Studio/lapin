@@ -231,6 +231,8 @@ Fiecare câmp de culoare din Lapin (materiale, straturi, culorile camerelor, ha�
 
 **+** de lângă o paletă adaugă în ea culoarea din câmp. **Editează paletele…** (și **Fișier → Preferințe → Culori**) creează, redenumește, mută și șterge paletele tale, adaugă sau scoate o culoare dintr-o paletă și îi reordonează culorile (selectezi o mostră, apoi săgețile), iar **Adaugă culorile materialelor folosite** pune într-o paletă culorile tuturor materialelor folosite de proiect. Paletele tale nu fac parte din fișierul de standarde (`.lapinstandards`); ca să împarți un set de culori cu o echipă, pune-le în paleta proiectului.
 
+O paletă poate fi umplută și dintr-un fișier: o carte de culori Autodesk sau Adobe (`.acb`), un fișier de mostre Adobe (`.ase`) sau un fișier `.csv` ori `.txt` cu valori `#rrggbb` sau `R,G,B`. Apasă **Importă culori dintr-un fișier…** în **Editează paletele…** sau trage fișierul pe paletă; culorile se adaugă la sfârșitul ei.
+
 ![Mostrele de culoare: culori recente, paleta proiectului și o paletă a ta](shots/colour-swatches.webp)
 
 ![Fișier → Preferințe → Afișare: culorile selecției și preselecției](shots/preferences-highlight.webp)

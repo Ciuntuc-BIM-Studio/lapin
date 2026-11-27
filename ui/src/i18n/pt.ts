@@ -7841,6 +7841,9 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "O aplicativo se registrou sozinho no servidor e escolheu este nome: ninguém o verificou.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "Revogar {name}? Ele para de imediato e só volta a funcionar se você o conectar de novo.",
   "App revoked.": "Aplicativo revogado.",
+  // Colours imported into a palette from a file.
+  "Import colours from a file…": "Importar cores de um ficheiro…",
+  "A colour book (.acb), a swatch file (.ase) or a text file (.csv, .txt) of #rrggbb or R,G,B values; or drop the file here": "Um livro de cores (.acb), um ficheiro de amostras (.ase) ou um ficheiro de texto (.csv, .txt) com valores #rrggbb ou R,G,B; ou largue aqui o ficheiro",
   // Curtain walls from lines (forum topic 282).
   "Curtain walls from lines": "Paredes-cortina a partir de linhas",
   "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Selecione primeiro linhas, polilinhas ou arcos desenhados numa planta e clique em Paredes-cortina a partir de linhas.",
@@ -8522,6 +8525,9 @@ export const PT_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Precisa de „${m[1]}”, que esta edição não tem.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Falta o seu ficheiro „${m[1]}”: instale-o de novo.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `O seu ficheiro „${m[1]}” foi alterado: não foi carregado. Instale-o de novo.`],
+  // Colours imported into a palette from a file.
+  [/^No colours found in (.+)\.$/, (m) => `Nenhuma cor encontrada em ${m[1]}.`],
+  [/^(\d+) colours added from (.+)\.$/, (m) => `${m[1]} cores adicionadas de ${m[2]}.`],
   // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
   [/^(\d+) curtain walls made from the lines\.$/, (m) => `${m[1]} paredes-cortina criadas a partir das linhas.`],
   [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `${m[1]} paredes-cortina criadas a partir das linhas, ${m[2]} trechos com menos de 100 mm deixados de fora.`],

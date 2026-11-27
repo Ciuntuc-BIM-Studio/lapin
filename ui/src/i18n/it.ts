@@ -7804,6 +7804,9 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "L'app si è registrata da sola sul server e ha scelto questo nome: nessuno l'ha verificato.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "Revocare {name}? Si ferma subito e funziona di nuovo solo se la colleghi di nuovo.",
   "App revoked.": "App revocata.",
+  // Colours imported into a palette from a file.
+  "Import colours from a file…": "Importa colori da un file…",
+  "A colour book (.acb), a swatch file (.ase) or a text file (.csv, .txt) of #rrggbb or R,G,B values; or drop the file here": "Un libro colori (.acb), un file di campioni (.ase) o un file di testo (.csv, .txt) con valori #rrggbb o R,G,B; oppure trascina qui il file",
   // Curtain walls from lines (forum topic 282).
   "Curtain walls from lines": "Facciate continue da linee",
   "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Seleziona prima linee, polilinee o archi disegnati su una pianta, poi fai clic su Facciate continue da linee.",
@@ -8485,6 +8488,9 @@ export const IT_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Richiede „${m[1]}”, che questa edizione non ha.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Manca il suo file „${m[1]}”: installalo di nuovo.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Il suo file „${m[1]}” è stato modificato: non è stato caricato. Installalo di nuovo.`],
+  // Colours imported into a palette from a file.
+  [/^No colours found in (.+)\.$/, (m) => `Nessun colore trovato in ${m[1]}.`],
+  [/^(\d+) colours added from (.+)\.$/, (m) => `${m[1]} colori aggiunti da ${m[2]}.`],
   // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
   [/^(\d+) curtain walls made from the lines\.$/, (m) => `${m[1]} facciate continue create dalle linee.`],
   [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `${m[1]} facciate continue create dalle linee, ${m[2]} tratti sotto i 100 mm tralasciati.`],

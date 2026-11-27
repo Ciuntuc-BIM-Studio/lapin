@@ -13901,6 +13901,9 @@ const S5D_TAILS: Record<string, string> = {
   "Someone changed this document at the same time: it was read again. Make your change again.": "Кто-то изменил этот документ одновременно с вами: он прочитан заново. Внесите своё изменение ещё раз.",
   "Reading the files…": "Чтение файлов…",
   "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "Модель: сохраните копию и откройте её в Lapin как связь (Файл → Связать IFC…).",
+  // Colours imported into a palette from a file.
+  "Import colours from a file…": "Импортировать цвета из файла…",
+  "A colour book (.acb), a swatch file (.ase) or a text file (.csv, .txt) of #rrggbb or R,G,B values; or drop the file here": "Книга цветов (.acb), файл образцов (.ase) или текстовый файл (.csv, .txt) со значениями #rrggbb или R,G,B; либо перетащите файл сюда",
 };
 export const RU_PATTERNS: Language['patterns'] = [
   [/^„(.+)” (\S+) is not installed: Lapin Extensions withdrew this version on (\d{4}-\d{2}-\d{2}): (.+)$/, (m) => `«${m[1]}» ${m[2]} не устанавливается: Lapin Extensions отозвал эту версию ${m[3]}: ${m[4]}`],
@@ -14461,6 +14464,9 @@ export const RU_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Ему нужен „${m[1]}”, которого нет в этой редакции.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Его файл „${m[1]}” отсутствует: установите его заново.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Его файл „${m[1]}” изменён: он не загружен. Установите его заново.`],
+  // Colours imported into a palette from a file.
+  [/^No colours found in (.+)\.$/, (m) => `В ${m[1]} цвета не найдены.`],
+  [/^(\d+) colours added from (.+)\.$/, (m) => `Добавлено цветов из ${m[2]}: ${m[1]}.`],
   // Curtain walls from lines (forum topic 282).
   [/^(\d+) curtain walls made from the lines\.$/, (m) => `Создано навесных стен из линий: ${m[1]}.`],
   [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `Создано навесных стен из линий: ${m[1]}; пропущено отрезков короче 100 мм: ${m[2]}.`],

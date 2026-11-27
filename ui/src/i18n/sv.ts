@@ -13959,6 +13959,9 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "Appen registrerade sig själv hos servern och valde det här namnet: ingen har kontrollerat det.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "Återkalla {name}? Den slutar genast och fungerar igen bara om du ansluter den på nytt.",
   "App revoked.": "App återkallad.",
+  // Colours imported into a palette from a file.
+  "Import colours from a file…": "Importera färger från en fil…",
+  "A colour book (.acb), a swatch file (.ase) or a text file (.csv, .txt) of #rrggbb or R,G,B values; or drop the file here": "En färgbok (.acb), en färgprovsfil (.ase) eller en textfil (.csv, .txt) med #rrggbb- eller R,G,B-värden; eller släpp filen här",
   // Curtain walls from lines (forum topic 282).
   "Curtain walls from lines": "Glasfasader från linjer",
   "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Välj först ritade linjer, polylinjer eller bågar på en plan och klicka sedan på Glasfasader från linjer.",
@@ -14639,6 +14642,9 @@ export const SV_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Den behöver „${m[1]}”, som denna utgåva inte har.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Dess fil „${m[1]}” saknas: installera den igen.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Dess fil „${m[1]}” har ändrats: den lästes inte in. Installera den igen.`],
+  // Colours imported into a palette from a file.
+  [/^No colours found in (.+)\.$/, (m) => `Inga färger hittades i ${m[1]}.`],
+  [/^(\d+) colours added from (.+)\.$/, (m) => `${m[1]} färger lades till från ${m[2]}.`],
   // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
   [/^(\d+) curtain walls made from the lines\.$/, (m) => `${m[1]} glasfasader skapade från linjerna.`],
   [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `${m[1]} glasfasader skapade från linjerna, ${m[2]} bitar under 100 mm utelämnade.`],

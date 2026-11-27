@@ -7806,6 +7806,9 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "L'application s'est enregistrée elle-même auprès du serveur et a choisi ce nom : personne ne l'a vérifié.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "Révoquer {name} ? Elle s'arrête aussitôt et ne fonctionne de nouveau que si vous la reconnectez.",
   "App revoked.": "Application révoquée.",
+  // Colours imported into a palette from a file.
+  "Import colours from a file…": "Importer des couleurs depuis un fichier…",
+  "A colour book (.acb), a swatch file (.ase) or a text file (.csv, .txt) of #rrggbb or R,G,B values; or drop the file here": "Un nuancier (.acb), un fichier de nuances (.ase) ou un fichier texte (.csv, .txt) de valeurs #rrggbb ou R,V,B ; ou déposez le fichier ici",
   // Curtain walls from lines (forum topic 282).
   "Curtain walls from lines": "Murs-rideaux depuis des lignes",
   "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Sélectionnez d’abord des lignes, polylignes ou arcs dessinés sur un plan, puis cliquez sur Murs-rideaux depuis des lignes.",
@@ -8487,6 +8490,9 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Il lui faut „${m[1]}”, que cette édition n’a pas.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Son fichier „${m[1]}” manque : installez-le à nouveau.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Son fichier „${m[1]}” a été modifié : il n’a pas été chargé. Installez-le à nouveau.`],
+  // Colours imported into a palette from a file.
+  [/^No colours found in (.+)\.$/, (m) => `Aucune couleur trouvée dans ${m[1]}.`],
+  [/^(\d+) colours added from (.+)\.$/, (m) => `${m[1]} couleurs ajoutées depuis ${m[2]}.`],
   // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
   [/^(\d+) curtain walls made from the lines\.$/, (m) => `${m[1]} murs-rideaux créés à partir des lignes.`],
   [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `${m[1]} murs-rideaux créés à partir des lignes, ${m[2]} tronçons de moins de 100 mm laissés de côté.`],

@@ -7838,6 +7838,9 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "该应用自行在服务器上注册并选择了这个名称：没有人核实过。",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "撤销 {name}？它会立即停止，只有再次连接后才能重新工作。",
   "App revoked.": "应用已撤销。",
+  // Colours imported into a palette from a file.
+  "Import colours from a file…": "从文件导入颜色…",
+  "A colour book (.acb), a swatch file (.ase) or a text file (.csv, .txt) of #rrggbb or R,G,B values; or drop the file here": "颜色簿（.acb）、色板文件（.ase）或包含 #rrggbb 或 R,G,B 值的文本文件（.csv、.txt）；也可将文件拖放到此处",
   // Curtain walls from lines (forum topic 282).
   "Curtain walls from lines": "由线生成幕墙",
   "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "请先在平面图上选择绘制的直线、多段线或圆弧，然后点击“由线生成幕墙”。",
@@ -8519,6 +8522,9 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `它需要“${m[1]}”，此版本没有该模块.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `其文件“${m[1]}”缺失：请重新安装.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `其文件“${m[1]}”已被更改：未加载。请重新安装.`],
+  // Colours imported into a palette from a file.
+  [/^No colours found in (.+)\.$/, (m) => `在 ${m[1]} 中未找到颜色。`],
+  [/^(\d+) colours added from (.+)\.$/, (m) => `已从 ${m[2]} 添加 ${m[1]} 种颜色。`],
   // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
   [/^(\d+) curtain walls made from the lines\.$/, (m) => `已由线生成 ${m[1]} 面幕墙。`],
   [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `已由线生成 ${m[1]} 面幕墙，跳过 ${m[2]} 段短于 100 mm 的线段。`],

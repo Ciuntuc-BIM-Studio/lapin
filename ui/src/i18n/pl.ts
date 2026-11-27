@@ -7850,6 +7850,9 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "Aplikacja sama zarejestrowała się na serwerze i wybrała tę nazwę: nikt jej nie sprawdził.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "Unieważnić {name}? Przestaje działać natychmiast i zadziała znowu dopiero po ponownym połączeniu.",
   "App revoked.": "Aplikacja unieważniona.",
+  // Colours imported into a palette from a file.
+  "Import colours from a file…": "Importuj kolory z pliku…",
+  "A colour book (.acb), a swatch file (.ase) or a text file (.csv, .txt) of #rrggbb or R,G,B values; or drop the file here": "Księga kolorów (.acb), plik próbek (.ase) lub plik tekstowy (.csv, .txt) z wartościami #rrggbb albo R,G,B; lub upuść plik tutaj",
   // Curtain walls from lines (forum topic 282).
   "Curtain walls from lines": "Ściany osłonowe z linii",
   "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "Najpierw zaznacz narysowane linie, polilinie lub łuki na rzucie, a potem kliknij Ściany osłonowe z linii.",
@@ -8531,6 +8534,9 @@ export const PL_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Wymaga „${m[1]}”, którego ta edycja nie ma.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Brakuje jego pliku „${m[1]}”: zainstaluj go ponownie.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Jego plik „${m[1]}” został zmieniony: nie został załadowany. Zainstaluj go ponownie.`],
+  // Colours imported into a palette from a file.
+  [/^No colours found in (.+)\.$/, (m) => `Nie znaleziono kolorów w ${m[1]}.`],
+  [/^(\d+) colours added from (.+)\.$/, (m) => `Dodano kolory z ${m[2]}: ${m[1]}.`],
   // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
   [/^(\d+) curtain walls made from the lines\.$/, (m) => `Utworzono ściany osłonowe z linii: ${m[1]}.`],
   [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `Utworzono ściany osłonowe z linii: ${m[1]}; pominięto odcinki krótsze niż 100 mm: ${m[2]}.`],

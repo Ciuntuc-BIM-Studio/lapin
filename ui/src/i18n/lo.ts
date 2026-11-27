@@ -7896,6 +7896,9 @@ const S5D_TAILS: Record<string, string> = {
   "The app registered itself with the server and chose this name: nobody checked it.": "ແອັບໄດ້ລົງທະບຽນກັບເຊີບເວີເອງ ແລະ ເລືອກຊື່ນີ້: ບໍ່ມີໃຜກວດສອບມັນ.",
   "Revoke {name}? It stops at once, and works again only if you connect it again.": "ຖອນ {name}? ມັນຈະຢຸດທັນທີ, ແລະ ຈະເຮັດວຽກອີກກໍຕໍ່ເມື່ອທ່ານເຊື່ອມຕໍ່ມັນອີກ.",
   "App revoked.": "ຖອນແອັບແລ້ວ.",
+  // Colours imported into a palette from a file.
+  "Import colours from a file…": "ນໍາເຂົ້າສີຈາກໄຟລ໌…",
+  "A colour book (.acb), a swatch file (.ase) or a text file (.csv, .txt) of #rrggbb or R,G,B values; or drop the file here": "ປຶ້ມສີ (.acb), ໄຟລ໌ຕົວຢ່າງສີ (.ase) ຫຼື ໄຟລ໌ຂໍ້ຄວາມ (.csv, .txt) ທີ່ມີຄ່າ #rrggbb ຫຼື R,G,B; ຫຼື ລາກໄຟລ໌ມາວາງທີ່ນີ້",
   // Curtain walls from lines (forum topic 282).
   "Curtain walls from lines": "ຝາຜ້າມ່ານຈາກເສັ້ນ",
   "Select drafted lines, polylines or arcs on a plan first, then click Curtain walls from lines.": "ເລືອກເສັ້ນ, ເສັ້ນຫຼາຍທ່ອນ ຫຼື ເສັ້ນໂຄ້ງທີ່ແຕ້ມໄວ້ໃນແຜນຜັງກ່ອນ, ແລ້ວກົດ ຝາຜ້າມ່ານຈາກເສັ້ນ.",
@@ -8577,6 +8580,9 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `ມັນຕ້ອງການ „${m[1]}”, ເຊິ່ງລຸ້ນນີ້ບໍ່ມີ.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `ໄຟລ໌ „${m[1]}” ຂອງມັນຂາດ: ຕິດຕັ້ງມັນໃໝ່.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `ໄຟລ໌ „${m[1]}” ຂອງມັນຖືກປ່ຽນ: ມັນບໍ່ໄດ້ໂຫຼດ. ຕິດຕັ້ງມັນໃໝ່.`],
+  // Colours imported into a palette from a file.
+  [/^No colours found in (.+)\.$/, (m) => `ບໍ່ພົບສີໃນ ${m[1]}.`],
+  [/^(\d+) colours added from (.+)\.$/, (m) => `ເພີ່ມ ${m[1]} ສີຈາກ ${m[2]} ແລ້ວ.`],
   // Curtain walls from lines (forum topic 282): what was made, and the pieces under 100 mm left out.
   [/^(\d+) curtain walls made from the lines\.$/, (m) => `ສ້າງຝາຜ້າມ່ານ ${m[1]} ອັນຈາກເສັ້ນແລ້ວ.`],
   [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `ສ້າງຝາຜ້າມ່ານ ${m[1]} ອັນຈາກເສັ້ນແລ້ວ, ຂ້າມ ${m[2]} ທ່ອນທີ່ສັ້ນກວ່າ 100 mm.`],

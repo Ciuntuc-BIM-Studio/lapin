@@ -13903,6 +13903,9 @@ const S5D_TAILS: Record<string, string> = {
   "Someone changed this document at the same time: it was read again. Make your change again.": "Хтось змінив цей документ одночасно: його прочитано заново. Внесіть зміну ще раз.",
   "Reading the files…": "Читання файлів…",
   "A model: save a copy, and open it in Lapin as a link (File → Link IFC…).": "Модель: збережіть копію й відкрийте її в Lapin як зв'язок (Файл → Зв'язати IFC…).",
+  // Colours imported into a palette from a file.
+  "Import colours from a file…": "Імпортувати кольори з файлу…",
+  "A colour book (.acb), a swatch file (.ase) or a text file (.csv, .txt) of #rrggbb or R,G,B values; or drop the file here": "Книга кольорів (.acb), файл зразків (.ase) або текстовий файл (.csv, .txt) зі значеннями #rrggbb чи R,G,B; або перетягніть файл сюди",
 };
 export const UK_PATTERNS: Language['patterns'] = [
   [/^„(.+)” (\S+) is not installed: Lapin Extensions withdrew this version on (\d{4}-\d{2}-\d{2}): (.+)$/, (m) => `«${m[1]}» ${m[2]} не встановлюється: Lapin Extensions відкликав цю версію ${m[3]}: ${m[4]}`],
@@ -14463,6 +14466,9 @@ export const UK_PATTERNS: Language['patterns'] = [
   [/^It needs „(.+)”, which this edition does not have\.$/, (m) => `Йому потрібен „${m[1]}”, якого немає в цій редакції.`],
   [/^Its file „(.+)” is missing: install it again\.$/, (m) => `Його файлу „${m[1]}” немає: встановіть його знову.`],
   [/^Its file „(.+)” was changed: it was not loaded\. Install it again\.$/, (m) => `Його файл „${m[1]}” змінено: його не завантажено. Встановіть його знову.`],
+  // Colours imported into a palette from a file.
+  [/^No colours found in (.+)\.$/, (m) => `У ${m[1]} кольорів не знайдено.`],
+  [/^(\d+) colours added from (.+)\.$/, (m) => `Додано кольорів із ${m[2]}: ${m[1]}.`],
   // Curtain walls from lines (forum topic 282).
   [/^(\d+) curtain walls made from the lines\.$/, (m) => `Створено навісних стін з ліній: ${m[1]}.`],
   [/^(\d+) curtain walls made from the lines, (\d+) pieces under 100 mm left out\.$/, (m) => `Створено навісних стін з ліній: ${m[1]}; пропущено відрізків коротших за 100 мм: ${m[2]}.`],
