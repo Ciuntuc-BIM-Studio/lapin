@@ -215,6 +215,8 @@ describe('the languages', () => {
     // The project information (A1b).
     'Project information synced: 2 changed here, 3 sent.',
     'Project information: 2 open proposals on the server (File → Collaborate → Publishing → Project information).',
+    'Sent: Hall.ifc, now at P01.2.',
+    'Nothing sent: Hall.ifc is already like this on the server, at P01.2.',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 

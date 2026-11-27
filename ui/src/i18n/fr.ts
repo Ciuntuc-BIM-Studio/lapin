@@ -7367,6 +7367,28 @@ export const FR: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "La connexion par le navigateur nécessite l'application de bureau.",
   "This server offers no sign-in through the browser: sign in with your password.": "Ce serveur n'offre pas de connexion par le navigateur : connectez-vous avec votre mot de passe.",
   "The browser could not be opened here.": "Le navigateur n'a pas pu être ouvert ici.",
+  // The Converge IFC connector (docs/plan-converge-ifc.md).
+  "Converge IFC: Send…": "Converge IFC: Envoyer…",
+  "Converge IFC: Get…": "Converge IFC: Récupérer…",
+  "Send to Converge IFC": "Envoyer vers Converge IFC",
+  "Get from Converge IFC": "Récupérer depuis Converge IFC",
+  "Looking for your account…": "Recherche de votre compte…",
+  "The address of your firm's Converge IFC server": "L'adresse du serveur Converge IFC de votre entreprise",
+  "On the server: the account menu → API tokens": "Sur le serveur : le menu du compte → Jetons d'API",
+  "Make a token on the server, in the account menu under API tokens. Lapin never writes it into the project, its settings or a report.": "Créez un jeton sur le serveur, dans le menu du compte, sous Jetons d'API. Lapin ne l'écrit jamais dans le projet, ses réglages ou un rapport.",
+  "no project on this server": "aucun projet sur ce serveur",
+  "a new file…": "un nouveau fichier…",
+  "no IFC file in this project": "aucun fichier IFC dans ce projet",
+  "Your roles in this project do not allow sending files.": "Vos rôles dans ce projet ne permettent pas d'envoyer des fichiers.",
+  "The whole project goes as one IFC file. On the server it is work in progress until it is shared or published there.": "Tout le projet part en un seul fichier IFC. Sur le serveur, il reste en cours jusqu'à ce qu'il y soit partagé ou publié.",
+  "The file is saved on this computer, its checksum checked, then the Import IFC dialog opens: bring it in recognised, as references or linked. Saving a newer version over a linked file updates the link.": "Le fichier est enregistré sur cet ordinateur, sa somme de contrôle vérifiée, puis la boîte de dialogue Importer IFC s'ouvre : importez-le reconnu, en références ou lié. Enregistrer une version plus récente sur un fichier lié met le lien à jour.",
+  "Get…": "Récupérer…",
+  "Getting…": "Récupération…",
+  "Sending to Converge IFC": "Envoi vers Converge IFC",
+  "Making the IFC": "Création de l'IFC",
+  "Getting from Converge IFC": "Récupération depuis Converge IFC",
+  "Downloading from the server": "Téléchargement depuis le serveur",
+  "Uploading to the server": "Téléversement vers le serveur",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;
@@ -8191,6 +8213,9 @@ export const FR_PATTERNS: Language['patterns'] = [
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `${m[1]} objets reçus de Speckle.`],
   [/^Received (\d+) objects from Speckle: (\d+) native elements, (\d+) references\.$/, (m) => `${m[1]} objets reçus de Speckle : ${m[2]} éléments natifs, ${m[3]} références.`],
+  // The Converge IFC connector: what a send made (docs/plan-converge-ifc.md).
+  [/^Sent: (.+), now at (.+)\.$/, (m) => `Envoyé : ${m[1]}, désormais à ${m[2]}.`],
+  [/^Nothing sent: (.+) is already like this on the server, at (.+)\.$/, (m) => `Rien envoyé : ${m[1]} est déjà identique sur le serveur, à ${m[2]}.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Cette version a été envoyée depuis ce projet : ${m[1]} de ses objets sont ses propres éléments.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Envoyé : ${m[1]} éléments, comme nouvelle version.`],
   // CDE on the web, W3: issue sync, activity.

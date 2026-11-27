@@ -871,11 +871,12 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
 
     /// <summary>
     /// The namespaces of queries no guest asks: a project's graphs (their evaluation runs the host's commands on a copy of the
-    /// model), the Speckle connector's (docs/plan-speckle.md): its account is the host's, signed in with the host's token, and
+    /// model), the Speckle connector's (docs/plan-speckle.md) and the Converge IFC connector's (docs/plan-converge-ifc.md): their account
+    /// is the host's, signed in with the host's token, the latter's also reading and writing files of the host's computer, and
     /// the scan of the project folder for reference documents (<c>references.scan</c>): it reads the host's disk. The other
     /// <c>references.*</c> queries (list, get, file, text, suggest, checklist, folders, types) are open to every guest through <c>doc.query</c>.
     /// </summary>
-    public static readonly string[] HostOnlyQueries = ["graphs.", "speckle.", "archicad.", "references.scan"];
+    public static readonly string[] HostOnlyQueries = ["graphs.", "speckle.", "archicad.", "convergeifc.", "references.scan"];
 
     /// <summary>Whether a <c>doc.execute</c> names a host-only command, itself or as a step of its batch.</summary>
     static bool HostOnly(JsonObject p)

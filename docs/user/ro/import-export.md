@@ -327,6 +327,28 @@ Primit din nou, un element recunoscut al cărui obiect nu s-a schimbat rămâne 
 
 Nu se primesc încă: texturile, muchiile obiectelor, grinzile înclinate sau curbe și pereții curbi ca elemente native.
 
+## Converge IFC
+
+**Fișier → Colaborare → Converge IFC: Trimite…** și **Converge IFC: Preia…** schimbă fișiere IFC cu un server Converge IFC, un mediu comun de date (ISO 19650) pentru IFC: fișiere cu versiuni și coduri de revizie, care trec din lucru în partajat și publicat, cu probleme (BCF). Sunt în aplicația desktop, nu în Lapin pentru browser. Folosește-le când livrabilele echipei stau pe un asemenea server; ca proiectul Lapin însuși să stea pe un server, cu istoricul lui, folosește **Salvează pe server…**.
+
+Prima dată, Lapin îți cere contul:
+
+- **Server**: adresa firmei tale, de exemplu `https://cde.example.com`. Trebuie să fie `https` (`http` doar pentru un server de pe acest calculator).
+- **Token**: un token personal de API pe care îl creezi pe server, în meniul contului, la **API tokens**.
+- **Ține minte**: tokenul stă în spațiul securizat al calculatorului, ca cel pentru Speckle. Nu e scris niciodată în proiect, în setările Lapin sau într-un raport. **Deconectare** îl uită.
+
+### Trimiterea
+
+Alege **Proiectul** (unde ai un rol care poate încărca), **Fișierul** (unul dintre fișierele `.ifc` ale proiectului, ca să-i adaugi o versiune, sau **un fișier nou…** cu numele lui) și **Schema** (IFC4 sau IFC4X3). **Trimite** scrie tot proiectul într-un singur fișier IFC și îl încarcă; **Renunță** oprește. La sfârșit, dialogul spune revizia fișierului de pe server, de exemplu `P01.2`. Versiunea nouă e în lucru acolo: partajarea, verificarea și publicarea se fac pe server.
+
+Fiecare export poartă ora la care a fost făcut, deci o nouă trimitere face mereu o versiune nouă, chiar dacă modelul nu s-a schimbat.
+
+### Preluarea
+
+Alege **Proiectul**, **Fișierul** (`.ifc` sau `.ifczip`) și **Versiunea** (implicit cea curentă, marcată ●). **Preia…** întreabă unde să salveze pe calculator, descarcă, verifică suma de control a serverului și deschide dialogul **Import IFC**, unde alegi ce intră și cum: recunoscut ca elemente Lapin, ca referințe sau **legat**. Un fișier arhivat se salvează dezarhivat.
+
+Ca să urmărești modelul unui consultant, adu-l **legat**. Mai târziu, preia versiunea mai nouă și salveaz-o peste același fișier (Lapin propune iar acel loc): Lapin vede că proiectul leagă fișierul și citește din nou legătura, într-un pas pe care îl poți anula, în loc să deschidă dialogul de import.
+
 ## Lapin pentru browser
 
 **Fișier → Exportă → Lapin pentru browser (.html)…** scrie proiectul ca o pagină web, un singur fișier .html pe care îl poți trimite oricui. Se deschide cu dublu clic în orice browser (Chrome, Edge, Safari, Firefox), pe orice calculator, fără internet și fără nimic de instalat:

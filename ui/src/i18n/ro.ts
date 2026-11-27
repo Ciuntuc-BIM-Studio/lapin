@@ -7359,6 +7359,28 @@ export const RO: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Autentificarea prin browser are nevoie de aplicația desktop.",
   "This server offers no sign-in through the browser: sign in with your password.": "Acest server nu oferă autentificare prin browser: autentifică-te cu parola.",
   "The browser could not be opened here.": "Browserul nu a putut fi deschis aici.",
+  // The Converge IFC connector (docs/plan-converge-ifc.md).
+  "Converge IFC: Send…": "Converge IFC: Trimite…",
+  "Converge IFC: Get…": "Converge IFC: Preia…",
+  "Send to Converge IFC": "Trimite în Converge IFC",
+  "Get from Converge IFC": "Preia din Converge IFC",
+  "Looking for your account…": "Caut contul tău…",
+  "The address of your firm's Converge IFC server": "Adresa serverului Converge IFC al firmei tale",
+  "On the server: the account menu → API tokens": "Pe server: meniul contului → Tokenuri API",
+  "Make a token on the server, in the account menu under API tokens. Lapin never writes it into the project, its settings or a report.": "Creează un token pe server, în meniul contului, la Tokenuri API. Lapin nu îl scrie niciodată în proiect, în setări sau într-un raport.",
+  "no project on this server": "niciun proiect pe acest server",
+  "a new file…": "un fișier nou…",
+  "no IFC file in this project": "niciun fișier IFC în acest proiect",
+  "Your roles in this project do not allow sending files.": "Rolurile tale în acest proiect nu permit trimiterea de fișiere.",
+  "The whole project goes as one IFC file. On the server it is work in progress until it is shared or published there.": "Întregul proiect pleacă într-un singur fișier IFC. Pe server rămâne în lucru până când este partajat sau publicat acolo.",
+  "The file is saved on this computer, its checksum checked, then the Import IFC dialog opens: bring it in recognised, as references or linked. Saving a newer version over a linked file updates the link.": "Fișierul este salvat pe acest calculator, cu suma de control verificată, apoi se deschide dialogul Import IFC: adu-l recunoscut, ca referințe sau legat. Salvarea unei versiuni mai noi peste un fișier legat actualizează legătura.",
+  "Get…": "Preia…",
+  "Getting…": "Se preia…",
+  "Sending to Converge IFC": "Trimit în Converge IFC",
+  "Making the IFC": "Creez fișierul IFC",
+  "Getting from Converge IFC": "Preiau din Converge IFC",
+  "Downloading from the server": "Descarc de pe server",
+  "Uploading to the server": "Încarc pe server",
 };
 
 /** Phrases with a number or a name in them. */
@@ -8181,6 +8203,9 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `Primite ${m[1]} obiecte din Speckle.`],
   [/^Received (\d+) objects from Speckle: (\d+) native elements, (\d+) references\.$/, (m) => `Primite ${m[1]} obiecte din Speckle: ${m[2]} elemente native, ${m[3]} referințe.`],
+  // The Converge IFC connector: what a send made (docs/plan-converge-ifc.md).
+  [/^Sent: (.+), now at (.+)\.$/, (m) => `Trimis: ${m[1]}, acum la ${m[2]}.`],
+  [/^Nothing sent: (.+) is already like this on the server, at (.+)\.$/, (m) => `Nimic trimis: ${m[1]} este deja la fel pe server, la ${m[2]}.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Această versiune a fost trimisă din acest proiect: ${m[1]} dintre obiectele ei sunt elementele lui.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Trimis: ${m[1]} elemente, ca versiune nouă.`],
   // CDE on the web, W3: issue sync, activity.

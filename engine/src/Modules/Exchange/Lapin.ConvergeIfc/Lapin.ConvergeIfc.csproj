@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The Converge IFC connector (docs/plan-converge-ifc.md): the model sent as IFC to a Converge IFC server (ifc-hub, an
+    ISO 19650 common data environment) as a new file or a new version of one, and a file's version fetched from it. Plain
+    HttpClient, no library of another's. Desktop only ("desktopOnly" in module.json): the browser's engine never builds it in.
+  -->
+  <PropertyGroup>
+    <LapinModuleId>convergeifc</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Lapin.Engine.Tests" />
+  </ItemGroup>
+</Project>

@@ -35,6 +35,7 @@
     <ProjectReference Include="../../src/Modules/Phases/Lapin.Phases/Lapin.Phases.csproj" />
     <ProjectReference Include="../../src/Modules/Coordination/Lapin.Clash/Lapin.Clash.csproj" />
     <ProjectReference Include="../../src/Modules/Exchange/Lapin.Archicad/Lapin.Archicad.csproj" />
+    <ProjectReference Include="../../src/Modules/Exchange/Lapin.ConvergeIfc/Lapin.ConvergeIfc.csproj" />
     <ProjectReference Include="../../src/Modules/Exchange/Lapin.Speckle/Lapin.Speckle.csproj" />
     <ProjectReference Include="../../src/Modules/Scripting/Lapin.Scripting/Lapin.Scripting.csproj" />
     <ProjectReference Include="../../src/Modules/Automation/Lapin.Graphs/Lapin.Graphs.csproj" />

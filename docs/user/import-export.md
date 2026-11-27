@@ -325,6 +325,28 @@ Received again, a recognised element whose object did not change is left as it i
 
 Not received yet: textures, the objects' edges, sloping or curved beams and curved walls as native ones.
 
+## Converge IFC
+
+**File → Collaborate → Converge IFC: Send…** and **Converge IFC: Get…** exchange IFC files with a Converge IFC server, a common data environment (ISO 19650) for IFC: files with versions and revision codes, that go from work in progress to shared and published, with issues (BCF). They are in the desktop app, not in Lapin for the browser. Use them when your team's deliverables live on such a server; to keep the Lapin project itself on a server, with its history, use **Save to server…** instead.
+
+The first time, Lapin asks for your account:
+
+- **Server**: your firm's own address, for example `https://cde.example.com`. It must be `https` (`http` only for a server on this computer).
+- **Token**: a personal API token you make on the server, in the account menu under **API tokens**.
+- **Remember**: the token is kept in your computer's secure store, as Speckle's is. It is never written into the project, Lapin's settings or a report. **Sign out** forgets it.
+
+### Sending
+
+Choose the **Project** (you need a role there that may upload), the **File** (one of the project's `.ifc` files, to add a version to it, or **a new file…** with its name) and the **Schema** (IFC4 or IFC4X3). **Send** writes the whole project as one IFC file and uploads it; **Cancel** stops it. When it is done, the dialog says the file's revision on the server, for example `P01.2`. The new version is work in progress there: sharing, review and publishing happen on the server.
+
+Every export carries the time it was made, so sending again always makes a new version, also when nothing changed in the model.
+
+### Getting
+
+Choose the **Project**, the **File** (`.ifc` or `.ifczip`) and the **Version** (the current one by default, marked ●). **Get…** asks where to save it on your computer, downloads it, checks it against the server's checksum and opens the **Import IFC** dialog, where you choose what comes in and how: recognised as Lapin elements, as references, or **linked**. A zipped file is saved unpacked.
+
+To follow a consultant's model, bring it in **linked**. Later, **Get…** the newer version and save it over the same file (Lapin proposes that place again): Lapin sees that the project links that file and reads the link again, in one step you can undo, instead of opening the import dialog.
+
 ## Lapin for the browser
 
 **File → Export → Lapin for the browser (.html)…** writes the project as one web page, a single .html file you can send to anyone. It opens with a double-click in any browser (Chrome, Edge, Safari, Firefox), on any computer, with no internet and nothing to install:

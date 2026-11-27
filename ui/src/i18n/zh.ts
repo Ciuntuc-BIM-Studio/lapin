@@ -7402,6 +7402,28 @@ export const ZH: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "通过浏览器登录需要桌面应用。",
   "This server offers no sign-in through the browser: sign in with your password.": "此服务器不提供通过浏览器登录：请使用密码登录。",
   "The browser could not be opened here.": "无法在此打开浏览器。",
+  // The Converge IFC connector (docs/plan-converge-ifc.md).
+  "Converge IFC: Send…": "Converge IFC: 发送…",
+  "Converge IFC: Get…": "Converge IFC: 获取…",
+  "Send to Converge IFC": "发送到 Converge IFC",
+  "Get from Converge IFC": "从 Converge IFC 获取",
+  "Looking for your account…": "正在查找你的账户…",
+  "The address of your firm's Converge IFC server": "你公司的 Converge IFC 服务器地址",
+  "On the server: the account menu → API tokens": "在服务器上：账户菜单 → API 令牌",
+  "Make a token on the server, in the account menu under API tokens. Lapin never writes it into the project, its settings or a report.": "在服务器的账户菜单“API 令牌”中创建令牌。Lapin 绝不会把它写入项目、设置或报告。",
+  "no project on this server": "此服务器上没有项目",
+  "a new file…": "新文件…",
+  "no IFC file in this project": "此项目中没有 IFC 文件",
+  "Your roles in this project do not allow sending files.": "你在此项目中的角色不允许发送文件。",
+  "The whole project goes as one IFC file. On the server it is work in progress until it is shared or published there.": "整个项目作为一个 IFC 文件发送。在服务器上，它在被共享或发布之前处于编制中。",
+  "The file is saved on this computer, its checksum checked, then the Import IFC dialog opens: bring it in recognised, as references or linked. Saving a newer version over a linked file updates the link.": "文件保存到这台电脑并校验和核对无误后，会打开“导入 IFC”对话框：可按识别、参照或链接方式导入。把更新的版本覆盖保存到已链接的文件上，链接会随之更新。",
+  "Get…": "获取…",
+  "Getting…": "正在获取…",
+  "Sending to Converge IFC": "正在发送到 Converge IFC",
+  "Making the IFC": "正在生成 IFC",
+  "Getting from Converge IFC": "正在从 Converge IFC 获取",
+  "Downloading from the server": "正在从服务器下载",
+  "Uploading to the server": "正在上传到服务器",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
@@ -8223,6 +8245,9 @@ export const ZH_PATTERNS: Language['patterns'] = [
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `已从 Speckle 接收 ${m[1]} 个对象。`],
   [/^Received (\d+) objects from Speckle: (\d+) native elements, (\d+) references\.$/, (m) => `已从 Speckle 接收 ${m[1]} 个对象：${m[2]} 个原生构件，${m[3]} 个参照。`],
+  // The Converge IFC connector: what a send made (docs/plan-converge-ifc.md).
+  [/^Sent: (.+), now at (.+)\.$/, (m) => `已发送：${m[1]}，现为 ${m[2]}。`],
+  [/^Nothing sent: (.+) is already like this on the server, at (.+)\.$/, (m) => `未发送任何内容：服务器上的 ${m[1]} 已经相同，版本为 ${m[2]}。`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `此版本是从本项目发送的：其中 ${m[1]} 个对象是本项目自己的元素。`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `已发送：${m[1]} 个构件，作为新版本。`],
   // CDE on the web, W3: issue sync, activity.

@@ -7366,6 +7366,28 @@ export const IT: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "L'accesso tramite browser richiede l'app desktop.",
   "This server offers no sign-in through the browser: sign in with your password.": "Questo server non offre l'accesso tramite browser: accedi con la password.",
   "The browser could not be opened here.": "Il browser non si è potuto aprire qui.",
+  // The Converge IFC connector (docs/plan-converge-ifc.md).
+  "Converge IFC: Send…": "Converge IFC: Invia…",
+  "Converge IFC: Get…": "Converge IFC: Ottieni…",
+  "Send to Converge IFC": "Invia a Converge IFC",
+  "Get from Converge IFC": "Ottieni da Converge IFC",
+  "Looking for your account…": "Cerco il tuo account…",
+  "The address of your firm's Converge IFC server": "L’indirizzo del server Converge IFC del tuo studio",
+  "On the server: the account menu → API tokens": "Sul server: menu dell’account → Token API",
+  "Make a token on the server, in the account menu under API tokens. Lapin never writes it into the project, its settings or a report.": "Crea un token sul server, nel menu dell’account, in Token API. Lapin non lo scrive mai nel progetto, nelle impostazioni o in un report.",
+  "no project on this server": "nessun progetto su questo server",
+  "a new file…": "un nuovo file…",
+  "no IFC file in this project": "nessun file IFC in questo progetto",
+  "Your roles in this project do not allow sending files.": "I tuoi ruoli in questo progetto non permettono di inviare file.",
+  "The whole project goes as one IFC file. On the server it is work in progress until it is shared or published there.": "L’intero progetto parte come un unico file IFC. Sul server resta in lavorazione finché non viene condiviso o pubblicato lì.",
+  "The file is saved on this computer, its checksum checked, then the Import IFC dialog opens: bring it in recognised, as references or linked. Saving a newer version over a linked file updates the link.": "Il file viene salvato su questo computer, con il checksum verificato, poi si apre la finestra Importa IFC: importalo riconosciuto, come riferimenti o collegato. Salvare una versione più recente sopra un file collegato aggiorna il collegamento.",
+  "Get…": "Ottieni…",
+  "Getting…": "Recupero…",
+  "Sending to Converge IFC": "Invio a Converge IFC",
+  "Making the IFC": "Creo l’IFC",
+  "Getting from Converge IFC": "Recupero da Converge IFC",
+  "Downloading from the server": "Download dal server",
+  "Uploading to the server": "Caricamento sul server",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
@@ -8189,6 +8211,9 @@ export const IT_PATTERNS: Language['patterns'] = [
   // The Speckle connector's receive (docs/plan-speckle.md, S2)
   [/^Received (\d+) objects from Speckle\.$/, (m) => `Ricevuti ${m[1]} oggetti da Speckle.`],
   [/^Received (\d+) objects from Speckle: (\d+) native elements, (\d+) references\.$/, (m) => `Ricevuti ${m[1]} oggetti da Speckle: ${m[2]} elementi nativi, ${m[3]} riferimenti.`],
+  // The Converge IFC connector: what a send made (docs/plan-converge-ifc.md).
+  [/^Sent: (.+), now at (.+)\.$/, (m) => `Inviato: ${m[1]}, ora a ${m[2]}.`],
+  [/^Nothing sent: (.+) is already like this on the server, at (.+)\.$/, (m) => `Niente inviato: ${m[1]} è già così sul server, a ${m[2]}.`],
   [/^This version was sent from this project: (\d+) of its objects are its own elements\.$/, (m) => `Questa versione è stata inviata da questo progetto: ${m[1]} dei suoi oggetti sono elementi suoi.`],
   [/^Sent: (\d+) elements, as a new version\.$/, (m) => `Inviato: ${m[1]} elementi, come nuova versione.`],
   // CDE on the web, W3: issue sync, activity.
