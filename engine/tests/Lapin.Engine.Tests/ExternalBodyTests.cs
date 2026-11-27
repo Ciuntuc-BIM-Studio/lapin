@@ -339,6 +339,88 @@ public class ExternalBodyTests : IDisposable
         Assert.Throws<CommandException>(() => f.Run("element.createBody", new JsonObject { ["ifcClass"] = "IfcBearing", ["body"] = Box(1, 1, 1), ["material"] = new JsonObject { ["color"] = "#000000" } }));
     }
 
+    static JsonNode Bridge(Fixture f, string cls, JsonObject body, params (string Key, JsonNode? Value)[] extra)
+    {
+        var a = new JsonObject { ["ifcClass"] = cls, ["storey"] = f.Storey, ["body"] = body, ["name"] = cls[3..] };
+        foreach (var (k, v) in extra) a[k] = v;
+        return f.Run("element.createBody", a)!;
+    }
+
+    [Fact]
+    public void Its_predefined_type_object_type_and_bridge_part_are_checked_and_exported()
+    {
+        var f = Make();
+        // A pier: its stem and its cap in one bridge part „Pier 1”; a bearing in a part of its own; a deck slab of a type IfcSlab lacks.
+        var stem = Bridge(f, "IfcColumn", Box(1, 1, 6), ("predefinedType", "pierstem"), ("ifcBridgePart", "pier"), ("ifcBridgePartName", "Pier 1"));
+        var cap = Bridge(f, "IfcBeam", Box(3, 1, 1, -1, 0, 6), ("predefinedType", "PIERCAP"), ("ifcBridgePart", "PIER"), ("ifcBridgePartName", "Pier 1"));
+        var bearing = Bridge(f, "IfcBearing", Box(0.4, 0.4, 0.05, 0, 0, 7), ("predefinedType", "ELASTOMERIC"), ("ifcBridgePart", "SUBSTRUCTURE"));
+        var deck = Bridge(f, "IfcSlab", Box(20, 4, 0.3, -10, -1.5, 7.05), ("predefinedType", "DECK"), ("objectType", "Deck slab"), ("ifcBridgePart", "SUPERSTRUCTURE"));
+        Assert.Empty(stem["notes"]!.AsArray());
+        Assert.Equal("PIERSTEM", f.Model.Get((string)stem["id"]!)!.PredefinedType);
+        Assert.Equal("PIER", f.Model.Get((string)stem["id"]!)!.Str("ifcBridgePart"));
+        Assert.Contains(deck["notes"]!.AsArray(), n => n!.ToString().Contains("written USERDEFINED, named „Deck slab”"));
+        Assert.Equal("Deck slab", f.Model.Get((string)deck["id"]!)!.Str("objectType"));
+        // Refused in plain words: a type that is not one, USERDEFINED with nothing naming it.
+        Assert.Throws<CommandException>(() => Bridge(f, "IfcBeam", Box(1, 1, 1), ("predefinedType", "PIER CAP")));
+        Assert.Throws<CommandException>(() => Bridge(f, "IfcBeam", Box(1, 1, 1), ("predefinedType", "USERDEFINED")));
+        // A part IFC 4.3 does not have is kept, and said to be user-defined.
+        Assert.Contains(Bridge(f, "IfcMember", Box(1, 1, 1, 30), ("ifcBridgePart", "Cable stays"))["notes"]!.AsArray(), n => n!.ToString().Contains("USERDEFINED"));
+
+        var path = Path.Combine(_dir, "bridge-43.ifc");
+        IfcExport.Write(f.Session, path, new IfcExportOptions(Schema: "IFC4X3"));
+        var text = File.ReadAllText(path);
+        Assert.Contains(".PIERSTEM.", text);
+        Assert.Contains(".PIERCAP.", text);
+        Assert.Contains("IFCBEARING(", text);
+        Assert.Contains(".ELASTOMERIC.", text);
+        Assert.Contains("'Deck slab'", text);
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(text, @"IFCBRIDGE\(").Cast<System.Text.RegularExpressions.Match>());
+        // One part for the pier's two elements, one each for the bearing, the deck and the stays.
+        var parts = System.Text.RegularExpressions.Regex.Matches(text, @"IFCBRIDGEPART\('[^']*',\$,'([^']*)'").Select(x => x.Groups[1].Value).ToList();
+        Assert.Equal(4, parts.Count);
+        Assert.Contains("Pier 1", parts);
+        // Read back, each is the program's element again, of its class, its predefined type kept.
+        var g = Make();
+        IfcImport.Run(g.Session, path, null, out _);
+        var back = g.Model.Get((string)bearing["id"]!)!;
+        Assert.Equal("IfcBearing", back.Class);
+        Assert.True(ExternalBodies.IsOwned(back));
+        Assert.Equal("PIERCAP", g.Model.Get((string)cap["id"]!)!.PredefinedType);
+        Assert.Equal(("PIER", "Pier 1"), (g.Model.Get((string)cap["id"]!)!.Str("ifcBridgePart"), g.Model.Get((string)cap["id"]!)!.Str("ifcBridgePartName")));
+        var deckBack = g.Model.Get((string)deck["id"]!)!;
+        // A slab a program made is not made a native slab from its triangles.
+        Assert.True(ExternalBodies.IsOwned(deckBack));
+        Assert.Equal("Deck slab", deckBack.Str("objectType"));
+        // IFC4 has neither the pier's types nor a bearing: user-defined, named by them; the bearing a proxy naming its class.
+        var path4 = Path.Combine(_dir, "bridge-4.ifc");
+        IfcExport.Write(f.Session, path4, new IfcExportOptions(Schema: "IFC4"));
+        var text4 = File.ReadAllText(path4);
+        Assert.Contains("'PIERCAP'", text4);
+        Assert.DoesNotContain("IFCBEARING(", text4);
+        Assert.DoesNotContain("IFCBRIDGEPART(", text4);
+    }
+
+    [Fact]
+    public void Element_update_changes_what_it_is_in_IFC_and_nothing_of_its_shape()
+    {
+        var f = Make();
+        var id = (string)Create(f, Box(1, 1, 1), cls: "IfcBeam")!["id"]!;
+        f.Run("element.update", new JsonObject { ["ids"] = new JsonArray(id), ["attrs"] = new JsonObject { ["ifcBridgePart"] = "deck", ["predefinedType"] = "edgebeam", ["objectType"] = "Edge beam" } });
+        var e = f.Model.Get(id)!;
+        Assert.Equal(("DECK", "EDGEBEAM", "Edge beam"), (e.Str("ifcBridgePart"), e.PredefinedType, e.Str("objectType")));
+        Assert.True(ExternalBodies.IsOwned(e));
+        Assert.Equal("Change", f.Session.History.UndoLabel);
+        // Taken off with a null; one undo step each.
+        f.Run("element.update", new JsonObject { ["id"] = id, ["attrs"] = new JsonObject { ["ifcBridgePart"] = null, ["predefinedType"] = null } });
+        Assert.Null(f.Model.Get(id)!.Str("ifcBridgePart"));
+        Assert.Null(f.Model.Get(id)!.PredefinedType);
+        f.Session.Undo();
+        Assert.Equal("EDGEBEAM", f.Model.Get(id)!.PredefinedType);
+        // Its shape stays the program's: any other field, alone or with these, is refused.
+        Assert.Equal(ExternalBodies.Refused, Assert.Throws<CommandException>(() => f.Run("element.update", new JsonObject { ["id"] = id, ["attrs"] = new JsonObject { ["height"] = 3, ["objectType"] = "X" } })).Message);
+        Assert.Throws<CommandException>(() => f.Run("element.update", new JsonObject { ["id"] = id, ["attrs"] = new JsonObject { ["predefinedType"] = "USERDEFINED", ["objectType"] = null } }));
+    }
+
     [Fact]
     public void Saved_and_opened_it_is_still_the_programs()
     {

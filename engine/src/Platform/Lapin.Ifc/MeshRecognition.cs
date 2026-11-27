@@ -56,7 +56,8 @@ public static class MeshRecognition
         var count = 0;
         // Only what a recogniser takes (a wall, a slab, a column…) and the doors and windows the walls take with them: a federated
         // file's pipes and fittings are no prism a module makes anything of, and reading them was most of the import.
-        var refs = ids.Select(edit.Model.Get).OfType<Entity>().Where(e => StoredBodies.Has(e) && e.Str(Links.Key) == null && Spatial.StoreyOf(edit.Model, e.Id) != null
+        // A body a program made (its owner read back from Lapin's intent) stays the program's: never made native from its triangles.
+        var refs = ids.Select(edit.Model.Get).OfType<Entity>().Where(e => StoredBodies.Has(e) && e.Str(Links.Key) == null && !ExternalBodies.IsOwned(e) && Spatial.StoreyOf(edit.Model, e.Id) != null
             && (Fillers.Contains(ClassOf(e)) || recognizers.Any(r => r.Takes(ClassOf(e))) || bodies.Any(r => r.Takes(ClassOf(e))))).ToList();
         // Each body read first, in parallel (its triangles' solid and the shapes of its layers): the model is not written meanwhile, and
         // what is read is kept by the body (StoredBodies), so the session builds the references left from it without reading them again.

@@ -77,7 +77,11 @@ public static class ExternalBodies
         };
         if (a["attrs"] is JsonObject extra) attrs[ExtraKey] = extra.DeepClone();
         var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : cls[3..];
-        var e = new Entity(id, cls, name, attrs);
+        // What it is in IFC beyond its class: its predefined type, object type and bridge part, checked as the export writes them.
+        var identity = new JsonObject();
+        foreach (var k in IdentityKeys) if (a.ContainsKey(k)) identity[k] = a[k]?.DeepClone();
+        var predefined = IfcIdentity(cls, null, attrs, identity, notes);
+        var e = new Entity(id, cls, name, attrs, predefined);
         ctx.Add(e);
         Spatial.Contain(ctx, storey.Id, e.Id);
         if ((string?)a["type"] is { Length: > 0 } typeId)
@@ -151,6 +155,62 @@ public static class ExternalBodies
         var shared = new Entity(ctx.NewId(), StoredBodies.SharedClass, "Script body (shared)", new JsonObject { [StoredBodies.Key] = stored, [HashKey] = hash, ["source"] = "script" });
         ctx.Add(shared);
         return (shared.Id, hash);
+    }
+
+    // ------------------------------------------------------------ what it is in IFC
+
+    /// <summary>
+    /// What a script's element is in IFC beyond its class, given to <c>element.createBody</c> and changed by <c>element.update</c>
+    /// (these keys alone): its PredefinedType, its ObjectType, and the IFC 4.3 bridge part it stands in (IfcBridgePartTypeEnum)
+    /// with the name that puts several elements in one part (a pier's stem and its cap).
+    /// </summary>
+    public static readonly string[] IdentityKeys = ["predefinedType", "objectType", "ifcBridgePart", "ifcBridgePartName"];
+
+    /// <summary>
+    /// <paramref name="given"/>'s identity keys checked and laid on <paramref name="attrs"/> (a null takes one off); the predefined
+    /// type the element has after (<paramref name="had"/> when none is given). The predefined type is checked against the class as the
+    /// IFC export writes it: one the class has in IFC4 or IFC 4.3 is written as it is; one it lacks is written USERDEFINED, named by the
+    /// object type (else by the type itself), and a note says so; USERDEFINED needs an object type; a class without a PredefinedType,
+    /// or one Lapin's writer writes as a proxy naming it, keeps it in Lapin only (a note).
+    /// </summary>
+    static string? IfcIdentity(string cls, string? had, JsonObject attrs, JsonObject given, List<string> notes)
+    {
+        foreach (var k in given.Select(kv => kv.Key)) if (!IdentityKeys.Contains(k)) throw new CommandException(Refused);
+        static string? Text(JsonNode? n, string key, int max) => n switch
+        {
+            null => null,
+            JsonValue v when v.TryGetValue<string>(out var t) => t.Trim() is { Length: > 0 } s ? (s.Length <= max ? s : throw new CommandException($"{key} is {max} characters at most.")) : null,
+            _ => throw new CommandException($"{key} is a text."),
+        };
+        foreach (var key in new[] { "objectType", "ifcBridgePartName" })
+            if (given.ContainsKey(key)) { if (Text(given[key], key, 255) is { } t) attrs[key] = t; else attrs.Remove(key); }
+        if (given.ContainsKey("ifcBridgePart"))
+        {
+            if (Text(given["ifcBridgePart"], "ifcBridgePart", 255) is { } part)
+            {
+                if (IfcPredefinedTypes.BridgeParts.Contains(part.ToUpperInvariant())) part = part.ToUpperInvariant();
+                else notes.Add($"„{part}” is not one of IFC 4.3's bridge parts ({string.Join(", ", IfcPredefinedTypes.BridgeParts)}): its part is written USERDEFINED, named „{part}”.");
+                attrs["ifcBridgePart"] = part;
+            }
+            else attrs.Remove("ifcBridgePart");
+        }
+        var predefined = had;
+        if (given.ContainsKey("predefinedType"))
+        {
+            predefined = Text(given["predefinedType"], "predefinedType", 64)?.ToUpperInvariant();
+            if (predefined != null && !System.Text.RegularExpressions.Regex.IsMatch(predefined, "^[A-Z][A-Z0-9_]*$"))
+                throw new CommandException($"„{predefined}” is not a predefined type (capitals, digits and _, as IFC writes them: PIERCAP, ELASTOMERIC).");
+        }
+        if (predefined == "NOTDEFINED") predefined = null;
+        if (predefined == null) return null;
+        var objectType = attrs["objectType"] is JsonValue ov ? (string?)ov : null;
+        if (predefined == "USERDEFINED" && objectType == null) throw new CommandException("A USERDEFINED predefined type is named by an objectType: give one.");
+        var (types, has) = IfcPredefinedTypes.Of(cls);
+        if (types == null) notes.Add($"Lapin's IFC writer writes {cls} as an IfcBuildingElementProxy naming it: its predefined type {predefined} is kept in Lapin, not in the file.");
+        else if (!has) notes.Add($"{cls} has no PredefinedType in IFC: {predefined} is kept in Lapin, not in the file.");
+        else if (predefined != "USERDEFINED" && !types.Contains(predefined))
+            notes.Add($"{cls} has no predefined type {predefined} in IFC4 or IFC 4.3: it is written USERDEFINED, named „{objectType ?? predefined}”.");
+        return predefined;
     }
 
     // ------------------------------------------------------------ units and placement
@@ -499,9 +559,22 @@ public static class ExternalBodies
     {
         public bool Drives(IModelView m, Entity e) => IsOwned(e);
 
+        /// <summary>
+        /// element.update: refused, unless it changes only what the element is in IFC (<see cref="IdentityKeys"/>: its predefined type,
+        /// object type and bridge part), which is set here, checked as element.createBody checks it.
+        /// </summary>
         public void Before(ICommandContext ctx, DrivenEdit edit, DrivenOutcome outcome)
         {
-            if (edit.Command == "element.update") throw new CommandException(Refused);
+            if (edit.Command != "element.update") return;
+            if (edit.Args["attrs"] is not JsonObject values || values.Count == 0 || values.Any(kv => !IdentityKeys.Contains(kv.Key))) throw new CommandException(Refused);
+            foreach (var id in edit.Ids)
+            {
+                var e = ctx.Model.Get(id)!;
+                var attrs = e.CloneAttrs();
+                var predefined = IfcIdentity(e.Class, e.PredefinedType, attrs, values, []);
+                ctx.Replace(new Entity(e.Id, e.Class, e.Name, attrs, predefined));
+                outcome.Handled.Add(id);
+            }
         }
     }
 }

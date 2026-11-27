@@ -1463,13 +1463,20 @@ public static partial class IfcImport
         void Referenced(IEdit edit, StepEntity e, string gid, JsonObject attrs, Prepared p)
         {
             var cls = ClassName(e.Type);
+            string? predefined = null;
             // A body an external program made in Lapin (docs/plan-external-geometry.md) comes back as one: its owner, its own
-            // attributes and its class (an IFC class Lapin's writer does not name was written as a proxy naming it).
+            // attributes and its class (an IFC class Lapin's writer does not name was written as a proxy naming it), its
+            // predefined type, object type and bridge part.
+            string? ownObjectType = null;
             if (!o.ReferenceOnly && IntentOf(e.Id) is { } own && (string?)own.Attrs[ExternalBodies.OwnerKey] is { Length: > 0 } owner)
             {
                 attrs[ExternalBodies.OwnerKey] = owner;
                 if (own.Attrs[ExternalBodies.ExtraKey] is JsonObject extra) attrs[ExternalBodies.ExtraKey] = extra.DeepClone();
                 if (IfcElementClasses.Resolve(own.Class) is { } given) cls = given;
+                predefined = own.Predefined;
+                foreach (var k in ExternalBodies.IdentityKeys)
+                    if (k != "predefinedType" && own.Attrs[k] is JsonValue kv && (string?)kv is { Length: > 0 } text) attrs[k] = text;
+                ownObjectType = (string?)attrs["objectType"];
             }
             // Its layers' direction, so the views split its body by them (ReferenceLayers); the element it is a part of, for its category.
             if (LayerAxis(e) is { } axis && axis.Length > 1e-9)
@@ -1478,7 +1485,7 @@ public static partial class IfcImport
                 attrs[ReferenceLayers.PartOfKey] = ClassName(host.Type);
             attrs["reference"] = true;
             attrs["ifcClass"] = cls;
-            attrs["objectType"] = Str(e[4]);
+            attrs["objectType"] = ownObjectType ?? Str(e[4]);
             // Its file type's name (a steel shape's "HEA200"), which recognition from its triangles names a native type after and
             // matches a catalogue profile by (decision 826).
             if (typeOf?.GetValueOrDefault(e.Id) is { } fileType && Str(fileType[2]) is { Length: > 0 } fileTypeName) attrs[MeshRecognition.TypeNameKey] = fileTypeName;
@@ -1492,7 +1499,7 @@ public static partial class IfcImport
             attrs[IfcSource.Key] = p.Carried.Own;
             foreach (var r in p.Carried.Shared)
                 if (recordsPut.Add(r.Id)) Put(edit, r.Id, IfcSource.RecordClass, IfcCarry.RecordName(r.Attrs) ?? ReferenceTypes.RecordDefault, r.Attrs, null, counts: false);
-            Put(edit, gid, cls, Str(e[2]) ?? cls[3..], attrs, null, counts: false);
+            Put(edit, gid, cls, Str(e[2]) ?? cls[3..], attrs, predefined, counts: false);
             references++;
             referencesByClass[cls] = referencesByClass.GetValueOrDefault(cls) + 1;
             var storey = StoreyFor(e.Id);

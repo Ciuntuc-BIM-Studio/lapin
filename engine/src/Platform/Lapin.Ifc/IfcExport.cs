@@ -170,102 +170,16 @@ public static partial class IfcExport
     sealed record Kind(string Class, string Predefined, string? ObjectType);
 
     /// <summary>The predefined types IFC4 knows per class (USERDEFINED and NOTDEFINED always); null: the class has no predefined type.</summary>
-    static readonly Dictionary<string, string[]?> Classes = new()
-    {
-        [IfcClass.Wall] = ["MOVABLE", "PARAPET", "PARTITIONING", "PLUMBINGWALL", "SHEAR", "SOLIDWALL", "STANDARD", "POLYGONAL", "ELEMENTEDWALL"],
-        [IfcClass.Slab] = ["FLOOR", "ROOF", "LANDING", "BASESLAB"],
-        [IfcClass.Roof] = ["FLAT_ROOF", "SHED_ROOF", "GABLE_ROOF", "HIP_ROOF", "HIPPED_GABLE_ROOF", "GAMBREL_ROOF", "MANSARD_ROOF", "BARREL_ROOF", "RAINBOW_ROOF", "BUTTERFLY_ROOF", "PAVILION_ROOF", "DOME_ROOF", "FREEFORM"],
-        [IfcClass.Column] = ["COLUMN", "PILASTER"],
-        [IfcClass.Beam] = ["BEAM", "JOIST", "HOLLOWCORE", "LINTEL", "SPANDREL", "T_BEAM"],
-        [IfcClass.Footing] = ["CAISSON_FOUNDATION", "FOOTING_BEAM", "PAD_FOOTING", "PILE_CAP", "STRIP_FOOTING"],
-        [IfcClass.Door] = ["DOOR", "GATE", "TRAPDOOR"],
-        [IfcClass.Window] = ["WINDOW", "SKYLIGHT", "LIGHTDOME"],
-        ["IfcMember"] = ["BRACE", "CHORD", "COLLAR", "MEMBER", "MULLION", "PLATE", "POST", "PURLIN", "RAFTER", "STRINGER", "STRUT", "STUD"],
-        ["IfcPlate"] = ["CURTAIN_PANEL", "SHEET"],
-        ["IfcCurtainWall"] = [],
-        ["IfcCovering"] = ["CEILING", "FLOORING", "CLADDING", "ROOFING", "MOLDING", "SKIRTINGBOARD", "INSULATION", "MEMBRANE", "SLEEVING", "WRAPPING"],
-        ["IfcRailing"] = ["HANDRAIL", "GUARDRAIL", "BALUSTRADE"],
-        ["IfcStair"] = ["STRAIGHT_RUN_STAIR", "TWO_STRAIGHT_RUN_STAIR", "QUARTER_WINDING_STAIR", "QUARTER_TURN_STAIR", "HALF_WINDING_STAIR", "HALF_TURN_STAIR", "TWO_QUARTER_WINDING_STAIR", "TWO_QUARTER_TURN_STAIR", "THREE_QUARTER_WINDING_STAIR", "THREE_QUARTER_TURN_STAIR", "SPIRAL_STAIR", "DOUBLE_RETURN_STAIR", "CURVED_RUN_STAIR", "TWO_CURVED_RUN_STAIR"],
-        [IfcClass.StairFlight] = ["STRAIGHT", "WINDER", "SPIRAL", "CURVED", "FREEFORM"],
-        [IfcClass.RampFlight] = ["STRAIGHT", "SPIRAL"],
-        ["IfcRamp"] = ["STRAIGHT_RUN_RAMP", "TWO_STRAIGHT_RUN_RAMP", "QUARTER_TURN_RAMP", "TWO_QUARTER_TURN_RAMP", "HALF_TURN_RAMP", "SPIRAL_RAMP"],
-        ["IfcChimney"] = [],
-        ["IfcFurnishingElement"] = null,
-        // Furniture (docs/plan-furniture.md): IFC4's IfcFurnitureTypeEnum.
-        ["IfcFurniture"] = ["CHAIR", "TABLE", "DESK", "BED", "FILECABINET", "SHELF", "SOFA"],
-        // Sunshades (report #56): IFC4's IfcShadingDeviceTypeEnum (louvres are USERDEFINED there, LOUVER in IFC 4.3).
-        ["IfcShadingDevice"] = ["JALOUSIE", "SHUTTER", "AWNING"],
-        [IfcClass.BuildingElementProxy] = ["COMPLEX", "ELEMENT", "PARTIAL", "PROVISIONFORVOID", "PROVISIONFORSPACE"],
-        [IfcClass.GeographicElement] = ["TERRAIN"],
-        [IfcClass.Pavement] = ["FLEXIBLE", "RIGID"],
-        [IfcClass.EarthworksCut] = ["BASE_EXCAVATION", "CUT", "DREDGING", "EXCAVATION", "OVEREXCAVATION", "PAVEMENTMILLING", "STEPEXCAVATION", "TOPSOILREMOVAL", "TRENCH"],
-        ["IfcBuildingElementPart"] = ["INSULATION", "PRECASTPANEL"],
-        ["IfcPipeSegment"] = ["CULVERT", "FLEXIBLESEGMENT", "RIGIDSEGMENT", "GUTTER", "SPOOL"],
-        ["IfcDiscreteAccessory"] = ["ANCHORPLATE", "BRACKET", "SHOE"],
-        // A steel connection's fasteners (decision 273): bolts and anchors, welds.
-        ["IfcMechanicalFastener"] = ["ANCHORBOLT", "BOLT", "DOWEL", "NAIL", "NAILPLATE", "RIVET", "SCREW", "SHEARCONNECTOR", "STAPLE", "STUDSHEARCONNECTOR"],
-        ["IfcFastener"] = ["GLUE", "MORTAR", "WELD"],
-        // Formwork and scaffolding (the site works module): assemblies of members, plates and accessories.
-        ["IfcElementAssembly"] = ["ACCESSORY_ASSEMBLY", "ARCH", "BEAM_GRID", "BRACED_FRAME", "GIRDER", "REINFORCEMENT_UNIT", "RIGID_FRAME", "SLAB_FIELD", "TRUSS"],
-        // The distribution elements (the MEP module's nodes and runs), IFC4's enumerations.
-        ["IfcDuctSegment"] = ["RIGIDSEGMENT", "FLEXIBLESEGMENT"],
-        ["IfcCableSegment"] = ["BUSBARSEGMENT", "CABLESEGMENT", "CONDUCTORSEGMENT", "CORESEGMENT"],
-        // Cable carriers (report #147): trays, ladders, trunking and conduit, their bends, tees, crosses and reducers.
-        ["IfcCableCarrierSegment"] = ["CABLELADDERSEGMENT", "CABLETRAYSEGMENT", "CABLETRUNKINGSEGMENT", "CONDUITSEGMENT"],
-        ["IfcCableCarrierFitting"] = ["BEND", "CROSS", "REDUCER", "TEE"],
-        ["IfcPipeFitting"] = ["BEND", "CONNECTOR", "ENTRY", "EXIT", "JUNCTION", "OBSTRUCTION", "TRANSITION"],
-        ["IfcDuctFitting"] = ["BEND", "CONNECTOR", "ENTRY", "EXIT", "JUNCTION", "OBSTRUCTION", "TRANSITION"],
-        ["IfcBoiler"] = ["WATER", "STEAM"],
-        // Lifts (docs/plan-elevators.md): IFC4's IfcTransportElementTypeEnum (IFC 4.3 adds HAULINGGEAR).
-        ["IfcTransportElement"] = ["ELEVATOR", "ESCALATOR", "MOVINGWALKWAY", "CRANEWAY", "LIFTINGGEAR"],
-        ["IfcSpaceHeater"] = ["CONVECTOR", "RADIATOR"],
-        ["IfcPump"] = ["CIRCULATOR", "ENDSUCTION", "SPLITCASE", "SUBMERSIBLEPUMP", "SUMPPUMP", "VERTICALINLINE", "VERTICALTURBINE"],
-        ["IfcValve"] = ["AIRRELEASE", "ANTIVACUUM", "CHANGEOVER", "CHECK", "COMMISSIONING", "DIVERTING", "DRAWOFFCOCK", "DOUBLECHECK", "DOUBLEREGULATING", "FAUCET", "FLUSHING", "GASCOCK", "GASTAP", "ISOLATING", "MIXING", "PRESSUREREDUCING", "PRESSURERELIEF", "REGULATING", "SAFETYCUTOFF", "STEAMTRAP", "STOPCOCK"],
-        ["IfcFlowMeter"] = ["ENERGYMETER", "GASMETER", "OILMETER", "WATERMETER"],
-        ["IfcTank"] = ["BASIN", "BREAKPRESSURE", "EXPANSION", "FEEDANDEXPANSION", "PRESSUREVESSEL", "STORAGE", "VESSEL"],
-        // Gas and fuel oil (decision 285): a cooker's burner, an oil filter, the meter box a service enters.
-        ["IfcBurner"] = [],
-        ["IfcFilter"] = ["AIRPARTICLEFILTER", "COMPRESSEDAIRFILTER", "ODORFILTER", "OILFILTER", "STRAINER", "WATERFILTER"],
-        ["IfcDistributionChamberElement"] = ["FORMEDDUCT", "INSPECTIONCHAMBER", "INSPECTIONPIT", "MANHOLE", "METERCHAMBER", "SUMP", "TRENCH", "VALVECHAMBER"],
-        ["IfcSanitaryTerminal"] = ["BATH", "BIDET", "CISTERN", "SHOWER", "SINK", "SANITARYFOUNTAIN", "TOILETPAN", "URINAL", "WASHHANDBASIN", "WCSEAT"],
-        ["IfcWasteTerminal"] = ["FLOORTRAP", "FLOORWASTE", "GULLYSUMP", "GULLYTRAP", "ROOFDRAIN", "WASTEDISPOSALUNIT", "WASTETRAP"],
-        ["IfcFan"] = ["CENTRIFUGALFORWARDCURVED", "CENTRIFUGALRADIAL", "CENTRIFUGALBACKWARDINCLINEDCURVED", "CENTRIFUGALAIRFOIL", "TUBEAXIAL", "VANEAXIAL", "PROPELLORAXIAL"],
-        ["IfcAirTerminal"] = ["DIFFUSER", "GRILLE", "LOUVRE", "REGISTER"],
-        ["IfcElectricDistributionBoard"] = ["CONSUMERUNIT", "DISTRIBUTIONBOARD", "MOTORCONTROLCENTRE", "SWITCHBOARD"],
-        ["IfcOutlet"] = ["AUDIOVISUALOUTLET", "COMMUNICATIONSOUTLET", "POWEROUTLET", "DATAOUTLET", "TELEPHONEOUTLET"],
-        ["IfcLightFixture"] = ["POINTSOURCE", "DIRECTIONSOURCE", "SECURITYLIGHTING"],
-        // Fire protection (report #89): the detection loop's panel, detectors, call points and sounders; hydrants, the fire brigade inlet, sprinklers.
-        ["IfcUnitaryControlElement"] = ["ALARMPANEL", "CONTROLPANEL", "GASDETECTIONPANEL", "INDICATORPANEL", "MIMICPANEL", "HUMIDISTAT", "THERMOSTAT", "WEATHERSTATION"],
-        ["IfcSensor"] = ["CO2SENSOR", "CONDUCTANCESENSOR", "CONTACTSENSOR", "COSENSOR", "FIRESENSOR", "FLOWSENSOR", "FROSTSENSOR", "GASSENSOR", "HEATSENSOR", "HUMIDITYSENSOR", "IDENTIFIERSENSOR", "IONCONCENTRATIONSENSOR", "LEVELSENSOR", "LIGHTSENSOR", "MOISTURESENSOR", "MOVEMENTSENSOR", "PHSENSOR", "PRESSURESENSOR", "RADIATIONSENSOR", "RADIOACTIVITYSENSOR", "SMOKESENSOR", "SOUNDSENSOR", "TEMPERATURESENSOR", "WINDSENSOR"],
-        ["IfcAlarm"] = ["BELL", "BREAKGLASSBUTTON", "LIGHT", "MANUALPULLBOX", "SIREN", "WHISTLE"],
-        ["IfcFireSuppressionTerminal"] = ["BREECHINGINLET", "FIREHYDRANT", "HOSEREEL", "SPRINKLER", "SPRINKLERDEFLECTOR"],
-        // Room separation lines (forum topic 80): IFC4's IfcVirtualElement has no PredefinedType.
-        [RoomDividers.Class] = null,
-        ["IfcSwitchingDevice"] = ["CONTACTOR", "DIMMERSWITCH", "EMERGENCYSTOP", "KEYPAD", "MOMENTARYSWITCH", "SELECTORSWITCH", "STARTER", "SWITCHDISCONNECTOR", "TOGGLESWITCH"],
-    };
+    static readonly IReadOnlyDictionary<string, string[]?> Classes = IfcPredefinedTypes.Ifc4;
 
     /// <summary>Whether IFC4 gives the class (upper case, as a file writes it) a PredefinedType after the eight attributes every element has.</summary>
     internal static bool HasPredefined(string upper) => UpperClasses.TryGetValue(upper, out var allowed) && allowed != null;
     static readonly Dictionary<string, string[]?> UpperClasses = Classes.ToDictionary(kv => kv.Key.ToUpperInvariant(), kv => kv.Value);
-    /// <summary>What IFC 4.3 adds: the railway's classes, and predefined types IFC4 lacks (a platform slab, a track panel).</summary>
-    static readonly Dictionary<string, string[]?> Classes43 = new()
-    {
-        ["IfcShadingDevice"] = ["JALOUSIE", "SHUTTER", "AWNING", "LOUVER"],
-        [IfcClass.Slab] = ["FLOOR", "ROOF", "LANDING", "BASESLAB", "APPROACH_SLAB", "PAVING", "WEARING", "SIDEWALK", "TRACKSLAB"],
-        ["IfcElementAssembly"] = ["ACCESSORY_ASSEMBLY", "ARCH", "BEAM_GRID", "BRACED_FRAME", "GIRDER", "REINFORCEMENT_UNIT", "RIGID_FRAME", "SLAB_FIELD", "TRUSS", "ABUTMENT", "PIER", "PYLON", "CROSS_BRACING", "DECK", "MAST", "SIGNALASSEMBLY", "GRID", "SHELTER", "SUPPORTINGASSEMBLY", "SUSPENSIONASSEMBLY", "TRACTION_SWITCHING_ASSEMBLY", "TRACKPANEL", "TURNOUTPANEL", "DILATATIONPANEL", "RAIL_MECHANICAL_EQUIPMENT_ASSEMBLY", "ENTRANCEWORKS", "SUMPBUSTER", "TRAFFIC_CALMING_DEVICE"],
-        ["IfcRail"] = ["RACKRAIL", "BLADE", "GUARDRAIL", "STOCKRAIL", "CHECKRAIL", "RAIL"],
-        ["IfcTrackElement"] = ["TRACKENDOFALIGNMENT", "BLOCKINGDEVICE", "VEHICLESTOP", "SLEEPER", "HALF_SET_OF_BLADES", "SPEEDREGULATOR", "DERAILER", "FROG"],
-        ["IfcCourse"] = ["ARMOUR", "FILTER", "BALLASTBED", "CORE", "PAVEMENT", "PROTECTION"],
-        // IfcKerbTypeEnum has only USERDEFINED and NOTDEFINED.
-        ["IfcKerb"] = [],
-        // A grading that mostly fills (site grading T5): IfcEarthworksFillTypeEnum.
-        ["IfcEarthworksFill"] = ["BACKFILL", "COUNTERWEIGHT", "EMBANKMENT", "SLOPEFILL", "SUBGRADE", "SUBGRADEBED", "TRANSITIONSECTION"],
-        ["IfcSignal"] = ["VISUAL", "AUDIO", "MIXED"],
-        [RoomDividers.Class] = ["BOUNDARY", "CLEARANCE", "PROVISIONFORVOID"],
-    };
+    /// <summary>What IFC 4.3 adds: the railway's classes, and predefined types IFC4 lacks (a platform slab, a track panel, a bridge's pier cap).</summary>
+    static readonly IReadOnlyDictionary<string, string[]?> Classes43 = IfcPredefinedTypes.Ifc43;
 
     /// <summary>The element assembly in IFC4: its own enumeration, without the railway's panels.</summary>
-    static readonly string[] AssemblyTypes4 = ["ACCESSORY_ASSEMBLY", "ARCH", "BEAM_GRID", "BRACED_FRAME", "GIRDER", "REINFORCEMENT_UNIT", "RIGID_FRAME", "SLAB_FIELD", "TRUSS"];
+    static readonly string[] AssemblyTypes4 = IfcPredefinedTypes.Assembly4;
 
     /// <summary>The classes with a Pset_…Common the export can answer.</summary>
     static readonly HashSet<string> CommonSets =
@@ -1473,7 +1387,8 @@ public static partial class IfcExport
             if (pre == null && cls == IfcClass.Roof)
                 pre = e.Str("shape") switch { "flat" => "FLAT_ROOF", "gable" => "GABLE_ROOF", "hip" => "HIP_ROOF", "mansard" => "MANSARD_ROOF", "shed" => "SHED_ROOF", "barrel" => "BARREL_ROOF", _ => null };
             if (pre == null && cls == IfcClass.GeographicElement) pre = "TERRAIN";
-            if (pre == null) return new(cls, "NOTDEFINED", null);
+            // A script's element names itself by its object type too (element.createBody's objectType), with no predefined type.
+            if (pre == null) return new(cls, "NOTDEFINED", ExternalBodies.IsOwned(e) ? e.Str("objectType") : null);
             // A user-defined type names itself through the element's objectType (a diamond crossing, a level crossing).
             if (pre == "USERDEFINED") return new(cls, pre, e.Str("objectType"));
             // A type this schema does not have (IFC4's assembly as an ABUTMENT): user-defined, named by the element's object type when it has one.
@@ -2678,29 +2593,35 @@ public static partial class IfcExport
         }
 
         string bridgeRef = "";
+        /// <summary>The bridge parts written for a name (<c>ifcBridgePartName</c>): the elements naming one part stand in it together.</summary>
+        readonly Dictionary<(string Kind, string Name), string> namedBridgeParts = [];
 
         /// <summary>
         /// IFC 4.3: the bridge part an element stands in (<c>ifcBridgePart</c>, its IfcBridgePartTypeEnum: an abutment written as an
         /// assembly of its wings and face wall, decision 789 S3), one per element, aggregated in the project's bridge under the site
-        /// (made once); null when it has none.
+        /// (made once); null when it has none. Elements that name their part (<c>ifcBridgePartName</c>: a script's pier, its stem and
+        /// its cap) stand in one part of that kind and name.
         /// </summary>
         string? BridgePart(Entity e)
         {
             if (e.Str("ifcBridgePart") is not { Length: > 0 } kind) return null;
+            var partName = e.Str("ifcBridgePartName") is { Length: > 0 } pn ? pn : null;
+            if (partName != null && namedBridgeParts.TryGetValue((kind.ToUpperInvariant(), partName), out var known)) return known;
             if (bridgeRef.Length == 0)
             {
                 bridgeRef = f.Add("IFCBRIDGE", Gid(project.Id, "bridge"), Null, S("Bridge"), Null, Null, Place(sitePlace, 0), Null, Null, E("ELEMENT"), E("NOTDEFINED"));
                 refIdOf[bridgeRef] = project.Id;
                 f.Add("IFCRELAGGREGATES", Gid(project.Id, "aggregates/bridge"), Null, Null, Null, siteRef, L(new[] { bridgeRef }));
             }
-            var predefined = kind.ToUpperInvariant() is var k && BridgePartTypes.Contains(k) ? k : "USERDEFINED";
-            var r = f.Add("IFCBRIDGEPART", Gid(e.Id, "bridge-part"), Null, S(e.Name), Null, predefined == "USERDEFINED" ? S(kind) : Null, Place(sitePlace, 0), Null, Null, E("ELEMENT"), E("NOTDEFINED"), E(predefined));
-            refIdOf[r] = e.Id + "/bridge-part";
-            f.Add("IFCRELAGGREGATES", Gid(e.Id, "bridge-part/aggregates"), Null, Null, Null, bridgeRef, L(new[] { r }));
+            var predefined = kind.ToUpperInvariant() is var k && IfcPredefinedTypes.BridgeParts.Contains(k) ? k : "USERDEFINED";
+            // A named part's GlobalId by its kind and name, the same at every export (the first element's would change with the order).
+            var gid = partName != null ? Gid(project.Id, $"bridge-part/{kind.ToUpperInvariant()}/{partName}") : Gid(e.Id, "bridge-part");
+            var r = f.Add("IFCBRIDGEPART", gid, Null, S(partName ?? e.Name), Null, predefined == "USERDEFINED" ? S(kind) : Null, Place(sitePlace, 0), Null, Null, E("ELEMENT"), E("NOTDEFINED"), E(predefined));
+            refIdOf[r] = partName != null ? project.Id + "/bridge-part/" + partName : e.Id + "/bridge-part";
+            f.Add("IFCRELAGGREGATES", partName != null ? Gid(project.Id, $"bridge-part/{kind.ToUpperInvariant()}/{partName}/aggregates") : Gid(e.Id, "bridge-part/aggregates"), Null, Null, Null, bridgeRef, L(new[] { r }));
+            if (partName != null) namedBridgeParts[(kind.ToUpperInvariant(), partName)] = r;
             return r;
         }
-
-        static readonly HashSet<string> BridgePartTypes = ["ABUTMENT", "DECK", "DECK_SEGMENT", "FOUNDATION", "PIER", "PIER_SEGMENT", "PYLON", "SUBSTRUCTURE", "SUPERSTRUCTURE", "SURFACESTRUCTURE"];
 
         /// <summary>Nothing of the railway's spatial tree is made ahead; the parts come as the elements ask for them.</summary>
         void Railway() { }
