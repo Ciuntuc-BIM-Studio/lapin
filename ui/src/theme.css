@@ -516,6 +516,7 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .notice.notice-status { position: fixed; top: auto; bottom: 44px; z-index: 500; pointer-events: none; }
 .notice.notice-problem { pointer-events: auto; display: flex; gap: 10px; align-items: center; max-width: min(640px, calc(100vw - 32px)); background: var(--danger, #9b2c2c); color: #fff; }
 .notice.notice-problem button.icon { color: inherit; }
+.notice.notice-absent { bottom: 84px; background: var(--ink); color: var(--bg); }
 [role="dialog"][tabindex="-1"]:focus { outline: none; }
 .lazy-part { padding: 16px; }
 /* A part of the window that stopped (PartBoundary, forum topic 258): said in place, the rest goes on. */

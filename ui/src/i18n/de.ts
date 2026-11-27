@@ -7462,6 +7462,32 @@ export const DE: Record<string, string> = {
   "The models the Python notebook's AI cells look for, best first: the first one installed is used. Empty: Lapin's own list": "Die Modelle, die die KI-Zellen des Python-Notebooks suchen, das beste zuerst: Das erste installierte wird verwendet. Leer: Lapins eigene Liste",
   "Notes in Markdown: # a heading, **bold**, lists, tables, ```code```…": "Notizen in Markdown: # eine Überschrift, **fett**, Listen, Tabellen, ```Code```…",
   "To graph": "Als Graph",
+  // Extension modules (docs/plan-extension-modules.md): Installed, the licence questions, the restart, the project notice
+  "Extension modules": "Erweiterungsmodule",
+  "Desktop app only.": "Nur in der Desktop-App.",
+  "Runs code with everything you can do on this computer: read and change your files, use the network, start programs": "Führt Code mit allem aus, was du auf diesem Computer tun kannst: deine Dateien lesen und ändern, das Netzwerk nutzen, Programme starten",
+  "Runs code with full access: it can read and change your files, use the network and start programs, as you can.": "Führt Code mit vollem Zugriff aus: Er kann deine Dateien lesen und ändern, das Netzwerk nutzen und Programme starten, wie du.",
+  "An extension module runs code with everything you can do on this computer. Lapin Extensions reviewed its source and signed it; it is desktop only.": "Ein Erweiterungsmodul führt Code mit allem aus, was du auf diesem Computer tun kannst. Lapin Extensions hat seinen Quellcode geprüft und signiert; es läuft nur in der Desktop-App.",
+  "Save the changes to the project before Lapin restarts?": "Änderungen am Projekt speichern, bevor Lapin neu startet?",
+  "Restart without saving? The changes will be lost.": "Ohne Speichern neu starten? Die Änderungen gehen verloren.",
+  "Changes to extension modules take effect when Lapin restarts.": "Änderungen an Erweiterungsmodulen gelten, sobald Lapin neu startet.",
+  "Restart now": "Jetzt neu starten",
+  "Its interface was left out:": "Seine Oberfläche wurde weggelassen:",
+  "Removed when Lapin restarts.": "Wird entfernt, wenn Lapin neu startet.",
+  "Not loaded:": "Nicht geladen:",
+  "Loads when Lapin restarts.": "Wird geladen, wenn Lapin neu startet.",
+  "The new version loads when Lapin restarts:": "Die neue Version wird geladen, wenn Lapin neu startet:",
+  "Turns on when Lapin restarts.": "Wird eingeschaltet, wenn Lapin neu startet.",
+  "Off.": "Aus.",
+  "Turns off when Lapin restarts.": "Wird ausgeschaltet, wenn Lapin neu startet.",
+  "Extension modules run in the desktop app only.": "Erweiterungsmodule laufen nur in der Desktop-App.",
+  "Not installed: the terms were not accepted.": "Nicht installiert: Die Bedingungen wurden nicht akzeptiert.",
+  "Licence:": "Lizenz:",
+  "Licence agreement of {name} (version {version}):": "Lizenzvereinbarung von {name} (Version {version}):",
+  "I accept": "Ich akzeptiere",
+  "Open Extensions": "Erweiterungen öffnen",
+  "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "Dieses Projekt verwendet {name} (Erweiterung), die nicht installiert ist. Ihre Daten bleiben erhalten und unverändert.",
+  "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "Dieses Projekt verwendet {names} (Erweiterungen), die nicht installiert sind. Ihre Daten bleiben erhalten und unverändert.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -8385,4 +8411,5 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^(\d+) line\(s\) have no graph node, the first at line (\d+):$/, (m) => `${m[1]} Zeile(n) haben keinen Graph-Knoten, die erste in Zeile ${m[2]}:`],
   [/^Open the partial graph \((\d+) nodes\)$/, (m) => `Teilgraph öffnen (${m[1]} Knoten)`],
   [/^Python cell (\d+)$/, (m) => `Python-Zelle ${m[1]}`],
+  [/^Some extensions were left out: (.+)\.$/, (m) => `Einige Erweiterungen wurden weggelassen: ${m[1]}.`],
 ];

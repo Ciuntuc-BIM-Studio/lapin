@@ -60,4 +60,6 @@ Când partea lui de interfață nu poate rula (cere un Lapin mai nou sau se opre
 
 O versiune pe care Lapin Extensions o retrage după ce a publicat-o nu mai este oferită în catalog.
 
+Dacă deschizi un proiect care ține datele unei extensii pe care nu ai instalat-o (sau ai oprit-o), Lapin spune asta o dată: *Acest proiect folosește … (extensie), care nu este instalată. Datele ei sunt păstrate neatinse.* Datele rămân în proiect și se salvează înapoi cum erau; **Deschide Extensii** te duce la catalog (sau la **Instalate**, dacă ai oprit-o doar) ca s-o instalezi sau s-o pornești. Închide notificarea cu ✕.
+
 Vezi și [Extensii](extensions.md) pentru catalog, pachetele de conținut, scripturi și extensiile plătite.

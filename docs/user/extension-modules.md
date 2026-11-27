@@ -60,4 +60,6 @@ When its interface part cannot run (it needs a newer Lapin, or it fails while it
 
 A version that Lapin Extensions withdraws after publishing it is no longer offered in the catalogue.
 
+If you open a project that holds the data of an extension you have not installed (or have turned off), Lapin says so once: *This project uses … (extension), which is not installed. Its data is kept and untouched.* Its data stays in the project and is saved back as it was; **Open Extensions** takes you to the catalogue (or to **Installed**, when you only turned it off) to install or turn it on. Close the notice with ✕.
+
 See also [Extensions](extensions.md) for the catalogue, content packs, scripts and paid extensions.

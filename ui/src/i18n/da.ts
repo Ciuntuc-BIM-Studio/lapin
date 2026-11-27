@@ -7499,6 +7499,32 @@ export const DA: Record<string, string> = {
   "The models the Python notebook's AI cells look for, best first: the first one installed is used. Empty: Lapin's own list": "Modellerne, som Python-notebookens AI-celler leder efter, bedste først: den første installerede bruges. Tom: Lapins egen liste",
   "Notes in Markdown: # a heading, **bold**, lists, tables, ```code```…": "Noter i Markdown: # en overskrift, **fed**, lister, tabeller, ```kode```…",
   "To graph": "Til graf",
+  // Extension modules (docs/plan-extension-modules.md): Installed, the licence questions, the restart, the project notice
+  "Extension modules": "Udvidelsesmoduler",
+  "Desktop app only.": "Kun i desktop-appen.",
+  "Runs code with everything you can do on this computer: read and change your files, use the network, start programs": "Kører kode med alt, hvad du kan på denne computer: læse og ændre dine filer, bruge netværket, starte programmer",
+  "Runs code with full access: it can read and change your files, use the network and start programs, as you can.": "Kører kode med fuld adgang: det kan læse og ændre dine filer, bruge netværket og starte programmer, som du kan.",
+  "An extension module runs code with everything you can do on this computer. Lapin Extensions reviewed its source and signed it; it is desktop only.": "Et udvidelsesmodul kører kode med alt, hvad du kan på denne computer. Lapin Extensions har gennemgået dets kildekode og signeret det; det virker kun i desktop-appen.",
+  "Save the changes to the project before Lapin restarts?": "Gem projektets ændringer, før Lapin genstarter?",
+  "Restart without saving? The changes will be lost.": "Genstart uden at gemme? Ændringerne går tabt.",
+  "Changes to extension modules take effect when Lapin restarts.": "Ændringer af udvidelsesmoduler træder i kraft, når Lapin genstarter.",
+  "Restart now": "Genstart nu",
+  "Its interface was left out:": "Dets brugerflade blev udeladt:",
+  "Removed when Lapin restarts.": "Fjernes, når Lapin genstarter.",
+  "Not loaded:": "Ikke indlæst:",
+  "Loads when Lapin restarts.": "Indlæses, når Lapin genstarter.",
+  "The new version loads when Lapin restarts:": "Den nye version indlæses, når Lapin genstarter:",
+  "Turns on when Lapin restarts.": "Slås til, når Lapin genstarter.",
+  "Off.": "Fra.",
+  "Turns off when Lapin restarts.": "Slås fra, når Lapin genstarter.",
+  "Extension modules run in the desktop app only.": "Udvidelsesmoduler kører kun i desktop-appen.",
+  "Not installed: the terms were not accepted.": "Ikke installeret: vilkårene blev ikke accepteret.",
+  "Licence:": "Licens:",
+  "Licence agreement of {name} (version {version}):": "Licensaftale for {name} (version {version}):",
+  "I accept": "Jeg accepterer",
+  "Open Extensions": "Åbn Udvidelser",
+  "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "Dette projekt bruger {name} (udvidelse), som ikke er installeret. Dens data bevares urørt.",
+  "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "Dette projekt bruger {names} (udvidelser), som ikke er installeret. Deres data bevares urørt.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -8422,4 +8448,5 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^(\d+) line\(s\) have no graph node, the first at line (\d+):$/, (m) => `${m[1]} linje(r) har ingen grafnode, den første i linje ${m[2]}:`],
   [/^Open the partial graph \((\d+) nodes\)$/, (m) => `Åbn den delvise graf (${m[1]} noder)`],
   [/^Python cell (\d+)$/, (m) => `Python-celle ${m[1]}`],
+  [/^Some extensions were left out: (.+)\.$/, (m) => `Nogle udvidelser blev udeladt: ${m[1]}.`],
 ];

@@ -13602,6 +13602,32 @@ export const RU: Record<string, string> = {
   "The models the Python notebook's AI cells look for, best first: the first one installed is used. Empty: Lapin's own list": "Модели, которые ищут AI-ячейки ноутбука Python, лучшая первой: используется первая из установленных. Пусто: собственный список Lapin",
   "Notes in Markdown: # a heading, **bold**, lists, tables, ```code```…": "Заметки в Markdown: # заголовок, **жирный**, списки, таблицы, ```код```…",
   "To graph": "В граф",
+  // Extension modules (docs/plan-extension-modules.md): Installed, the licence questions, the restart, the project notice
+  "Extension modules": "Модули расширений",
+  "Desktop app only.": "Только в настольном приложении.",
+  "Runs code with everything you can do on this computer: read and change your files, use the network, start programs": "Выполняет код со всем, что можете делать вы на этом компьютере: читать и менять ваши файлы, пользоваться сетью, запускать программы",
+  "Runs code with full access: it can read and change your files, use the network and start programs, as you can.": "Выполняет код с полным доступом: может читать и менять ваши файлы, пользоваться сетью и запускать программы, как и вы.",
+  "An extension module runs code with everything you can do on this computer. Lapin Extensions reviewed its source and signed it; it is desktop only.": "Модуль расширения выполняет код со всем, что можете делать вы на этом компьютере. Lapin Extensions проверил его исходный код и подписал его; он работает только в настольном приложении.",
+  "Save the changes to the project before Lapin restarts?": "Сохранить изменения проекта перед перезапуском Lapin?",
+  "Restart without saving? The changes will be lost.": "Перезапустить без сохранения? Изменения будут потеряны.",
+  "Changes to extension modules take effect when Lapin restarts.": "Изменения модулей расширений вступят в силу после перезапуска Lapin.",
+  "Restart now": "Перезапустить сейчас",
+  "Its interface was left out:": "Его интерфейс был пропущен:",
+  "Removed when Lapin restarts.": "Будет удалён при перезапуске Lapin.",
+  "Not loaded:": "Не загружен:",
+  "Loads when Lapin restarts.": "Загрузится при перезапуске Lapin.",
+  "The new version loads when Lapin restarts:": "Новая версия загрузится при перезапуске Lapin:",
+  "Turns on when Lapin restarts.": "Включится при перезапуске Lapin.",
+  "Off.": "Выкл.",
+  "Turns off when Lapin restarts.": "Выключится при перезапуске Lapin.",
+  "Extension modules run in the desktop app only.": "Модули расширений работают только в настольном приложении.",
+  "Not installed: the terms were not accepted.": "Не установлено: условия не приняты.",
+  "Licence:": "Лицензия:",
+  "Licence agreement of {name} (version {version}):": "Лицензионное соглашение {name} (версия {version}):",
+  "I accept": "Принимаю",
+  "Open Extensions": "Открыть Расширения",
+  "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "Этот проект использует {name} (расширение), которое не установлено. Его данные сохранены нетронутыми.",
+  "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "Этот проект использует {names} (расширения), которые не установлены. Их данные сохранены нетронутыми.",
 };
 /** The Russian plural: one → n%10 = 1 and n%100 ≠ 11; few → n%10 in 2–4 and n%100 not in 12–14; many → the rest. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -14365,4 +14391,5 @@ export const RU_PATTERNS: Language['patterns'] = [
   [/^(\d+) line\(s\) have no graph node, the first at line (\d+):$/, (m) => `Строки без узла графа: ${m[1]}, первая — строка ${m[2]}:`],
   [/^Open the partial graph \((\d+) nodes\)$/, (m) => `Открыть частичный граф (узлов: ${m[1]})`],
   [/^Python cell (\d+)$/, (m) => `Ячейка Python ${m[1]}`],
+  [/^Some extensions were left out: (.+)\.$/, (m) => `Некоторые расширения были пропущены: ${m[1]}.`],
 ];

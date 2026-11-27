@@ -13621,6 +13621,32 @@ export const TH: Record<string, string> = {
   "The models the Python notebook's AI cells look for, best first: the first one installed is used. Empty: Lapin's own list": "โมเดลที่เซลล์ AI ของโน้ตบุ๊ก Python มองหา เรียงจากดีที่สุด: ใช้ตัวแรกที่ติดตั้งไว้ ว่าง: ใช้รายการของ Lapin เอง",
   "Notes in Markdown: # a heading, **bold**, lists, tables, ```code```…": "บันทึกใน Markdown: # หัวข้อ, **ตัวหนา**, รายการ, ตาราง, ```โค้ด```…",
   "To graph": "เป็นกราฟ",
+  // Extension modules (docs/plan-extension-modules.md): Installed, the licence questions, the restart, the project notice
+  "Extension modules": "โมดูลส่วนขยาย",
+  "Desktop app only.": "ใช้ได้เฉพาะแอปเดสก์ท็อป.",
+  "Runs code with everything you can do on this computer: read and change your files, use the network, start programs": "รันโค้ดด้วยทุกอย่างที่คุณทำได้บนคอมพิวเตอร์เครื่องนี้: อ่านและแก้ไขไฟล์ของคุณ ใช้เครือข่าย เริ่มโปรแกรม",
+  "Runs code with full access: it can read and change your files, use the network and start programs, as you can.": "รันโค้ดด้วยสิทธิ์เต็ม: อ่านและแก้ไขไฟล์ของคุณ ใช้เครือข่าย และเริ่มโปรแกรมได้เหมือนที่คุณทำได้.",
+  "An extension module runs code with everything you can do on this computer. Lapin Extensions reviewed its source and signed it; it is desktop only.": "โมดูลส่วนขยายรันโค้ดด้วยทุกอย่างที่คุณทำได้บนคอมพิวเตอร์เครื่องนี้ Lapin Extensions ตรวจสอบซอร์สโค้ดและลงนามแล้ว ใช้ได้เฉพาะแอปเดสก์ท็อป.",
+  "Save the changes to the project before Lapin restarts?": "บันทึกการเปลี่ยนแปลงของโครงการก่อนที่ Lapin จะรีสตาร์ทหรือไม่?",
+  "Restart without saving? The changes will be lost.": "รีสตาร์ทโดยไม่บันทึกหรือไม่? การเปลี่ยนแปลงจะสูญหาย.",
+  "Changes to extension modules take effect when Lapin restarts.": "การเปลี่ยนแปลงของโมดูลส่วนขยายมีผลเมื่อ Lapin รีสตาร์ท.",
+  "Restart now": "รีสตาร์ทตอนนี้",
+  "Its interface was left out:": "ส่วนติดต่อผู้ใช้ของโมดูลถูกข้ามไป:",
+  "Removed when Lapin restarts.": "จะถูกลบเมื่อ Lapin รีสตาร์ท.",
+  "Not loaded:": "ไม่ได้โหลด:",
+  "Loads when Lapin restarts.": "จะโหลดเมื่อ Lapin รีสตาร์ท.",
+  "The new version loads when Lapin restarts:": "เวอร์ชันใหม่จะโหลดเมื่อ Lapin รีสตาร์ท:",
+  "Turns on when Lapin restarts.": "จะเปิดเมื่อ Lapin รีสตาร์ท.",
+  "Off.": "ปิด.",
+  "Turns off when Lapin restarts.": "จะปิดเมื่อ Lapin รีสตาร์ท.",
+  "Extension modules run in the desktop app only.": "โมดูลส่วนขยายทำงานได้เฉพาะในแอปเดสก์ท็อป.",
+  "Not installed: the terms were not accepted.": "ไม่ได้ติดตั้ง: ไม่ได้ยอมรับข้อกำหนด.",
+  "Licence:": "สัญญาอนุญาต:",
+  "Licence agreement of {name} (version {version}):": "ข้อตกลงสัญญาอนุญาตของ {name} (เวอร์ชัน {version}):",
+  "I accept": "ฉันยอมรับ",
+  "Open Extensions": "เปิดส่วนขยาย",
+  "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "โครงการนี้ใช้ {name} (ส่วนขยาย) ซึ่งยังไม่ได้ติดตั้ง ข้อมูลของส่วนขยายถูกเก็บไว้ครบถ้วน.",
+  "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "โครงการนี้ใช้ {names} (ส่วนขยาย) ซึ่งยังไม่ได้ติดตั้ง ข้อมูลของส่วนขยายถูกเก็บไว้ครบถ้วน.",
 };
 
 /** Phrases with a number or a name in them. */
@@ -14541,4 +14567,5 @@ export const TH_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(\d+) line\(s\) have no graph node, the first at line (\d+):$/, (m) => `${m[1]} บรรทัดไม่มีโหนดกราฟ บรรทัดแรกคือบรรทัดที่ ${m[2]}:`],
   [/^Open the partial graph \((\d+) nodes\)$/, (m) => `เปิดกราฟบางส่วน (${m[1]} โหนด)`],
   [/^Python cell (\d+)$/, (m) => `เซลล์ Python ${m[1]}`],
+  [/^Some extensions were left out: (.+)\.$/, (m) => `ส่วนขยายบางตัวถูกข้ามไป: ${m[1]}.`],
 ];

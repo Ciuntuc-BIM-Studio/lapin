@@ -13602,6 +13602,32 @@ export const UK: Record<string, string> = {
   "The models the Python notebook's AI cells look for, best first: the first one installed is used. Empty: Lapin's own list": "Моделі, які шукають AI-комірки ноутбука Python, найкраща першою: використовується перша зі встановлених. Порожньо: власний список Lapin",
   "Notes in Markdown: # a heading, **bold**, lists, tables, ```code```…": "Нотатки в Markdown: # заголовок, **жирний**, списки, таблиці, ```код```…",
   "To graph": "У граф",
+  // Extension modules (docs/plan-extension-modules.md): Installed, the licence questions, the restart, the project notice
+  "Extension modules": "Модулі розширень",
+  "Desktop app only.": "Лише в настільному застосунку.",
+  "Runs code with everything you can do on this computer: read and change your files, use the network, start programs": "Виконує код з усім, що можете робити ви на цьому комп'ютері: читати й змінювати ваші файли, користуватися мережею, запускати програми",
+  "Runs code with full access: it can read and change your files, use the network and start programs, as you can.": "Виконує код з повним доступом: може читати й змінювати ваші файли, користуватися мережею та запускати програми, як і ви.",
+  "An extension module runs code with everything you can do on this computer. Lapin Extensions reviewed its source and signed it; it is desktop only.": "Модуль розширення виконує код з усім, що можете робити ви на цьому комп'ютері. Lapin Extensions перевірив його вихідний код і підписав його; він працює лише в настільному застосунку.",
+  "Save the changes to the project before Lapin restarts?": "Зберегти зміни проєкту перед перезапуском Lapin?",
+  "Restart without saving? The changes will be lost.": "Перезапустити без збереження? Зміни буде втрачено.",
+  "Changes to extension modules take effect when Lapin restarts.": "Зміни модулів розширень набудуть чинності після перезапуску Lapin.",
+  "Restart now": "Перезапустити зараз",
+  "Its interface was left out:": "Його інтерфейс пропущено:",
+  "Removed when Lapin restarts.": "Буде видалено під час перезапуску Lapin.",
+  "Not loaded:": "Не завантажено:",
+  "Loads when Lapin restarts.": "Завантажиться під час перезапуску Lapin.",
+  "The new version loads when Lapin restarts:": "Нова версія завантажиться під час перезапуску Lapin:",
+  "Turns on when Lapin restarts.": "Увімкнеться під час перезапуску Lapin.",
+  "Off.": "Вимк.",
+  "Turns off when Lapin restarts.": "Вимкнеться під час перезапуску Lapin.",
+  "Extension modules run in the desktop app only.": "Модулі розширень працюють лише в настільному застосунку.",
+  "Not installed: the terms were not accepted.": "Не встановлено: умови не прийнято.",
+  "Licence:": "Ліцензія:",
+  "Licence agreement of {name} (version {version}):": "Ліцензійна угода {name} (версія {version}):",
+  "I accept": "Приймаю",
+  "Open Extensions": "Відкрити Розширення",
+  "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "Цей проєкт використовує {name} (розширення), яке не встановлено. Його дані збережено недоторканими.",
+  "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "Цей проєкт використовує {names} (розширення), які не встановлено. Їхні дані збережено недоторканими.",
 };
 /** The Ukrainian plural: 1 (not 11) → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -14367,4 +14393,5 @@ export const UK_PATTERNS: Language['patterns'] = [
   [/^(\d+) line\(s\) have no graph node, the first at line (\d+):$/, (m) => `Рядки без вузла графа: ${m[1]}, перший — рядок ${m[2]}:`],
   [/^Open the partial graph \((\d+) nodes\)$/, (m) => `Відкрити частковий граф (вузлів: ${m[1]})`],
   [/^Python cell (\d+)$/, (m) => `Комірка Python ${m[1]}`],
+  [/^Some extensions were left out: (.+)\.$/, (m) => `Деякі розширення було пропущено: ${m[1]}.`],
 ];

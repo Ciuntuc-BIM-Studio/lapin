@@ -13621,6 +13621,32 @@ export const SV: Record<string, string> = {
   "The models the Python notebook's AI cells look for, best first: the first one installed is used. Empty: Lapin's own list": "Modellerna som Python-anteckningsbokens AI-celler söker efter, bäst först: den första installerade används. Tomt: Lapins egen lista",
   "Notes in Markdown: # a heading, **bold**, lists, tables, ```code```…": "Anteckningar i Markdown: # en rubrik, **fet**, listor, tabeller, ```kod```…",
   "To graph": "Till graf",
+  // Extension modules (docs/plan-extension-modules.md): Installed, the licence questions, the restart, the project notice
+  "Extension modules": "Tilläggsmoduler",
+  "Desktop app only.": "Endast i skrivbordsappen.",
+  "Runs code with everything you can do on this computer: read and change your files, use the network, start programs": "Kör kod med allt du kan göra på den här datorn: läsa och ändra dina filer, använda nätverket, starta program",
+  "Runs code with full access: it can read and change your files, use the network and start programs, as you can.": "Kör kod med full åtkomst: den kan läsa och ändra dina filer, använda nätverket och starta program, som du.",
+  "An extension module runs code with everything you can do on this computer. Lapin Extensions reviewed its source and signed it; it is desktop only.": "En tilläggsmodul kör kod med allt du kan göra på den här datorn. Lapin Extensions har granskat dess källkod och signerat den; den fungerar bara i skrivbordsappen.",
+  "Save the changes to the project before Lapin restarts?": "Spara ändringarna i projektet innan Lapin startar om?",
+  "Restart without saving? The changes will be lost.": "Starta om utan att spara? Ändringarna går förlorade.",
+  "Changes to extension modules take effect when Lapin restarts.": "Ändringar av tilläggsmoduler gäller när Lapin startar om.",
+  "Restart now": "Starta om nu",
+  "Its interface was left out:": "Dess gränssnitt utelämnades:",
+  "Removed when Lapin restarts.": "Tas bort när Lapin startar om.",
+  "Not loaded:": "Inte inläst:",
+  "Loads when Lapin restarts.": "Läses in när Lapin startar om.",
+  "The new version loads when Lapin restarts:": "Den nya versionen läses in när Lapin startar om:",
+  "Turns on when Lapin restarts.": "Slås på när Lapin startar om.",
+  "Off.": "Av.",
+  "Turns off when Lapin restarts.": "Slås av när Lapin startar om.",
+  "Extension modules run in the desktop app only.": "Tilläggsmoduler körs bara i skrivbordsappen.",
+  "Not installed: the terms were not accepted.": "Inte installerat: villkoren godkändes inte.",
+  "Licence:": "Licens:",
+  "Licence agreement of {name} (version {version}):": "Licensavtal för {name} (version {version}):",
+  "I accept": "Jag godkänner",
+  "Open Extensions": "Öppna Tillägg",
+  "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "Det här projektet använder {name} (tillägg), som inte är installerat. Dess data bevaras orörd.",
+  "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "Det här projektet använder {names} (tillägg), som inte är installerade. Deras data bevaras orörd.",
 };
 
 /** Phrases with a number or a name in them. */
@@ -14541,4 +14567,5 @@ export const SV_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(\d+) line\(s\) have no graph node, the first at line (\d+):$/, (m) => `${m[1]} rad(er) saknar grafnod, den första på rad ${m[2]}:`],
   [/^Open the partial graph \((\d+) nodes\)$/, (m) => `Öppna den partiella grafen (${m[1]} noder)`],
   [/^Python cell (\d+)$/, (m) => `Python-cell ${m[1]}`],
+  [/^Some extensions were left out: (.+)\.$/, (m) => `Vissa tillägg utelämnades: ${m[1]}.`],
 ];

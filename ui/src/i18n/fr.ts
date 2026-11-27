@@ -7466,6 +7466,32 @@ export const FR: Record<string, string> = {
   "The models the Python notebook's AI cells look for, best first: the first one installed is used. Empty: Lapin's own list": "Les modèles que cherchent les cellules IA du notebook Python, le meilleur d’abord : le premier installé est utilisé. Vide : la liste propre à Lapin",
   "Notes in Markdown: # a heading, **bold**, lists, tables, ```code```…": "Notes en Markdown : # un titre, **gras**, listes, tableaux, ```code```…",
   "To graph": "Vers graphe",
+  // Extension modules (docs/plan-extension-modules.md): Installed, the licence questions, the restart, the project notice
+  "Extension modules": "Modules d'extension",
+  "Desktop app only.": "Uniquement dans l'application de bureau.",
+  "Runs code with everything you can do on this computer: read and change your files, use the network, start programs": "Exécute du code avec tout ce que vous pouvez faire sur cet ordinateur : lire et modifier vos fichiers, utiliser le réseau, lancer des programmes",
+  "Runs code with full access: it can read and change your files, use the network and start programs, as you can.": "Exécute du code avec un accès complet : il peut lire et modifier vos fichiers, utiliser le réseau et lancer des programmes, comme vous.",
+  "An extension module runs code with everything you can do on this computer. Lapin Extensions reviewed its source and signed it; it is desktop only.": "Un module d'extension exécute du code avec tout ce que vous pouvez faire sur cet ordinateur. Lapin Extensions a examiné son code source et l'a signé ; il ne fonctionne que dans l'application de bureau.",
+  "Save the changes to the project before Lapin restarts?": "Enregistrer les modifications du projet avant que Lapin ne redémarre ?",
+  "Restart without saving? The changes will be lost.": "Redémarrer sans enregistrer ? Les modifications seront perdues.",
+  "Changes to extension modules take effect when Lapin restarts.": "Les modifications des modules d'extension prennent effet au redémarrage de Lapin.",
+  "Restart now": "Redémarrer maintenant",
+  "Its interface was left out:": "Son interface a été écartée :",
+  "Removed when Lapin restarts.": "Supprimé au redémarrage de Lapin.",
+  "Not loaded:": "Non chargé :",
+  "Loads when Lapin restarts.": "Se charge au redémarrage de Lapin.",
+  "The new version loads when Lapin restarts:": "La nouvelle version se charge au redémarrage de Lapin :",
+  "Turns on when Lapin restarts.": "S'active au redémarrage de Lapin.",
+  "Off.": "Désactivé.",
+  "Turns off when Lapin restarts.": "Se désactive au redémarrage de Lapin.",
+  "Extension modules run in the desktop app only.": "Les modules d'extension ne fonctionnent que dans l'application de bureau.",
+  "Not installed: the terms were not accepted.": "Non installé : les conditions n'ont pas été acceptées.",
+  "Licence:": "Licence :",
+  "Licence agreement of {name} (version {version}):": "Contrat de licence de {name} (version {version}) :",
+  "I accept": "J'accepte",
+  "Open Extensions": "Ouvrir Extensions",
+  "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "Ce projet utilise {name} (extension), qui n'est pas installée. Ses données sont conservées intactes.",
+  "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "Ce projet utilise {names} (extensions), qui ne sont pas installées. Leurs données sont conservées intactes.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;
@@ -8389,4 +8415,5 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^(\d+) line\(s\) have no graph node, the first at line (\d+):$/, (m) => `${m[1]} ligne(s) n’ont pas de nœud de graphe, la première à la ligne ${m[2]} :`],
   [/^Open the partial graph \((\d+) nodes\)$/, (m) => `Ouvrir le graphe partiel (${m[1]} nœuds)`],
   [/^Python cell (\d+)$/, (m) => `Cellule Python ${m[1]}`],
+  [/^Some extensions were left out: (.+)\.$/, (m) => `Certaines extensions ont été écartées : ${m[1]}.`],
 ];
