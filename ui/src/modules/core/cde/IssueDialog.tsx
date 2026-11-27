@@ -117,14 +117,15 @@ export function IssueDialog() {
   // each answer is kept with what it was asked for, so an issue goes only on the checks of what is chosen now.
   const showing = done != null;
   const asked = JSON.stringify([ids, revision, status]);
-  const namesFor = JSON.stringify([ids, docIds, model, target]);
+  const refIds = sendRefs.map((d) => d.id);
+  const namesFor = JSON.stringify([ids, docIds, model, target, refIds, dxf, set, docx]);
   useEffect(() => {
     if (showing || !chosen || !isRevision(revision)) return;
     let live = true;
     const t = setTimeout(() => {
       void (async () => {
         const c = await cdeCheck(ids, revision);
-        const n = await cdeNames({ sheets: ids, documents: docIds, model, revision, status, ...(target ? { of: target } : {}) });
+        const n = await cdeNames({ sheets: ids, documents: docIds, model, revision, status, ...(target ? { of: target } : {}), ...(refIds.length ? { references: refIds, dxf, set, documentsDocx: docx } : {}) });
         if (live) { setCheck({ key: asked, result: c }); setNames(n); }
       })();
     }, 300);
@@ -332,6 +333,17 @@ export function IssueDialog() {
                     );
                   })}
                   {sendRefs.length > 0 && <p className="muted small"><span data-no-i18n="">{sendRefs.length}</span> <span>reference documents go with the issue</span></p>}
+                  {names?.references && names.references.length > 0 && (
+                    <div className="small" data-field="issue-references-names">
+                      <p className="muted">Their files in the issue, under these names:</p>
+                      {names.references.flatMap((r) => r.files.map((x) => (
+                        <div key={`${r.id}:${x.name}:${x.file}`} className="indent" style={{ display: 'flex', gap: 8, alignItems: 'baseline' }} title={x.file !== x.name ? t('Another file of the issue has this name: a number is put after it') : undefined}>
+                          <code className={x.file !== x.name ? 'cde-warn' : 'muted'} data-no-i18n="">{x.file}</code>
+                          <span className="muted" data-no-i18n="">{r.title}{r.number ? ` · ${r.number}` : ''}</span>
+                        </div>
+                      )))}
+                    </div>
+                  )}
                   {refsNotHeld.length > 0 && <p className="cde-warn small">Some files are larger than the project keeps: they are fetched from the project's server, or left out when it has none.</p>}
                 </div>
               )}

@@ -88,6 +88,8 @@ A certificate lists the permits it requires. A reference document of type `cu` h
 
 The user ticks the permits the certificate asks for and adds the others. Each item is then *missing*, *requested* (a `requested` document stands for it), or *received*, and the document's link sets this. The list is what the generator's table and the CDE's "what is still missing" read.
 
+*Done (26.11.2026, the leftovers):* the list offered is edited in Folders and types → Checklist (rename, a folder for each item, order, remove, add, the indicative list again), locally by `references.setChecklist` and on a server by `PUT {r}/types {checklist}` (the server has no defaults to go back to); the certificate's Checklist tab ticks from it, as before.
+
 ### 3.4 Commands and queries (engine)
 
 Registered by the core module, each one an undo step, listed in the command catalogue (`node scripts/command-catalogue.mjs --check`):
@@ -165,7 +167,7 @@ Under `/atrium/1.0/projects/{id}` (`{p}`), with Atrium's errors and its role rul
 
 - **Transport.** MCP's Streamable HTTP at `/mcp` on the server (`https://cde.lapinbim.com/mcp`). It is written after the public specification, like the other protocols (JSON-RPC 2.0: `initialize`, `tools/list`, `tools/call`, with no resources or prompts at first), with no dependency. The official C# SDK (MIT) is the alternative if the specification's churn makes our own costly (question R-Q5).
 - **Sign-in, step 1: personal access tokens.** Made in the account's page (*Access tokens*: a name, a scope `read` or `read+write`, an expiry), shown once, stored as a hash like the session tokens, revocable. Clients send them as `Authorization: Bearer` (`claude mcp add --transport http atrium https://cde.lapinbim.com/mcp --header "Authorization: Bearer <token>"`). The token never goes into a project or a chat: the page says to paste it into the client's configuration.
-- **Sign-in, step 2 (later): OAuth 2.1** (authorization code with PKCE, dynamic client registration), which MCP's authorization specification asks for and which hosted clients such as claude.ai's connectors need. lapin-remote 1.0 lists the browser sign-in as missing, so this is the same piece of work for both.
+- **Sign-in, step 2: OAuth 2.1** (done: R6b for MCP clients; Lapin desktop's browser sign-in with the leftovers, 26.11.2026: Atrium's first-party client `lapin-desktop` with scope `session`, the feature `oauth.session`, the answer on the engine's own loopback port `/oauth/callback`, the code exchanged for the session the password grant gives; the password form stays) (authorization code with PKCE, dynamic client registration), which MCP's authorization specification asks for and which hosted clients such as claude.ai's connectors need. lapin-remote 1.0 lists the browser sign-in as missing, so this is the same piece of work for both.
 - **Tools.** Each tool calls the same service code as the REST API, with the token's account and role:
 
 | Tool | Scope | What |
@@ -208,6 +210,10 @@ Each stage leaves main working and has its tests, its guide page in both languag
 | **R6b** (later) | OAuth 2.1 with PKCE for MCP and the browser sign-in. | Atrium Server | 3 |
 
 Order: R1 → R2 (usable on its own, without a server) → R3 → R4 → R5 → R6 → R7. R5 can start after R1. R6 needs R3.
+
+### The leftovers (26.11.2026)
+
+Done on the branches `feat/cde-leftovers` (lapin-pro and Atrium): the checklist offered's editor (§3.3); Suggest on the server (`GET {r}/{id}/suggest`, Lapin's patterns rewritten in Atrium, the feature `references.suggest`, the MCP tool `cde_reference_suggest`), used by the CDE web's Documents tab; Issue… lists the names the reference files take (`cde.naming` with `references`); the Containers view marks files-only issues (`filesOnly` on the containers' items) and offers their own IFC, never main's; OAuth's metadata name the guide's `cde-server` page; a project's server name tied to its project information's `name`; project information proposed from a PDF or DXF title block (`projectInfo.proposeFromTitleBlock`, the mapping's `titleblock` table; Lapin's `project-info-mapping.json` takes it once Atrium's branch is merged, as `ArchicadProjectInfoTests` compares it byte for byte with ../Atrium); the desktop's browser sign-in (§7). Left: a title block's reading is not kept or shown on the file as `ifcProjectInfo` is; `tools/atrium-oauth-check.mjs` does not run the session flow.
 
 ## 10. Open questions (with what is done meanwhile)
 

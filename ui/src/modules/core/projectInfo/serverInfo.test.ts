@@ -38,7 +38,9 @@ describe('the project information on the server (A1b)', () => {
   });
 
   it('lets viewers read, editors change and dismiss their own, owners apply', () => {
-    expect(infoPerms('viewer', 'a')).toMatchObject({ edit: false, apply: false });
+    expect(infoPerms('viewer', 'a')).toMatchObject({ edit: false, apply: false, rename: false });
+    expect(infoPerms('editor', 'a')).toMatchObject({ edit: true, rename: false });
+    expect(infoPerms('owner', 'a')).toMatchObject({ edit: true, rename: true });
     const editor = infoPerms('editor', 'atrium:me');
     expect([editor.edit, editor.apply, editor.dismiss({ createdBy: 'atrium:me' }), editor.dismiss({ createdBy: 'atrium:x' })]).toEqual([true, false, true, false]);
     expect(infoPerms('owner', null).dismiss({ createdBy: 'atrium:x' })).toBe(true);

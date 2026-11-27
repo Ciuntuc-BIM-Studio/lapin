@@ -30,11 +30,13 @@ public sealed record FinishHatch(string Mode = "material", string? Pattern = nul
 /// What a room is finished with (decision 265): the floor's layers from the top down, the walls' from the wall's face into the room
 /// (each with its pieces up the height: tiles to 2.10 m, paint over them), the ceiling's from the slab down; how high the walls'
 /// go (null: up to the ceiling); a skirting type by name; whether the floor runs on through the doors to the wall's axis; and
-/// a structural slab under the floor, made a floor of its own.
+/// a structural slab under the floor, made a floor of its own. <see cref="PartTypes"/> (issue #143; off by default, so a finish
+/// reads and exports as before): the floor, the walls and the ceiling each typed by a part type of their own (a
+/// <c>LapinRoomFinishPartType</c>, „Name · Floor”), which carries its own type parameters and its own layer set in IFC.
 /// </summary>
 public sealed record RoomFinishSpec(string Name, List<FinishLayer>? Floor = null, List<FinishLayer>? Walls = null, List<FinishLayer>? Ceiling = null,
     double? WallHeight = null, string? Skirting = null, bool Thresholds = true, FinishSlab? Slab = null,
-    FinishHatch? FloorHatch = null, FinishHatch? CeilingHatch = null)
+    FinishHatch? FloorHatch = null, FinishHatch? CeilingHatch = null, bool? PartTypes = null)
 {
     static FinishLayer L(string material, double t, params FinishPart[] parts) => new(material, t, parts.Length > 0 ? [.. parts] : null);
 
@@ -101,6 +103,8 @@ public sealed record RoomFinishSpec(string Name, List<FinishLayer>? Floor = null
         return s with
         {
             FloorHatch = Hatch(s.FloorHatch, "floor"), CeilingHatch = Hatch(s.CeilingHatch, "ceiling"),
+            // Off is kept as nothing, so a spec reads as before.
+            PartTypes = s.PartTypes == true ? true : null,
             Name = s.Name.Trim(), Floor = Check(s.Floor, "floor"), Walls = Check(s.Walls, "walls"), Ceiling = Check(s.Ceiling, "ceiling"),
             Skirting = string.IsNullOrWhiteSpace(s.Skirting) ? null : s.Skirting.Trim(),
             Slab = s.Slab is { } slab ? slab with { Material = string.IsNullOrWhiteSpace(slab.Material) ? "Reinforced concrete" : slab.Material.Trim(), Extend = Math.Clamp(slab.Extend, 0, 1) } : null,
@@ -127,15 +131,27 @@ public static class RoomFinishes
 {
     public const string Class = "LapinRoomFinish";
     public const string TypeClass = "LapinRoomFinishType";
+    /// <summary>A part's own type when its finish says so (issue #143): <c>finishType</c> the finish's type, <c>part</c> floor, walls or ceiling.</summary>
+    public const string PartTypeClass = "LapinRoomFinishPartType";
     public static readonly string[] PartNames = ["floor", "walls", "ceiling"];
+    static readonly Dictionary<string, (string Label, string Predefined)> PartKinds = new()
+    {
+        ["floor"] = ("Floor", "FLOORING"), ["walls"] = ("Walls", "CLADDING"), ["ceiling"] = ("Ceiling", "CEILING"),
+    };
+
+    /// <summary>A room's option (issue #145): <c>ceilingFrom</c> „falseCeiling”, its ceiling is the false ceiling over it when it has one (else, and by default, the slab above).</summary>
+    public const string CeilingFromKey = "ceilingFrom";
+    public const string FalseCeilingValue = "falseCeiling";
 
     public static void Register(IModuleRegistry r)
     {
         r.Class(new(TypeClass, "Room finish", [], "#d9cdb8", Kind: "type"));
+        r.Class(new(PartTypeClass, "Room finish part type", [], "#d9cdb8", Kind: "type"));
         r.Class(new(Class, "Room finish", [], "#e6dccb"));
         r.Geometry(Class, Geometry);
         r.Quantities(Class, Quantities);
         r.Service<IScheduleSource>(new RoomFinishSchedule());
+        r.Service<IIfcLayerSets>(new RoomFinishLayerSets());
         r.Catalog("roomFinishes", new JsonObject
         {
             ["spec"] = RoomFinishSpec.Default().ToJson(),
@@ -151,6 +167,7 @@ public static class RoomFinishes
             var attrs = type.CloneAttrs();
             attrs["spec"] = spec.ToJson();
             ctx.Replace(type.With(name: spec.Name, attrs: attrs));
+            EnsurePartTypes(ctx, ctx.Model.Get(type.Id)!, spec);
             // The rooms finished so are laid again: a part added or taken away, the skirting and the slab as the finish now says.
             var changed = ctx.Model.Get(type.Id)!;
             foreach (var room in ctx.Model.OfClass(Rooms.Class).Where(x => x.Str("finishType") == type.Id).ToList()) Apply(ctx, room, changed);
@@ -202,8 +219,35 @@ public static class RoomFinishes
         EnsureMaterials(ctx, spec);
         var type = new Entity(ctx.NewId(), TypeClass, spec.Name, new JsonObject { ["spec"] = spec.ToJson(), ["exportAs"] = "IfcCoveringType" });
         ctx.Add(type);
+        EnsurePartTypes(ctx, type, spec);
         return type;
     }
+
+    /// <summary>The part types a finish has made for its parts (issue #143), kept when the option is turned off so their parameters stay.</summary>
+    public static IEnumerable<Entity> PartTypesOf(IModelView m, string typeId) => m.OfClass(PartTypeClass).Where(t => t.Str("finishType") == typeId);
+
+    /// <summary>
+    /// A finish that types its parts apart (<see cref="RoomFinishSpec.PartTypes"/>): a part type for each part it has, made once
+    /// (its GlobalId kept from then on) and named after the finish („Bathroom · Floor”), renamed with it.
+    /// </summary>
+    static void EnsurePartTypes(ICommandContext ctx, Entity type, RoomFinishSpec spec)
+    {
+        var have = PartTypesOf(ctx.Model, type.Id).ToList();
+        foreach (var (part, (label, predefined)) in PartKinds)
+        {
+            var name = $"{spec.Name} · {label}";
+            if (have.FirstOrDefault(t => t.Str("part") == part) is { } was)
+            {
+                if (was.Name != name) ctx.Replace(was.With(name: name));
+                continue;
+            }
+            if (spec.PartTypes != true || LayersOf(spec, part) is not { Count: > 0 }) continue;
+            ctx.Add(new Entity(ctx.NewId(), PartTypeClass, name, new JsonObject { ["finishType"] = type.Id, ["part"] = part, ["exportAs"] = "IfcCoveringType" }, predefined));
+        }
+    }
+
+    /// <summary>A part's layers in a spec (floor, walls or ceiling).</summary>
+    public static List<FinishLayer>? LayersOf(RoomFinishSpec spec, string? part) => part switch { "floor" => spec.Floor, "walls" => spec.Walls, "ceiling" => spec.Ceiling, _ => null };
 
     /// <summary>The finish's materials in the project, a new one made a finish (the slab's left as it is).</summary>
     static void EnsureMaterials(ICommandContext ctx, RoomFinishSpec spec)
@@ -221,7 +265,9 @@ public static class RoomFinishes
 
     public static RoomFinishSpec? SpecOf(IModelView m, Entity finishOrType)
     {
-        var type = finishOrType.Class == TypeClass ? finishOrType : m.RelatingOf(finishOrType.Id, IfcClass.RelDefinesByType);
+        var type = finishOrType.Class is TypeClass or PartTypeClass ? finishOrType : m.RelatingOf(finishOrType.Id, IfcClass.RelDefinesByType);
+        // A part's own type (issue #143) reads its finish's spec.
+        if (type?.Class == PartTypeClass) type = type.Str("finishType") is { } parent ? m.Get(parent) : null;
         if (type?.Attrs["spec"] is not { } node) return null;
         try { return node.Deserialize(ArchitectureJson.Default.RoomFinishSpec); }
         catch (JsonException) { return null; }
@@ -247,6 +293,10 @@ public static class RoomFinishes
     {
         var spec = SpecOf(ctx.Model, type) ?? throw new CommandException("The room finish cannot be read.");
         var storeyId = Spatial.StoreyOf(ctx.Model, room.Id)?.Id ?? throw new CommandException("The room is on no storey.");
+        // Its materials in the project (a finish brought in from a type pack names them only), its parts' own types when it has them.
+        EnsureMaterials(ctx, spec);
+        EnsurePartTypes(ctx, type, spec);
+        var partTypes = spec.PartTypes == true ? PartTypesOf(ctx.Model, type.Id).ToDictionary(t => t.Str("part") ?? "") : [];
         var laid = Laid(ctx.Model, room.Id).ToList();
         var kept = new HashSet<string>();
         Entity? Take(Func<Entity, bool> match)
@@ -263,6 +313,7 @@ public static class RoomFinishes
         foreach (var (part, layers, predefined) in new[] { ("floor", spec.Floor, "FLOORING"), ("walls", spec.Walls, "CLADDING"), ("ceiling", spec.Ceiling, "CEILING") })
         {
             if (layers is not { Count: > 0 }) continue;
+            var typeOf = partTypes.GetValueOrDefault(part) ?? type;
             var attrs = new JsonObject { ["roomId"] = room.Id, ["part"] = part, ["exportAs"] = "IfcCovering" };
             if (Take(x => x.Class == Class && x.Str("part") == part) is { } was)
             {
@@ -270,13 +321,13 @@ public static class RoomFinishes
                 foreach (var (k, v) in attrs) keep[k] = v?.DeepClone();
                 ctx.Replace(new Entity(was.Id, Class, $"{label} · {part}", keep, predefined));
                 Home(was.Id);
-                ctx.Relate(IfcClass.RelDefinesByType, type.Id, was.Id);
+                ctx.Relate(IfcClass.RelDefinesByType, typeOf.Id, was.Id);
                 continue;
             }
             var e = new Entity(ctx.NewId(), Class, $"{label} · {part}", attrs, predefined);
             ctx.Add(e);
             Spatial.Contain(ctx, storeyId, e.Id);
-            ctx.Relate(IfcClass.RelDefinesByType, type.Id, e.Id);
+            ctx.Relate(IfcClass.RelDefinesByType, typeOf.Id, e.Id);
         }
         if (spec.Skirting is { } sk && Skirtings.TypeNamed(ctx, sk) is { } skType)
         {
@@ -359,6 +410,40 @@ public static class RoomFinishes
             if (soffit > level + 1.0 && (best == null || soffit < best.Value.Item2)) best = (s, soffit);
         }
         return best;
+    }
+
+    /// <summary>
+    /// The underside of the slab over a point, above <paramref name="level"/> by more than a metre (the lowest such; a finish's own
+    /// slab left out): what a false ceiling placed there hangs under (issue #145). Null: no slab over it.
+    /// </summary>
+    public static double? SoffitOver(IModelView m, Vec2 at, double level)
+    {
+        double? best = null;
+        foreach (var s in m.OfClass(IfcClass.Slab))
+        {
+            if (s.Str("finishOf") != null) continue;
+            var contour = Slabs.Contour(s);
+            if (contour.Count < 3 || !Polygon2.Contains(contour, at)) continue;
+            var soffit = Slabs.Top(m, s) + Slabs.Section(m, s).Min(b => b.From);
+            if (soffit > level + 1.0 && (best == null || soffit < best)) best = soffit;
+        }
+        return best;
+    }
+
+    /// <summary>
+    /// The room's false ceiling's underside, when the room takes its false ceiling as its ceiling (<see cref="CeilingFromKey"/>,
+    /// issue #145): the lowest false ceiling on its storey over the room's stamp point (one placed in the room first), above its floor.
+    /// </summary>
+    public static double? FalseCeiling(IModelView m, Entity room, Rooms.Outline o)
+    {
+        if (room.Str(CeilingFromKey) != FalseCeilingValue) return null;
+        var storeyId = Spatial.StoreyOf(m, room.Id)?.Id;
+        var at = Rooms.StampPoint(room, o);
+        var level = Level(m, room);
+        var over = m.OfClass(Ceilings.Class).Where(c => Spatial.StoreyOf(m, c.Id)?.Id == storeyId && Slabs.Contour(c) is { Count: >= 3 } k && Polygon2.Contains(k, at))
+            .Select(c => (Own: c.Str("roomId") == room.Id, Z: Ceilings.Underside(m, c))).Where(x => x.Z > level + 1e-3).ToList();
+        if (over.Count == 0) return null;
+        return (over.Any(x => x.Own) ? over.Where(x => x.Own) : over).Min(x => x.Z);
     }
 
     /// <summary>The underside the ceiling hangs from: the slab's over the room, else the room's height over its floor.</summary>
@@ -579,7 +664,7 @@ public static class RoomFinishes
             switch (e.Str("part"))
             {
                 case "walls" when WallFace(spec) is var t && t > 0:
-                    net = Inset(o, t);
+                    net = Inset(o, t, Spatial.StoreyOf(m, room.Id)?.Id, m);
                     break;
                 case "ceiling" when spec.Ceiling is { Count: > 0 } c:
                     var level = Level(m, room);
@@ -590,16 +675,72 @@ public static class RoomFinishes
                     break;
             }
         }
+        // A room whose ceiling is its false ceiling (issue #145): the finished ceiling's height is the false ceiling's underside over its floor.
+        if (FalseCeiling(m, room, o) is { } z) ceiling = Math.Max(0, z - Level(m, room));
         return net == null && ceiling == null && floor == null ? null : new Finished(net ?? o, ceiling, floor);
     }
 
-    /// <summary>The outline taken in by <paramref name="t"/>, its islands out by it; as it was when nothing would be left.</summary>
-    static Rooms.Outline Inset(Rooms.Outline o, double t)
+    /// <summary>
+    /// The outline taken in by <paramref name="t"/>, its islands out by it; as it was when nothing would be left. An edge on a
+    /// room separation line (GitHub #142) has no finish and stays where it is.
+    /// </summary>
+    static Rooms.Outline Inset(Rooms.Outline o, double t, string? storeyId, IModelView m)
     {
-        var outer = Polygon2.Offset(Polygon2.EnsureCcw(o.Outer), [-t]);
+        var ccw = Polygon2.EnsureCcw(o.Outer);
+        var outer = Polygon2.Offset(ccw, Distances(ccw, RoomDividers.Edges(m, storeyId, ccw), -t));
         if (Polygon2.SignedArea(outer) <= 1e-9) return o;
-        return o with { Outer = outer, Islands = o.Islands.Select(i => (IReadOnlyList<Vec2>)Polygon2.Offset(Polygon2.EnsureCcw(i), [t])).ToList() };
+        return o with
+        {
+            Outer = outer,
+            Islands = o.Islands.Select(i => Polygon2.EnsureCcw(i) is var ci ? (IReadOnlyList<Vec2>)Polygon2.Offset(ci, Distances(ci, RoomDividers.Edges(m, storeyId, ci), t)) : i).ToList(),
+        };
     }
+
+    /// <summary>Each edge's offset: <paramref name="d"/>, 0 on a room separation line (a single distance when there is none, as before).</summary>
+    static double[] Distances(IReadOnlyList<Vec2> loop, bool[] skip, double d) =>
+        skip.Any(x => x) ? [.. Enumerable.Range(0, loop.Count).Select(i => skip[i] ? 0 : d)] : [d];
+
+    /// <summary>How far in from the walls' faces the room's walls finish is at the floor (<see cref="WallFace(RoomFinishSpec)"/>); 0 without one.</summary>
+    public static double WallFaceOf(IModelView m, Entity room) =>
+        m.OfClass(Class).Where(e => e.Str("roomId") == room.Id && e.Str("part") == "walls")
+            .Select(e => SpecOf(m, e) is { } spec ? WallFace(spec) : 0).DefaultIfEmpty(0).Max();
+
+    /// <summary>
+    /// The band between <paramref name="d0"/> and <paramref name="d1"/> off a loop anticlockwise (<paramref name="sign"/> −1:
+    /// inwards, an outline; +1: outwards, an island), as polygons anticlockwise: the whole ring (outer, hole) when no edge is
+    /// skipped, else one open band per run of edges between the skipped ones (the room separation lines, GitHub #142), its ends
+    /// on the skipped edges' lines.
+    /// </summary>
+    internal static List<(IReadOnlyList<Vec2> Outer, IReadOnlyList<IReadOnlyList<Vec2>> Holes)> Bands(IReadOnlyList<Vec2> ccw, bool[] skip, double d0, double d1, int sign)
+    {
+        var n = ccw.Count;
+        if (!skip.Any(x => x))
+            return sign < 0 ? [(Polygon2.Offset(ccw, [-d0]), [Polygon2.Offset(ccw, [-d1])])] : [(Polygon2.Offset(ccw, [d1]), [Polygon2.Offset(ccw, [d0])])];
+        if (skip.All(x => x)) return [];
+        var a = Polygon2.Offset(ccw, Distances(ccw, skip, sign * d0));
+        var b = Polygon2.Offset(ccw, Distances(ccw, skip, sign * d1));
+        var o = new List<(IReadOnlyList<Vec2>, IReadOnlyList<IReadOnlyList<Vec2>>)>();
+        var first = Array.IndexOf(skip, true);
+        var run = new List<int>();
+        for (var k = 1; k <= n; k++)
+        {
+            var e = (first + k) % n;
+            if (!skip[e]) { run.Add(e); continue; }
+            if (run.Count > 0)
+            {
+                // The run's corners: its first edge's start to its last edge's end, along the near line, back along the far one.
+                var corners = Enumerable.Range(0, run.Count + 1).Select(i => (run[0] + i) % n).ToList();
+                var band = corners.Select(i => a[i]).Concat(corners.AsEnumerable().Reverse().Select(i => b[i])).ToList();
+                if (Math.Abs(Polygon2.SignedArea(band)) > 1e-12) o.Add((Polygon2.EnsureCcw(band), []));
+            }
+            run.Clear();
+        }
+        return o;
+    }
+
+    /// <summary>The loops' length the walls' finish lines: every edge but those on a room separation line (GitHub #142).</summary>
+    static double FinishedPerimeter(IEnumerable<(IReadOnlyList<Vec2> Loop, bool[] Skip)> loops) =>
+        loops.Sum(x => Enumerable.Range(0, x.Loop.Count).Where(i => !x.Skip[i]).Sum(i => (x.Loop[(i + 1) % x.Loop.Count] - x.Loop[i]).Length));
 
     // ------------------------------------------------------------ in plans (decision 299)
 
@@ -763,7 +904,8 @@ public static class RoomFinishes
         else if (part == "walls" && spec.Walls is { Count: > 0 } walls)
         {
             var (soffit, _) = Ceiling(m, room, o, level);
-            var z1 = spec.WallHeight is { } wh ? level + wh : soffit - Thickness(spec.Ceiling);
+            // Up to the ceiling: the finish's own ceiling under the slab, or the false ceiling when the room takes it as its ceiling (issue #145).
+            var z1 = spec.WallHeight is { } wh ? level + wh : FalseCeiling(m, room, o) ?? soffit - Thickness(spec.Ceiling);
             if (z1 - level < 1e-6) return new ElementGeometry([], Diagnostics: ["The walls' finish has no height: the ceiling is at the floor."]);
             var total = walls.Sum(l => Math.Max(l.Thickness, l.Parts?.Max(p => p.Thickness ?? 0) ?? 0));
             // The doors and windows of the walls along the outline, through every layer of the finish.
@@ -775,13 +917,20 @@ public static class RoomFinishes
                 return Prism.ExtrudeFootprint(footprint, x.F.Base + x.P.Sill, x.P.Height, "opening");
             }).OfType<Solid>().ToList();
             if (cutters.Count > 0 && booleans == null) problems.Add("Openings need the boolean library (manifold), missing here: the walls' finish is drawn uncut.");
-            // A ring between d0 and d1 in from the outline, and out from each island.
+            // The edges on room separation lines (GitHub #142): they bound the floor but have no wall, so no finish runs along them.
+            var outerSkip = RoomDividers.Edges(m, storeyId, outer);
+            var islandSkips = islands.Select(i => RoomDividers.Edges(m, storeyId, i)).ToList();
+            var perimeter = outerSkip.Any(x => x) || islandSkips.Any(s => s.Any(x => x))
+                ? FinishedPerimeter([(outer, outerSkip), .. islands.Select((i, k) => (i, islandSkips[k]))]) : o.NetPerimeter;
+            // A ring between d0 and d1 in from the outline, and out from each island (open bands where a separation line is).
             List<Solid> Rings(double d0, double d1, double z0, double h)
             {
                 var o2 = new List<Solid>();
-                if (Slab(Polygon2.Offset(outer, [-d0]), [Polygon2.Offset(outer, [-d1])], z0, h, "walls") is { } s) o2.Add(s);
-                foreach (var isl in islands)
-                    if (Slab(Polygon2.Offset(isl, [d1]), [Polygon2.Offset(isl, [d0])], z0, h, "walls") is { } si) o2.Add(si);
+                foreach (var (bo, bh) in Bands(outer, outerSkip, d0, d1, -1))
+                    if (Slab(bo, bh, z0, h, "walls") is { } s) o2.Add(s);
+                for (var k = 0; k < islands.Count; k++)
+                    foreach (var (bo, bh) in Bands(islands[k], islandSkips[k], d0, d1, 1))
+                        if (Slab(bo, bh, z0, h, "walls") is { } si) o2.Add(si);
                 return o2;
             }
             var linings = along.Select(Lining).OfType<RevealLining>().ToList();
@@ -809,7 +958,7 @@ public static class RoomFinishes
                         }
                     if (p.Material.Length > 0 && top - at > 1e-9)
                     {
-                        gross.Add((i, p.Material, p.Thickness ?? l.Thickness, o.NetPerimeter * (top - at), 0));
+                        gross.Add((i, p.Material, p.Thickness ?? l.Thickness, perimeter * (top - at), 0));
                         // The reveals of the doors and windows lined too, from the room's face to the frame, this piece where it reaches.
                         foreach (var lining in thick ? linings : [])
                             foreach (var box in lining.Boxes(d, d + (p.Thickness ?? l.Thickness), at, top, top >= z1 - 1e-9))
@@ -885,6 +1034,39 @@ public static class RoomFinishes
                 new("NetVolume", x.Volume, "VOLUME", "Net volume"),
                 .. x.Part == "walls" ? [new Quantity("RevealArea", x.Reveals, "AREA", "Reveals")] : Array.Empty<Quantity>(),
             ], $"{x.Part}:{x.Layer}:{x.Material}", x.Material, Materials.Find(m, x.Material)?.Id);
+    }
+}
+
+/// <summary>
+/// A room finish's covering in IFC (issue #143): its part's layers as an IfcMaterialLayerSet, as walls and floors have theirs —
+/// the floor's and the ceiling's laid down from their reference (the finished floor, the slab's underside), the walls' from the
+/// wall's face into the room; a layer's pieces up the height (tiles to 2.10 m) said in its description. A part's own type has
+/// its part's set; the finish's type, shared by its three parts, has none.
+/// </summary>
+public sealed class RoomFinishLayerSets : IIfcLayerSets
+{
+    public IfcLayerSet? ElementLayers(IModelView m, Entity e) =>
+        e.Class == RoomFinishes.Class && RoomFinishes.SpecOf(m, e) is { } spec ? Set(m, spec, e.Str("part")) : null;
+
+    public IfcLayerSet? TypeLayers(IModelView m, Entity type) =>
+        type.Class == RoomFinishes.PartTypeClass && RoomFinishes.SpecOf(m, type) is { } spec ? Set(m, spec, type.Str("part")) : null;
+
+    static IfcLayerSet? Set(IModelView m, RoomFinishSpec spec, string? part)
+    {
+        if (RoomFinishes.LayersOf(spec, part) is not { Count: > 0 } layers) return null;
+        static string Len(double v) => v.ToString("0.###", CultureInfo.InvariantCulture);
+        var o = new List<IfcLayer>();
+        foreach (var l in layers)
+        {
+            if (Materials.Find(m, l.Material) is not { } mat) continue;
+            var note = l.Parts is { Count: > 0 } ps
+                ? string.Join("; ", ps.Select(p => $"{(p.Material.Length > 0 ? p.Material : "nothing")} to {Len(p.Height)} m" + (p.Thickness is { } t ? $" ({Len(t * 1000)} mm)" : ""))) + $"; {l.Material} above"
+                : null;
+            o.Add(new IfcLayer(mat.Id, l.Thickness, l.Material, note, "Finish"));
+        }
+        if (o.Count == 0) return null;
+        var label = part switch { "floor" => "Floor", "walls" => "Walls", _ => "Ceiling" };
+        return new IfcLayerSet($"{spec.Name} · {label}", o, part == "walls" ? "AXIS2" : "AXIS3", Negative: part != "walls");
     }
 }
 

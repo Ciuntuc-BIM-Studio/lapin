@@ -142,7 +142,7 @@ export function CdeProjectInfo({ server, project, withModel = false }: { server:
             {INFO_FIELDS.filter((f) => f.group === g.key).map((f) => (
               <label key={f.key} className="doc-info-row">
                 <span className="muted small">{f.label}</span>
-                {perms.edit
+                {perms.edit && (f.key !== 'name' || perms.rename)
                   ? MULTILINE.has(f.key)
                     ? <textarea rows={2} value={value(f.key)} data-cde-info-field={f.key} data-no-i18n onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))} />
                     : <input value={value(f.key)} data-cde-info-field={f.key} data-no-i18n onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))} />

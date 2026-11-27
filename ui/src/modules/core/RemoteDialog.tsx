@@ -10,7 +10,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, FolderOpen, GitCommitHorizontal, KeyRound, LogIn, LogOut, MessageSquare, RefreshCw, ShieldCheck, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, FolderOpen, GitCommitHorizontal, Globe, KeyRound, LogIn, LogOut, MessageSquare, RefreshCw, ShieldCheck, Trash2, X } from 'lucide-react';
 import { backdropClose } from '../../shell/Dialog';
 import { confirmAction } from '../../shell/prompts';
 import { notify, useUi } from '../../app/store';
@@ -18,12 +18,12 @@ import { useSession } from '../../engine/session';
 import { enter, isDesktop, pickPath, projectTitle } from '../../engine/files';
 import { pickFolder } from './cde/cde';
 import {
-  authorFor, changePassword, historyLog, historyStatus, remoteCall, serverOf, setAuthorName, authorName, signedIn, signIn, signOut, syncIssuesAndDocuments, writingCall,
+  authorFor, browserSignIn, BROWSER_SIGN_IN_FEATURE, canSignInWithBrowser, changePassword, historyLog, historyStatus, remoteCall, serverOf, setAuthorName, authorName, signedIn, signIn, signOut, syncIssuesAndDocuments, writingCall,
   type CommitInfo, type HistoryStatus,
 } from '../../engine/remote';
 import { when } from './format';
 import { useCde } from '../../engine/cdeServer';
-import { account } from '../../engine/atrium';
+import { account, features } from '../../engine/atrium';
 import { ActivityList, RulesEditor, openAdmin } from './CdeAdmin';
 import { AccessTokensButton, AccessTokensSection, useTokensOffered } from './AccessTokensEntry';
 import { PublishingPanel } from './CdePublish';
@@ -198,7 +198,20 @@ function ServerProject({ server, project, name, busy, run }: { server: string; p
   );
 }
 
-/** The account on the project's server: sign in (e-mail and password) or out. */
+/** Whether the server lets this desktop sign in through the browser (false until it says so, and always in the browser's Lapin). */
+function useBrowserSignInOffered(server: string | null): boolean {
+  const [offered, setOffered] = useState(false);
+  useEffect(() => {
+    setOffered(false);
+    if (!server || !canSignInWithBrowser()) return;
+    let live = true;
+    void features(server).then((f) => { if (live) setOffered(f.includes(BROWSER_SIGN_IN_FEATURE)); }).catch(() => undefined);
+    return () => { live = false; };
+  }, [server]);
+  return offered;
+}
+
+/** The account on the project's server: sign in (through the browser when the server offers it, or with the e-mail and password) or out. */
 function Account({ server, signedIn: inNow, onChange }: { server: string; signedIn: boolean; onChange: () => void }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -216,6 +229,7 @@ function Account({ server, signedIn: inNow, onChange }: { server: string; signed
   const [changing, setChanging] = useState(false);
   const [tokens, setTokens] = useState(false);
   const tokensOffered = useTokensOffered(inNow ? server : null);
+  const browser = useBrowserSignInOffered(inNow ? null : server);
   if (inNow) {
     return (
       <>
@@ -231,10 +245,38 @@ function Account({ server, signedIn: inNow, onChange }: { server: string; signed
     );
   }
   return (
-    <div className="version-save">
+    <>
+      {browser && <BrowserSignIn server={server} onChange={onChange} />}
+      <div className="version-save">
       <input placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="E-mail" autoComplete="username" />
       <input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} aria-label="Password" autoComplete="current-password" onKeyDown={(e) => { if (e.key === 'Enter') void go(); }} />
-      <button type="button" className="btn primary" disabled={busy || !email || !password} onClick={() => void go()}><LogIn size={13} /> Sign in</button>
+      <button type="button" className={browser ? 'btn' : 'btn primary'} disabled={busy || !email || !password} onClick={() => void go()}><LogIn size={13} /> Sign in</button>
+      </div>
+    </>
+  );
+}
+
+/**
+ * Sign in through the system's browser, when the server offers it (its `oauth.session` feature) and this is the desktop: the server's
+ * own page opens in the browser, the password is typed there and never reaches Lapin; Lapin waits for the browser's answer.
+ */
+function BrowserSignIn({ server, onChange }: { server: string; onChange: () => void }) {
+  const [waiting, setWaiting] = useState<{ cancelled: boolean } | null>(null);
+  useEffect(() => () => { if (waiting) waiting.cancelled = true; }, [waiting]);
+  const go = async () => {
+    const stop = { cancelled: false };
+    setWaiting(stop);
+    try {
+      const who = await browserSignIn(server, stop);
+      if (who) { notify('Signed in.'); onChange(); }
+    } catch (e) { notify(e instanceof Error ? e.message : String(e)); } finally { setWaiting(null); }
+  };
+  return (
+    <div className="version-save" data-remote="browser-sign-in">
+      {waiting
+        ? <><span className="muted">Waiting for the browser: sign in on the server's page there.</span><button type="button" onClick={() => { waiting.cancelled = true; setWaiting(null); }}>Cancel</button></>
+        : <><button type="button" className="btn primary" onClick={() => void go()} title="Opens the server's sign-in page in your browser: your password is typed there, not in Lapin"><Globe size={13} /> Sign in with the browser</button>
+          <span className="muted small">or with your e-mail and password:</span></>}
     </div>
   );
 }

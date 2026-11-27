@@ -267,7 +267,13 @@ public sealed record JoinerySpec(
     /// threshold across the wall, whichever the door has (<see cref="JoinerySymbols.ThresholdPlan"/>); null or false: not drawn, as
     /// before. Sections cut it as the body has it either way.
     /// </summary>
-    bool? ThresholdInPlan = null)
+    bool? ThresholdInPlan = null,
+    /// <summary>
+    /// Whether a plan at LOD 200 draws the sills too (GitHub issue #153): true, the interior and exterior sills (the detailed ones, else
+    /// a window's plain boards) seen under the cut from LOD 200 up (<see cref="JoinerySymbols.SillsPlan"/>); null or false: from LOD
+    /// 300 only, the sills being details (decisions 404, 405), as before.
+    /// </summary>
+    bool? SillsInPlan = null)
 {
     public static JoinerySpec DefaultWindow(string name = "Window") => new(
         "window", name, "W", 1.2, 1.5, 0.9,

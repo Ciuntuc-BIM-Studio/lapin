@@ -304,6 +304,8 @@ export const deleteRegister = (server: string, project: string) => need<unknown>
 export interface IssueTagItem {
   kind: 'issue'; name: string; issue: number; revision: string; suitability: string; container: string; tag: string; commit: string; at: string;
   author: Person; issuedAt: string; issuedBy: Person; note: string | null; files: ServerFile[]; submission: string | null; supersededBy: string | null;
+  /** Files submitted from disk (R7): the commit is main's at the time, not a model of this issue's own. Left out by an older server. */
+  filesOnly?: boolean;
 }
 export interface WipItem { kind: 'branch'; name: string; commit: string; updatedAt: string; updatedBy: Person }
 export interface Containers { wip: (WipItem | IssueTagItem)[]; shared: IssueTagItem[]; published: IssueTagItem[]; archived: IssueTagItem[] }

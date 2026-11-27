@@ -41,6 +41,9 @@ public sealed partial class EngineDispatcher
 
     HttpClient Http => (HttpClient?)_remoteHttp ?? SharedHttp.Client;
 
+    /// <summary>The scope a browser sign-in asks for: the server's session, as the password grant gives it (Atrium's first-party sign-in).</summary>
+    public const string BrowserSignInScope = "session";
+
     /// <summary>
     /// The way in to <see cref="RemoteCallAsync"/> from <see cref="HandleAsync(string, Caller)"/> and <see cref="Dispatch"/>, which every
     /// call runs: never inlined, so that their code does not set up <see cref="RemoteCallAsync"/>'s state machine (whose fields may hold
@@ -136,6 +139,42 @@ public sealed partial class EngineDispatcher
                 if (await CurrentUser(url, t) is { } user) o["user"] = user;
                 return (o, null);
             }
+            // The sign-in through the system's browser (OAuth 2.1 code + PKCE, a loopback answer: BrowserSignIn): started here, the
+            // server's page opened; the interface then asks for its result until the browser came back, and gets the session's tokens
+            // as remote.signIn gives them. The password never reaches Lapin.
+            case "remote.browserSignInStart":
+            {
+                var url = (string?)p["url"] ?? throw new CommandException("Which server?");
+                if (BrowserSignIn.CallbackUrl == null) throw new CommandException("Signing in through the browser needs the desktop app.");
+                var server = await HttpRemote.BrowserSignInAsync(Http, url) ?? throw new CommandException("This server offers no sign-in through the browser: sign in with your password.");
+                var pending = BrowserSignIn.Start(url, server.Issuer, server.Token.ToString(), (string?)p["clientId"] ?? HttpRemote.ClientId, server.IssInAnswer);
+                var q = string.Join("&", new (string, string)[]
+                {
+                    ("response_type", "code"), ("client_id", pending.ClientId), ("redirect_uri", pending.RedirectUri), ("code_challenge", BrowserSignIn.Challenge(pending.Verifier)),
+                    ("code_challenge_method", "S256"), ("state", pending.State), ("scope", BrowserSignInScope),
+                }.Select(kv => $"{kv.Item1}={Uri.EscapeDataString(kv.Item2)}"));
+                var authorize = $"{server.Authorize}{(server.Authorize.Query.Length > 0 ? "&" : "?")}{q}";
+                if (p["open"] is not JsonValue ov || !ov.TryGetValue<bool>(out var open) || open)
+                    (BrowserSignIn.OpenBrowser ?? throw new CommandException("The browser could not be opened here."))(authorize);
+                return (new JsonObject { ["id"] = pending.State, ["authorizeUrl"] = authorize, ["expiresIn"] = (int)BrowserSignIn.Lifetime.TotalSeconds }, null);
+            }
+            case "remote.browserSignInResult":
+            {
+                var id = (string?)p["id"] ?? throw new CommandException("Which sign-in?");
+                if (BrowserSignIn.Get(id) is not { } pending) return (new JsonObject { ["status"] = "gone", ["message"] = "This sign-in ended: start it again." }, null);
+                if (pending.Error is { } why) { BrowserSignIn.Forget(id); return (new JsonObject { ["status"] = "failed", ["message"] = why }, null); }
+                if (pending.Code is not { } code) return (new JsonObject { ["status"] = "waiting" }, null);
+                BrowserSignIn.Forget(id);
+                RemoteTokens t;
+                try { t = await HttpRemote.ExchangeCodeAsync(Http, new Uri(pending.TokenUrl), code, pending.Verifier, pending.RedirectUri, pending.ClientId); }
+                catch (RemoteException e) { return (new JsonObject { ["status"] = "failed", ["message"] = $"The server did not finish the sign-in: {e.Message}" }, null); }
+                var o = new JsonObject { ["status"] = "done", ["accessToken"] = t.Access, ["refreshToken"] = t.Refresh };
+                if (await CurrentUser(pending.Server, t) is { } user) o["user"] = user;
+                return (o, null);
+            }
+            case "remote.browserSignInCancel":
+                BrowserSignIn.Forget((string?)p["id"] ?? "");
+                return (null, null);
             case "remote.changePassword":
             {
                 // Atrium Server's own call (not lapin-remote): the server ends every sign-in and hands back a fresh pair. A refusal is

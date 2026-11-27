@@ -11,9 +11,14 @@ A false ceiling hangs under the slab above, at a height you set. It is drawn ove
 The tools are in **Interior → Ceiling**:
 
 - **Ceiling** (<kbd>CG</kbd>) draws a ceiling over an outline: click its corners, then the first one again, or press <kbd>Enter</kbd>.
-- **Ceiling in a room** fills the room you click, following its outline between the walls' faces. There has to be a room there ([Rooms](rooms.md)); with none, Lapin says so.
+- **Ceiling in a room** fills the room you click, following its outline between the walls' faces as it is now: a room separation line bounds it as a wall would, so a ceiling clicked in one of two rooms divided by a line covers only that room. There has to be a room there ([Rooms](rooms.md)); with none, Lapin says so.
 
-While either tool is on, the properties panel shows **New element** with the ceiling type to lay, to choose before the click. The ceiling goes on the active level and hangs at its **Height** over it: 2700 mm unless you change it. Select the ceiling and its properties show its **Ceiling type** and its **Height**; both change there, and the grips on its corners reshape the outline.
+While either tool is on, the properties panel shows **New element** with the ceiling type to lay, to choose before the click. The ceiling goes on the active level and hangs as its type places it: by default just under the slab above (its type's **Plenum depth** below it), or 2700 mm over the level where there is no slab above. Select the ceiling and its properties show its **Ceiling type** and its **Height** over the level; both change there, and the grips on its corners reshape the outline.
+
+**Measured from.** A ceiling placed in a room can be measured from the room's finished floor instead of the level: **the room's finished floor** in its properties. Its height is then over the room's floor, as a room finish's walls' **Height** is, so with a room raised by its **Base offset** both read from the same floor.
+
+A room can take its false ceiling as its ceiling (its finished ceiling height, its volume, its walls' finish up to the ceiling): set the room's **Ceiling** to **the false ceiling** ([Rooms](rooms.md#a-rooms-properties)).
+
 
 A ceiling follows nothing once drawn: if you move a wall, move the ceiling's corners too.
 
@@ -30,6 +35,8 @@ The **System** chooses what is built:
   - **Grid**: the **Face width** (24 mm) and **Depth** (38 mm) of the tees, a **Rotation (°)** of the whole grid, the **Grid material** and **Grid colour**. The tees run along both ways at every cell line, with an angle round the edge of the ceiling.
   - **Hangers up to the structure**, at the **Hanger spacing** (1200 mm): rods from the tees up to the top of the storey.
 - **Plasterboard, continuous.** The default, **Plasterboard ceiling**, is one board of the ceiling's outline, 12.5 mm thick, with no grid and no hangers. Its module width and length still make the cells the fixtures use.
+
+**Placed** sets where a new ceiling of the type hangs when you place it: **Under the slab above**, its top a **Plenum depth** below the slab's underside (0: just under it), else at **Height with no slab above** (2700) over the level; or **Over the finished floor**, at its **Height over the finished floor**, measured from the floor of the room it is placed in. A ceiling keeps its height once placed: change it in its properties.
 
 **In the cells** chooses the colours of the light panels and the air diffusers.
 

@@ -28,10 +28,38 @@ public static class CutPriorities
             var mine = by.Where((_, k) => boxes[k] is { } b && Meets(b, bounds[i])).ToList();
             if (mine.Count == 0) { o.Add(part); continue; }
             // A cutter's faces lying on the part's (a column flush with a wall's face, both turned) moved out a hair, so no sliver is left (decision 519).
-            try { if (booleans.Difference(part.Solid, mine.Select(t => Flush.Proud(t, part.Solid)).ToList(), part.Solid.Tag) is { } cut) o.Add(part with { Solid = cut }); }
+            try
+            {
+                if (booleans.Difference(part.Solid, mine.Select(t => Flush.Proud(t, part.Solid)).ToList(), part.Solid.Tag) is { } cut)
+                    o.Add(part with { Solid = cut, Pieces = CutPieces(part.Pieces, mine, booleans, (t, s) => Flush.Proud(t, s)) });
+            }
             catch (InvalidOperationException ex) { problems.Add($"{part.Name}: could not be cut ({ex.Message})."); o.Add(part); }
         }
         return o;
+    }
+
+    /// <summary>
+    /// A cut part's pieces (a roof covering's slopes, issue #139) cut by the tools that reach each (<paramref name="prepare"/>
+    /// readies a tool for the piece), a piece cut away whole left out; null when one will not cut or fewer than two are left, so
+    /// the part is written whole rather than in pieces that are not it.
+    /// </summary>
+    public static List<PartPiece>? CutPieces(IReadOnlyList<PartPiece>? pieces, IReadOnlyList<Solid> tools, ISolidBooleans booleans, Func<Solid, Solid, Solid>? prepare = null)
+    {
+        if (pieces == null) return null;
+        var boxes = tools.Select(Measure.Bounds).ToList();
+        var o = new List<PartPiece>();
+        try
+        {
+            foreach (var pc in pieces)
+            {
+                if (Measure.Bounds(pc.Solid) is not { } b) continue;
+                var mine = tools.Where((_, k) => boxes[k] is { } tb && Meets(tb, b)).Select(t => prepare?.Invoke(t, pc.Solid) ?? t).ToList();
+                if (mine.Count == 0) { o.Add(pc); continue; }
+                if (booleans.Difference(pc.Solid, mine, pc.Solid.Tag) is { } cut && cut.Faces.Length > 0) o.Add(pc with { Solid = cut });
+            }
+        }
+        catch (InvalidOperationException) { return null; }
+        return o.Count > 1 ? o : null;
     }
 
     /// <summary>Whether two boxes overlap by more than a touch, as <see cref="ICutters.For"/> reads it.</summary>

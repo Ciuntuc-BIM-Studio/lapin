@@ -1,8 +1,9 @@
 /**
  * Folders and types (docs/plan-cde-references.md §3.2): the project's own copy of the folder tree (rename, add, remove, order; the
  * engine refuses to remove a folder that holds documents and says so), the language the folders are named in on disk, the list
- * of document types with their default folder, validity and extra fields, and the size above which a file is not kept in the
- * project file. Every value shipped is indicative; the norms are the user's.
+ * of document types with their default folder, validity and extra fields, the urbanism certificate's checklist offered (§3.3: the
+ * permits a certificate may ask for, ticked on each certificate) and the size above which a file is not kept in the project file.
+ * Every value shipped is indicative; the norms are the user's.
  */
 
 import { confirmAction, promptText } from '../../../shell/prompts';
@@ -10,15 +11,15 @@ import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, FolderPlus, Plus, Trash2 } from 'lucide-react';
 import { execute } from '../../../engine/session';
 import { useLang } from '../../../i18n';
-import { addFolder, addTypeField, draftOf, moveFolder, removeFolder, renameFolder, renameType, sameTree, typeIdOf, type FolderDraft } from './folderEdit';
+import { addFolder, addOption, addTypeField, draftOf, moveOption, plainOptions, renameOption, moveFolder, removeFolder, renameFolder, renameType, sameTree, typeIdOf, type FolderDraft } from './folderEdit';
 import { useRefAdapter } from './adapter';
-import { nameIn, type FolderTree, type RefType, type TypeList } from './references';
+import { nameIn, type ChecklistOption, type FolderTree, type RefType, type TypeList } from './references';
 
 export function ReferenceSettings({ tree, types, guest, onDone }: { tree: FolderTree; types: TypeList; guest: boolean; onDone: () => void }) {
   const ui = useLang((s) => s.lang);
   const adapter = useRefAdapter();
   const { setFolders, setTypes } = adapter;
-  const [tab, setTab] = useState<'folders' | 'types'>('folders');
+  const [tab, setTab] = useState<'folders' | 'types' | 'checklist'>('folders');
   const [draft, setDraft] = useState<FolderDraft[]>(() => draftOf(tree.folders));
   const [list, setList] = useState<RefType[]>(types.types);
   const saved = draftOf(tree.folders);
@@ -64,7 +65,9 @@ export function ReferenceSettings({ tree, types, guest, onDone }: { tree: Folder
       <div className="chips" role="tablist" aria-label="Settings">
         <button type="button" role="tab" aria-selected={tab === 'folders'} className={`chip${tab === 'folders' ? ' on' : ''}`} onClick={() => setTab('folders')}>Folders</button>
         <button type="button" role="tab" aria-selected={tab === 'types'} className={`chip${tab === 'types' ? ' on' : ''}`} onClick={() => setTab('types')}>Types</button>
+        <button type="button" role="tab" aria-selected={tab === 'checklist'} className={`chip${tab === 'checklist' ? ' on' : ''}`} data-testid="refs-settings-checklist" onClick={() => setTab('checklist')}>Checklist</button>
       </div>
+      {tab === 'checklist' && <ChecklistOffered types={types} folders={flat} guest={guest} onDone={onDone} />}
       {tab === 'folders' && (
         <>
           <p className="muted small">The project's own copy of the folder tree. Documents point at a folder's id, so renaming one keeps them in it. The folders are named on disk in the language chosen here.</p>
@@ -121,6 +124,60 @@ export function ReferenceSettings({ tree, types, guest, onDone }: { tree: Folder
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * The urbanism certificate's checklist offered: the permits and studies a certificate may ask for, which each certificate's
+ * Checklist tab ticks. Renaming an item keeps its key, so the certificates that ticked it keep it; taking one off the list leaves it
+ * on the certificates that ticked it.
+ */
+function ChecklistOffered({ types, folders, guest, onDone }: { types: TypeList; folders: { id: string; text: string; depth: number }[]; guest: boolean; onDone: () => void }) {
+  const ui = useLang((s) => s.lang);
+  const lang = ui === 'ro' ? 'ro' : 'en';
+  const adapter = useRefAdapter();
+  const [items, setItems] = useState<ChecklistOption[]>(() => plainOptions(types.checklist ?? []));
+  useEffect(() => { setItems(plainOptions(types.checklist ?? [])); }, [types]);
+  const dirty = JSON.stringify(items) !== JSON.stringify(plainOptions(types.checklist ?? []));
+  const add = () => { const label = promptText('Name of the permit or study:')?.trim(); if (label) setItems((l) => addOption(l, label, lang)); };
+  const save = async () => { await adapter.setChecklist(plainOptions(items)); onDone(); };
+  const defaults = async () => {
+    if (!confirmAction('Take the indicative list again? The certificates keep the items they ticked.')) return;
+    await adapter.setChecklist(null);
+    onDone();
+  };
+  return (
+    <>
+      <p className="muted small">The permits and studies an urbanism certificate may ask for, offered on each certificate's Checklist tab to tick. The list shipped is indicative, never what the law requires: change it to what your certificates ask for. A certificate keeps the items it ticked whatever this list becomes.</p>
+      <table className="layer-table refs-types" data-testid="refs-checklist-offered">
+        <thead><tr><th>Permit or study</th><th>Folder</th><th /></tr></thead>
+        <tbody>
+          {items.map((o, i) => (
+            <tr key={o.key} data-option={o.key}>
+              <td><input aria-label="Permit or study" key={`${o.key}:${nameIn(o.label, ui)}`} defaultValue={nameIn(o.label, ui)} disabled={guest}
+                onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== nameIn(o.label, ui)) setItems((l) => plainOptions(renameOption(l, o.key, lang, v))); }} /></td>
+              <td><select aria-label="Folder" value={o.folder ?? ''} disabled={guest} title="Where a document requested for this item goes"
+                onChange={(e) => setItems((l) => l.map((x) => (x.key === o.key ? (e.target.value ? { ...x, folder: e.target.value } : (({ folder: _f, ...rest }) => rest)(x)) : x)))}>
+                <option value="" />{folders.map((f) => <option key={f.id} value={f.id}>{' '.repeat(f.depth)}{f.text}</option>)}</select></td>
+              <td style={{ width: 1 }}>{!guest && <span style={{ display: 'inline-flex', gap: 2 }}>
+                <button type="button" className="icon mini" title="Move up" disabled={i === 0} onClick={() => setItems((l) => moveOption(l, o.key, -1))}><ArrowUp size={11} /></button>
+                <button type="button" className="icon mini" title="Move down" disabled={i === items.length - 1} onClick={() => setItems((l) => moveOption(l, o.key, 1))}><ArrowDown size={11} /></button>
+                <button type="button" className="icon mini" title="Take the item off the list: the certificates that ticked it keep it" onClick={() => setItems((l) => l.filter((x) => x.key !== o.key))}><Trash2 size={11} /></button>
+              </span>}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {!guest && (
+        <div className="row">
+          <button type="button" className="btn small" data-testid="refs-checklist-add" onClick={add}><Plus size={12} /> New item</button>
+          {adapter.kind === 'engine' && <button type="button" className="btn small" title="The indicative list Lapin ships, again" onClick={() => void defaults()}>Indicative list</button>}
+          <span className="grow" />
+          <button type="button" className="btn small" disabled={!dirty} onClick={() => setItems(plainOptions(types.checklist ?? []))}>Revert</button>
+          <button type="button" className="btn small primary" disabled={!dirty} data-testid="refs-save-checklist" onClick={() => void save()}>Save checklist</button>
+        </div>
+      )}
+    </>
   );
 }
 

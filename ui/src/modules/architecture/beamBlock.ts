@@ -1,6 +1,7 @@
 /**
  * A beam-and-block floor type's rules (report #134), as the engine keeps them on the floor type (`beamBlock`): POT-like
  * precast joists at a spacing, infill blocks between them, a cast topping. Metres; the engine lays it out and builds it.
+ * A self-supporting I-joist (#152) has a top flange too (`topFlangeWidth` × `topFlangeHeight`); 0 is the inverted T.
  */
 
 export interface BeamBlockSpec {
@@ -9,6 +10,7 @@ export interface BeamBlockSpec {
   spacing: number; blockHeight: number; blockLength: number; blockMaterial: string;
   topping: number; toppingMaterial: string;
   direction: 'auto' | 'x' | 'y' | 'angle'; angle: number; bearing: number; mesh: string;
+  topFlangeWidth: number; topFlangeHeight: number;
 }
 
 /** The first indicative preset, until the engine's list comes. */
@@ -16,6 +18,7 @@ export const BEAM_BLOCK_DEFAULT: BeamBlockSpec = {
   preset: 'POT + MIAKO 19/62.5', joistWidth: 0.16, joistHeight: 0.175, flangeHeight: 0.06, webWidth: 0.06, joistMaterial: 'Precast joist',
   spacing: 0.625, blockHeight: 0.19, blockLength: 0.25, blockMaterial: 'Ceramic infill block', topping: 0.06, toppingMaterial: 'Concrete C20/25',
   direction: 'auto', angle: 0, bearing: 0.125, mesh: 'Mesh 6/100-6/100',
+  topFlangeWidth: 0, topFlangeHeight: 0,
 };
 
 /** The structure's depth: the blocks and the topping. */

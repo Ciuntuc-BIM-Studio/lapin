@@ -4,7 +4,7 @@
  * The engine refuses what it must (removing a folder that holds documents), and its words are shown as it says them.
  */
 
-import type { Named, RefFolder, RefType } from './references';
+import type { ChecklistOption, Named, RefFolder, RefType } from './references';
 
 /** A folder as the engine takes it: its id, names and children, without the counts the query adds. */
 export interface FolderDraft { id: string; name: Record<string, string>; derived?: string; children: FolderDraft[] }
@@ -103,4 +103,36 @@ export function addTypeField(types: RefType[], id: string, label: string, lang: 
     const key = typeIdOf(label, t.fields.map((f) => f.key)).replace(/-(\w)/g, (_m, c: string) => c.toUpperCase());
     return { ...t, fields: [...t.fields, { key, label: { en: label, ro: label, [lang]: label }, kind: 'text' }] };
   });
+}
+
+// ---------------------------------------------------------------- the checklist offered (§3.3)
+
+/** The checklist items offered as the engine and the server take them back: key, label, group, folder (the shown text left out). */
+export const plainOptions = (items: ChecklistOption[]): ChecklistOption[] =>
+  items.map((o) => ({ key: o.key, label: o.label, ...(o.group ? { group: o.group } : {}), ...(o.folder ? { folder: o.folder } : {}) }));
+
+/** An item added to the list offered (its label in `lang` and, when missing, English and Romanian), its key from the label. */
+export function addOption(items: ChecklistOption[], label: string, lang: string): ChecklistOption[] {
+  const key = typeIdOf(label, items.map((o) => o.key));
+  return [...items, { key, label: { en: label, ro: label, [lang]: label } }];
+}
+
+/** An item's label set in `lang`; the key stays, so the certificates that ticked it keep it. */
+export function renameOption(items: ChecklistOption[], key: string, lang: string, label: string): ChecklistOption[] {
+  return items.map((o) => {
+    if (o.key !== key) return o;
+    const names = { ...asNames(o.label), [lang]: label };
+    for (const l of ['en', 'ro']) if (!names[l]) names[l] = label;
+    return { ...o, label: names, text: label };
+  });
+}
+
+/** An item moved up or down the list. */
+export function moveOption(items: ChecklistOption[], key: string, by: -1 | 1): ChecklistOption[] {
+  const i = items.findIndex((o) => o.key === key);
+  const j = i + by;
+  if (i < 0 || j < 0 || j >= items.length) return items;
+  const out = [...items];
+  [out[i], out[j]] = [out[j], out[i]];
+  return out;
 }

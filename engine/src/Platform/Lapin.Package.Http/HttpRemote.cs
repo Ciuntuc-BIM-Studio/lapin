@@ -15,9 +15,15 @@ namespace Lapin.Package.Remote;
 /// Asynchronous over <see cref="HttpClient"/> (<c>SendAsync</c>), so one client serves the desktop and the browser's engine, where
 /// the client is the page's fetch (Atrium docs/plan-cde-web.md §2.1 A); the engine still answers one call at a time.
 /// </summary>
+/// <summary>A server's browser sign-in: who issues the codes, where the person signs in, where the code is exchanged, whether its answer names the issuer.</summary>
+public sealed record BrowserSignInServer(string Issuer, Uri Authorize, Uri Token, bool IssInAnswer);
+
 public sealed class HttpRemote : IRemote
 {
     public const string ClientId = "lapin-desktop";
+
+    /// <summary>The feature of Atrium's API (<c>GET /atrium/1.0/</c>) that offers the first-party browser sign-in for a session.</summary>
+    public const string SessionFeature = "oauth.session";
     readonly HttpClient _http;
     readonly Uri _root;
     readonly string _base, _p;
@@ -106,6 +112,39 @@ public sealed class HttpRemote : IRemote
         var url = (string?)auth["oauth2_token_url"] ?? throw new InvalidDataException("The server names no token address.");
         return await Token(http, new Uri(uri, url), [new("grant_type", "password"), new("username", username), new("password", password), new("client_id", clientId)]);
     }
+
+    /// <summary>
+    /// What a browser sign-in needs from a server (Atrium Server's OAuth, docs/atrium-server.md "OAuth (R6b)"): its authorization
+    /// server metadata (RFC 8414, <c>/.well-known/oauth-authorization-server</c>: the issuer and the authorization endpoint) and the
+    /// Foundation's token address, which takes the authorization code beside the password grant. Null when the server offers no
+    /// authorization code flow for a session (an older server, one without OAuth, or without the feature <c>oauth.session</c>): the password form is then the only sign-in.
+    /// </summary>
+    public static async Task<BrowserSignInServer?> BrowserSignInAsync(HttpClient http, string root)
+    {
+        var uri = CheckRoot(root);
+        var auth = await Json(await http.SendAsync(new HttpRequestMessage(HttpMethod.Get, new Uri(uri, "foundation/1.1/auth"))));
+        var flows = (auth["supported_oauth2_flows"] as JsonArray)?.Select(x => (string?)x).ToList() ?? [];
+        if (!flows.Contains("authorization_code_grant") || (string?)auth["oauth2_token_url"] is not { } tokenUrl) return null;
+        // Atrium's first-party sign-in (a session, not an MCP client's token) is said by its API's features, never by the metadata's scopes.
+        JsonObject atrium;
+        try { atrium = await Json(await http.SendAsync(new HttpRequestMessage(HttpMethod.Get, new Uri(uri, "atrium/1.0/")))); }
+        catch (RemoteException) { return null; }
+        if (!((atrium["features"] as JsonArray)?.Any(x => (string?)x == SessionFeature) ?? false)) return null;
+        JsonObject meta;
+        try { meta = await Json(await http.SendAsync(new HttpRequestMessage(HttpMethod.Get, new Uri(uri, ".well-known/oauth-authorization-server")))); }
+        catch (RemoteException) { return null; }
+        if ((string?)meta["authorization_endpoint"] is not { } authorize || (string?)meta["issuer"] is not { } issuer) return null;
+        var authorizeUri = new Uri(uri, authorize);
+        // The page the person signs in on is the server's own: same scheme, host and port as the address they gave.
+        if (authorizeUri.Scheme != uri.Scheme || !string.Equals(authorizeUri.Authority, uri.Authority, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("The server's sign-in page is not on the server's own address.");
+        return new BrowserSignInServer(issuer, authorizeUri, new Uri(uri, tokenUrl),
+            meta["authorization_response_iss_parameter_supported"] is JsonValue iv && iv.TryGetValue<bool>(out var iss) && iss);
+    }
+
+    /// <summary>The authorization code a browser sign-in brought back, exchanged for the server's session tokens with its PKCE verifier (RFC 7636).</summary>
+    public static Task<RemoteTokens> ExchangeCodeAsync(HttpClient http, Uri tokenUrl, string code, string verifier, string redirectUri, string clientId = ClientId) =>
+        Token(http, tokenUrl, [new("grant_type", "authorization_code"), new("code", code), new("code_verifier", verifier), new("redirect_uri", redirectUri), new("client_id", clientId)]);
 
     /// <summary>Atrium Server's own endpoint for the signed-in account's password, relative to the server's root (not part of lapin-remote).</summary>
     public const string PasswordPath = "atrium/1.0/account/password";

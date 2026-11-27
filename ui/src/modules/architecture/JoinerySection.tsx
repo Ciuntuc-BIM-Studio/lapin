@@ -23,6 +23,8 @@ import { openTypeDialog } from '../../shell/typeToEdit';
 /** Doors and windows flip together. */
 const JOINERY = ['IfcDoor', 'IfcWindow'];
 
+const REACH_TIP = 'The wall opening goes down to the structure under the finished floor, so the screed and the flooring run under the door; the door stays on the finished floor.';
+
 /** The doors and windows selected made wall openings of their holes, one step; the first opening selected. */
 async function toOpening(node: NodeDto): Promise<void> {
   const r = await execute('architecture.fillToOpening', { ids: sameKind(node, JOINERY) }) as { ids?: string[] } | null;
@@ -91,6 +93,12 @@ export function JoinerySection({ node }: { node: NodeDto }) {
           <dt>Sill</dt><dd><LengthField metres={num(opening, 'sill')} onCommit={(v) => { if (v != null) void execute('architecture.moveOpening', { ids: sameKind(node, JOINERY), sill: v }); }} /></dd>
           {/* Forum topic 192: the sill from the structural base or the finished floor; chosen alone, the element stays where it is. */}
           <SillFromRows value={sillFromOf(opening)} wall={wall} onChange={(v) => void execute('architecture.moveOpening', { ids: sameKind(node, JOINERY), sillFrom: v })} />
+          {/* GitHub #149: the hole down to the structure under the finished floor, the door staying on that floor. */}
+          {sillFromOf(opening) === 'finished' && <>
+            <dt title={REACH_TIP}>Opening</dt>
+            <dd><label className="check"><input type="checkbox" data-field="reach-structure" checked={opening.props.reachStructure === true} title={REACH_TIP}
+              onChange={(e) => void execute('architecture.setReachStructure', { ids: sameKind(node, JOINERY), on: e.target.checked })} /><span>Down to the structure</span></label></dd>
+          </>}
         </>}
         {node.editable && !inCurtain && <>
           <dt>Frame in the wall</dt><dd>

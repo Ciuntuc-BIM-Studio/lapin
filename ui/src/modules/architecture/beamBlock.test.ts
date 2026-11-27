@@ -14,6 +14,10 @@ describe('beam and block floor types', () => {
     expect(s.direction).toBe('x');
     expect(s.joistMaterial).toBe('Precast joist');
     expect(s.topping).toBe(0.06);
+    // A type saved before the I-joist (#152): no top flange, an inverted T.
+    expect([s.topFlangeWidth, s.topFlangeHeight]).toEqual([0, 0]);
+    expect(beamBlockOf({ topFlangeWidth: 0.09, topFlangeHeight: 0.04 })!.topFlangeWidth).toBe(0.09);
+    expect(editBeamBlock(BEAM_BLOCK_DEFAULT, { topFlangeHeight: 0.04 }).preset).toBe('');
   });
 
   it('forgets the preset once a size is changed by hand, not for the span or the bearing', () => {

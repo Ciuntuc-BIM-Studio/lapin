@@ -26,7 +26,7 @@ Drag a document (or several, with Ctrl or Cmd held) onto a folder to move it. Wh
 
 Its form holds the title, type, issuer, number, date, validity, phases, role and folder, and the extra fields of its type. Its files can be previewed (a PDF page by page, an image inline), saved as a copy, taken off the document, or added to. An IFC (or an .ifczip) offers **Open as link**: it opens in the project as a read-only link, like File → Link IFC…. A file the project does not keep (one above the size limit, on a server) is fetched from the server first.
 
-**Suggest** reads the file's text and proposes the number, the date, the issuer, the type and the validity, each with the words it was read from. You tick what is right and apply it; nothing is written without you. A scan has no text and gets no suggestion. A validity that comes only from the type's usual period is marked *indicative*: the dates written on the document are what count.
+**Suggest** reads the file's text and proposes the number, the date, the issuer, the type and the validity, each with the words it was read from. You tick what is right and apply it; nothing is written without you. A scan has no text and gets no suggestion. On a CDE server's **Documents** tab, **Suggest** asks the server, which reads the file's text by the same rules (a server too old for it says so). A validity that comes only from the type's usual period is marked *indicative*: the dates written on the document are what count.
 
 ![Suggest, with the words each value was read from](shots/reference-suggest.webp)
 
@@ -39,6 +39,10 @@ A document of the type *Urbanism certificate* has a **Checklist** tab: the permi
 ![The checklist: one permit received, one requested, one missing](shots/reference-checklist.webp)
 
 The list shipped with Lapin is indicative. The norms and the validity periods are yours: Lapin never claims a legal period.
+
+The list offered is the project's own: **Folders and types → Checklist** edits it. Rename an item, give it the folder a document requested for it goes into, order the list, take items off it, add your own (**New item**), and **Save checklist**. **Indicative list** takes Lapin's list again. A certificate keeps the items it ticked whatever the list becomes. On a CDE server the list is the server's, edited the same way by its owners.
+
+![The checklist offered, in Folders and types](shots/reference-checklist-offered.webp)
 
 ## Validity
 
@@ -68,7 +72,7 @@ The certificate these read is the latest received certificate still valid.
 
 ## Sending them with an issue
 
-**Manage → Issue…** has **Include reference documents**. Tick documents one by one, or a folder to tick the documents in it and in its subfolders (a requested document has no file and cannot go; a folder does not take superseded or withdrawn ones). Their files go with the issue as copies under their own names (a second file with the same name gets a number), listed in the transmittal (kind `REF`, with the document's number and title) and in the manifest with their SHA-256. On a CDE server they are files of the issue, not documents of the register.
+**Manage → Issue…** has **Include reference documents**. Tick documents one by one, or a folder to tick the documents in it and in its subfolders (a requested document has no file and cannot go; a folder does not take superseded or withdrawn ones). Their files go with the issue as copies under their own names (a second file with the same name gets a number; the dialog lists the names the files will have, a numbered one marked), listed in the transmittal (kind `REF`, with the document's number and title) and in the manifest with their SHA-256. On a CDE server they are files of the issue, not documents of the register.
 
 ![Issue: the certificate and the permits folder ticked](shots/issue-references.webp)
 

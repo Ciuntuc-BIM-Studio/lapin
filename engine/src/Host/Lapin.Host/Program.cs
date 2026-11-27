@@ -73,6 +73,18 @@ WebApplication Build(int listenPort)
         EngineHub.AllowedHost(ctx.Request.Host.Host, ctx.Request.Host.Port, listenPort)
         && EngineHub.Classify(ctx.Request.Headers.Origin.ToString(), out _) == EngineHub.OriginKind.Own
             ? Results.Json(hub.Hello()) : Results.StatusCode(403));
+    // A browser sign-in's answer (RFC 8252 §7.3: the server sends the browser back to this loopback address with the code, or an
+    // error, and the state it was given; Lapin.Protocol.BrowserSignIn). Taken only for a sign-in this engine started; nothing of it logged.
+    web.MapGet("/oauth/callback", (HttpContext ctx) =>
+    {
+        var q = ctx.Request.Query;
+        string? One(string k) => q[k].Count == 1 ? q[k].ToString() : null;
+        var (_, page) = Lapin.Protocol.BrowserSignIn.Arrive(One("state"), One("code"), One("error"), One("error_description"), One("iss"));
+        ctx.Response.Headers.CacheControl = "no-store";
+        ctx.Response.Headers["Referrer-Policy"] = "no-referrer";
+        ctx.Response.Headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'";
+        return Results.Content(page, "text/html; charset=utf-8");
+    });
     web.Map("/ws", async ctx =>
     {
         if (!ctx.WebSockets.IsWebSocketRequest) { ctx.Response.StatusCode = 400; return; }
@@ -94,6 +106,13 @@ var bound = started.Port;
 hub.Port = bound;
 hub.Scripts.Port = bound;
 app.Lifetime.ApplicationStopping.Register(hub.Scripts.Dispose);
+// The browser sign-in's answer comes back here, on this engine's own port; the server's page opens in the system's browser.
+Lapin.Protocol.BrowserSignIn.CallbackUrl = $"http://127.0.0.1:{bound}/oauth/callback";
+Lapin.Protocol.BrowserSignIn.OpenBrowser = url =>
+{
+    if (!Uri.TryCreate(url, UriKind.Absolute, out var u) || u.Scheme is not ("https" or "http")) return;
+    Process.Start(new ProcessStartInfo(u.AbsoluteUri) { UseShellExecute = true });
+};
 Console.WriteLine($"LAPIN_HOST_READY {{\"port\":{bound}}}");
 Console.Out.Flush();
 

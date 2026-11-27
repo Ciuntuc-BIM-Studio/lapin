@@ -10,7 +10,7 @@ import { notify } from '../../../app/store';
 import { refusalText } from '../../../engine/refusals';
 import type { ModelInfo, RefAdapter, RefPerms } from './adapter';
 import { today } from './expiry';
-import type { AddResult, Checklist, FolderTree, RefDoc, RefFile, RefFileData, RefFolder, TypeList } from './references';
+import type { AddResult, Checklist, FolderTree, RefDoc, RefFile, RefFileData, RefFolder, Suggestion, TypeList } from './references';
 
 export class ServerRefError extends Error {
   constructor(public status: number, public code: string, message: string, public body: Record<string, unknown> | null = null) { super(message); }
@@ -167,6 +167,17 @@ export function serverAdapter(project: string, lang: string, name = project): Re
         return out;
       } catch { return null; }
     },
+    async suggest(id, name) {
+      // The server reads the file's text by Lapin's own patterns (GET {r}/{id}/suggest, feature references.suggest); a server
+      // without it answers 404, said in the suggestion's place. A file still being read or without text comes back with its warning.
+      try {
+        const r = await send('GET', `${base}/${enc(id)}/suggest${name ? `?name=${enc(name)}` : ''}`);
+        return r.body as unknown as Suggestion;
+      } catch (e) {
+        if (e instanceof ServerRefError && e.status === 404 && e.code === 'not_offered') return { evidence: {}, warning: 'This server does not suggest metadata yet: it needs a newer Atrium Server.' };
+        return { evidence: {}, warning: e instanceof Error ? e.message : String(e) };
+      }
+    },
     async text(id, name, pages) {
       try {
         const r = await send('GET', `${base}/${enc(id)}/text?${name ? `name=${enc(name)}&` : ''}${pages ? `pages=${enc(pages)}` : ''}`);
@@ -219,5 +230,7 @@ export function serverAdapter(project: string, lang: string, name = project): Re
     },
     async setFolders(args) { return said(() => send('PUT', `${base}/folders`, args)); },
     async setTypes(types) { return said(() => send('PUT', `${base}/types`, { types })); },
+    // The server keeps the list as given and has no defaults to go back to (docs/atrium-server.md, "Folders and types").
+    async setChecklist(items) { return items ? said(() => send('PUT', `${base}/types`, { checklist: items })) : null; },
   };
 }

@@ -1,5 +1,5 @@
 /**
- * A floor type of beam and block (report #134): its preset, the joist's section and spacing, the infill block, the topping,
+ * A floor type of beam and block (report #134): its preset, the joist's section (an inverted T, or an I with a top flange, #152) and spacing, the infill block, the topping,
  * the span and the bearing, the mesh; the depth derived; beside them the engine's own layout of a sample floor in plan and
  * two bays in section. The user's own catalogue comes in from a CSV as floor types (architecture.importBeamBlockTypes).
  */
@@ -100,6 +100,8 @@ export function BeamBlockFields({ spec, onChange, onImported }: { spec: BeamBloc
           <Size label="Height" value={spec.joistHeight} onChange={(v) => set({ joistHeight: v })} />
           <Size label="Foot height" value={spec.flangeHeight} onChange={(v) => set({ flangeHeight: v })} title="The foot the blocks rest on" />
           <Size label="Web width" value={spec.webWidth} onChange={(v) => set({ webWidth: v })} />
+          <Size label="Top flange width" value={spec.topFlangeWidth} onChange={(v) => set({ topFlangeWidth: v })} title="A self-supporting I-joist's top flange, no wider than the foot; 0 for an inverted T" />
+          <Size label="Top flange height" value={spec.topFlangeHeight} onChange={(v) => set({ topFlangeHeight: v })} title="A self-supporting I-joist's top flange at the joist's top; 0 for an inverted T" />
           <Size label="Spacing" value={spec.spacing} onChange={(v) => set({ spacing: v })} title="Axis to axis: the block's width and the joist's" />
           <label className="field-line"><span className="eyebrow">Material</span><MaterialPicker value={spec.joistMaterial} onChange={(m) => set({ joistMaterial: m })} /></label>
           <p className="eyebrow">Infill block</p>

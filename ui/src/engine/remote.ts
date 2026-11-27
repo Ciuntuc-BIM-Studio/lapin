@@ -103,6 +103,11 @@ export async function signIn(server: string, username: string, password: string)
   const r = await engine.call<{ accessToken: string; refreshToken: string | null; user?: { id?: string; name?: string } }>('remote.signIn', {
     url: server, username, password, clientId: engineInBrowser ? 'lapin-web' : 'lapin-desktop',
   }, { timeoutMs: 60_000 });
+  return keepSignIn(server, r);
+}
+
+/** A sign-in's tokens kept as the server session (the access token in memory, the refresh token in the shell's store), and its account. */
+async function keepSignIn(server: string, r: { accessToken: string; refreshToken: string | null; user?: { id?: string; name?: string } }): Promise<Author | null> {
   tokens.set(server, { access: r.accessToken, refresh: r.refreshToken });
   await keepRefresh(server, r.refreshToken);
   const name = r.user?.name?.trim();
@@ -113,6 +118,33 @@ export async function signIn(server: string, username: string, password: string)
     return author;
   }
   return null;
+}
+
+/** The feature of Atrium's API that says a desktop may sign in through the browser (its first-party OAuth sign-in, docs/atrium-server.md). */
+export const BROWSER_SIGN_IN_FEATURE = 'oauth.session';
+
+/** Whether this Lapin can sign in through the system's browser: the desktop's engine, which takes the browser's answer on this computer. */
+export const canSignInWithBrowser = () => isDesktop() && !engineInBrowser;
+
+/**
+ * A sign-in through the system's browser (OAuth 2.1's authorization code with PKCE, the answer to a loopback address, RFC 8252): the
+ * engine opens the server's own sign-in page, where the password is typed, and takes the browser's answer; this asks for the result
+ * every second until it comes, the sign-in is cancelled (`stop.cancelled`), or 10 minutes pass. The tokens are kept as a password
+ * sign-in's, never logged. Null when cancelled.
+ */
+export async function browserSignIn(server: string, stop: { cancelled: boolean } = { cancelled: false }): Promise<Author | null> {
+  const s = await engine.call<{ id: string; expiresIn?: number }>('remote.browserSignInStart', { url: server, clientId: 'lapin-desktop' }, { timeoutMs: 60_000 });
+  const until = Date.now() + (s.expiresIn ?? 600) * 1000;
+  type Result = { status: 'waiting' | 'done' | 'failed' | 'gone'; message?: string; accessToken?: string; refreshToken?: string | null; user?: { id?: string; name?: string } };
+  while (Date.now() < until) {
+    if (stop.cancelled) { await engine.call('remote.browserSignInCancel', { id: s.id }).catch(() => undefined); return null; }
+    const r = await engine.call<Result>('remote.browserSignInResult', { id: s.id }, { timeoutMs: 60_000 });
+    if (r.status === 'done' && r.accessToken) return (await keepSignIn(server, { accessToken: r.accessToken, refreshToken: r.refreshToken ?? null, user: r.user })) ?? authorFor(server);
+    if (r.status !== 'waiting') throw new Error(r.message ?? 'The sign-in did not finish.');
+    await new Promise((res) => setTimeout(res, 1000));
+  }
+  await engine.call('remote.browserSignInCancel', { id: s.id }).catch(() => undefined);
+  throw new Error('The browser did not come back within 10 minutes: start the sign-in again.');
 }
 
 export async function signOut(server: string): Promise<void> {

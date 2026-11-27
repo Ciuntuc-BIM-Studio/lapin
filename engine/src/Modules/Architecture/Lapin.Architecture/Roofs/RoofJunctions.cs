@@ -97,7 +97,7 @@ public static class RoofJunctions
             if (!Cuttable(part) || Measure.Bounds(part.Solid) is not { } pb) { o.Add(part); continue; }
             var mine = tools.Where((_, k) => Meets(boxes[k], pb)).ToList();
             if (mine.Count == 0) { o.Add(part); continue; }
-            try { if (booleans.Difference(part.Solid, mine, part.Solid.Tag) is { } cut) o.Add(part with { Solid = cut }); }
+            try { if (booleans.Difference(part.Solid, mine, part.Solid.Tag) is { } cut) o.Add(part with { Solid = cut, Pieces = CutPriorities.CutPieces(part.Pieces, mine, booleans) }); }
             catch (InvalidOperationException ex) { diags.Add($"{part.Name}: could not be cut where it meets another roof ({ex.Message})."); o.Add(part); }
         }
         return o;

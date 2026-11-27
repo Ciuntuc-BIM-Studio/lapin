@@ -24,8 +24,19 @@ namespace Lapin.Ifc;
 /// <summary><paramref name="Voids"/>: the openings also as solid voids (IfcBuildingElementProxy PROVISIONFORVOID, decision 289), of the kinds asked, their sides moved by the offset; off by default.</summary>
 public sealed record IfcExportOptions(string Schema = "IFC4", string Detail = "group", string? Phase = null, string Geometry = "brep", double Tolerance = 0, IReadOnlySet<string>? Exclude = null,
     bool Voids = false, IReadOnlySet<string>? VoidKinds = null, double VoidOffset = 0, bool BonsaiStyles = false, bool Structural = false, bool TypePropertiesOnOccurrences = false, bool SpaceBrep = false,
-    bool AdvancedBrep = false, bool DerivedLoadBearing = false)
+    bool AdvancedBrep = false, bool DerivedLoadBearing = false, bool RoofSlopes = false, bool FloorBody = false, bool MirroredSameType = false, bool LintelBeams = false)
 {
+    // RoofSlopes (issue #139): a sloped roof's covering (its deck, its layers) one IfcSlab ROOF per slope (each a part of the IfcRoof,
+    // its GlobalId from the roof's and the slope's), for readers that fit one plane to a slab (CYPECAD MEP); a roof written over its
+    // parts then even with one body each. Off: the covering one slab of all its slopes, as decisions 328 and 329 have it.
+    // FloorBody (#140): a floor written as a parent over its parts (a beam-and-block floor's joists, blocks and concrete; a timber or CLT
+    // floor's) also carries a plain body of its own, its outline extruded by its depth (IIfcEnvelopes), for readers that take a floor by its
+    // own body only (CYPECAD MEP). Off: the parent has no body, its parts have them, as before.
+    // MirroredSameType (issue #141): a door or window flipped on one axis is an occurrence of its own type, its hand said by its own
+    // OperationType (a door) and panels; off: of the type's mirror image, a type of its own "… (mirrored)" (decision 530), as before.
+    // LintelBeams (issue #150): a wall's lintels IfcBeam LINTEL of their own in either detail (one body each too: aggregated under the
+    // wall, its body the rest), each with its Qto_BeamBaseQuantities, and one without a beam type of a generic IfcBeamType LINTEL by
+    // its name and material. Off: as before (in one body each, the lintels in the wall's body and their quantities on the wall).
     // DerivedLoadBearing (docs/plan-structural-usage.md, the user's answer 4): Pset_…Common.LoadBearing also on the elements nothing
     // says it of, from the views' rule (StructuralUsage.ForViews: a wall unless a partition, floors, roofs, columns, beams); off by
     // default, on for a CDE issue and an IDS check. Off: written only where it is said (the Structural tick, a Pset value), and on
@@ -959,9 +970,13 @@ public static partial class IfcExport
             if (railPart != null && LinearPlace(e) is { } along) (place, fr) = along;
             var kind = KindOf(e);
             var type = m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
+            // A roof's slopes, each an element of its own when asked (issue #139): the pieces of its covering, deck and layers in their
+            // part's place, keyed "covering:slope:1" (a GlobalId of the roof's and the slope's), of the part's material and colour.
+            var slopes = o.RoofSlopes && kind.Class == IfcClass.Roof && e.Attrs[IfcSource.Key] == null && parts.Any(p => p.Pieces is { Count: > 1 });
+            if (slopes) parts = [.. parts.SelectMany(p => p.Pieces is { Count: > 1 } pcs ? pcs.Select(pc => new GeometryPart(pc.Name, p.Color, pc.Solid, p.Material, $"{p.Key}:{pc.Key}")) : [p])];
             // A wall of layers only is one body with its layer set; one with zones, lintels or a ring beam (a roof with its planes and timber, a footing with its sole) is a parent over its parts.
             // A door's frame and leaf, a column's body, a terrain: one element. Only a wall, a roof and a footing hold parts that are elements of their own.
-            var grouped = o.Grouped && (kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing or "IfcCurtainWall" or IfcClass.Stair or IfcClass.Ramp or "IfcElementAssembly"
+            var grouped = slopes || o.Grouped && (kind.Class is IfcClass.Wall or IfcClass.Roof or IfcClass.Footing or "IfcCurtainWall" or IfcClass.Stair or IfcClass.Ramp or "IfcElementAssembly"
                 || kind.Class == IfcClass.Slab && parts.Any(p => p.Key?.StartsWith("clt:", StringComparison.Ordinal) == true || p.Key?.StartsWith("wood:", StringComparison.Ordinal) == true || p.Key?.StartsWith("bb-", StringComparison.Ordinal) == true)) && parts.Count > 1 && !parts.All(p => (p.Key ?? "").StartsWith("layer:", StringComparison.Ordinal));
             // A door or window: placed with its local +Y the way its panels open, which IFC's left and right are seen along.
             var joinery = e.Class is IfcClass.Door or IfcClass.Window && !grouped ? s.Catalog.Get<IJoineryIfc>() : null;
@@ -972,6 +987,12 @@ public static partial class IfcExport
             var fittings = o.Grouped && !grouped && kind.Class == "IfcCableCarrierSegment" ? parts.Where(p => p.Key?.StartsWith("fitting:", StringComparison.Ordinal) == true).ToList() : [];
             if (fittings.Count > 0 && fittings.Count < parts.Count) parts = [.. parts.Except(fittings)];
             else fittings = [];
+            // Asked in one body each (issue #150): a wall's lintels IfcBeam LINTEL of their own aggregated under it, as a cable carrier's fittings, its body the rest.
+            if (o.LintelBeams && !grouped && kind.Class == IfcClass.Wall && parts.Where(IsLintel).ToList() is { Count: > 0 } lintels && lintels.Count < parts.Count)
+            {
+                parts = [.. parts.Except(lintels)];
+                fittings = lintels;
+            }
             var reps = new List<string>();
             // A type with a body of its own (a part): its map written before the type is, whatever this element's body.
             var typeMap = type != null ? TypeMap(type) : null;
@@ -995,6 +1016,7 @@ public static partial class IfcExport
                 partItems = [.. parts.Select(p => p.Unit != null && p.Instances is { Count: > 0 } ? null : Brep(p.Solid, StyleKey(p), fr))];
                 reps.Add(BodyOf(parts.Select((p, i) => partItems[i] ?? Brep(p.Solid, StyleKey(p), fr))));
             }
+            if (grouped && o.FloorBody && kind.Class == IfcClass.Slab && FloorBodyOf(e, fr, parts) is { } plain) reps.Add(plain);
             if (AxisOf(e) is { } ax) reps.Add(ax);
             if (ArcFootprint(e) is { } fp) reps.Add(fp);
             else if (ArcAxis(e) is { } aa) reps.Add(aa);
@@ -1006,6 +1028,9 @@ public static partial class IfcExport
             // Its type in IFC's terms (the mirrored type for an element that is its type's mirror image), which the element repeats.
             var mirrored = at?.Mirrored == true;
             var terms = type != null && joinery != null ? joinery.Type(m, type, mirrored) : null;
+            // Asked (issue #141): the mirror image an occurrence of the type itself, its own terms (its hand) on the element only.
+            var typeMirrored = mirrored && !o.MirroredSameType;
+            var typeTerms = mirrored && !typeMirrored && type != null && joinery != null ? joinery.Type(m, type, false) : terms;
             // A foreign element: its class and attributes as its file wrote them.
             var src = e.Attrs[IfcSource.Key] as JsonObject;
             // Its Tag: its own mark (IFC's identifier at the occurrence, forum topic 177), else its category's rule's (decision 737), else its id as before.
@@ -1014,8 +1039,8 @@ public static partial class IfcExport
             if (at == null) placeOf[e.Id] = (place, z0);
             Contain(spatial, entity);
             Elements++;
-            if (type != null) TypeOf(type, kind, entity, mirrored, terms, retyped: e.Str("exportAs") is { Length: > 3 } ea && ea == kind.Class && ea != e.Class);
-            if (src?["material"] == null) MaterialsOf(e, entity, parts, grouped, type != null && types.TryGetValue(mirrored ? type.Id + MirrorKey : type.Id, out var written2) ? (type.Id + (mirrored ? MirrorKey : ""), written2.Ref) : null);
+            if (type != null) TypeOf(type, kind, entity, typeMirrored, typeTerms, retyped: e.Str("exportAs") is { Length: > 3 } ea && ea == kind.Class && ea != e.Class);
+            if (src?["material"] == null) MaterialsOf(e, entity, parts, grouped, type != null && types.TryGetValue(typeMirrored ? type.Id + MirrorKey : type.Id, out var written2) ? (type.Id + (typeMirrored ? MirrorKey : ""), written2.Ref) : null);
             if (grouped) Parts(e, kind, parts, place, fr, entity, partItems);
             if (fittings.Count > 0) Parts(e, kind, fittings, place, fr, entity);
             Openings(e, entity, place, z0, voids);
@@ -1024,6 +1049,33 @@ public static partial class IfcExport
             if (swept is { Parts.Count: > 0 }) SweptParts(e, swept, entity, spatial, place, fr, parts);
             Properties(e, kind, entity, type, hostedBy != null ? [("LapinHost", hostedBy.Id)] : null);
             Quantities(e, entity, grouped);
+        }
+
+        /// <summary>
+        /// A floor of parts' own plain body (#140, <see cref="IfcExportOptions.FloorBody"/>): its outline (its true curve when it has arcs,
+        /// its own holes as voids) extruded from its bottom by its depth, an IfcExtrudedAreaSolid (SweptSolid); a shaped floor's envelope as
+        /// a B-rep. Styled as its structure (a beam-and-block floor's concrete), else its first part.
+        /// </summary>
+        string? FloorBodyOf(Entity e, Frame fr, IReadOnlyList<GeometryPart> parts)
+        {
+            if (s.Catalog.All<IIfcEnvelopes>().Select(x => x.EnvelopeOf(m, e)).FirstOrDefault(x => x != null) is not { } env) return null;
+            var style = StyleKey(parts.FirstOrDefault(p => p.Key == "bb-concrete") ?? parts[0]) ?? "#a8a8a8";
+            var corners = e.Attrs["contour"] is JsonArray ? Args.StoredPoints(e.Attrs["contour"]) : [];
+            if (env.Bottom is not { } bottom || env.Depth is not { } depth || depth <= 0 || corners.Count < 3)
+                return BodyOf([Brep(env.Body, style, fr)]);
+            var rises = ArcOutline.Rises(e.Attrs[ArcOutline.Key], corners.Count);
+            var ellipses = EllipseEdge.Read(e.Attrs[EllipseEdge.Key], corners.Count);
+            string Loop(IReadOnlyList<Vec2> c, IReadOnlyList<double>? r, IReadOnlyList<EllipseEdge?>? el) =>
+                r == null && (el == null || el.All(x => x == null)) ? f.Add("IFCPOLYLINE", L(c.Append(c[0]).Select(P2))) : OutlineLoop(c, r, el);
+            var outer = Loop(corners, rises, ellipses);
+            var holes = OutlineHoles.Of(e);
+            var profile = holes.Count == 0
+                ? f.Add("IFCARBITRARYCLOSEDPROFILEDEF", E("AREA"), Null, outer)
+                : f.Add("IFCARBITRARYPROFILEDEFWITHVOIDS", E("AREA"), Null, outer, L(holes.Select(h => Loop(h.Corners, h.Rises, h.Ellipses))));
+            var origin = f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", L(new[] { R(0), R(0), R(fr.Local(new Vec3(0, 0, bottom)).Z) })), Null, Null);
+            var solid = f.Add("IFCEXTRUDEDAREASOLID", profile, origin, f.Add("IFCDIRECTION", "(0.,0.,1.)"), R(depth));
+            f.Add("IFCSTYLEDITEM", solid, L(new[] { Style(style) }), Null);
+            return f.Add("IFCSHAPEREPRESENTATION", body, S("Body"), S("SweptSolid"), L(new[] { solid }));
         }
 
         /// <summary>
@@ -1596,6 +1648,9 @@ public static partial class IfcExport
                     f.Add("IFCRELASSOCIATESMATERIAL", Gid(type.Id, "material"), Null, Null, Null, L(new[] { r }), LayerSet(set));
                 else if (type.Str("material") is { } mat && m.Get(mat) is { Class: IfcClass.Material })
                     UseMaterial(mat, r);
+                // A module's type whose layers it works out (a room finish's part type, issue #143): its layer set.
+                else if (ModuleLayers(x => x.TypeLayers(m, type)) is { } ownLayers)
+                    f.Add("IFCRELASSOCIATESMATERIAL", Gid(type.Id, "material"), Null, Null, Null, L(new[] { r }), ModuleLayerSet(ownLayers));
             }
             t.Occurrences.Add(entity);
         }
@@ -1742,6 +1797,27 @@ public static partial class IfcExport
             return set;
         }
 
+        /// <summary>The first layer set a module works out for an element or a type (none of a material the project lacks).</summary>
+        IfcLayerSet? ModuleLayers(Func<IIfcLayerSets, IfcLayerSet?> ask)
+        {
+            foreach (var src in s.Catalog.All<IIfcLayerSets>())
+                if (ask(src) is { } set)
+                {
+                    var layers = set.Layers.Where(l => m.Get(l.Material) is { Class: IfcClass.Material }).ToList();
+                    if (layers.Count > 0) return set with { Layers = layers };
+                }
+            return null;
+        }
+
+        /// <summary>A module's layer set, written once for every element and type that has the same (by name and layers).</summary>
+        string ModuleLayerSet(IfcLayerSet set)
+        {
+            var key = "module|" + set.Name + "|" + string.Join("|", set.Layers.Select(l => $"{l.Material}={l.Thickness.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}={l.Name}={l.Note}={l.Category}"));
+            if (layerSets.TryGetValue(key, out var known)) return known;
+            var layers = set.Layers.Select(l => f.Add("IFCMATERIALLAYER", Material(l.Material), R(l.Thickness), Null, S(l.Name ?? m.Get(l.Material)?.Name), S(l.Note), S(l.Category), Null)).ToArray();
+            return layerSets[key] = f.Add("IFCMATERIALLAYERSET", L(layers), S(set.Name), Null);
+        }
+
         void Associate(string set, string entity) => constituentSets.Values.First(x => x.Ref == set).Users.Add(entity);
 
         void UseMaterial(string materialId, string entity) => (materialUses.TryGetValue(materialId, out var l) ? l : materialUses[materialId] = []).Add(entity);
@@ -1761,6 +1837,13 @@ public static partial class IfcExport
             {
                 Associate(columnSet, entity);
                 if (type is var (ckey, ctypeRef) && constituentTypes.Add(ckey)) Associate(columnSet, ctypeRef);
+                return;
+            }
+            // A module's element whose layers it works out (a room finish's covering, issue #143): its usage of that layer set.
+            if (!grouped && LayerSets.UsageOf(m, e.Id) == null && ModuleLayers(x => x.ElementLayers(m, e)) is { } own)
+            {
+                var ownUsage = f.Add("IFCMATERIALLAYERSETUSAGE", ModuleLayerSet(own), E(own.Direction), E(own.Negative ? "NEGATIVE" : "POSITIVE"), R(own.Offset), Null);
+                f.Add("IFCRELASSOCIATESMATERIAL", Gid(e.Id, "material"), Null, Null, Null, L(new[] { entity }), ownUsage);
                 return;
             }
             if (LayerSets.UsageOf(m, e.Id) is { } u && Layers.ReadUsage(u) is { } usage && m.Get(usage.ForLayerSet) is { } set)
@@ -1801,6 +1884,8 @@ public static partial class IfcExport
                 if (p.Material != null) UseMaterial(p.Material, r);
                 // A part made of a type (a lintel of a beam type, report #135): typed by it, IfcBeamType LINTEL.
                 if (p.TypeId != null && m.Get(p.TypeId) is { } partType) TypeOf(partType, pk, r);
+                // Asked (issue #150): a lintel of no beam type of a generic IfcBeamType LINTEL, one by its name and material.
+                else if (o.LintelBeams && kind.Class == IfcClass.Wall && IsLintel(p)) LintelType(p, r);
                 StandardSets(e, p, r, $"{e.Id}/{key}");
                 if ((p.Properties?.Count ?? 0) + (p.Measures?.Count ?? 0) > 0)
                     Define(r, f.Add("IFCPROPERTYSET", Gid(e.Id, key + "/pset"), Null, S(p.PropertySet ?? "Lapin_Part"), Null, L(PartProperties(p.Properties, p.Measures))), Gid(e.Id, key + "/pset-rel"));
@@ -1815,6 +1900,7 @@ public static partial class IfcExport
                     g.Members.Add(r);
                 }
                 partRefs[(e.Id, key)] = r;
+                partSolids[(e.Id, key)] = p.Solid;
                 if (kind.Class == IfcClass.Roof && key.Split(':') is ["truss", var n, ..]) { if (!trusses.TryGetValue(n, out var members)) trusses[n] = members = []; members.Add(r); }
                 // A prefabricated timber-frame wall's members and boards (decision 245), by the panel they belong to.
                 else if (kind.Class == IfcClass.Wall && p.Properties?.FirstOrDefault(x => x.Name == "Panel").Value is { Length: > 0 } mark) { if (!panels.TryGetValue(mark, out var members)) panels[mark] = members = []; members.Add(r); }
@@ -2434,6 +2520,44 @@ public static partial class IfcExport
         }
 
         /// <summary>The element's quantity sets, by the kind IFC measures; a part's set goes on the part when it is an element of its own, else on the element, named after the part.</summary>
+        /// <summary>A wall's lintel piece (keys "lintel:&lt;opening&gt;:&lt;n&gt;"), which <see cref="IfcExportOptions.LintelBeams"/> writes as a beam of its own.</summary>
+        static bool IsLintel(GeometryPart p) => p.Key?.StartsWith("lintel:", StringComparison.Ordinal) == true;
+
+        /// <summary>The bodies of the parts written, by element and key: a lintel's pieces share its quantities by their volumes.</summary>
+        readonly Dictionary<(string Element, string Key), Solid> partSolids = [];
+
+        /// <summary>
+        /// The pieces written of a lintel's or a ring beam over an opening's set (keyed "lintel:&lt;opening&gt;", its pieces
+        /// "lintel:&lt;opening&gt;:&lt;n&gt;"), each with its share of their volume; empty for any other set.
+        /// </summary>
+        List<(string Key, string Ref, double Share)> LintelPieces(string element, string part)
+        {
+            if (!part.StartsWith("lintel:", StringComparison.Ordinal) && !part.StartsWith("downstand:", StringComparison.Ordinal)) return [];
+            var pieces = partRefs.Where(x => x.Key.Element == element && x.Key.Key.StartsWith(part + ":", StringComparison.Ordinal) && x.Key.Key.LastIndexOf(':') == part.Length)
+                .Select(x => (x.Key.Key, x.Value, Volume: partSolids.TryGetValue(x.Key, out var solid) ? Measure.Volume(solid) : 0)).OrderBy(x => x.Key, StringComparer.Ordinal).ToList();
+            var total = pieces.Sum(x => x.Volume);
+            return [.. pieces.Select(x => (x.Key, x.Value, total > 0 ? x.Volume / total : 1.0 / pieces.Count))];
+        }
+
+        /// <summary>A piece's share of its lintel's set: its lengths as they are, its areas, volumes and weights its share.</summary>
+        static QuantitySet Shared(QuantitySet set, double share) =>
+            set with { Quantities = [.. set.Quantities.Select(x => x.Kind is "LENGTH" or "COUNT" ? x : x with { Value = x.Value * share })] };
+
+        /// <summary>A lintel of no beam type (issue #150): typed by a generic IfcBeamType LINTEL, one by its name and material, with no intent (Lapin's import leaves it).</summary>
+        void LintelType(GeometryPart p, string r)
+        {
+            var material = p.Material != null ? m.Get(p.Material)?.Name ?? p.Material : null;
+            var name = material != null ? $"{p.Name} · {material}" : p.Name ?? "Lintel";
+            var key = "lintel-type:" + name;
+            if (!types.TryGetValue(key, out var t))
+            {
+                var type = f.Add("IFCBEAMTYPE", Gid("lintel-type", name), Null, S(name), Null, Null, Null, Null, Null, Null, E("LINTEL"));
+                if (p.Material != null && m.Get(p.Material) is { Class: IfcClass.Material }) UseMaterial(p.Material, type);
+                types[key] = t = (type, []);
+            }
+            t.Occurrences.Add(r);
+        }
+
         void Quantities(Entity e, string entity, bool grouped)
         {
             var carried = e.Attrs[IfcSource.Key] is JsonObject src ? IfcCarry.Writer.SetNames(src).ToHashSet() : [];
@@ -2442,9 +2566,19 @@ public static partial class IfcExport
             foreach (var set in s.Quantities(e.Id))
             {
                 if (carried.Contains(set.Name)) continue;
-                var target = set.Part != null && grouped && partRefs.TryGetValue((e.Id, set.Part), out var pr) ? pr : entity;
                 var q = QuantityItems(set);
                 if (q.Count == 0) continue;
+                // A lintel's set (issue #150) is its pieces' together, keyed by the lintel: on its one piece, else each piece its share.
+                if (set.Part != null && (grouped || o.LintelBeams) && LintelPieces(e.Id, set.Part) is { Count: > 0 } pieces)
+                {
+                    foreach (var (pieceKey, pieceRef, share) in pieces)
+                    {
+                        var own = pieces.Count == 1 ? q : QuantityItems(Shared(set, share));
+                        Define(pieceRef, f.Add("IFCELEMENTQUANTITY", Gid(e.Id, "qto/" + set.Name + "/" + pieceKey), Null, S(set.Name), Null, Null, L(own)), Gid(e.Id, "qto-rel/" + set.Name + "/" + pieceKey));
+                    }
+                    continue;
+                }
+                var target = set.Part != null && grouped && partRefs.TryGetValue((e.Id, set.Part), out var pr) ? pr : entity;
                 var key = set.Part != null ? $"{set.Name}/{set.Part}" : set.Name;
                 var description = target == entity && set.Part != null ? set.PartName ?? set.Part : null;
                 Define(target, f.Add("IFCELEMENTQUANTITY", Gid(e.Id, "qto/" + key), Null, S(set.Name), S(description), Null, L(q)), Gid(e.Id, "qto-rel/" + key));

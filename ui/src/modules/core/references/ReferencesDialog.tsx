@@ -183,7 +183,7 @@ export function ReferencesWorkspace({ adapter, perms, reloadOn, onClose, embedde
             {!guest && <button type="button" className="btn" data-testid="refs-add" onClick={() => input.current?.click()}><Paperclip size={13} /> Add files…</button>}
             {!guest && <button type="button" className="btn" onClick={() => void request()} title="A document asked for and not received yet: it has no file"><FilePlus2 size={13} /> New request</button>}
             {canScan && <button type="button" className={`btn${panel === 'scan' ? ' on' : ''}`} onClick={() => setPanel(panel === 'scan' ? '' : 'scan')}><FolderSearch size={13} /> Scan folder</button>}
-            <button type="button" className={`btn${panel === 'settings' ? ' on' : ''}`} onClick={() => setPanel(panel === 'settings' ? '' : 'settings')}><Settings2 size={13} /> Folders and types</button>
+            <button type="button" className={`btn${panel === 'settings' ? ' on' : ''}`} data-testid="refs-open-settings" onClick={() => setPanel(panel === 'settings' ? '' : 'settings')}><Settings2 size={13} /> Folders and types</button>
             <input ref={input} type="file" multiple hidden data-testid="refs-file" onChange={(e) => { const f = [...(e.target.files ?? [])]; e.target.value = ''; void addFiles(f); }} />
           </div>
 

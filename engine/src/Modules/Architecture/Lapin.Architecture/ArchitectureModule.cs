@@ -313,7 +313,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 {
                     ["elevation"] = Strokes([.. JoinerySymbols.Elevation(spec, false, convention, hardware), .. JoinerySymbols.Dressings(spec, wall, "elevation")]),
                     ["exterior"] = Strokes([.. JoinerySymbols.Elevation(spec, true, convention, hardware), .. JoinerySymbols.Dressings(spec, wall, "exterior")]),
-                    ["plan"] = Strokes([.. JoinerySymbols.Plan(spec, windowSwing: Joinery.WindowSwing(q.Model)), .. JoinerySymbols.ThresholdPlan(spec, wall), .. JoinerySymbols.Dressings(spec, wall, "plan")]),
+                    ["plan"] = Strokes([.. JoinerySymbols.Plan(spec, windowSwing: Joinery.WindowSwing(q.Model), sillsApart: true), .. JoinerySymbols.SillsPlan(spec, wall), .. JoinerySymbols.ThresholdPlan(spec, wall), .. JoinerySymbols.Dressings(spec, wall, "plan")]),
                     ["section"] = Strokes([.. JoinerySymbols.Section(spec), .. JoinerySymbols.Dressings(spec, wall, "section", JoinerySymbols.SectionCut(spec))]),
                 },
                 ["symbols"] = new JsonObject { ["convention"] = convention, ["hardware"] = hardware, ["windowSwing"] = Joinery.WindowSwing(q.Model) },
@@ -392,9 +392,11 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         // A floor type; beamBlock (report #134): its beam-and-block rules (null: a layered floor), set in the same step.
         r.Command("createSlabType", "New floor type", (ctx, a) =>
         {
+            // `mark` and `params` (issues #146, #147): the new type's mark and parameters, in the same step.
+            var given = NewTypeArgs.Read(a, IfcClass.SlabType);
             var type = Slabs.CreateType(ctx, (string?)a["name"], LayerSets.Parse(a["layers"], "A floor type"));
             if (a["beamBlock"] is JsonObject bb) BeamBlock.Set(ctx, type, BeamBlockSpec.From(bb));
-            return new JsonObject { ["id"] = type.Id };
+            return NewTypeArgs.Made(ctx, type, given);
         });
 
         r.Command("updateSlabType", "Change floor type", (ctx, a) =>
@@ -679,6 +681,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         new Schedules.ScheduleEntity().Register(r);
         r.Service<IScheduleSource>(new RoomSchedule());
         r.Service<IScheduleSource>(new BeamBlockSchedule());
+        // A floor of parts with a plain body of its own in IFC, when the export asks (#140).
+        r.Service<IIfcEnvelopes>(new SlabEnvelopes());
         r.Service<IElementBuildUps>(new RoomFinishBuildUps());
         r.Service<IElementUpdate>(new RoomUpdate());
         r.Service<IProjectUpgrade>(new RoomNameUpgrade());
@@ -718,6 +722,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new("hatchColor", "Hatch colour", "color"),
             // Whether plans hatch the room's floor finish (decision 299): absent, yes.
             new("finishHatch", "Show floor finish hatch", "bool"),
+            // What the room's ceiling is (issue #145): absent, the slab above (as before); „falseCeiling”, the false ceiling over it when it has one.
+            new(RoomFinishes.CeilingFromKey, "Ceiling", "choice", Choices: ["slab", RoomFinishes.FalseCeilingValue]),
         ], Rooms.Color));
         r.Geometry(Rooms.Class, Rooms.Geometry);
         r.Quantities(Rooms.Class, Rooms.Quantities);
@@ -799,6 +805,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new("downpipeDiameter", "Downpipe size", "length", Min: 0.04, Max: 0.3),
         ], "#b0563d"));
         r.Geometry(IfcClass.Roof, (roof, model, services) => RoofCuts.Geometry(roof, model, services));
+        // A roof type (issue #151): its parameters and, made from a roof, its build-up.
+        r.Class(new(RoofTypes.Class, "Roof type", [], "#b5655a", Kind: "type"));
         // A roof cuts walls and Studio solids by its covering, and is cut by slabs, beams, columns and footings.
         r.Cutter(IfcClass.Roof, 55, RoofCuts.Envelope);
         r.Quantities(IfcClass.Roof, (roof, geometry, model) => Roof.Quantities(roof, geometry, model));
@@ -828,6 +836,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             CheckRoof(ctx.Model, roof);
             ctx.Add(roof);
             Spatial.Contain(ctx, storeyId, roof.Id);
+            // Of a roof type (issue #151): typed by it, its build-up put on.
+            if ((string?)a["typeId"] is { Length: > 0 } rt) RoofTypes.Assign(ctx, roof, Spatial.Require(ctx.Model, rt, RoofTypes.Class), next => CheckedRoof(ctx, next));
             return new JsonObject { ["id"] = roof.Id };
         });
 
@@ -929,6 +939,28 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Command("renameRoofStyle", "Rename roof style", (ctx, a) => { ProjectRoofStyles.Rename(ctx, (string?)a["styleId"] ?? "", (string?)a["name"] ?? ""); return null; });
         r.Command("deleteRoofStyle", "Delete roof style", (ctx, a) => { ProjectRoofStyles.Delete(ctx, (string?)a["styleId"] ?? ""); return null; });
 
+        // Roof types (issue #151): an IfcRoofType with its type parameters and, made from a roof, its build-up, which the roofs of
+        // the type share (their shape their own); a roof typed by one, or by none. {name?, roofId?, params?}; {id, name?, roofId?}; {ids, typeId | null}.
+        r.Command("createRoofType", "New roof type", (ctx, a) =>
+        {
+            var ps = Params.ParseList(a["params"], RoofTypes.Class);
+            var from = (string?)a["roofId"] is { Length: > 0 } rid ? Spatial.Require(ctx.Model, rid, IfcClass.Roof) : null;
+            return new JsonObject { ["id"] = RoofTypes.Create(ctx, (string?)a["name"], from, ps, next => CheckedRoof(ctx, next)).Id };
+        });
+        r.Command("updateRoofType", "Change roof type", (ctx, a) =>
+        {
+            var type = Spatial.Require(ctx.Model, (string?)a["id"], RoofTypes.Class);
+            var from = (string?)a["roofId"] is { Length: > 0 } rid ? Spatial.Require(ctx.Model, rid, IfcClass.Roof) : null;
+            RoofTypes.Update(ctx, type, (string?)a["name"], from, next => CheckedRoof(ctx, next));
+            return null;
+        });
+        r.Command("setRoofType", "Change type", (ctx, a) =>
+        {
+            var type = (string?)a["typeId"] is { Length: > 0 } tid ? Spatial.Require(ctx.Model, tid, RoofTypes.Class) : null;
+            foreach (var id in Ids(a)) RoofTypes.Assign(ctx, Spatial.Require(ctx.Model, id, IfcClass.Roof), type, next => CheckedRoof(ctx, next));
+            return null;
+        });
+
         // The roof configurator's preview: the roof as the draft would make it (a style, fields, edge rules), its plan, a section
         // through its framing and what it takes; nothing changes in the model.
         r.Query("roofPreview", (q, a) =>
@@ -1010,6 +1042,26 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 ctx.Replace(opening.With(attrs: attrs));
                 var p = Openings.Place(ctx.Model, ctx.Model.Get(opening.Id)!);
                 Openings.CheckFits(ctx.Model, wall, p.Along, p.Sill, p.Width, p.Height, opening.Id);
+            }
+            return null;
+        });
+
+        // Whether a door's or window's hole goes down to the structure under the finished floor it stands on (GitHub #149): {id | ids
+        // (openings, or the doors and windows filling them), on}. Kept on the opening; it acts on one measured from the finished floor.
+        r.Command("setReachStructure", "Opening down to the structure", (ctx, a) =>
+        {
+            var ids = Ids(a).ToList();
+            if (ids.Count == 0) throw new CommandException("Select a door or a window.");
+            var on = a["on"] is not JsonValue v || !v.TryGetValue<bool>(out var b) || b;
+            foreach (var id in ids)
+            {
+                var e = ctx.Model.Get(id) ?? throw new CommandException("Select a door or a window.");
+                var opening = e.Class == IfcClass.OpeningElement ? e : Openings.OpeningOf(ctx.Model, id) ?? throw new CommandException($"„{e.Name}” fills no opening.");
+                if (Openings.FillOf(ctx.Model, opening.Id) == null) throw new CommandException("Only a door's or a window's opening goes down to the structure under it.");
+                if (opening.Bool(OpeningSills.ReachKey) == on) continue;
+                var attrs = opening.CloneAttrs();
+                if (on) attrs[OpeningSills.ReachKey] = true; else attrs.Remove(OpeningSills.ReachKey);
+                ctx.Replace(opening.With(attrs: attrs));
             }
             return null;
         });
@@ -1574,6 +1626,14 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     /// the outline (<c>points</c>) and the edge rules (<c>edges</c>: one entry per edge, null for "as the roof"; null clears
     /// them all). Fields or edges changed by hand leave the roof no longer exactly its style.
     /// </summary>
+    /// <summary>A roof changed by its type (issue #151), checked as a style put on is: it builds, its openings fit, its covering's material is made.</summary>
+    static Entity CheckedRoof(ICommandContext ctx, Entity next)
+    {
+        CheckRoof(ctx.Model, next);
+        CheckRoofOpenings(ctx.Model, next);
+        return RoofCoverings.Settle(ctx, ctx.Model.Get(next.Id), next);
+    }
+
     internal static Entity RoofDraft(IModelView m, Entity roof, JsonObject a)
     {
         var attrs = roof.CloneAttrs();

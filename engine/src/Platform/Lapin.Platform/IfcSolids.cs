@@ -67,6 +67,22 @@ public interface IIfcExportFilter
     bool IsPrivate(Entity element, string key) => false;
 }
 
+/// <summary>
+/// An element of parts (a beam-and-block floor, a timber or CLT floor) as one plain body (#140): <see cref="Body"/> its whole thickness
+/// over its outline (its own holes out); <see cref="Bottom"/> (model z) and <see cref="Depth"/> when that body is its outline extruded
+/// straight up, null when it is not (a shaped floor).
+/// </summary>
+public sealed record IfcEnvelope(Solid Body, double? Bottom = null, double? Depth = null);
+
+/// <summary>
+/// A module's elements of parts whose IFC parent may carry a plain body of its own beside its parts (<c>IfcExportOptions.FloorBody</c>),
+/// for readers that take an element only by its own body; null for the others.
+/// </summary>
+public interface IIfcEnvelopes
+{
+    IfcEnvelope? EnvelopeOf(IModelView model, Entity element);
+}
+
 /// <summary>A module's entities that IFC writes as systems of elements (IfcBuildingSystem).</summary>
 public interface IIfcSystems
 {
