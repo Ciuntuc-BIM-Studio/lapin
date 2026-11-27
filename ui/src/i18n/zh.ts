@@ -3,6 +3,25 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // A script's element (element.createBody) in Properties, and what a material draws as whatever its name's language (forum: a bridge modeller).
+  "Reinforced concrete": "钢筋混凝土",
+  "Aerated concrete blocks": "加气混凝土砌块",
+  "Stone": "石材",
+  "Engineered wood": "工程木",
+  "Rigid insulation": "硬质保温",
+  "Sand": "砂",
+  "Gravel": "碎石",
+  "Earth": "土",
+  "Asphalt": "沥青",
+  "Elastomer": "弹性体",
+  "Nothing (no pattern)": "无（无图案）",
+  "The script's values": "脚本的值",
+  "Its parts": "其部件",
+  "Change it in Manage → Materials (how it draws) or in the script (what it is made of).": "在 管理 → 材料 中更改（绘制方式），或在脚本中更改（由什么制成）。",
+  "Object type": "对象类型",
+  "Bridge part": "桥梁部分",
+  "Draws as": "绘制为",
+  "What the project's material standard draws it as, whatever language its name is in: a name it does not know, or one it misreads (an asphalt taken for a membrane), draws as the kind chosen here. Its own graphics still come first": "项目的材料标准如何绘制它，无论其名称是何种语言：标准不认识或误读的名称（被当作防水层的沥青）按此处所选的类型绘制。其自身的图形仍然优先",
   // Analyses on the CDE server: clash tests and the sun study run by Lapin's engine (docs/headless-run.md).
   "Clash tests run on every submission": "每次提交都运行碰撞检测",
   "New hard clashes stop the approval": "新的硬碰撞会阻止批准",

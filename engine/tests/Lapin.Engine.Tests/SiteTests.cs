@@ -156,8 +156,13 @@ public class SiteTests
                 Assert.Single(step.OfType(pavement));
                 Assert.Single(step.OfType(trench));
                 var wall = Assert.Single(step.OfType("IFCWALL"));
-                Assert.Equal(new StepEnum("USERDEFINED"), wall[8]);
-                Assert.Equal("RETAININGWALL", (string?)wall[4]);
+                // IFC 4.3's IfcWallTypeEnum has RETAININGWALL; IFC4's has not: user-defined, named so.
+                if (schema == "IFC4X3") Assert.Equal(new StepEnum("RETAININGWALL"), wall[8]);
+                else
+                {
+                    Assert.Equal(new StepEnum("USERDEFINED"), wall[8]);
+                    Assert.Equal("RETAININGWALL", (string?)wall[4]);
+                }
                 Assert.Equal(2, step.OfType("IFCGEOGRAPHICELEMENT").Count());
                 if (schema == "IFC4X3") Assert.Contains(step.OfType("IFCGEOGRAPHICELEMENT"), g => Equals(g[8], new StepEnum("VEGETATION")));
             }

@@ -1133,7 +1133,12 @@ public sealed partial class Session
         Cde.Remarks.Remarks.Strip(e, props);
         if (e.PredefinedType != null) props["predefinedType"] = e.PredefinedType;
         // A body an external program made (docs/plan-external-geometry.md): the window says so in Properties.
-        if (ExternalBodies.IsOwned(e)) props["scriptOwned"] = true;
+        if (ExternalBodies.IsOwned(e))
+        {
+            props["scriptOwned"] = true;
+            // Its parts' own materials (element.createBody's parts[].material), which Properties lists beside its element's.
+            if (ExternalBodies.PartMaterials(_store, e) is { Count: > 0 } pm) props["partMaterials"] = new JsonArray([.. pm.Select(x => (JsonNode)x)]);
+        }
         foreach (var extra in _catalog.All<INodeProps>())
             try { extra.Add(e, _store, props); } catch (Exception) { /* derived only: the node goes without it */ }
         var owner = _catalog.OwnerOf(e.Class);

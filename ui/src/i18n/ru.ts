@@ -3,6 +3,25 @@
 import type { Language } from './index';
 
 export const RU: Record<string, string> = {
+  // A script's element (element.createBody) in Properties, and what a material draws as whatever its name's language (forum: a bridge modeller).
+  "Reinforced concrete": "Железобетон",
+  "Aerated concrete blocks": "Газобетонные блоки",
+  "Stone": "Камень",
+  "Engineered wood": "Инженерная древесина",
+  "Rigid insulation": "Жёсткая теплоизоляция",
+  "Sand": "Песок",
+  "Gravel": "Гравий",
+  "Earth": "Грунт",
+  "Asphalt": "Асфальт",
+  "Elastomer": "Эластомер",
+  "Nothing (no pattern)": "Ничего (без штриховки)",
+  "The script's values": "Значения скрипта",
+  "Its parts": "Его части",
+  "Change it in Manage → Materials (how it draws) or in the script (what it is made of).": "Измените его в Управление → Материалы (как он рисуется) или в скрипте (из чего он сделан).",
+  "Object type": "Тип объекта",
+  "Bridge part": "Часть моста",
+  "Draws as": "Рисуется как",
+  "What the project's material standard draws it as, whatever language its name is in: a name it does not know, or one it misreads (an asphalt taken for a membrane), draws as the kind chosen here. Its own graphics still come first": "Как его рисует стандарт материалов проекта, на каком бы языке ни было его имя: имя, которого он не знает или которое читает неверно (асфальт, принятый за мембрану), рисуется как выбранный здесь вид. Его собственная графика по-прежнему важнее",
   "Name of the permit or study:": "Название согласования или исследования:",
   "Take the indicative list again? The certificates keep the items they ticked.": "Вернуть ориентировочный список? Сертификаты сохранят отмеченные пункты.",
   "The permits and studies an urbanism certificate may ask for, offered on each certificate's Checklist tab to tick. The list shipped is indicative, never what the law requires: change it to what your certificates ask for. A certificate keeps the items it ticked whatever this list becomes.": "Согласования и исследования, которые может требовать градостроительный сертификат; их можно отметить на вкладке «Контрольный список» каждого сертификата. Поставляемый список ориентировочный и не означает требований закона: измените его под то, что требуют ваши сертификаты. Сертификат сохраняет отмеченные пункты, каким бы ни стал этот список.",

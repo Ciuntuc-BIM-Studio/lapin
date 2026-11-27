@@ -44,6 +44,13 @@ public static class ExternalBodies
     public static string? MaterialOfElement(IModelView m, Entity e) =>
         IsOwned(e) && m.RelatingOf(e.Id, IfcClass.RelAssociatesMaterial) is { Class: IfcClass.Material } mat ? mat.Id : null;
 
+    /// <summary>The materials a program's element's parts name of their own (ids or names, as kept), in order, each once.</summary>
+    public static IReadOnlyList<string> PartMaterials(IModelView m, Entity e)
+    {
+        var stored = StoredBodies.InstanceOf(e) is var (bodyId, _) ? m.Get(bodyId)?.Attrs[StoredBodies.Key] as JsonObject : e.Attrs[StoredBodies.Key] as JsonObject;
+        return [.. (stored?["parts"] as JsonArray ?? []).OfType<JsonObject>().Select(p => (string?)p["material"]).OfType<string>().Distinct()];
+    }
+
     public static void Register(IModuleRegistry r)
     {
         r.Command("element.createBody", "Create body", (ctx, a) => Create(ctx, a));
@@ -79,7 +86,8 @@ public static class ExternalBodies
         var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : cls[3..];
         // What it is in IFC beyond its class: its predefined type, object type and bridge part, checked as the export writes them.
         var identity = new JsonObject();
-        foreach (var k in IdentityKeys) if (a.ContainsKey(k)) identity[k] = a[k]?.DeepClone();
+        foreach (var (k, v) in new (string Key, JsonNode? Value)[] { ("predefinedType", a["predefinedType"]), ("objectType", a["objectType"]), ("ifcBridgePart", a["ifcBridgePart"]), ("ifcBridgePartName", a["ifcBridgePartName"]) })
+            if (a.ContainsKey(k)) identity[k] = v?.DeepClone();
         var predefined = IfcIdentity(cls, null, attrs, identity, notes);
         var e = new Entity(id, cls, name, attrs, predefined);
         ctx.Add(e);

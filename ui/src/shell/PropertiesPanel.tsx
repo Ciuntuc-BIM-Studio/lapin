@@ -38,6 +38,7 @@ import { MaterialPicker } from '../modules/core/MaterialPicker';
 import { hiddenHere, useShownHere } from '../viewport/cad/shown';
 import { ElementMarkField, hasMark, TypeMarkField } from '../modules/core/MarkField';
 import { PartBoundary } from './PartBoundary';
+import { elementMaterials, scriptValues } from './scriptBody';
 
 /** An input that commits on Enter or when it loses focus, not on every key. */
 function Commit({ value, onCommit, suffix, className }: { value: string; onCommit: (v: string) => void; suffix?: string; className?: string }) {
@@ -328,6 +329,25 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
       {notShown && <p className="muted small pad props-not-shown" data-testid="not-shown-here"><EyeOff size={12} /> Not shown in this view: hidden by its graphics, a filter, a phase, Hide / Isolate, its range or a level put away. A click or a box here does not take it.</p>}
       {!node.editable && <p className="muted small pad">This element belongs to a module this edition does not have: it is shown and kept, not edited.</p>}
       {node.props.scriptOwned === true && <p className="muted small pad props-script-owned" data-testid="script-owned"><Code2 size={12} /> <span>Made by a script:</span> <b>{String(node.props.owner ?? '')}</b><br /><span>Its shape is changed in the script; here it moves, turns, copies and is cut like any element.</span></p>}
+      {node.props.scriptOwned === true && scriptValues(node).length > 0 && (
+        <Group id="scriptValues" label="The script's values">
+          <dl className="fields" data-testid="script-values">{scriptValues(node).map(([k, v]) => <Fragment key={k}><dt data-no-i18n>{k}</dt><dd data-no-i18n>{v}</dd></Fragment>)}</dl>
+        </Group>
+      )}
+      {(() => {
+        // Its material, read only (an untyped element: a typed one shows its type's), and its parts' own (a script's body).
+        const mats = elementMaterials(model, node);
+        if (!mats || cls?.fields.some((f) => f.kind === 'material' || f.kind === 'materialRef')) return null;
+        return (
+          <Group id="elementMaterial" label="Material">
+            <dl className="fields" data-testid="element-material">
+              {mats.own && <><dt>Material</dt><dd data-no-i18n>{mats.own}</dd></>}
+              {mats.parts.length > 0 && <><dt>Its parts</dt><dd data-no-i18n>{mats.parts.join(', ')}</dd></>}
+            </dl>
+            <p className="muted small pad">Change it in Manage → Materials (how it draws) or in the script (what it is made of).</p>
+          </Group>
+        );
+      })()}
       {sections.map((s) => (
         <Group key={s.id} id={s.id} label={s.label}><PartBoundary part={`Properties: ${s.label}`} compact resetKey={node.id}><s.component node={node} /></PartBoundary></Group>
       ))}
@@ -417,6 +437,8 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
           <dt>Class</dt><dd>{node.type}{typeof node.props.predefinedType === 'string' ? ` · ${node.props.predefinedType}` : ''}</dd>
           <dt>GlobalId</dt><dd className="mono">{node.id}</dd>
           {type && <><dt>Type</dt><dd>{type.type} · {type.name}</dd></>}
+          {typeof node.props.objectType === 'string' && node.props.objectType && <><dt>Object type</dt><dd data-no-i18n>{node.props.objectType}</dd></>}
+          {typeof node.props.ifcBridgePart === 'string' && node.props.ifcBridgePart && <><dt>Bridge part</dt><dd data-no-i18n>{node.props.ifcBridgePart}{typeof node.props.ifcBridgePartName === 'string' && node.props.ifcBridgePartName ? ` · ${node.props.ifcBridgePartName}` : ''}</dd></>}
           {storey && <><dt>Storey</dt><dd>{storey.name}</dd></>}
           <dt>Module</dt><dd>{node.module ?? '—'}</dd>
         </dl>

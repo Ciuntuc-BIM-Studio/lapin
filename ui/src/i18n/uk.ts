@@ -3,6 +3,25 @@
 import type { Language } from './index';
 
 export const UK: Record<string, string> = {
+  // A script's element (element.createBody) in Properties, and what a material draws as whatever its name's language (forum: a bridge modeller).
+  "Reinforced concrete": "Залізобетон",
+  "Aerated concrete blocks": "Газобетонні блоки",
+  "Stone": "Камінь",
+  "Engineered wood": "Інженерна деревина",
+  "Rigid insulation": "Жорстка теплоізоляція",
+  "Sand": "Пісок",
+  "Gravel": "Гравій",
+  "Earth": "Ґрунт",
+  "Asphalt": "Асфальт",
+  "Elastomer": "Еластомер",
+  "Nothing (no pattern)": "Нічого (без штрихування)",
+  "The script's values": "Значення скрипта",
+  "Its parts": "Його частини",
+  "Change it in Manage → Materials (how it draws) or in the script (what it is made of).": "Змініть його в Керування → Матеріали (як він малюється) або в скрипті (з чого він зроблений).",
+  "Object type": "Тип об'єкта",
+  "Bridge part": "Частина мосту",
+  "Draws as": "Малюється як",
+  "What the project's material standard draws it as, whatever language its name is in: a name it does not know, or one it misreads (an asphalt taken for a membrane), draws as the kind chosen here. Its own graphics still come first": "Як його малює стандарт матеріалів проєкту, хоч би якою мовою була його назва: назва, якої він не знає або яку читає хибно (асфальт, сприйнятий як мембрана), малюється як вибраний тут вид. Його власна графіка й надалі має перевагу",
   "Name of the permit or study:": "Назва погодження або дослідження:",
   "Take the indicative list again? The certificates keep the items they ticked.": "Повернути орієнтовний список? Сертифікати збережуть позначені пункти.",
   "The permits and studies an urbanism certificate may ask for, offered on each certificate's Checklist tab to tick. The list shipped is indicative, never what the law requires: change it to what your certificates ask for. A certificate keeps the items it ticked whatever this list becomes.": "Погодження та дослідження, яких може вимагати містобудівний сертифікат; їх можна позначити на вкладці «Контрольний список» кожного сертифіката. Список, що постачається, орієнтовний і не означає вимог закону: змініть його відповідно до того, що вимагають ваші сертифікати. Сертифікат зберігає позначені пункти, хоч би яким став цей список.",

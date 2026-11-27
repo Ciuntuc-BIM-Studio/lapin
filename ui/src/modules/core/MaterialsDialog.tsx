@@ -42,6 +42,17 @@ import { commitDecimalField } from '../../shell/parseDecimal';
 /** IfcMaterial.Category as the interface offers it (Materials.Categories in the engine). */
 const MATERIAL_CATEGORIES = ['Structure', 'Finish', 'Insulation', 'Membrane', 'Other'];
 
+/**
+ * What a material draws as by the project's standard whatever its name's language (the engine's DrawsAs): its kind, and how the
+ * list names it. None given, its name is read, as before.
+ */
+export const DRAWS_AS: [string, string][] = [
+  ['concrete', 'Concrete'], ['reinforcedConcrete', 'Reinforced concrete'], ['masonry', 'Masonry'], ['block', 'Blocks'], ['aeratedBlock', 'Aerated concrete blocks'],
+  ['stone', 'Stone'], ['steel', 'Steel'], ['timber', 'Timber'], ['engineeredWood', 'Engineered wood'], ['rigidInsulation', 'Rigid insulation'],
+  ['insulation', 'Insulation'], ['membrane', 'Membrane'], ['glass', 'Glass'], ['plaster', 'Plaster'], ['tile', 'Tiles'], ['sand', 'Sand'], ['gravel', 'Gravel'],
+  ['earth', 'Earth'], ['asphalt', 'Asphalt'], ['elastomer', 'Elastomer'], ['none', 'Nothing (no pattern)'],
+];
+
 const TEXTURES = ['none', 'brick', 'brick-end', 'concrete', 'wood', 'wood-end', 'plaster', 'stone', 'metal', 'insulation', 'earth', 'tiles'];
 type LookKey = Exclude<keyof Look, 'emissive'>;
 
@@ -284,6 +295,11 @@ export function MaterialsDialog() {
                   <select value={String(node?.props.category ?? '')} onChange={(e) => update({ category: e.target.value || null })}>
                     <option value="">by its name</option>
                     {MATERIAL_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select></label>
+                <label className="field-line" title="What the project's material standard draws it as, whatever language its name is in: a name it does not know, or one it misreads (an asphalt taken for a membrane), draws as the kind chosen here. Its own graphics still come first"><span className="eyebrow">Draws as</span>
+                  <select data-field="material-draws-as" value={String(node?.props.drawsAs ?? '')} onChange={(e) => update({ drawsAs: e.target.value || null })}>
+                    <option value="">by its name</option>
+                    {DRAWS_AS.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
                   </select></label>
               </div>
               <div className="row material-actions">

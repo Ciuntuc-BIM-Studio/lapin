@@ -294,7 +294,7 @@ public static class DraftingResources
         // What it draws as by the project's standard, whatever its name's language (DrawsAs): a kind, or null back to its name.
         if (a.ContainsKey(DrawsAs.Key))
         {
-            if (((string?)a[DrawsAs.Key])?.Trim() is { Length: > 0 } given)
+            if (((string?)a["drawsAs"])?.Trim() is { Length: > 0 } given)
                 attrs[DrawsAs.Key] = DrawsAs.Kind(given) ?? throw new CommandException($"„{given}” is not what a material draws as: {string.Join(", ", DrawsAs.Kinds.Select(k => k.Kind))}.");
             else attrs.Remove(DrawsAs.Key);
         }

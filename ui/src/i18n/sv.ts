@@ -1,6 +1,25 @@
 /** The interface in Swedish: each English phrase as the interface shows it, and its Swedish. */
 
 export const SV: Record<string, string> = {
+  // A script's element (element.createBody) in Properties, and what a material draws as whatever its name's language (forum: a bridge modeller).
+  "Reinforced concrete": "Armerad betong",
+  "Aerated concrete blocks": "Lättbetongblock",
+  "Stone": "Sten",
+  "Engineered wood": "Träbaserade skivor",
+  "Rigid insulation": "Hård isolering",
+  "Sand": "Sand",
+  "Gravel": "Grus",
+  "Earth": "Jord",
+  "Asphalt": "Asfalt",
+  "Elastomer": "Elastomer",
+  "Nothing (no pattern)": "Inget (inget mönster)",
+  "The script's values": "Skriptets värden",
+  "Its parts": "Dess delar",
+  "Change it in Manage → Materials (how it draws) or in the script (what it is made of).": "Ändra det i Hantera → Material (hur det ritas) eller i skriptet (vad det är gjort av).",
+  "Object type": "Objekttyp",
+  "Bridge part": "Brodel",
+  "Draws as": "Ritas som",
+  "What the project's material standard draws it as, whatever language its name is in: a name it does not know, or one it misreads (an asphalt taken for a membrane), draws as the kind chosen here. Its own graphics still come first": "Hur projektets materialstandard ritar det, oavsett vilket språk namnet är på: ett namn den inte känner till, eller läser fel (en asfalt tagen för ett membran), ritas som den typ som väljs här. Dess egen grafik går fortfarande först",
   // Analyses on the CDE server: clash tests and the sun study run by Lapin's engine (docs/headless-run.md).
   "Clash tests run on every submission": "Kollisionstester körs vid varje inlämning",
   "New hard clashes stop the approval": "Nya hårda kollisioner stoppar godkännandet",

@@ -294,6 +294,9 @@ public class ExternalBodyTests : IDisposable
         Assert.Equal(concrete.Id, (string?)parts[0]!["material"]);
         Assert.Null(parts[1]!["material"]);
         Assert.Equal(steel.Id, f.Model.RelatingOf(id, IfcClass.RelAssociatesMaterial)!.Id);
+        // The window is told its parts' own materials, for Properties.
+        var props = f.Session.Snapshot().Nodes.Single(n => n.Id == id).Props;
+        Assert.Equal([concrete.Id], props["partMaterials"]!.AsArray().Select(x => (string?)x));
         // Cut in a plan: the pier in its concrete, the plate that names none in its element's steel.
         Assert.Equal(["CONCRETE", "STEEL"], PlanHatches(f, id));
         // The same triangles in another material are another body.

@@ -3,6 +3,25 @@
 import type { Language } from './index';
 
 export const PT: Record<string, string> = {
+  // A script's element (element.createBody) in Properties, and what a material draws as whatever its name's language (forum: a bridge modeller).
+  "Reinforced concrete": "Concreto armado",
+  "Aerated concrete blocks": "Blocos de concreto celular",
+  "Stone": "Pedra",
+  "Engineered wood": "Madeira engenheirada",
+  "Rigid insulation": "Isolamento rígido",
+  "Sand": "Areia",
+  "Gravel": "Brita",
+  "Earth": "Terra",
+  "Asphalt": "Asfalto",
+  "Elastomer": "Elastômero",
+  "Nothing (no pattern)": "Nada (sem hachura)",
+  "The script's values": "Valores do script",
+  "Its parts": "Suas partes",
+  "Change it in Manage → Materials (how it draws) or in the script (what it is made of).": "Altere em Gerenciar → Materiais (como é desenhado) ou no script (do que é feito).",
+  "Object type": "Tipo de objeto",
+  "Bridge part": "Parte da ponte",
+  "Draws as": "Desenhado como",
+  "What the project's material standard draws it as, whatever language its name is in: a name it does not know, or one it misreads (an asphalt taken for a membrane), draws as the kind chosen here. Its own graphics still come first": "Como o padrão de materiais do projeto o desenha, qualquer que seja o idioma do seu nome: um nome que ele não conhece, ou que lê mal (um asfalto tomado por uma membrana), é desenhado como o tipo escolhido aqui. Seus próprios gráficos continuam tendo prioridade",
   // Analyses on the CDE server: clash tests and the sun study run by Lapin's engine (docs/headless-run.md).
   "Clash tests run on every submission": "Os testes de colisão são executados em cada submissão",
   "New hard clashes stop the approval": "As novas colisões rígidas param a aprovação",

@@ -3,6 +3,25 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // A script's element (element.createBody) in Properties, and what a material draws as whatever its name's language (forum: a bridge modeller).
+  "Reinforced concrete": "ຄອນກຣີດເສີມເຫຼັກ",
+  "Aerated concrete blocks": "ບລັອກຄອນກຣີດມວນເບົາ",
+  "Stone": "ຫີນ",
+  "Engineered wood": "ໄມ້ວິສະວະກຳ",
+  "Rigid insulation": "ສນວນແຂງ",
+  "Sand": "ຊາຍ",
+  "Gravel": "ຫີນກ້ອນ",
+  "Earth": "ດິນ",
+  "Asphalt": "ຢາງມະຕອຍ",
+  "Elastomer": "ອີລາສໂຕເມີ",
+  "Nothing (no pattern)": "ບໍ່ມີ (ບໍ່ມີລາຍ)",
+  "The script's values": "ຄ່າຂອງສະຄຣິບ",
+  "Its parts": "ສ່ວນຂອງມັນ",
+  "Change it in Manage → Materials (how it draws) or in the script (what it is made of).": "ປ່ຽນມັນໃນ ຈັດການ → ວັດສະດຸ (ວິທີແຕ້ມ) ຫຼື ໃນສະຄຣິບ (ເຮັດຈາກຫຍັງ).",
+  "Object type": "ປະເພດວັດຖຸ",
+  "Bridge part": "ສ່ວນຂອງຂົວ",
+  "Draws as": "ແຕ້ມເປັນ",
+  "What the project's material standard draws it as, whatever language its name is in: a name it does not know, or one it misreads (an asphalt taken for a membrane), draws as the kind chosen here. Its own graphics still come first": "ມາດຕະຖານວັດສະດຸຂອງໂຄງການແຕ້ມມັນແນວໃດ ບໍ່ວ່າຊື່ຂອງມັນຈະເປັນພາສາໃດ: ຊື່ທີ່ມັນບໍ່ຮູ້ຈັກ ຫຼື ອ່ານຜິດ (ຢາງມະຕອຍທີ່ຖືກຖືວ່າເປັນແຜ່ນກັນຊຶມ) ຈະຖືກແຕ້ມເປັນປະເພດທີ່ເລືອກຢູ່ນີ້. ກຣາຟິກຂອງມັນເອງຍັງມາກ່ອນ",
   // Analyses on the CDE server: clash tests and the sun study run by Lapin's engine (docs/headless-run.md).
   "Clash tests run on every submission": "ການທົດສອບການຂັດກັນແລ່ນທຸກການສົ່ງ",
   "New hard clashes stop the approval": "ການຂັດກັນແຂງໃໝ່ຢຸດການອະນຸມັດ",

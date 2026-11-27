@@ -1,6 +1,25 @@
 /** The interface in Thai: each English phrase as the interface shows it, and its Thai. */
 
 export const TH: Record<string, string> = {
+  // A script's element (element.createBody) in Properties, and what a material draws as whatever its name's language (forum: a bridge modeller).
+  "Reinforced concrete": "คอนกรีตเสริมเหล็ก",
+  "Aerated concrete blocks": "บล็อกคอนกรีตมวลเบา",
+  "Stone": "หิน",
+  "Engineered wood": "ไม้วิศวกรรม",
+  "Rigid insulation": "ฉนวนแข็ง",
+  "Sand": "ทราย",
+  "Gravel": "กรวด",
+  "Earth": "ดิน",
+  "Asphalt": "แอสฟัลต์",
+  "Elastomer": "อีลาสโตเมอร์",
+  "Nothing (no pattern)": "ไม่มี (ไม่มีลาย)",
+  "The script's values": "ค่าของสคริปต์",
+  "Its parts": "ส่วนประกอบ",
+  "Change it in Manage → Materials (how it draws) or in the script (what it is made of).": "เปลี่ยนได้ที่ จัดการ → วัสดุ (วิธีวาด) หรือในสคริปต์ (ทำจากอะไร).",
+  "Object type": "ประเภทวัตถุ",
+  "Bridge part": "ส่วนของสะพาน",
+  "Draws as": "วาดเป็น",
+  "What the project's material standard draws it as, whatever language its name is in: a name it does not know, or one it misreads (an asphalt taken for a membrane), draws as the kind chosen here. Its own graphics still come first": "มาตรฐานวัสดุของโครงการวาดวัสดุนี้อย่างไร ไม่ว่าชื่อจะเป็นภาษาใด: ชื่อที่มาตรฐานไม่รู้จัก หรืออ่านผิด (แอสฟัลต์ที่ถูกมองว่าเป็นเมมเบรน) จะถูกวาดเป็นชนิดที่เลือกไว้ที่นี่ กราฟิกของวัสดุเองยังมาก่อน",
   // Analyses on the CDE server: clash tests and the sun study run by Lapin's engine (docs/headless-run.md).
   "Clash tests run on every submission": "รันการทดสอบการชนกันทุกครั้งที่ส่ง",
   "New hard clashes stop the approval": "การชนกันแบบแข็งใหม่หยุดการอนุมัติ",

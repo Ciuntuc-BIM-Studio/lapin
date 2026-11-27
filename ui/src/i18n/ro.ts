@@ -1,6 +1,25 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // A script's element (element.createBody) in Properties, and what a material draws as whatever its name's language (forum: a bridge modeller).
+  "Reinforced concrete": "Beton armat",
+  "Aerated concrete blocks": "Blocuri BCA",
+  "Stone": "Piatră",
+  "Engineered wood": "Lemn compozit",
+  "Rigid insulation": "Termoizolație rigidă",
+  "Sand": "Nisip",
+  "Gravel": "Pietriș",
+  "Earth": "Pământ",
+  "Asphalt": "Asfalt",
+  "Elastomer": "Elastomer",
+  "Nothing (no pattern)": "Nimic (fără hașură)",
+  "The script's values": "Valorile scriptului",
+  "Its parts": "Părțile lui",
+  "Change it in Manage → Materials (how it draws) or in the script (what it is made of).": "Schimbă-l în Gestionare → Materiale (cum se desenează) sau în script (din ce e făcut).",
+  "Object type": "Tip de obiect",
+  "Bridge part": "Parte de pod",
+  "Draws as": "Se desenează ca",
+  "What the project's material standard draws it as, whatever language its name is in: a name it does not know, or one it misreads (an asphalt taken for a membrane), draws as the kind chosen here. Its own graphics still come first": "Cum îl desenează standardul de materiale al proiectului, oricare ar fi limba numelui său: un nume pe care nu-l cunoaște, sau pe care îl citește greșit (un asfalt luat drept membrană), se desenează ca tipul ales aici. Grafica lui proprie are în continuare prioritate",
   // Analyses on the CDE server: clash tests and the sun study run by Lapin's engine (docs/headless-run.md).
   "Clash tests run on every submission": "Testele de coliziune rulează la fiecare propunere",
   "New hard clashes stop the approval": "Coliziunile dure noi opresc aprobarea",

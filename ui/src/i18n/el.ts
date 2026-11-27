@@ -1,6 +1,25 @@
 /** The interface in Greek: each English phrase as the interface shows it, and its Greek. */
 
 export const EL: Record<string, string> = {
+  // A script's element (element.createBody) in Properties, and what a material draws as whatever its name's language (forum: a bridge modeller).
+  "Reinforced concrete": "Οπλισμένο σκυρόδεμα",
+  "Aerated concrete blocks": "Τσιμεντόλιθοι κυψελωτού σκυροδέματος",
+  "Stone": "Πέτρα",
+  "Engineered wood": "Σύνθετη ξυλεία",
+  "Rigid insulation": "Άκαμπτη μόνωση",
+  "Sand": "Άμμος",
+  "Gravel": "Χαλίκι",
+  "Earth": "Χώμα",
+  "Asphalt": "Άσφαλτος",
+  "Elastomer": "Ελαστομερές",
+  "Nothing (no pattern)": "Τίποτα (χωρίς μοτίβο)",
+  "The script's values": "Τιμές του σεναρίου",
+  "Its parts": "Τα μέρη του",
+  "Change it in Manage → Materials (how it draws) or in the script (what it is made of).": "Αλλάξτε το στη Διαχείριση → Υλικά (πώς σχεδιάζεται) ή στο σενάριο (από τι είναι φτιαγμένο).",
+  "Object type": "Τύπος αντικειμένου",
+  "Bridge part": "Τμήμα γέφυρας",
+  "Draws as": "Σχεδιάζεται ως",
+  "What the project's material standard draws it as, whatever language its name is in: a name it does not know, or one it misreads (an asphalt taken for a membrane), draws as the kind chosen here. Its own graphics still come first": "Πώς το σχεδιάζει το πρότυπο υλικών του έργου, όποια κι αν είναι η γλώσσα του ονόματός του: ένα όνομα που δεν γνωρίζει ή που διαβάζει λάθος (μια άσφαλτος που εκλαμβάνεται ως μεμβράνη) σχεδιάζεται ως το είδος που επιλέγεται εδώ. Τα δικά του γραφικά εξακολουθούν να προηγούνται",
   // Analyses on the CDE server: clash tests and the sun study run by Lapin's engine (docs/headless-run.md).
   "Clash tests run on every submission": "Οι έλεγχοι συγκρούσεων εκτελούνται σε κάθε υποβολή",
   "New hard clashes stop the approval": "Οι νέες σκληρές συγκρούσεις σταματούν την έγκριση",
