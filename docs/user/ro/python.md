@@ -1,7 +1,7 @@
 ---
 title: Scripturi Python
 order: 127
-summary: Conduci Lapin cu Python din panoul Script, un extra pentru dezvoltatori: o consolă și un editor care rulează Python-ul tău, fiecare Rulare un singur pas de anulare.
+summary: Conduci Lapin cu Python din panoul Script, un extra pentru dezvoltatori: un notebook cu celule Python, Markdown și AI care rulează Python-ul tău, fiecare rulare un singur pas de anulare.
 ---
 
 ## Pornește Extra pentru dezvoltatori
@@ -17,46 +17,71 @@ Deschide **Fișier → Preferințe…** și, la **General**, bifează **Extra pe
 
 Python rulează doar în aplicația desktop: în Lapin pentru browser, panoul spune asta.
 
-## Panoul Script
+## Panoul Script: un notebook
 
-Deschide **Vedere → Script**. Panoul se deschide de-a lungul marginii de jos a ferestrei; trage de marginea lui de sus ca să-l faci mai înalt. Antetul lui spune ce Python a găsit sau de ce n-a găsit niciunul.
+Deschide **Vedere → Script**. Notebook-ul se deschide ca o vedere lângă plan sau 3D, cu fereastra împărțită în două; poate fi mutat într-o fereastră a lui, ca orice vedere. Antetul lui spune ce Python a găsit sau de ce n-a găsit niciunul.
 
 ![Panoul Script după o rulare: patru pereți, un singur pas de anulare](shots/python-panel.webp)
 
-- **Ale mele**, în stânga: scripturile tale, fișiere `.py` obișnuite, păstrate în folderul lui Lapin de pe acest calculator. Dă clic pe unul ca să-l deschizi; **Script nou** pornește de la un exemplu.
-- **Editorul**, la mijloc: Python cu culorile și indentarea lui. Scrii `lapin.` și îți propune ce are Lapin (comenzile tuturor modulelor ediției tale și apelurile lui proprii); `lapin.architecture.` propune comenzile de arhitectură cu argumentele lor. Dă-i scriptului un nume și **salvează-l** în Ale mele; **Deschide în editorul extern** îi deschide fișierul în editorul tău, iar ce salvezi acolo revine în panou.
-- **Consola**, în dreapta: ce afișează scripturile, erorile lor cu rândul la care s-au oprit (marcat în editor) și un rând în care scrii Python. **Enter** îl rulează, **Shift+Enter** începe un rând nou, **Sus** și **Jos** aduc înapoi rândurile scrise înainte. Un nume pe care îl dai în consolă rămâne pentru rândul următor și pentru scripturile pe care le rulezi.
+- **Ale mele** și **Ale proiectului**, în stânga (primul buton din antet le arată sau le ascunde): scripturile și notebook-urile tale, fișiere `.py` obișnuite, păstrate în folderul lui Lapin de pe acest calculator, și cele ale proiectului. Dă clic pe unul ca să-l deschizi; **Notebook nou** pornește de la un exemplu.
+- **Celulele**, la mijloc. Un notebook e o listă de celule, fiecare cu butoanele ei:
+  - **Python**: cod, cu culorile și indentarea lui. Scrii `lapin.` și îți propune ce are Lapin (comenzile tuturor modulelor ediției tale și apelurile lui proprii); `lapin.architecture.` propune comenzile de arhitectură cu argumentele lor. Se editează doar celula pe care dai clic; celelalte își arată codul.
+  - **Markdown**: notițe, titluri, liste, tabele și cod, arătate formatat; **Editează** (sau dublu clic) le scrie, **Previzualizare** sau **Shift+Enter** le arată din nou.
+  - **Prompt AI → Python**: o cerere în cuvintele tale, pe care un model al Ollama-ului tău o transformă în Python în celula de sub ea (vezi *Celulele AI* mai jos).
+  
+  **+ Cod**, **+ Text** și **+ Prompt AI**, sub ultima celulă, adaugă una; săgețile mută o celulă în sus sau în jos, coșul o șterge.
+- **Terminalul**, jos (trage de marginea lui de sus ca să-l faci mai înalt, **Arată sau ascunde terminalul** în antet): **Terminal**, ce afișează fiecare rulare, erorile cu rândul lor și un rând în care scrii Python (**Enter** îl rulează, **Shift+Enter** începe un rând nou, **Sus** și **Jos** aduc înapoi rândurile scrise înainte), și **Înregistrator**.
 
-În panou, `lapin` e pachetul `lapinbim`, deja încărcat. Același script rulează dintr-un terminal cu `import lapinbim as lapin`, cât timp Lapin e deschis.
+Un notebook se salvează ca un singur fișier `.py`, cu celulele marcate de rânduri `# %%` (`# %% [markdown]` pentru notițe, `# %% [prompt]` pentru o cerere), cum le scriu Jupytext și Visual Studio Code. Un script fără aceste rânduri se deschide ca o singură celulă Python și se salvează cum era, deci orice script scris înainte merge ca înainte; ce au afișat celulele nu se salvează în fișier. Dă-i notebook-ului un nume și **salvează-l** în Ale mele; **Deschide în editorul extern** îi deschide fișierul în editorul tău, iar ce salvezi acolo revine în panou.
+
+În panou, `lapin` e pachetul `lapinbim`, deja încărcat, iar toate celulele, rândul terminalului și rularea următoare împart aceleași nume. Același script rulează dintr-un terminal cu `import lapinbim as lapin`, cât timp Lapin e deschis.
 
 ```python
+# %%
 storey = next(s.id for s in lapin.model.storeys if s.elevation == 0)
 corners = [(0, 0), (8, 0), (8, 6), (0, 6)]
 for (x1, y1), (x2, y2) in zip(corners, corners[1:] + corners[:1]):
     lapin.architecture.add_wall(storey_id=storey, x1=x1, y1=y1, x2=x2, y2=y2, height=2.8)
-print(len(lapin.model.walls), "walls")
+len(lapin.model.walls)
 ```
 
-Lungimile sunt în metri și unghiurile în grade, oricare ar fi unitatea în care arată proiectul.
+Ultimul rând al unei celule, când e o valoare, se arată sub celulă, ca în Jupyter. Lungimile sunt în metri și unghiurile în grade, oricare ar fi unitatea în care arată proiectul.
 
 ## Rulează, Oprește, Repornește, Anulează
 
-- **Rulează** (**Ctrl+Enter** în editor) rulează scriptul. Tot ce face e **un singur pas de anulare**, numit după script: un singur **Anulează** le ia pe toate înapoi.
+- **Rulează** pe o celulă (**Shift+Enter** sau **Ctrl+Enter** în ea) rulează celula. Tot ce face e **un singur pas de anulare**: un singur **Anulează** le ia pe toate înapoi. Ce afișează apare sub ea, iar numărul ei (`[1]`, `[2]`…) spune în ce ordine au rulat celulele; o celulă schimbată de la rulare e marcată cu `•`.
+- **Rulează tot** rulează toate celulele Python, de sus, ca **un singur pas de anulare** numit după notebook.
 
   ![Un singur Anulează a luat înapoi cei patru pereți ai rulării](shots/python-undo.webp)
 
 - Cât rulează un script, modelul e al scriptului: o unealtă folosită în fereastră e refuzată cu *A script is editing the model*; vederile, selecția și extrasele merg mai departe.
-- Un script care eșuează nu păstrează **nimic** din ce a făcut: modelul e cum era înainte de **Rulează**, iar consola arată eroarea și rândul ei.
-- **Oprește** oprește scriptul; nu se păstrează nimic din ce a făcut. Unui script care nu se oprește în două secunde i se închide Python-ul.
-- **Repornește** pornește Python din nou: numele păstrate de consolă se uită.
+- O rulare care eșuează nu păstrează **nimic** din ce a făcut: modelul e cum era înainte, iar celula arată eroarea, cu rândul ei marcat.
+- **Oprește** oprește rularea; nu se păstrează nimic din ce a făcut. Unui script care nu se oprește în două secunde i se închide Python-ul.
+- **Repornește** pornește Python din nou: numele păstrate de celule și de terminal se uită. **Repornește și rulează tot** le face pe amândouă: așa verifici că notebook-ul rulează singur, de sus.
+
+## Celulele AI
+
+O celulă **Prompt AI** cere unui model **Ollama** de pe acest calculator Python-ul celulei de sub ea: scrii ce trebuie să facă (*șase stâlpi la 4 m unul de altul, pe X, la parter*), apoi **Generează** (**Shift+Enter**). Codul se scrie în celula de dedesubt pe măsură ce vine; **nu rulează niciodată singur**: citește-l, apoi rulează-l. **Oprește** oprește modelul.
+
+- Modelul primește ce îi trebuie ca să scrie corect apelurile lui Lapin: comenzile ediției tale potrivite cererii (din catalogul de comenzi), nivelurile, tipurile și selecția proiectului, celulele de deasupra și numele pe care le ține Python acum. Ce scrie se verifică după catalog, iar o comandă sau un argument care nu există se trimite înapoi o dată, spre corectare.
+- O celulă Python care a eșuat are **Repară cu AI**: modelul primește codul și eroarea și scrie celula corectată.
+- Modelul se alege în antetul notebook-ului, dintre cele pe care le are Ollama; prima dată se ia primul model de cod instalat. Ce modele contează ca modele de cod, cel mai bun primul, e câmpul **Modele pentru cod** din setările asistentului (**Vedere → Asistent**, butonul de setări); gol, e lista proprie a lui Lapin (`qwen3-coder:30b`, `qwen2.5-coder`, `deepseek-coder-v2`, `gemma4:12b`). Adresa Ollama e tot a asistentului ([Asistentul](assistant.md)).
+
+Nimic nu pleacă de pe acest calculator: Ollama rulează pe el. Fără Ollama, celulele AI spun asta, iar restul notebook-ului merge ca înainte.
+
+## O celulă ca graf
+
+**În graf**, pe o celulă Python, face din ea un graf vizual ([Grafuri vizuale](graphs.md)) și îl deschide în panoul **Grafuri**, salvat în proiect. Numerele, textele și punctele ei devin noduri de parametri, `range(…)` un interval, aritmetica o formulă, iar fiecare `lapin.<modul>.<comandă>(…)` nodul acelei comenzi, legat de ce folosește. Un graf rulează în Lapin însuși, deci merge și în browser.
+
+O celulă cu rânduri care n-au nod (un `if`, o bibliotecă proprie) spune care sunt: **Deschide graful parțial** deschide ce s-a putut face, iar **Transformă cu Ollama** îi cere modelului tot graful, verificat de Lapin înainte să fie salvat.
 
 ## Înregistrează ce faci ca script
 
-Fila **Înregistrator**, lângă consolă, scrie ce faci în fereastră ca Python, o linie pe pas.
+Fila **Înregistrator** a terminalului, lângă **Terminal**, scrie ce faci în fereastră ca Python, o linie pe pas.
 
 1. Dă clic pe **Înregistrează**. Un punct roșu pe filă arată că se înregistrează.
 2. Lucrează ca de obicei: desenează pereți, schimbă o proprietate, șterge ceva. Fiecare pas apare pe loc ca o linie, de exemplu `wall1 = lapin.architecture.add_wall(storey_id=storey1, x1=0, y1=0, x2=5, y2=0)`.
-3. Dă clic pe **Oprește**, apoi pe **Copiază** (ca să lipești scriptul în altă parte) sau pe **Salvează ca script** (intră în Ale mele și se deschide în editor).
+3. Dă clic pe **Oprește**, apoi pe **Inserează ca celulă** (o celulă Python nouă sub cea pe care ești), **Copiază** (ca să lipești scriptul în altă parte) sau **Salvează ca script** (intră în Ale mele și se deschide în editor).
 
 ![Înregistratorul după desenarea a doi pereți](shots/python-recorder.webp)
 
@@ -173,7 +198,7 @@ Ca pe orice unealtă, le poți muta, face mici sau scoate; o unealtă scoasă r�
 
 ## Mesaje
 
-Jos în panoul Script, banda Mesaje păstrează un rând pe rulare: pornită, terminată cu cât a durat, oprită, sau eșuată cu ultima linie a erorii și, când traceback-ul Python le dă, numele scriptului și linia (`Pereti:12`). Un clic pe un rând eșuat deschide scriptul în editor la acea linie, dacă e cel deschis, unul dintre ale tale sau unul al proiectului. Înregistrează și rulările pornite din Uneltele mele și din butoanele paletelor, chiar cu panoul închis, deci o unealtă care a eșuat e raportată când deschizi panoul. O deschizi cu săgeata ei, filtrezi după Erori, Avertismente sau Toate, copiezi rândurile ca text simplu sau le golești. Consola din dreapta e neschimbată: arată în continuare tot ce tipărește un script.
+Jos în panoul Script, banda Mesaje păstrează un rând pe rulare: pornită, terminată cu cât a durat, oprită, sau eșuată cu ultima linie a erorii și, când traceback-ul Python le dă, numele scriptului și linia (`Pereti:12`). Un clic pe un rând eșuat deschide scriptul în editor la acea linie, dacă e cel deschis, unul dintre ale tale sau unul al proiectului. Înregistrează și rulările pornite din Uneltele mele și din butoanele paletelor, chiar cu panoul închis, deci o unealtă care a eșuat e raportată când deschizi panoul. O deschizi cu săgeata ei, filtrezi după Erori, Avertismente sau Toate, copiezi rândurile ca text simplu sau le golești. Terminalul e neschimbat: arată în continuare tot ce tipărește un script.
 
 ## Forme făcute de un script
 

@@ -215,7 +215,7 @@ describe('the languages', () => {
     // The project information (A1b).
     'Project information synced: 2 changed here, 3 sent.',
     'Project information: 2 open proposals on the server (File → Collaborate → Publishing → Project information).',
-    // The Python notebook (decision 897).
+    // The Python notebook (decision 901).
     'Generating with qwen3-coder:30b…',
     'Refining with qwen3-coder:30b…',
     'Looking up search_catalogue…',

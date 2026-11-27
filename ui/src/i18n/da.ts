@@ -7446,7 +7446,7 @@ export const DA: Record<string, string> = {
   "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI og andre klienter med en mcpServers-indstilling",
   "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "Tilføj dette til klientens indstillingsfil (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), og genstart derefter klienten.",
   "User guide: Connect an AI agent": "Brugervejledning: Forbind en AI-agent",
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   "+ AI prompt": "+ AI-prompt",
   "+ Code": "+ Kode",
   "+ Text": "+ Tekst",
@@ -8407,7 +8407,7 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^„(.+)” fills no opening\.$/, (m) => `„${m[1]}” udfylder ingen åbning.`],
   [/^Roof type (\d+)$/, (m) => `Tagtype ${m[1]}`],
   [/^(.+) · (Floor|Walls|Ceiling)$/, (m) => `${m[1]} · ${({ "Floor": "Gulv", "Walls": "Vægge", "Ceiling": "Loft" } as Record<string, string>)[m[2]]}`],
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   [/^Generating with (.+)…$/, (m) => `Genererer med ${m[1]}…`],
   [/^Refining with (.+)…$/, (m) => `Forfiner med ${m[1]}…`],
   [/^Looking up (.+)…$/, (m) => `Slår ${m[1]} op…`],

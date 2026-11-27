@@ -13570,7 +13570,7 @@ export const EL: Record<string, string> = {
   "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI και άλλοι πελάτες με ρύθμιση mcpServers",
   "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "Προσθέστε αυτό στο αρχείο ρυθμίσεων του πελάτη (Claude Desktop: claude_desktop_config.json· Gemini CLI: settings.json) και επανεκκινήστε τον πελάτη.",
   "User guide: Connect an AI agent": "Οδηγός χρήστη: Σύνδεση πράκτορα AI",
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   "+ AI prompt": "+ Προτροπή AI",
   "+ Code": "+ Κώδικας",
   "+ Text": "+ Κείμενο",
@@ -14468,7 +14468,7 @@ export const EL_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^„(.+)” fills no opening\.$/, (m) => `Το «${m[1]}» δεν γεμίζει κανένα άνοιγμα.`],
   [/^Roof type (\d+)$/, (m) => `Τύπος στέγης ${m[1]}`],
   [/^(.+) · (Floor|Walls|Ceiling)$/, (m) => `${m[1]} · ${({ "Floor": "Δάπεδο", "Walls": "Τοίχοι", "Ceiling": "Οροφή" } as Record<string, string>)[m[2]]}`],
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   [/^Generating with (.+)…$/, (m) => `Δημιουργία με ${m[1]}…`],
   [/^Refining with (.+)…$/, (m) => `Βελτίωση με ${m[1]}…`],
   [/^Looking up (.+)…$/, (m) => `Αναζήτηση του ${m[1]}…`],

@@ -13568,7 +13568,7 @@ export const SV: Record<string, string> = {
   "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI och andra klienter med inställningen mcpServers",
   "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "Lägg till detta i klientens inställningsfil (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json) och starta sedan om klienten.",
   "User guide: Connect an AI agent": "Användarguide: Anslut en AI-agent",
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   "+ AI prompt": "+ AI-prompt",
   "+ Code": "+ Kod",
   "+ Text": "+ Text",
@@ -14526,7 +14526,7 @@ export const SV_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^„(.+)” fills no opening\.$/, (m) => `”${m[1]}” fyller ingen öppning.`],
   [/^Roof type (\d+)$/, (m) => `Taktyp ${m[1]}`],
   [/^(.+) · (Floor|Walls|Ceiling)$/, (m) => `${m[1]} · ${({ "Floor": "Golv", "Walls": "Väggar", "Ceiling": "Tak" } as Record<string, string>)[m[2]]}`],
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   [/^Generating with (.+)…$/, (m) => `Genererar med ${m[1]}…`],
   [/^Refining with (.+)…$/, (m) => `Förfinar med ${m[1]}…`],
   [/^Looking up (.+)…$/, (m) => `Slår upp ${m[1]}…`],

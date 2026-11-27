@@ -17,7 +17,7 @@ const DEFAULT_URL = 'http://127.0.0.1:11434';
 const PREFERRED_MODELS = ['qwen3-coder:30b', 'gemma4:12b'];
 /**
  * The models the Python notebook's AI cells prefer, best first: the built-in default of a list the user can change
- * (the assistant's settings, Coding models; decision 897). Empty or unset: this list.
+ * (the assistant's settings, Coding models; decision 901). Empty or unset: this list.
  */
 export const DEFAULT_CODE_MODELS = ['qwen3-coder:30b', 'qwen2.5-coder:32b', 'qwen2.5-coder:14b', 'qwen2.5-coder:7b', 'qwen2.5-coder:latest', 'deepseek-coder-v2:latest', 'gemma4:12b'];
 

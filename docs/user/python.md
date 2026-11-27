@@ -1,7 +1,7 @@
 ---
 title: Python scripts
 order: 127
-summary: Drive Lapin with Python from the Script panel, a developer extra: a console and an editor that run your own Python, each Run one undo step.
+summary: Drive Lapin with Python from the Script panel, a developer extra: a notebook of Python, Markdown and AI cells that runs your own Python, each run one undo step.
 ---
 
 <!-- video python-automation -->
@@ -19,46 +19,71 @@ Open **File → Preferences…** and, on **General**, tick **Developer extras**.
 
 Python runs in the desktop app only: in Lapin for the browser the panel says so.
 
-## The Script panel
+## The Script panel: a notebook
 
-Open **View → Script**. The panel opens along the bottom of the window; drag its top edge to make it taller. Its header says which Python it found, or why it found none.
+Open **View → Script**. The notebook opens as a view beside the plan or the 3D, the window split in two; it can be moved to a window of its own like any view. Its header says which Python it found, or why it found none.
 
 ![The Script panel after a run: four walls, one undo step](shots/python-panel.webp)
 
-- **Mine**, on the left: your own scripts, plain `.py` files kept in Lapin's folder on this computer. Click one to open it; **New script** starts from an example.
-- **The editor**, in the middle: Python with its colours and indentation. Type `lapin.` and it offers what Lapin has (the commands of every module of your edition, and its own calls); `lapin.architecture.` offers the architecture commands with their arguments. Give the script a name and **Save** it in Mine; **Open in external editor** opens its file in your editor, and what you save there comes back into the panel.
-- **The console**, on the right: what scripts print, their errors with the line they stopped at (marked in the editor), and a line to type Python in. **Enter** runs it, **Shift+Enter** starts a new line, **Up** and **Down** bring back the lines typed before. A name you set in the console stays for the next line and for the scripts you run.
+- **Mine** and **Project's**, on the left (the first button of the header shows or hides them): your own scripts and notebooks, plain `.py` files kept in Lapin's folder on this computer, and the project's own. Click one to open it; **New notebook** starts from an example.
+- **The cells**, in the middle. A notebook is a list of cells, each with its own buttons:
+  - **Python**: code, with its colours and indentation. Type `lapin.` and it offers what Lapin has (the commands of every module of your edition, and its own calls); `lapin.architecture.` offers the architecture commands with their arguments. Only the cell you click is edited; the others show their code.
+  - **Markdown**: notes, headings, lists, tables and code, shown formatted; **Edit** (or a double click) writes them, **Preview** or **Shift+Enter** shows them again.
+  - **AI prompt → Python**: a request in your words, which a model of your own Ollama turns into Python in the cell below it (see *AI cells* below).
+  
+  **+ Code**, **+ Text** and **+ AI prompt** under the last cell add one; the arrows move a cell up or down, the bin deletes it.
+- **The terminal**, at the bottom (drag its top edge to make it taller, **Show or hide the terminal** in the header): **Terminal**, what every run prints, the errors with their line, and a line to type Python in (**Enter** runs it, **Shift+Enter** starts a new line, **Up** and **Down** bring back the lines typed before), and **Recorder**.
 
-In the panel, `lapin` is the `lapinbim` package already there. The same script runs from a terminal with `import lapinbim as lapin`, while Lapin is open.
+A notebook is saved as one `.py` file, its cells marked by `# %%` lines (`# %% [markdown]` for notes, `# %% [prompt]` for a request), the way Jupytext and Visual Studio Code write them. A script without those lines opens as one Python cell and is saved as it was, so every script written before works as it did; what the cells printed is not saved in the file. Give the notebook a name and **Save** it in Mine; **Open in external editor** opens its file in your editor, and what you save there comes back into the panel.
+
+In the panel, `lapin` is the `lapinbim` package already there, and every cell, the terminal's line and the next run share the same names. The same script runs from a terminal with `import lapinbim as lapin`, while Lapin is open.
 
 ```python
+# %%
 storey = next(s.id for s in lapin.model.storeys if s.elevation == 0)
 corners = [(0, 0), (8, 0), (8, 6), (0, 6)]
 for (x1, y1), (x2, y2) in zip(corners, corners[1:] + corners[:1]):
     lapin.architecture.add_wall(storey_id=storey, x1=x1, y1=y1, x2=x2, y2=y2, height=2.8)
-print(len(lapin.model.walls), "walls")
+len(lapin.model.walls)
 ```
 
-Lengths are in metres and angles in degrees, whatever unit the project shows.
+The last line of a cell, when it is a value, is shown under the cell, as in Jupyter. Lengths are in metres and angles in degrees, whatever unit the project shows.
 
 ## Run, Stop, Restart, Undo
 
-- **Run** (**Ctrl+Enter** in the editor) runs the script. Everything it does is **one undo step**, named after the script: one **Undo** takes all of it away.
+- **Run** on a cell (**Shift+Enter** or **Ctrl+Enter** in it) runs that cell. Everything it does is **one undo step**: one **Undo** takes all of it away. What it prints shows under it, and its number (`[1]`, `[2]`…) says in which order the cells ran; a cell changed since its run is marked `•`.
+- **Run all** runs every Python cell, from the top, as **one undo step** named after the notebook.
 
   ![One Undo took the run's four walls away](shots/python-undo.webp)
 
 - While a script runs, the model is the script's: a tool you use in the window is refused with *A script is editing the model*; views, selection and schedules go on.
-- A script that fails keeps **nothing** of what it did: the model is as it was before **Run**, and the console shows the error and its line.
-- **Stop** stops the script; nothing it did is kept. A script that does not stop within two seconds has its Python ended.
-- **Restart** starts Python again: the names the console kept are forgotten.
+- A run that fails keeps **nothing** of what it did: the model is as it was before it, and the cell shows the error with its line marked.
+- **Stop** stops the run; nothing it did is kept. A script that does not stop within two seconds has its Python ended.
+- **Restart** starts Python again: the names the cells and the terminal kept are forgotten. **Restart and run all** does both, the way to check that the notebook runs from the top on its own.
+
+## AI cells
+
+An **AI prompt** cell asks a model of **Ollama** on this computer for the Python of the cell below it: write what it should do (*six columns 4 m apart along X on the ground floor*), then **Generate** (**Shift+Enter**). The code is written into the cell below as it comes; it is **never run by itself**: read it, then run it. **Stop** stops the model.
+
+- The model is given what it needs to write Lapin's calls right: the commands of your edition that fit the request (from the command catalogue), the project's storeys, types and selection, the cells above, and the names Python holds now. What it writes is checked against the catalogue, and a command or an argument that does not exist is sent back once to be corrected.
+- A Python cell that failed has **Fix with AI**: the model is given the code and the error, and writes the corrected cell.
+- The model is chosen in the notebook's header, among those Ollama has; the first time, the first coding model installed is taken. Which models count as coding models, best first, is the **Coding models** field of the assistant's settings (**View → Assistant**, the settings button); empty, it is Lapin's own list (`qwen3-coder:30b`, `qwen2.5-coder`, `deepseek-coder-v2`, `gemma4:12b`). Ollama's address is the assistant's too ([The assistant](assistant.md)).
+
+Nothing leaves this computer: Ollama runs on it. Without Ollama the AI cells say so, and the rest of the notebook works as before.
+
+## A cell as a graph
+
+**To graph** on a Python cell makes a visual graph of it ([Visual graphs](graphs.md)) and opens it in the **Graphs** panel, saved in the project. Its numbers, texts and points become parameter nodes, `range(…)` a range, arithmetic a formula, and each `lapin.<module>.<command>(…)` that command's node, wired to what it uses. A graph runs in Lapin itself, so it works in the browser too.
+
+A cell with lines that have no node (an `if`, a library of its own) says which: **Open the partial graph** opens what could be made, and **Convert with Ollama** asks the model for the whole graph, checked by Lapin before it is saved.
 
 ## Record what you do as a script
 
-The **Recorder** tab, beside the console, writes what you do in the window as Python, one line per step.
+The **Recorder** tab of the terminal, beside **Terminal**, writes what you do in the window as Python, one line per step.
 
 1. Click **Record**. A red dot on the tab shows it is recording.
 2. Work as usual: draw walls, change a property, delete something. Each step shows at once as a line, for example `wall1 = lapin.architecture.add_wall(storey_id=storey1, x1=0, y1=0, x2=5, y2=0)`.
-3. Click **Stop**, then **Copy** (to paste the script elsewhere) or **Save as script** (it goes into Mine and opens in the editor).
+3. Click **Stop**, then **Insert as cell** (a new Python cell under the one you are on), **Copy** (to paste the script elsewhere) or **Save as script** (it goes into Mine and opens in the editor).
 
 ![The recorder after drawing two walls](shots/python-recorder.webp)
 
@@ -175,7 +200,7 @@ As for any tool, you can move them, make them small or take them out; once taken
 
 ## Messages
 
-At the bottom of the Script panel, a Messages strip keeps one row per run: started, done with how long it took, stopped, or failed with the error's last line and, when Python's traceback gives them, the script's name and line (`Walls:12`). Click a failed row to open that script in the editor at that line, when it is the one open, one of Mine or one of the project's. It also records the runs started from My tools and from palette buttons, even while the panel is closed, so a tool that failed is reported when you open it. Open it with its arrow, filter by Errors, Warnings or All, copy the rows as plain text, or clear them. The console on the right is unchanged: it still shows everything a script prints.
+At the bottom of the Script panel, a Messages strip keeps one row per run: started, done with how long it took, stopped, or failed with the error's last line and, when Python's traceback gives them, the script's name and line (`Walls:12`). Click a failed row to open that script in the editor at that line, when it is the one open, one of Mine or one of the project's. It also records the runs started from My tools and from palette buttons, even while the panel is closed, so a tool that failed is reported when you open it. Open it with its arrow, filter by Errors, Warnings or All, copy the rows as plain text, or clear them. The terminal is unchanged: it still shows everything a script prints.
 
 ## Shapes made by a script
 

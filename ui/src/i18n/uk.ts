@@ -13549,7 +13549,7 @@ export const UK: Record<string, string> = {
   "Shadows (m²)": "Тіні (м²)",
   "The sun is down.": "Сонце зайшло.",
   "The sun study ran on the server.": "Аналіз інсоляції виконано на сервері.",
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   "+ AI prompt": "+ AI-запит",
   "+ Code": "+ Код",
   "+ Text": "+ Текст",
@@ -14352,7 +14352,7 @@ export const UK_PATTERNS: Language['patterns'] = [
   [/^„(.+)” fills no opening\.$/, (m) => `«${m[1]}» не заповнює жодного отвору.`],
   [/^Roof type (\d+)$/, (m) => `Тип даху ${m[1]}`],
   [/^(.+) · (Floor|Walls|Ceiling)$/, (m) => `${m[1]} · ${({ "Floor": "Підлога", "Walls": "Стіни", "Ceiling": "Стеля" } as Record<string, string>)[m[2]]}`],
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   [/^Generating with (.+)…$/, (m) => `Генерація з ${m[1]}…`],
   [/^Refining with (.+)…$/, (m) => `Уточнення з ${m[1]}…`],
   [/^Looking up (.+)…$/, (m) => `Пошук ${m[1]}…`],

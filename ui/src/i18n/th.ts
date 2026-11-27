@@ -13568,7 +13568,7 @@ export const TH: Record<string, string> = {
   "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI และไคลเอนต์อื่นที่มีการตั้งค่า mcpServers",
   "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "เพิ่มข้อความนี้ลงในไฟล์การตั้งค่าของไคลเอนต์ (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json) แล้วรีสตาร์ตไคลเอนต์.",
   "User guide: Connect an AI agent": "คู่มือผู้ใช้: เชื่อมต่อเอเจนต์ AI",
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   "+ AI prompt": "+ พรอมต์ AI",
   "+ Code": "+ โค้ด",
   "+ Text": "+ ข้อความ",
@@ -14526,7 +14526,7 @@ export const TH_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^„(.+)” fills no opening\.$/, (m) => `“${m[1]}” ไม่ได้อยู่ในช่องเปิดใด ๆ.`],
   [/^Roof type (\d+)$/, (m) => `ชนิดหลังคา ${m[1]}`],
   [/^(.+) · (Floor|Walls|Ceiling)$/, (m) => `${m[1]} · ${({ "Floor": "พื้น", "Walls": "ผนัง", "Ceiling": "ฝ้าเพดาน" } as Record<string, string>)[m[2]]}`],
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   [/^Generating with (.+)…$/, (m) => `กำลังสร้างด้วย ${m[1]}…`],
   [/^Refining with (.+)…$/, (m) => `กำลังปรับปรุงด้วย ${m[1]}…`],
   [/^Looking up (.+)…$/, (m) => `กำลังค้นหา ${m[1]}…`],

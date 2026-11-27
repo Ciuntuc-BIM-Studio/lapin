@@ -7405,7 +7405,7 @@ export const RO: Record<string, string> = {
   "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI și alți clienți cu setarea mcpServers",
   "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "Adaugă asta în fișierul de setări al clientului (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), apoi repornește clientul.",
   "User guide: Connect an AI agent": "Ghidul utilizatorului: Conectează un agent AI",
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   "+ AI prompt": "+ Prompt AI",
   "+ Code": "+ Cod",
   "+ Text": "+ Text",
@@ -8364,7 +8364,7 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^„(.+)” fills no opening\.$/, (m) => `„${m[1]}” nu umple niciun gol.`],
   [/^Roof type (\d+)$/, (m) => `Tip de acoperiș ${m[1]}`],
   [/^(.+) · (Floor|Walls|Ceiling)$/, (m) => `${m[1]} · ${({ "Floor": "Pardoseală", "Walls": "Pereți", "Ceiling": "Tavan" } as Record<string, string>)[m[2]]}`],
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   [/^Generating with (.+)…$/, (m) => `Se generează cu ${m[1]}…`],
   [/^Refining with (.+)…$/, (m) => `Se rafinează cu ${m[1]}…`],
   [/^Looking up (.+)…$/, (m) => `Se caută ${m[1]}…`],

@@ -65,7 +65,7 @@ function Settings({ status, recheck }: { status: OllamaStatus | null; recheck: (
   );
 }
 
-/** The Python notebook's coding models, best first (decision 897): the user's list, or the built-in one when left empty. */
+/** The Python notebook's coding models, best first (decision 901): the user's list, or the built-in one when left empty. */
 function CodeModels() {
   const codeModels = useAssistantSettings((s) => s.codeModels);
   const [text, setText] = useState((codeModels ?? []).join(', '));

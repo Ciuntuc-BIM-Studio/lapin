@@ -7448,7 +7448,7 @@ export const ZH: Record<string, string> = {
   "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop、Gemini CLI 以及其他带有 mcpServers 设置的客户端",
   "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "将此内容添加到客户端的设置文件中（Claude Desktop：claude_desktop_config.json；Gemini CLI：settings.json），然后重启客户端。",
   "User guide: Connect an AI agent": "用户指南：连接 AI 智能体",
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   "+ AI prompt": "+ AI 提示",
   "+ Code": "+ 代码",
   "+ Text": "+ 文字",
@@ -8406,7 +8406,7 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^„(.+)” fills no opening\.$/, (m) => `“${m[1]}”没有填充任何洞口。`],
   [/^Roof type (\d+)$/, (m) => `屋顶类型 ${m[1]}`],
   [/^(.+) · (Floor|Walls|Ceiling)$/, (m) => `${m[1]} · ${({ "Floor": "地面", "Walls": "墙面", "Ceiling": "顶棚" } as Record<string, string>)[m[2]]}`],
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   [/^Generating with (.+)…$/, (m) => `正在用 ${m[1]} 生成…`],
   [/^Refining with (.+)…$/, (m) => `正在用 ${m[1]} 优化…`],
   [/^Looking up (.+)…$/, (m) => `正在查找 ${m[1]}…`],

@@ -7505,7 +7505,7 @@ export const LO: Record<string, string> = {
   "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI ແລະ client ອື່ນທີ່ມີການຕັ້ງຄ່າ mcpServers",
   "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "ເພີ່ມສິ່ງນີ້ໃສ່ໄຟລ໌ການຕັ້ງຄ່າຂອງ client (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json) ແລ້ວເລີ່ມ client ໃໝ່.",
   "User guide: Connect an AI agent": "ຄູ່ມືຜູ້ໃຊ້: ເຊື່ອມຕໍ່ເອເຈນ AI",
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   "+ AI prompt": "+ ພຣອມ AI",
   "+ Code": "+ ລະຫັດ",
   "+ Text": "+ ຂໍ້ຄວາມ",
@@ -8464,7 +8464,7 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^„(.+)” fills no opening\.$/, (m) => `„${m[1]}” ບໍ່ໄດ້ເຕີມຊ່ອງເປີດໃດ.`],
   [/^Roof type (\d+)$/, (m) => `ປະເພດຫຼັງຄາ ${m[1]}`],
   [/^(.+) · (Floor|Walls|Ceiling)$/, (m) => `${m[1]} · ${({ "Floor": "ພື້ນ", "Walls": "ຝາ", "Ceiling": "ເພດານ" } as Record<string, string>)[m[2]]}`],
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   [/^Generating with (.+)…$/, (m) => `ກຳລັງສ້າງດ້ວຍ ${m[1]}…`],
   [/^Refining with (.+)…$/, (m) => `ກຳລັງປັບປຸງດ້ວຍ ${m[1]}…`],
   [/^Looking up (.+)…$/, (m) => `ກຳລັງຊອກຫາ ${m[1]}…`],

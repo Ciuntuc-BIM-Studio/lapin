@@ -7449,7 +7449,7 @@ export const PT: Record<string, string> = {
   "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI e outros clientes com a configuração mcpServers",
   "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "Adicione isto ao arquivo de configurações do cliente (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json) e reinicie o cliente.",
   "User guide: Connect an AI agent": "Guia do usuário: Conectar um agente de IA",
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   "+ AI prompt": "+ Prompt de IA",
   "+ Code": "+ Código",
   "+ Text": "+ Texto",
@@ -8409,7 +8409,7 @@ export const PT_PATTERNS: Language['patterns'] = [
   [/^„(.+)” fills no opening\.$/, (m) => `“${m[1]}” não preenche nenhuma abertura.`],
   [/^Roof type (\d+)$/, (m) => `Tipo de telhado ${m[1]}`],
   [/^(.+) · (Floor|Walls|Ceiling)$/, (m) => `${m[1]} · ${({ "Floor": "Piso", "Walls": "Paredes", "Ceiling": "Forro" } as Record<string, string>)[m[2]]}`],
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   [/^Generating with (.+)…$/, (m) => `Gerando com ${m[1]}…`],
   [/^Refining with (.+)…$/, (m) => `Refinando com ${m[1]}…`],
   [/^Looking up (.+)…$/, (m) => `Consultando ${m[1]}…`],

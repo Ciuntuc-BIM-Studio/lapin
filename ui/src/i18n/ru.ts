@@ -13549,7 +13549,7 @@ export const RU: Record<string, string> = {
   "Shadows (m²)": "Тени (м²)",
   "The sun is down.": "Солнце зашло.",
   "The sun study ran on the server.": "Анализ инсоляции выполнен на сервере.",
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   "+ AI prompt": "+ AI-запрос",
   "+ Code": "+ Код",
   "+ Text": "+ Текст",
@@ -14350,7 +14350,7 @@ export const RU_PATTERNS: Language['patterns'] = [
   [/^„(.+)” fills no opening\.$/, (m) => `«${m[1]}» не заполняет ни одного проёма.`],
   [/^Roof type (\d+)$/, (m) => `Тип крыши ${m[1]}`],
   [/^(.+) · (Floor|Walls|Ceiling)$/, (m) => `${m[1]} · ${({ "Floor": "Пол", "Walls": "Стены", "Ceiling": "Потолок" } as Record<string, string>)[m[2]]}`],
-  // The Python notebook (decision 897).
+  // The Python notebook (decision 901).
   [/^Generating with (.+)…$/, (m) => `Генерация с ${m[1]}…`],
   [/^Refining with (.+)…$/, (m) => `Уточнение с ${m[1]}…`],
   [/^Looking up (.+)…$/, (m) => `Поиск ${m[1]}…`],
