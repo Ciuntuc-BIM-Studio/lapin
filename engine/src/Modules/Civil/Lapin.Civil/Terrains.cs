@@ -116,8 +116,9 @@ public static class Terrains
     static readonly string[] SurfaceKeys = ["points", "faces", "breaklines", "sculpts", "datum", BoundaryKey, BoundaryArcs, FeatureLines.Derived];
     static readonly string[] ExistingKeys = ["points", "faces", "existingPoints", "existingFaces", "breaklines", "datum", BoundaryKey, BoundaryArcs];
 
-    /// <summary>The surfaces built lately, by what they are made of: a terrain changed only in what it shows keeps its surface.</summary>
+    /// <summary>The surfaces built lately, by what they are made of: a terrain changed only in what it shows keeps its surface, and the oldest go first when there are too many (emptying the cache would rebuild the surface in the views).</summary>
     static readonly Dictionary<string, Terrain> ByContent = [];
+    static readonly Queue<string> ByContentOrder = [];
 
     static Terrain Built(Entity x, bool sculpted, bool features = true)
     {
@@ -130,7 +131,9 @@ public static class Terrains
         var t = BuildTerrain(x, sculpted, features);
         lock (ByContent)
         {
-            if (ByContent.Count >= 32) ByContent.Clear();
+            while (ByContent.Count >= 32 && ByContentOrder.Count > 0) ByContent.Remove(ByContentOrder.Dequeue());
+            // The same surface built twice at once keeps one place in the queue, or a stale copy would evict another surface for nothing.
+            if (!ByContent.ContainsKey(key)) ByContentOrder.Enqueue(key);
             ByContent[key] = t;
         }
         return t;

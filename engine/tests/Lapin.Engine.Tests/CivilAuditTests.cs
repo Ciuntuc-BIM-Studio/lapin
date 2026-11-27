@@ -127,6 +127,25 @@ public class CivilAuditTests
         Assert.NotSame(before, Terrains.Of(f.Model.Get(t)!));
     }
 
+    [Fact]
+    public void A_terrain_built_while_another_is_being_drawn_leaves_its_surface_as_it_was_built()
+    {
+        var f = Site();
+        // The surfaces built lately number 32: fill the cache with terrains of their own.
+        for (var i = 0; i < 31; i++)
+        {
+            var filler = Survey(f, (x, y) => 0.1 * x + i, 10);
+            Terrains.Of(f.Model.Get(filler)!);
+        }
+        var t = Survey(f, (x, y) => 0.1 * x + 0.05 * y, 40);
+        var before = Terrains.Of(f.Model.Get(t)!);
+        // One more terrain built at the same moment (another test's, in a whole suite run): the oldest surface goes, not all of them.
+        var other = Survey(f, (x, y) => 0.2 * x + 99, 10);
+        Terrains.Of(f.Model.Get(other)!);
+        f.Run("civil.addSpot", new JsonObject { ["terrainId"] = t, ["x"] = 12, ["y"] = 7 });
+        Assert.Same(before, Terrains.Of(f.Model.Get(t)!));
+    }
+
     /// <summary>Scattered points (no four on a circle, so the triangulation is one), heights rolling.</summary>
     static List<Vec3> Scatter(int n, double size, int seed)
     {
