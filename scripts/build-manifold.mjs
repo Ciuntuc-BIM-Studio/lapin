@@ -43,7 +43,7 @@ if (!win) {
   for (let dir = dirname(work); ; dir = dirname(dir)) {
     const a = statSync(dir), mine = a.uid === process.getuid();
     if (a.uid !== 0 && !mine) throw new Error(`build-manifold: ${dir} belongs to another account, which could replace the cache under it: set XDG_CACHE_HOME to a folder only you and root can change, or give that folder to yourself.`);
-    if (!(a.mode & 0o1000) && (a.mode & 0o002 || (a.mode & 0o020 && !(mine && a.gid === process.getgid())))) throw new Error(`build-manifold: other accounts can write to ${dir}, so they could replace the cache under it: take that write access away (chmod go-w "${dir}"), or set XDG_CACHE_HOME to a folder only you can write to.`);
+    if (!(a.mode & 0o1000) && a.mode & 0o022) throw new Error(`build-manifold: other accounts can write to ${dir}, so they could replace the cache under it: take that write access away (chmod go-w "${dir}"), or set XDG_CACHE_HOME to a folder only you can write to.`);
     if (dir === dirname(dir)) break;
   }
 }
