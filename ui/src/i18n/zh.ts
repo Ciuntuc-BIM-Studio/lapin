@@ -7402,6 +7402,16 @@ export const ZH: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "通过浏览器登录需要桌面应用。",
   "This server offers no sign-in through the browser: sign in with your password.": "此服务器不提供通过浏览器登录：请使用密码登录。",
   "The browser could not be opened here.": "无法在此打开浏览器。",
+  // Help → Connect an AI agent (the MCP bridge of the installed app)
+  "Connect an AI agent…": "连接 AI 智能体…",
+  "Connect an AI agent": "连接 AI 智能体",
+  "Connect an AI agent (Claude Code, Claude Desktop, Gemini CLI or any other MCP client) to the Lapin that is open now. The agent drives the model through the same commands as the interface: its edits show at once, and each one is one undo step.": "将 AI 智能体（Claude Code、Claude Desktop、Gemini CLI 或任何其他 MCP 客户端）连接到当前打开的 Lapin。智能体通过与界面相同的命令操作模型：它的修改会立即显示，每一次修改都是一个撤销步骤。",
+  "It needs Node.js 22 or newer on this computer (nodejs.org), and Lapin open while the agent works.": "需要本机安装 Node.js 22 或更高版本（nodejs.org），并且在智能体工作期间保持 Lapin 打开。",
+  "Use scripts/lapin-mcp.mjs from the source folder instead.": "请改用源代码文件夹中的 scripts/lapin-mcp.mjs。",
+  "The bridge script": "桥接脚本",
+  "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop、Gemini CLI 以及其他带有 mcpServers 设置的客户端",
+  "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "将此内容添加到客户端的设置文件中（Claude Desktop：claude_desktop_config.json；Gemini CLI：settings.json），然后重启客户端。",
+  "User guide: Connect an AI agent": "用户指南：连接 AI 智能体",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

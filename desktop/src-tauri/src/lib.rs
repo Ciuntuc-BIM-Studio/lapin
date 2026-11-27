@@ -93,6 +93,17 @@ impl Engine {
     }
 }
 
+/// Where the MCP bridge script (scripts/lapin-mcp.mjs, copied into the resources by the product build) is in this installed
+/// app, for Help → Connect an AI agent. Err when it is not there (a development run has no resources folder).
+#[tauri::command]
+fn mcp_script_path(app: AppHandle) -> Result<String, String> {
+    let p = app.path().resource_dir().map_err(|e| e.to_string())?.join("resources").join("lapin-mcp.mjs");
+    if !p.is_file() {
+        return Err(format!("The bridge script is not bundled in this run ({}).", p.display()));
+    }
+    Ok(p.to_string_lossy().into_owned())
+}
+
 /// The engine's WebSocket address, once it has said it is listening.
 #[tauri::command]
 async fn engine_url(engine: State<'_, Arc<Engine>>) -> Result<String, String> {
@@ -677,7 +688,7 @@ pub fn run() {
         .manage(Arc::new(OllamaCalls::default()))
         .manage(Arc::new(SettingsFile::default()))
         .manage(Arc::new(SecretsFile::default()))
-        .invoke_handler(tauri::generate_handler![engine_url, open_separately, startup_file, open_path, stop_engine, ollama_request, ollama_cancel, user_settings_read, user_settings_write, secret_read, secret_write, secret_delete, remote_secret_get, remote_secret_set])
+        .invoke_handler(tauri::generate_handler![engine_url, mcp_script_path, open_separately, startup_file, open_path, stop_engine, ollama_request, ollama_cancel, user_settings_read, user_settings_write, secret_read, secret_write, secret_delete, remote_secret_get, remote_secret_set])
         .setup({
             let engine = engine.clone();
             move |app| {

@@ -3628,3 +3628,7 @@ body.panel-dragging, body.panel-dragging * { cursor: grabbing !important; user-s
 @media (prefers-reduced-motion: reduce) {
   .hold-ring-progress, .rich-tip-draw, .rich-tip-pulse { animation: none !important; stroke-dashoffset: 0; }
 }
+
+/* Help → Connect an AI agent: a command to copy, with its Copy button. */
+.agent-snippet { display: flex; gap: 8px; align-items: flex-start; margin: 4px 0 10px; }
+.agent-snippet pre { flex: 1; min-width: 0; margin: 0; padding: 6px 8px; overflow-x: auto; white-space: pre; font-size: 12px; user-select: text; border: 1px solid var(--border, #8884); border-radius: 4px; }

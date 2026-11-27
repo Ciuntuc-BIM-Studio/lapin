@@ -7363,6 +7363,16 @@ export const DE: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Die Anmeldung über den Browser braucht die Desktop-App.",
   "This server offers no sign-in through the browser: sign in with your password.": "Dieser Server bietet keine Anmeldung über den Browser: Melden Sie sich mit Ihrem Passwort an.",
   "The browser could not be opened here.": "Der Browser konnte hier nicht geöffnet werden.",
+  // Help → Connect an AI agent (the MCP bridge of the installed app)
+  "Connect an AI agent…": "KI-Agenten verbinden…",
+  "Connect an AI agent": "KI-Agenten verbinden",
+  "Connect an AI agent (Claude Code, Claude Desktop, Gemini CLI or any other MCP client) to the Lapin that is open now. The agent drives the model through the same commands as the interface: its edits show at once, and each one is one undo step.": "Verbinden Sie einen KI-Agenten (Claude Code, Claude Desktop, Gemini CLI oder einen anderen MCP-Client) mit dem jetzt geöffneten Lapin. Der Agent steuert das Modell über dieselben Befehle wie die Oberfläche: Seine Änderungen erscheinen sofort, und jede ist ein einzelner Rückgängig-Schritt.",
+  "It needs Node.js 22 or newer on this computer (nodejs.org), and Lapin open while the agent works.": "Dafür wird Node.js 22 oder neuer auf diesem Computer benötigt (nodejs.org) und ein geöffnetes Lapin, solange der Agent arbeitet.",
+  "Use scripts/lapin-mcp.mjs from the source folder instead.": "Verwenden Sie stattdessen scripts/lapin-mcp.mjs aus dem Quellordner.",
+  "The bridge script": "Das Brückenskript",
+  "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI und andere Clients mit einer mcpServers-Einstellung",
+  "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "Fügen Sie dies der Einstellungsdatei des Clients hinzu (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json) und starten Sie den Client neu.",
+  "User guide: Connect an AI agent": "Benutzerhandbuch: KI-Agenten verbinden",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

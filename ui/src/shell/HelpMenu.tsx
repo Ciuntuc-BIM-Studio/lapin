@@ -24,6 +24,7 @@ import { modules, productInfo, replacements } from '../platform/modules';
 import { lazyPart } from '../platform/lazyPart';
 import { openOnboarding } from '../app/onboarding';
 import { MenuSub } from './MenuSub';
+import { ConnectAgentDialog } from './ConnectAgentDialog';
 
 // Ask Lapin and its answers (help/faq.ts), fetched the first time it is opened.
 const AskDialog = lazyPart(() => import('../help/AskDialog').then((m) => m.AskDialog), { title: 'Ask Lapin' });
@@ -112,6 +113,7 @@ export function HelpMenu() {
   const [asking, setAsking] = useState(false);
   const [about, setAbout] = useState(false);
   const [messages, setMessages] = useState(false);
+  const [agent, setAgent] = useState(false);
   // Messages: offered once this device has a key (a reply was asked for once), never to a guest of a shared session.
   const hasKey = useReplies((s) => s.settings !== null) && !isGuest();
   const unread = useReplies((s) => s.unread);
@@ -149,6 +151,7 @@ export function HelpMenu() {
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openForumTopic(); }}>Ask on the forum…</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('community'); }}>Community (Skool)</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('site'); }}>lapinbim.com</button>
+          {isDesktop() && <button type="button" role="menuitem" onClick={() => { setOpen(false); setAgent(true); }}>Connect an AI agent…</button>}
           {isDesktop() && <button type="button" role="menuitem" onClick={() => { setOpen(false); void checkForUpdates(true); }}>Check for updates…</button>}
           <MenuSub label="Language" toLeft>
             <div className="menu-langs" role="group" aria-label="Language" data-no-i18n>
@@ -164,6 +167,7 @@ export function HelpMenu() {
       )}
       {asking && <AskDialog onClose={() => setAsking(false)}
         onReport={(q) => { setAsking(false); setReport(q ? { kind: 'question', title: q.length > 80 ? `${q.slice(0, 77)}…` : q, description: q } : true); }} />}
+      {agent && <ConnectAgentDialog onClose={() => setAgent(false)} />}
       {messages && <MessagesDialog onClose={() => setMessages(false)} />}
       {about && <AboutDialog version={info?.engineVersion} overrides={info?.overrides} onClose={() => setAbout(false)} />}
       {report && <ReportDialog onClose={() => setReport(false)} start={report === true ? undefined : report} />}

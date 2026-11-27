@@ -7406,6 +7406,16 @@ export const PL: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Logowanie przez przeglądarkę wymaga aplikacji na komputer.",
   "This server offers no sign-in through the browser: sign in with your password.": "Ten serwer nie oferuje logowania przez przeglądarkę: zaloguj się hasłem.",
   "The browser could not be opened here.": "Nie udało się tu otworzyć przeglądarki.",
+  // Help → Connect an AI agent (the MCP bridge of the installed app)
+  "Connect an AI agent…": "Połącz agenta AI…",
+  "Connect an AI agent": "Połącz agenta AI",
+  "Connect an AI agent (Claude Code, Claude Desktop, Gemini CLI or any other MCP client) to the Lapin that is open now. The agent drives the model through the same commands as the interface: its edits show at once, and each one is one undo step.": "Połącz agenta AI (Claude Code, Claude Desktop, Gemini CLI lub innego klienta MCP) z otwartym teraz Lapinem. Agent steruje modelem tymi samymi poleceniami co interfejs: jego zmiany widać od razu, a każda jest jednym krokiem cofania.",
+  "It needs Node.js 22 or newer on this computer (nodejs.org), and Lapin open while the agent works.": "Potrzebny jest Node.js 22 lub nowszy na tym komputerze (nodejs.org) oraz otwarty Lapin, gdy agent pracuje.",
+  "Use scripts/lapin-mcp.mjs from the source folder instead.": "Użyj zamiast tego scripts/lapin-mcp.mjs z folderu ze źródłami.",
+  "The bridge script": "Skrypt mostu",
+  "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI i inni klienci z ustawieniem mcpServers",
+  "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "Dodaj to do pliku ustawień klienta (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), a następnie uruchom klienta ponownie.",
+  "User guide: Connect an AI agent": "Podręcznik użytkownika: Połącz agenta AI",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

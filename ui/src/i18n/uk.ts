@@ -13504,6 +13504,16 @@ export const UK: Record<string, string> = {
   "Afterwards, File → Collaborate → Get latest from Archicad brings only what changed in Archicad since; the status bar says when it changed.": "Потім Файл → Спільна робота → Отримати останнє з Archicad приносить лише те, що змінилося в Archicad відтоді; рядок стану повідомляє, коли це сталося.",
   "From IFC": "З IFC",
   "What the model's own project information says that no field above takes, kept as it said it (read-only; replaced when it is received again).": "Те, що інформація про проєкт самої моделі повідомляє і що не підходить жодному полю вище, збережено як є (лише читання; замінюється під час повторного отримання).",
+  // Help → Connect an AI agent (the MCP bridge of the installed app)
+  "Connect an AI agent…": "Підключити ШІ-агента…",
+  "Connect an AI agent": "Підключити ШІ-агента",
+  "Connect an AI agent (Claude Code, Claude Desktop, Gemini CLI or any other MCP client) to the Lapin that is open now. The agent drives the model through the same commands as the interface: its edits show at once, and each one is one undo step.": "Підключіть ШІ-агента (Claude Code, Claude Desktop, Gemini CLI або будь-якого іншого MCP-клієнта) до відкритого зараз Lapin. Агент керує моделлю тими самими командами, що й інтерфейс: його зміни видно одразу, і кожна з них — один крок скасування.",
+  "It needs Node.js 22 or newer on this computer (nodejs.org), and Lapin open while the agent works.": "Потрібен Node.js 22 або новіший на цьому комп’ютері (nodejs.org) і відкритий Lapin, поки працює агент.",
+  "Use scripts/lapin-mcp.mjs from the source folder instead.": "Натомість використайте scripts/lapin-mcp.mjs із теки з вихідним кодом.",
+  "The bridge script": "Скрипт-міст",
+  "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI та інші клієнти з параметром mcpServers",
+  "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "Додайте це до файлу налаштувань клієнта (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), потім перезапустіть клієнт.",
+  "User guide: Connect an AI agent": "Посібник користувача: Підключити ШІ-агента",
 };
 /** The Ukrainian plural: 1 (not 11) → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

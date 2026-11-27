@@ -25,6 +25,7 @@ Butonul **?** de lângă Ask Me deschide meniul de ajutor:
 - **Forum** deschide forumul Lapin (forum.lapinbim.com), unde utilizatorii și fanii vorbesc, își arată lucrările și se ajută între ei. Forumul e în engleză, dar poți scrie în limba ta.
 - **Întreabă pe forum…** deschide un subiect nou pe forum, în categoria Lapin, cu versiunea aplicației trecută sub textul tău. Nimic altceva despre calculatorul sau proiectul tău nu pleacă odată cu el. Te autentifici pe forum și publici subiectul acolo.
 - **Comunitatea (Skool)** e locul cursurilor și al celorlalte materiale ale echipei.
+- **Conectează un agent AI…** (doar în aplicația desktop) dă comenzile care leagă Claude Code, Claude Desktop, Gemini CLI sau alt client MCP de Lapin-ul deschis: vezi [Conectează un agent AI](mcp.md).
 - **Caută actualizări…** există doar în aplicația desktop.
 - **Despre Lapin…** arată versiunea, licența, un link spre codul sursă și ce înseamnă helpware.
 

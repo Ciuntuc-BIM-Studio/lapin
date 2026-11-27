@@ -99,6 +99,9 @@ rmSync(res, { recursive: true, force: true });
 mkdirSync(join(res, 'modules'), { recursive: true });
 const manifest = join(res, 'product.json');
 writeFileSync(manifest, JSON.stringify(product, null, 2));
+// The MCP bridge (scripts/lapin-mcp.mjs, docs/mcp.md) beside the manifest, for every edition: Help → Connect an AI agent shows its
+// path, so an installed app needs no checkout. The script imports only Node's own modules (its catalogue import is optional).
+cpSync(join(root, 'scripts', 'lapin-mcp.mjs'), join(res, 'lapin-mcp.mjs'));
 for (const m of product.engine.filter((id) => id !== 'core')) {
   const src = join(root, 'engine/artifacts/modules', m);
   if (!existsSync(src)) { console.error(`Module ${m} was not built (${src}).`); process.exit(1); }

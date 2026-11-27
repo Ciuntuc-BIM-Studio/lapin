@@ -13524,6 +13524,16 @@ export const EL: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Η σύνδεση μέσω προγράμματος περιήγησης χρειάζεται την εφαρμογή υπολογιστή.",
   "This server offers no sign-in through the browser: sign in with your password.": "Αυτός ο διακομιστής δεν προσφέρει σύνδεση μέσω προγράμματος περιήγησης: συνδεθείτε με τον κωδικό σας.",
   "The browser could not be opened here.": "Δεν ήταν δυνατό να ανοίξει το πρόγραμμα περιήγησης εδώ.",
+  // Help → Connect an AI agent (the MCP bridge of the installed app)
+  "Connect an AI agent…": "Σύνδεση πράκτορα AI…",
+  "Connect an AI agent": "Σύνδεση πράκτορα AI",
+  "Connect an AI agent (Claude Code, Claude Desktop, Gemini CLI or any other MCP client) to the Lapin that is open now. The agent drives the model through the same commands as the interface: its edits show at once, and each one is one undo step.": "Συνδέστε έναν πράκτορα AI (Claude Code, Claude Desktop, Gemini CLI ή οποιονδήποτε άλλο πελάτη MCP) με το Lapin που είναι ανοιχτό τώρα. Ο πράκτορας χειρίζεται το μοντέλο με τις ίδιες εντολές με τη διεπαφή: οι αλλαγές του φαίνονται αμέσως και καθεμία είναι ένα βήμα αναίρεσης.",
+  "It needs Node.js 22 or newer on this computer (nodejs.org), and Lapin open while the agent works.": "Χρειάζεται Node.js 22 ή νεότερο σε αυτόν τον υπολογιστή (nodejs.org) και ανοιχτό Lapin όσο εργάζεται ο πράκτορας.",
+  "Use scripts/lapin-mcp.mjs from the source folder instead.": "Χρησιμοποιήστε αντί γι’ αυτό το scripts/lapin-mcp.mjs από τον φάκελο του πηγαίου κώδικα.",
+  "The bridge script": "Το σενάριο-γέφυρα",
+  "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI και άλλοι πελάτες με ρύθμιση mcpServers",
+  "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "Προσθέστε αυτό στο αρχείο ρυθμίσεων του πελάτη (Claude Desktop: claude_desktop_config.json· Gemini CLI: settings.json) και επανεκκινήστε τον πελάτη.",
+  "User guide: Connect an AI agent": "Οδηγός χρήστη: Σύνδεση πράκτορα AI",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

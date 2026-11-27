@@ -7367,6 +7367,16 @@ export const FR: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "La connexion par le navigateur nécessite l'application de bureau.",
   "This server offers no sign-in through the browser: sign in with your password.": "Ce serveur n'offre pas de connexion par le navigateur : connectez-vous avec votre mot de passe.",
   "The browser could not be opened here.": "Le navigateur n'a pas pu être ouvert ici.",
+  // Help → Connect an AI agent (the MCP bridge of the installed app)
+  "Connect an AI agent…": "Connecter un agent IA…",
+  "Connect an AI agent": "Connecter un agent IA",
+  "Connect an AI agent (Claude Code, Claude Desktop, Gemini CLI or any other MCP client) to the Lapin that is open now. The agent drives the model through the same commands as the interface: its edits show at once, and each one is one undo step.": "Connectez un agent IA (Claude Code, Claude Desktop, Gemini CLI ou tout autre client MCP) au Lapin ouvert en ce moment. L’agent pilote le modèle avec les mêmes commandes que l’interface : ses modifications apparaissent aussitôt, et chacune est une seule étape d’annulation.",
+  "It needs Node.js 22 or newer on this computer (nodejs.org), and Lapin open while the agent works.": "Il faut Node.js 22 ou plus récent sur cet ordinateur (nodejs.org) et Lapin ouvert pendant que l’agent travaille.",
+  "Use scripts/lapin-mcp.mjs from the source folder instead.": "Utilisez plutôt scripts/lapin-mcp.mjs du dossier des sources.",
+  "The bridge script": "Le script passerelle",
+  "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI et d’autres clients avec un réglage mcpServers",
+  "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "Ajoutez ceci au fichier de réglages du client (Claude Desktop : claude_desktop_config.json ; Gemini CLI : settings.json), puis redémarrez le client.",
+  "User guide: Connect an AI agent": "Guide de l’utilisateur : Connecter un agent IA",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

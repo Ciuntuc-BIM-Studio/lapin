@@ -7400,6 +7400,16 @@ export const DA: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Login gennem browseren kræver skrivebordsappen.",
   "This server offers no sign-in through the browser: sign in with your password.": "Denne server tilbyder ikke login gennem browseren: log ind med din adgangskode.",
   "The browser could not be opened here.": "Browseren kunne ikke åbnes her.",
+  // Help → Connect an AI agent (the MCP bridge of the installed app)
+  "Connect an AI agent…": "Forbind en AI-agent…",
+  "Connect an AI agent": "Forbind en AI-agent",
+  "Connect an AI agent (Claude Code, Claude Desktop, Gemini CLI or any other MCP client) to the Lapin that is open now. The agent drives the model through the same commands as the interface: its edits show at once, and each one is one undo step.": "Forbind en AI-agent (Claude Code, Claude Desktop, Gemini CLI eller en anden MCP-klient) til den Lapin, der er åben nu. Agenten styrer modellen med de samme kommandoer som brugerfladen: dens ændringer vises med det samme, og hver er ét fortryd-trin.",
+  "It needs Node.js 22 or newer on this computer (nodejs.org), and Lapin open while the agent works.": "Det kræver Node.js 22 eller nyere på denne computer (nodejs.org) og en åben Lapin, mens agenten arbejder.",
+  "Use scripts/lapin-mcp.mjs from the source folder instead.": "Brug i stedet scripts/lapin-mcp.mjs fra kildemappen.",
+  "The bridge script": "Bro-scriptet",
+  "Claude Desktop, Gemini CLI and other clients with an mcpServers setting": "Claude Desktop, Gemini CLI og andre klienter med en mcpServers-indstilling",
+  "Add this to the client's settings file (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), then restart the client.": "Tilføj dette til klientens indstillingsfil (Claude Desktop: claude_desktop_config.json; Gemini CLI: settings.json), og genstart derefter klienten.",
+  "User guide: Connect an AI agent": "Brugervejledning: Forbind en AI-agent",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
