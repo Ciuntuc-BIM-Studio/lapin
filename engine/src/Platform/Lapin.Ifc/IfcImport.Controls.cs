@@ -89,7 +89,7 @@ public static partial class IfcImport
             if (result.Count == 0) return;
             foreach (var service in services)
             {
-                var r = service.Import(edit, result, IdOf);
+                var r = service.Import(edit, result, IdOf, s.Catalog);
                 if (r.Items > 0) notes.Add($"Estimate: {r.Items} item(s) (Cost → Estimate).");
                 notes.AddRange(r.Notes);
             }

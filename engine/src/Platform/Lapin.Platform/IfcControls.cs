@@ -38,4 +38,10 @@ public interface IIfcControls
     IEnumerable<IfcCostScheduleData> CostSchedules(IQueryContext query);
     /// <summary>The file's cost schedules made the module's own; <paramref name="idOf"/> gives the project's id of an element the file names by GlobalId, null when the project has none.</summary>
     IfcControlImport Import(IEdit edit, IReadOnlyList<IfcCostScheduleData> schedules, Func<string, string?> idOf);
+
+    /// <summary>
+    /// The same, with the edition's services (what other modules add to the module's controls: an extension's properties of
+    /// an estimate, docs/plan-extension-modules.md §6.3). The import calls this one; by default it is <see cref="Import(IEdit, IReadOnlyList{IfcCostScheduleData}, Func{string, string?})"/>.
+    /// </summary>
+    IfcControlImport Import(IEdit edit, IReadOnlyList<IfcCostScheduleData> schedules, Func<string, string?> idOf, IServices services) => Import(edit, schedules, idOf);
 }

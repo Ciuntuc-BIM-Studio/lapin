@@ -54,11 +54,29 @@ public sealed class CostIfc : IIfcControls
             [
                 ("Currency", s.Currency), ("EurRate", N(s.EurRate)), ("LabourTax", N(s.LabourTax)), ("Overheads", N(s.Overheads)),
                 ("Profit", N(s.Profit)), ("Vat", N(s.Vat)), ("Grouping", s.Grouping), ("Equivalent", s.Equivalent ? "true" : "false"),
+                // What other modules keep on the estimate (IEstimateIfcProperties: an extension's cash-flow terms), after Lapin's own.
+                .. Extra(query.Services, e),
             ]);
         }
     }
 
-    public IfcControlImport Import(IEdit edit, IReadOnlyList<IfcCostScheduleData> schedules, Func<string, string?> idOf)
+    /// <summary>The properties the other modules add to an estimate's set, none named as one of Lapin's own or twice.</summary>
+    static List<(string Name, string Value)> Extra(IServices services, Entity estimate)
+    {
+        var o = new List<(string, string)>();
+        var seen = new HashSet<string>(Own, StringComparer.Ordinal);
+        foreach (var x in services.All<IEstimateIfcProperties>())
+            foreach (var (name, value) in x.Write(estimate))
+                if (name.Length > 0 && seen.Add(name)) o.Add((name, value));
+        return o;
+    }
+
+    /// <summary>The names of Lapin_Estimate's own properties.</summary>
+    static readonly string[] Own = ["Currency", "EurRate", "LabourTax", "Overheads", "Profit", "Vat", "Grouping", "Equivalent"];
+
+    public IfcControlImport Import(IEdit edit, IReadOnlyList<IfcCostScheduleData> schedules, Func<string, string?> idOf) => Import(edit, schedules, idOf, null);
+
+    public IfcControlImport Import(IEdit edit, IReadOnlyList<IfcCostScheduleData> schedules, Func<string, string?> idOf, IServices? services)
     {
         var notes = new List<string>();
         int made = 0, items = 0;
@@ -103,6 +121,8 @@ public sealed class CostIfc : IIfcControls
                 if (Num(key) is { } v) attrs[attr] = v;
             if (props.TryGetValue("Grouping", out var g) && g == "storey") attrs["grouping"] = g;
             if (props.TryGetValue("Equivalent", out var eq) && eq == "true") attrs["equivalent"] = true;
+            // What other modules read back of the set (their own attributes on the estimate).
+            foreach (var x in services?.All<IEstimateIfcProperties>() ?? []) x.Read(props, attrs);
             var id = edit.Model.GetRelation(cs.Id) == null ? cs.Id : edit.NewId();
             edit.Add(new Entity(id, Costing.Class, cs.Name, attrs, cs.Predefined is "PRICEDBILLOFQUANTITIES" ? cs.Predefined : "COSTPLAN"));
             made++;
@@ -111,4 +131,19 @@ public sealed class CostIfc : IIfcControls
     }
 
     static string Category(string c) => PriceLists.KindOf(c) ?? (c.ToLowerInvariant() switch { "plant" => "equipment", _ => "material" });
+}
+
+/// <summary>
+/// Properties another module keeps on an estimate (IfcCostSchedule) and writes in its Lapin_Estimate property set in IFC,
+/// after Lapin's own (docs/plan-extension-modules.md §6.3: an extension's cash-flow terms), and reads back into the
+/// estimate's attributes on import. Registered with <c>r.Service&lt;IEstimateIfcProperties&gt;</c>; without one the set is as before.
+/// A name Lapin's own properties have is never written over.
+/// </summary>
+public interface IEstimateIfcProperties
+{
+    /// <summary>The estimate's properties of this module's (none: nothing written).</summary>
+    IEnumerable<(string Name, string Value)> Write(Entity estimate);
+
+    /// <summary>The set's properties as read from a file (Lapin's own among them): this module's put into the new estimate's <paramref name="attrs"/>.</summary>
+    void Read(IReadOnlyDictionary<string, string> properties, JsonObject attrs);
 }
