@@ -90,6 +90,14 @@ Platforma (deschisă, în toate edițiile) ține tot ce e randare: materialele P
 
 > **Decizia 785 (22.11.2026)**: după analiza din aceeași zi, S6 nu mai e doar un export, ci o **legătură vie cu Blender**: un add-on Blender al nostru (MIT) legat de motorul Lapin prin WebSocket (protocolul de azi), care primește scena ca glTF și apoi diferențele sesiunii (elementele schimbate, după GlobalId-urile lor, păstrate), ca Blender să rămână la zi cât lucrezi în Lapin. Exportul de mai jos rămâne calea fără add-on. Godot doar dacă se cer plimbări interactive sau VR, mai târziu.
 
+> **Decizia 920 (27.11.2026, propunerea unui utilizator pe forum, topicul 300; Ionuț a acceptat)**: S6 primește și **calea de întoarcere pentru mobilier**. Lapin rămâne sursa adevărului pentru arhitectură; Blender (cu Home Builder 5, dacă utilizatorul îl are) face mobilierul parametric, materialele, luminile și randările. Etape, în ordine:
+> 1. **Lapin → Blender**: ca în decizia 785 (glTF cu GlobalId-uri, apoi diferențele sesiunii).
+> 2. **Blender → Lapin**: add-on-ul trimite o colecție aleasă; în Lapin ajunge ca **referințe** (decizia 448) sau `IfcFurniture` cu `Lapin_Intent`, dimensiunile, tipul și materialul ca proprietăți, GlobalId-ul purtat de obiect. Nu devin elemente native cu parametri (regula „native first”); parametrii Home Builder rămân în Blender.
+> 3. **Proprietatea**: arhitectura e a lui Lapin, mobilierul din Blender e al lui Blender, deci nu există conflicte pe același obiect. Un duplicat din Blender primește GlobalId nou; un obiect fără ID e un obiect nou; unul șters în Blender se șterge în Lapin doar după confirmare.
+> 4. **Sincronizare cu raport de conflicte**, abia după ce 1 și 2 merg.
+>
+> **Licența, de lămurit înainte de cod**: un add-on Blender care folosește `bpy` se consideră de obicei GPL (de verificat la Blender); dacă se confirmă, add-on-ul trăiește într-un depozit separat, GPL, iar motorul, protocolul și `lapin_open.py` rămân MIT. Ea schimbă „add-on MIT” din 785. **Prima probă**: o casă mică (camere, pereți, o ușă, o fereastră), o bază de bucătărie și un dulap făcute în Blender și întoarse; a doua sincronizare actualizează obiectele, nu le dublează; scara, orientarea (Blender e Z-up ca Lapin, glTF e Y-up) și poziția corecte. Întrebări pentru autorul propunerii: ce vrea întâi, randarea sau mobilierul; un `.blend` de test cu Home Builder 5.
+
 - **Fișierul**: **glTF 2.0** (GLB) cu `KHR_materials_transmission`, `KHR_materials_ior`, `KHR_materials_emissive_strength`, `KHR_texture_transform`, **`KHR_lights_punctual`** (luminile S2: punct, spot cu conul lor, intensitatea în candela / lux cum cere extensia) și **camerele** vederilor 3D salvate (perspectivă, câmpul vizual, ținta); sau **USD** (deja scris: `UsdLux` pentru lumini, `UsdGeomCamera`). glTF e implicit: importatorul glTF al Blender citește toate extensiile de mai sus; USD rămâne pentru Omniverse și Twinmotion.
 - **Scriptul**: `lapin_open.py` (MIT, ~200 de linii, al nostru), pus lângă fișier: deschide GLB-ul, pune Cycles (eșantioane, denoise OpenImageDenoise al Blender), cerul (Nishita după soarele vederii: data, ora, locul), expunerea și balansul de alb, camera activă, deplasarea din harta de înălțime (modificatorul sau `Displacement` în material) și lumina corpurilor după IES (prin noduri, unde există). Se rulează `blender --python lapin_open.py` sau din Blender (Scripting → Open). Opțional, un add-on Blender mic care face același lucru din meniu.
 - **Fără dependență**: Lapin nu cheamă Blender; dacă îl găsește instalat, butonul „Open in Blender” îl pornește cu scriptul (ca „Open in …” de azi), altfel salvează fișierele și spune ce să faci.
@@ -110,6 +118,7 @@ Din `plan-visualisation.md` §3: panorame 360° (6 fețe → echirectangular 4K/
 | `three-mesh-bvh` | MIT | npm, nou (cerut de pathtracer) | S4 |
 | Intel Open Image Denoise | Apache-2.0 | nativ lângă manifold sau sidecar | S4 (Î4) |
 | Scriptul Blender `lapin_open.py` | MIT (al Lapin) | lângă fișierul trimis | S6 |
+| Add-on-ul Blender (`bpy`, legătura vie și întoarcerea mobilierului) | probabil GPL, într-un depozit separat; de verificat la Blender (decizia 920) | nu în acest depozit | S6 |
 | glTF 2.0, KHR_*, USD | specificații publice | scrise de Lapin, fără bibliotecă | S1, S6 |
 
 `pnpm check:licenses` acoperă npm, NuGet și resursele (mobilierul, texturile); OIDN, dacă intră ca bibliotecă nativă, se adaugă la verificare ca manifold.
