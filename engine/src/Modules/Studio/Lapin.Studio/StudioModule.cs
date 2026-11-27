@@ -144,6 +144,10 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         r.Service<IIfcExactBodies>(new StudioExactBodies());
         r.Service<IProjectUpgrade>(new RampSolidUpgrade());
         r.Service<IElementPlacement>(new StudioPlacement());
+        // Its voids (and a union's or an intersection's tools) go with what they work on, a group's member or one alone.
+        var attached = new StudioAttached();
+        r.Service<IAttachedElements>(attached);
+        r.Service<ITransformFollowers>(attached);
         // A placed part's own axes for its drawings (decision 579).
         r.Service<IElementFrames>(new PartFrames());
         // Raised or lowered by a 3D move: a move step (docs/plan-3d-modelling.md).

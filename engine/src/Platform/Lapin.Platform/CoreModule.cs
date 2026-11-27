@@ -653,6 +653,8 @@ public static class ElementTransform
             (ids, groups) = Groups.Expand(ctx.Model, Driven.Rest(Args.Ids(a), driven));
             ids = Driven.Rest(ids, driven);
         }
+        // What is attached to them goes with them (a void cut into a member's face, a group's or one's alone; a user's report).
+        ids = WithAttached(ctx, ids, copy);
         var all = ids.Select(id => ctx.Model.Get(id)).OfType<Entity>()
             .Where(e => e.Class is not (IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey)).ToList();
         // The model's own edit when the view's is not it (a section's or an elevation's): a move along the view and up, a mirror
@@ -765,6 +767,30 @@ public static class ElementTransform
         if (copy) Pins.Unpinned(ctx, made.Select(x => (string?)x).OfType<string>());
         foreach (var id in driven.Made) made.Add((JsonNode)id);
         return new Result(made, copies, twins) { Kept = kept, Moved = copy ? [] : entities.Select(e => e.Id).ToList() };
+    }
+
+    /// <summary>
+    /// The ids with what the modules attach to them (<see cref="IAttachedElements"/>), until nothing more comes (a void cutting
+    /// a union's tool). A pinned one is left where it is when they move (decision 449), and copied with them.
+    /// </summary>
+    static List<string> WithAttached(ICommandContext ctx, List<string> ids, bool copy)
+    {
+        var attaching = ctx.Services.All<IAttachedElements>().ToList();
+        if (attaching.Count == 0) return ids;
+        var carried = ids.ToHashSet();
+        var o = ids.ToList();
+        for (var fresh = true; fresh;)
+        {
+            fresh = false;
+            foreach (var id in attaching.SelectMany(x => x.Attached(ctx.Model, carried)).Distinct().ToList())
+            {
+                if (carried.Contains(id) || ctx.Model.Get(id) is not { } e || (!copy && Pins.Is(e))) continue;
+                carried.Add(id);
+                o.Add(id);
+                fresh = true;
+            }
+        }
+        return o;
     }
 
     /// <summary>What lies on a view and takes the view's points (a drafted shape, a dimension, a bar drawn on it), not the model's.</summary>
