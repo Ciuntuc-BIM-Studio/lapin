@@ -152,7 +152,7 @@ public sealed partial class ProjectFiles(Func<Session, string, Diff> open, Actio
             return imported.Diff;
         }
         var content = LapinPackage.Read(input);
-        var diff = session.Load(content.Entities, content.Relations, name, content.Classes);
+        var diff = session.Load(content.Entities, content.Relations, name, content.Classes, content.Extensions);
         Adopt(null, null);
         Keep(name, PackageVersions.Of(bytes));
         KeepIssues(name, PackageIssues.Of(bytes), PackageIssues.ReferencesOf(bytes));
@@ -199,7 +199,7 @@ public sealed partial class ProjectFiles(Func<Session, string, Diff> open, Actio
         try { HtmlPackage.Check(bytes); }
         catch (InvalidDataException e) { throw new CommandException(e.Message); }
         var content = LapinPackage.Read(new MemoryStream(bytes, writable: false));
-        var diff = session.Load(content.Entities, content.Relations, null, content.Classes);
+        var diff = session.Load(content.Entities, content.Relations, null, content.Classes, content.Extensions);
         Adopt(null, null);
         _page = (PackageVersions.Of(bytes), PackageForeign.Of(bytes));
         KeepIssues(null, PackageIssues.Of(bytes), PackageIssues.ReferencesOf(bytes));
@@ -1123,7 +1123,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             case "project.open":
             {
                 var diff = files.Open(session, PathParam());
-                return (new JsonObject { ["notes"] = new JsonArray(files.LastNotes.Select(n => (JsonNode)n).ToArray()), ["page"] = files.LastPage, ["absent"] = new JsonArray([.. session.AbsentModules().Select(x => (JsonNode)x)]) }, diff);
+                return (new JsonObject { ["notes"] = new JsonArray(files.LastNotes.Select(n => (JsonNode)n).ToArray()), ["page"] = files.LastPage, ["absent"] = new JsonArray([.. session.AbsentModules().Select(x => (JsonNode)x)]), ["absentExtensions"] = ProjectPackage.AbsentExtensions(session) }, diff);
             }
             case "project.save": return (null, files.Save(session, (string?)p["path"] is { } savePath ? HostFiles.Check(savePath) : null));
             case "project.openBytes":
@@ -1131,7 +1131,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 // A project from its bytes (a host without files: the browser), base64 in `data`.
                 var name = (string?)p["name"] ?? "project.lapin";
                 var diff = files.OpenBytes(session, name, Convert.FromBase64String((string?)p["data"] ?? throw new CommandException("The project's bytes are missing.")));
-                return (new JsonObject { ["notes"] = new JsonArray(files.LastNotes.Select(n => (JsonNode)n).ToArray()), ["page"] = files.LastPage, ["absent"] = new JsonArray([.. session.AbsentModules().Select(x => (JsonNode)x)]) }, diff);
+                return (new JsonObject { ["notes"] = new JsonArray(files.LastNotes.Select(n => (JsonNode)n).ToArray()), ["page"] = files.LastPage, ["absent"] = new JsonArray([.. session.AbsentModules().Select(x => (JsonNode)x)]), ["absentExtensions"] = ProjectPackage.AbsentExtensions(session) }, diff);
             }
             case "project.saveBytes":
             {

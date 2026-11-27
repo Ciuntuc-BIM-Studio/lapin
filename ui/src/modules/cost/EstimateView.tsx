@@ -9,8 +9,9 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ChevronDown, ChevronRight, FileSpreadsheet, FileText, ListChecks, Plus, Sheet, Tags, Trash2 } from 'lucide-react';
 import { useUi } from '../../app/store';
+import { t } from '../../i18n';
 import { execute, query, useSession } from '../../engine/session';
-import { FORMS, exportPdf, exportXlsx, formOnSheet, linesHolding, inOther, money, parseRate, qty, EXCHANGE, PERCENT, type RateBounds, unpricedCount, useEstimate, useEstimateData, type FormDto, type LineDto, durationText } from './estimate';
+import { FORMS, exportPdf, exportXlsx, formOnSheet, linesHolding, inOther, money, parseRate, qty, EXCHANGE, PERCENT, type RateBounds, unpricedCount, useEstimate, useEstimateData, type FormDto, type LineDto, durationText, quantityDerived, spanText, TIME_UNITS, type TimeUnit } from './estimate';
 
 /** A rate typed in the toolbar, sent when it is left or Enter is pressed. */
 function RateInput({ label, value, field, title, unit = '%', testId, bounds = PERCENT }: { label: string; value: number; field: string; title: string; unit?: string; testId: string; bounds?: RateBounds }) {
@@ -168,14 +169,18 @@ export function EstimateView() {
                       <td title={l.elements.length ? 'Click to select its elements' : undefined}><span data-no-i18n>{l.manual ? <Cell value={l.name} onCommit={(v) => update(l.manual!, 'name', v)} /> : l.name}</span>{!l.priced && <>{' '}<span className="error-text small">no price</span></>}
                         {durationText(l) && <>{' '}<span className="muted small" title="The quantity times how long the element is on site, from the tasks that take it in the schedule" data-testid="estimate-line-duration">{durationText(l)}</span></>}
                         {l.notes?.map((n) => <span key={n} className="cde-warn small estimate-line-note" data-testid="estimate-line-note"><AlertTriangle size={11} />{n}</span>)}
+                        {l.per && <>{' '}<span className="muted small" title="A time-related item: its quantity is how long its task (or the whole project) lasts in the schedule, so it grows when the work slips" data-testid="estimate-line-span" data-no-i18n>{spanText(l)}</span>
+                          {' '}<select className="estimate-task" value={l.per} onChange={(e) => void execute('cost.updateLine', { line: l.manual, per: e.target.value as TimeUnit })} title="What its rate is by" data-testid="estimate-line-per">
+                            {TIME_UNITS.map((u) => <option key={u.id} value={u.id}>{u.label}</option>)}
+                          </select></>}
                         {l.manual && tasks.length > 0 && (
-                          <select className="estimate-task" value={l.tasks?.[0] ?? ''} onChange={(e) => void execute('cost.updateLine', { line: l.manual, tasks: e.target.value ? [e.target.value] : [] })} title="The task its work is done in: its cost goes on the S-curve with it" data-testid="estimate-line-task">
-                            <option value="">In no task</option>
+                          <select className="estimate-task" value={l.tasks?.[0] ?? ''} onChange={(e) => void execute('cost.updateLine', { line: l.manual, tasks: e.target.value ? [e.target.value] : [] })} title={l.per ? 'The task it lasts as long as (a level of effort task, usually), or the whole project' : 'The task its work is done in: its cost goes on the S-curve with it'} data-testid="estimate-line-task">
+                            <option value="">{l.per ? 'The whole project' : 'In no task'}</option>
                             {tasks.map((t) => <option key={t.id} value={t.id} data-no-i18n>{t.name}</option>)}
                           </select>
                         )}</td>
                       <td data-no-i18n>{l.manual ? <Cell value={l.unit} onCommit={(v) => update(l.manual!, 'unit', v)} /> : l.unit}</td>
-                      <td className="num" data-no-i18n>{l.manual ? <Cell num value={String(l.qty)} onCommit={(v) => update(l.manual!, 'qty', v)} /> : qty(l.qty)}</td>
+                      <td className="num" data-no-i18n>{l.manual && !quantityDerived(l) ? <Cell num value={String(l.qty)} onCommit={(v) => update(l.manual!, 'qty', v)} /> : qty(l.qty)}</td>
                       {(['m', 'l', 'e', 't'] as const).map((k) => <td key={k} className="num" data-no-i18n>{l.manual ? <Cell num value={String(l[k])} onCommit={(v) => update(l.manual!, k, v)} /> : money(l[k])}</td>)}
                       <td className="num" data-no-i18n>{money(l.unitPrice)}</td>
                       <td className="num" data-no-i18n>{money(l.value)}{l.manual && <button type="button" className="icon mini" title="Remove this line" onClick={() => void execute('cost.removeLine', { line: l.manual })}><Trash2 size={11} /></button>}</td>
@@ -184,7 +189,8 @@ export function EstimateView() {
                   ))}
                 </Fragment>
               ))}
-              <tr className="row-add"><td colSpan={other ? 12 : 11}><button type="button" className="link" onClick={() => void execute('cost.addLine', { name: 'New line' })} data-testid="estimate-add-line"><Plus size={12} />A line of your own (work the model does not have)</button></td></tr>
+              <tr className="row-add"><td colSpan={other ? 12 : 11}><button type="button" className="link" onClick={() => void execute('cost.addLine', { name: 'New line' })} data-testid="estimate-add-line"><Plus size={12} />A line of your own (work the model does not have)</button>
+                {' '}<button type="button" className="link" title="Site management, supervision, site office: a rate a week (or month, day) times how long its task or the whole project lasts, so a delay raises it" onClick={() => void execute('cost.addLine', { name: t('Site management'), per: 'weeks', unit: 'week' })} data-testid="estimate-add-time-item"><Plus size={12} />A time-related item (rate × duration)</button></td></tr>
               {total('Direct costs', data.totals.direct, true, 'estimate-direct')}
               {total('Contributions on labour (CAM)', data.totals.labourTax, false, undefined, s.labourTax)}
               {total('Overheads', data.totals.overheads, false, undefined, s.overheads)}

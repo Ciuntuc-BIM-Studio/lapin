@@ -51,7 +51,53 @@ const TABLES: Partial<Record<Exclude<Lang, 'en'>, Language>> = {};
 /** Loads a language's phrases (at once for English or one already here). */
 export async function loadLanguage(lang: Lang): Promise<void> {
   if (lang === 'en' || TABLES[lang]) return;
-  TABLES[lang] = await LOADERS[lang]();
+  const table = await LOADERS[lang]();
+  TABLES[lang] ??= table;
+  mergeAdded(lang);
+}
+
+/** What extensions add to a language (docs/plan-extension-modules.md §3.3), kept until the language is loaded. */
+const ADDED: Partial<Record<Exclude<Lang, 'en'>, AddedPhrases[]>> = {};
+
+/** An extension's phrases for one language (ui/i18n/<lang>.json): exact phrases, and patterns whose template takes the groups as {1}, {2}… */
+export interface AddedPhrases { phrases?: Record<string, string>; patterns?: [string, string][] }
+
+/** A pattern's template filled with the groups matched ({1} the first; a group not matched is empty). */
+export function fillTemplate(template: string, m: RegExpExecArray): string {
+  return template.replace(/\{(\d+)\}/g, (_, n: string) => m[Number(n)] ?? '');
+}
+
+/**
+ * Adds an extension's phrases to a language: merged now when it is loaded, else when it loads. A phrase the host already
+ * translates keeps the host's translation; the patterns come after the host's. English and unknown languages are ignored
+ * (false), as are entries that are not text and patterns that are not valid expressions.
+ */
+export function addPhrases(lang: string, table: AddedPhrases): boolean {
+  if (lang === 'en' || !(lang in LOADERS) || !table || typeof table !== 'object') return false;
+  const l = lang as Exclude<Lang, 'en'>;
+  (ADDED[l] ??= []).push(table);
+  mergeAdded(l);
+  return true;
+}
+
+function mergeAdded(lang: Exclude<Lang, 'en'>): void {
+  const table = TABLES[lang];
+  const added = ADDED[lang];
+  if (!table || !added?.length) return;
+  ADDED[lang] = [];
+  for (const a of added) {
+    for (const [en, tr] of Object.entries(a.phrases ?? {})) {
+      if (typeof tr === 'string' && en.trim() && !(en in table.dict)) table.dict[en] = tr;
+    }
+    for (const p of Array.isArray(a.patterns) ? a.patterns : []) {
+      if (!Array.isArray(p) || typeof p[0] !== 'string' || typeof p[1] !== 'string') continue;
+      let re: RegExp;
+      try { re = new RegExp(p[0]); } catch { continue; }
+      const template = p[1];
+      table.patterns.push([re, (m) => fillTemplate(template, m)]);
+    }
+  }
+  if (lang === useLang.getState().lang) retranslate();
 }
 
 /** Every language, for the tests that compare them. */

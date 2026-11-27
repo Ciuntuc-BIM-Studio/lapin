@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { NodeDto } from '../../engine/protocol';
 import type { TaskDto } from './gantt';
-import { dropOf, elementIds, frameDistance, partLabel, ruleSummary, tasksHolding, tasksOf, toggleRule } from './links';
+import { byProductText, dropOf, elementIds, frameDistance, partLabel, ruleSummary, tasksHolding, tasksOf, toggleRule } from './links';
 
 const task = (id: string, extra: Partial<TaskDto> = {}): TaskDto => ({
   id, row: 0, name: id, wbs: '', level: 0, parent: null, summary: false, milestone: false, duration: 1, start: '2026-11-16', finish: '2026-11-16',
@@ -63,6 +63,17 @@ describe('the tasks and the elements', () => {
     expect(dropOf('[]', false)).toBeNull();
     expect(dropOf('not json', false)).toBeNull();
     expect(dropOf('{"a":1}', false)).toBeNull();
+  });
+
+  it('names a rule\'s products and locations (the PBS × GBS terms), the other keys as before', () => {
+    expect(ruleSummary({ rule: { classes: ['IfcWall'], products: ['40.20'], locations: ['s1'] } }, (id) => ({ s1: 'Ground floor' } as Record<string, string>)[id], (c) => c.replace('Ifc', '')))
+      .toBe('Wall · 40.20 · Ground floor');
+    expect(ruleSummary({ rule: { classes: ['IfcWall'] } }, () => undefined, (c) => c.replace('Ifc', ''))).toBe('Wall');
+  });
+
+  it('counts the elements without a task by product', () => {
+    expect(byProductText([{ code: '', title: '', count: 2 }, { code: '40.20', title: 'Doors', count: 3 }])).toBe('40.20 Doors 3, no code 2');
+    expect(byProductText(undefined)).toBe('');
   });
 
   it('frames a box from far enough to see it whole', () => {

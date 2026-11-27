@@ -15,8 +15,8 @@ import type { NodeDto } from '../../engine/protocol';
 import { expansionChanged } from '../../platform/groups';
 import { useCamera } from '../../viewport/camera';
 import { zoomHost } from '../../viewport/zoom';
-import { showDate, type ScheduleDto, type TaskDto } from './gantt';
-import { elementIds, frameDistance, TASK } from './links';
+import { loeSpanOf, showDate, type ScheduleDto, type TaskDto } from './gantt';
+import { byProductText, elementIds, frameDistance, TASK } from './links';
 
 export const usePlanning = create<{ data: ScheduleDto | null; version: number }>(() => ({ data: null, version: -2 }));
 
@@ -69,6 +69,20 @@ export function openGantt(): void { openUnder('gantt'); }
 export async function addTask(milestone = false, before?: string | null): Promise<string | null> {
   const sel = before === undefined ? selectedTasks()[0] ?? null : before;
   const r = await execute('planning.addTask', { milestone, ...(sel ? { before: sel } : {}) }) as { id: string } | null;
+  if (r?.id) useUi.setState({ selection: r.id, selected: [r.id] });
+  return r?.id ?? null;
+}
+
+/**
+ * A level of effort task (a hammock: site management, supervision) spanning the tasks selected, from the one that starts
+ * first to the one that finishes last, put before the first of them; it becomes the selection.
+ */
+export async function addLevelOfEffort(): Promise<string | null> {
+  const data = usePlanning.getState().data;
+  const span = data ? loeSpanOf(data.tasks, selectedTasks()) : null;
+  if (!data || !span) { notify('Select the tasks it spans in the Gantt (the first and the last will do), then make the level of effort task.'); return null; }
+  const before = data.tasks.filter((x) => selectedTasks().includes(x.id)).sort((a, b) => a.row - b.row)[0]?.id;
+  const r = await execute('planning.addTask', { name: t('Level of effort'), effort: 'loe', effortFrom: span.from, effortTo: span.to, ...(before ? { before } : {}) }) as { id: string } | null;
   if (r?.id) useUi.setState({ selection: r.id, selected: [r.id] });
   return r?.id ?? null;
 }
@@ -162,7 +176,7 @@ export function showTaskElements(task: TaskDto): void {
 
 /** The elements no task takes (wholly or in part), selected, so they can be dragged onto a task. */
 export async function selectUnlinked(): Promise<void> {
-  const r = await query<{ none: string[]; partial: string[] }>('planning.unlinked');
+  const r = await query<{ none: string[]; partial: string[]; byProduct?: { code: string; title: string; count: number }[] }>('planning.unlinked');
   if (!r) return;
   const ids = [...r.none, ...r.partial];
   if (!ids.length) { notify('Every element has a task.'); return; }
@@ -170,7 +184,8 @@ export async function selectUnlinked(): Promise<void> {
   const model = s.panes.findIndex((p) => p.view !== 'gantt');
   if (model >= 0) focusPane(model);
   useUi.setState({ selected: ids, selection: ids[ids.length - 1] });
-  notify(`${r.none.length} element(s) without a task, ${r.partial.length} with layers without one: selected.`);
+  const by = byProductText(r.byProduct);
+  notify(`${r.none.length} element(s) without a task, ${r.partial.length} with layers without one: selected.${by ? ` By product: ${by}.` : ''}`);
 }
 
 /** TA: the elements selected put in a task chosen from a list. */

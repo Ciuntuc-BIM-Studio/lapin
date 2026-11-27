@@ -1,1 +1,1 @@
-{ "id": "scripting", "name": "Scripting", "assembly": "Lapin.Scripting.dll", "requires": ["core"] }
+{ "id": "scripting", "name": "Scripting", "assembly": "Lapin.Scripting.dll", "requires": ["core"], "api": 1 }

@@ -10,8 +10,8 @@
 import { Calculator, CalendarRange, FileSpreadsheet, FileText, ListChecks, Sheet, Sigma, Table2, Tags } from 'lucide-react';
 import type { LapinModule } from '../../platform/module';
 import { useUi } from '../../app/store';
-import { openCostTime } from './costTime';
-import { exportPdf, exportXlsx, formOnSheet, openEstimate, useEstimate } from './estimate';
+import { axisOf, niceStep, openCostTime, shortMoney } from './costTime';
+import { exportPdf, exportXlsx, formOnSheet, money, openEstimate, useEstimate, useEstimateData } from './estimate';
 import { exportTakeoff, takeoff } from './schedules';
 import { lazyPart } from '../../platform/lazyPart';
 // Lapin Extensions: the content packs this module's libraries take (docs/plan-extensions.md).
@@ -60,6 +60,9 @@ const cost: LapinModule = {
   }],
   views: { estimate: { label: 'Estimate', component: EstimateView }, costTime: { label: 'Cost over time', component: CostTimeView } },
   dialogs: { schedules: SchedulesDialog, 'cost.prices': PriceListsDialog, 'cost.map': MapArticlesDialog },
+  // For extension modules (docs/plan-extension-modules.md §6.3): money as the estimate shows it, a chart's axis, the estimate, its forms on sheets, cost over time.
+  api: 1,
+  exports: { money, shortMoney, axisOf, niceStep, useEstimateData, formOnSheet, openCostTime },
 };
 
 export default cost;

@@ -11,12 +11,18 @@ namespace Lapin.Planning;
 /// added and taken off by hand (ids), and the part of them it takes (<see cref="TaskParts"/>); its progress (stage 5): the
 /// actual start and finish and the percentage typed on it, its elements marked started or done, and its baseline; the start
 /// a resource levelling gave it (<c>levelStart</c>: no earlier than that day while it has not started; <see cref="Levelling"/> writes it,
-/// MS Project's leveling delay as a date), cleared when its start is set by hand.
+/// MS Project's leveling delay as a date), cleared when its start is set by hand. A level of effort task (a hammock,
+/// <c>effort: "loe"</c>, a Lapin attribute: IFC's IfcTaskTypeEnum has no such kind) takes its dates from others: from the
+/// start of its "from" task (<c>effortFrom</c>, else its SS predecessors) to the finish of its "to" task
+/// (<c>effortTo</c>, else its FF predecessors); see <see cref="Cpm"/>.
 /// </summary>
 public sealed record PlanTask(string Id, string Name, string? Parent, double Order, int Duration, bool Milestone, string? Constraint, DateOnly? ConstraintDate, bool Wet, string? Kind, string? Notes,
     TaskRule? Rule = null, string? Part = null, IReadOnlyList<string>? AddIds = null, IReadOnlyList<string>? RemoveIds = null,
-    DateOnly? ActualStart = null, DateOnly? ActualFinish = null, double? Complete = null, IReadOnlyDictionary<string, ElementMark>? MarkMap = null, TaskBaseline? Baseline = null, DateOnly? LevelStart = null)
+    DateOnly? ActualStart = null, DateOnly? ActualFinish = null, double? Complete = null, IReadOnlyDictionary<string, ElementMark>? MarkMap = null, TaskBaseline? Baseline = null, DateOnly? LevelStart = null,
+    string? Effort = null, string? EffortFrom = null, string? EffortTo = null)
 {
+    /// <summary>Whether it is a level of effort task (a hammock): its dates derived from the tasks it spans.</summary>
+    public bool Loe => Effort == Plan.LevelOfEffort;
     /// <summary>Its elements marked on site (stage 5): started, done, by element id.</summary>
     public IReadOnlyDictionary<string, ElementMark> Marks => MarkMap ?? EmptyMarks;
     static readonly Dictionary<string, ElementMark> EmptyMarks = [];
@@ -40,7 +46,19 @@ public sealed class Plan
     public const string TaskClass = "IfcTask";
     public const string SequenceClass = "IfcRelSequence";
     public static readonly string[] LinkTypes = ["FS", "SS", "FF", "SF"];
-    public static readonly string[] Constraints = ["snet", "mso"];
+    /// <summary>
+    /// A task's constraints: start no earlier than and must start on (with a date), and as late as possible (no date: the
+    /// task placed as late as its successors and the project's finish let it). No constraint is as soon as possible, the default.
+    /// </summary>
+    public static readonly string[] Constraints = ["snet", "mso", "alap"];
+    /// <summary>The constraints that need a date.</summary>
+    public static readonly string[] DatedConstraints = ["snet", "mso"];
+    /// <summary>The value of a task's <c>effort</c> attribute that makes it a level of effort task.</summary>
+    public const string LevelOfEffort = "loe";
+
+    /// <summary>A constraint as a task keeps it: a dated one only with its date, ALAP alone; null for anything else (as soon as possible).</summary>
+    public static string? ConstraintOf(string? c, DateOnly? date) =>
+        c == "alap" ? c : c != null && DatedConstraints.Contains(c) && date != null ? c : null;
     /// <summary>IFC4's IfcTaskTypeEnum, the kinds a task may be.</summary>
     public static readonly string[] Kinds = ["ATTENDANCE", "CONSTRUCTION", "DEMOLITION", "DISMANTLE", "DISPOSAL", "INSTALLATION", "LOGISTIC", "MAINTENANCE", "MOVE", "OPERATION", "REMOVAL", "RENOVATION"];
 
@@ -82,6 +100,15 @@ public sealed class Plan
     /// <summary>The project's schedule: the first IfcWorkSchedule (one per project in stage 1).</summary>
     public static Entity? ScheduleOf(IModelView m) => m.OfClass(ScheduleClass).FirstOrDefault();
 
+    /// <summary>
+    /// A task's attribute saying whether it shows in charts that draw the works by location (a location-based chart):
+    /// <c>false</c> leaves it out (procurement, management); missing or <c>true</c>, it shows. The Gantt shows every task.
+    /// </summary>
+    public const string ChartKey = "chart";
+
+    /// <summary>Whether a task shows in location-based charts (<see cref="ChartKey"/>).</summary>
+    public static bool InCharts(Entity e) => e.Attrs[ChartKey] is not JsonValue v || !v.TryGetValue<bool>(out var b) || b;
+
     /// <summary>The Monday after a day (the day itself when it is a Monday): where a new schedule starts.</summary>
     public static DateOnly NextMonday(DateOnly d)
     {
@@ -94,12 +121,13 @@ public sealed class Plan
     public static PlanTask ReadTask(Entity e) => new(
         e.Id, e.Name, e.Str("parent"), e.Num("order"),
         Math.Max(0, (int)Math.Round(e.Num("duration", 1))), e.Bool("milestone"),
-        e.Str("constraint") is { } c && Constraints.Contains(c) ? c : null, WorkCalendar.ParseDate(e.Str("constraintDate")),
+        e.Str("constraint") is { } c && Constraints.Contains(c) ? c : null, e.Str("constraint") == "alap" ? null : WorkCalendar.ParseDate(e.Str("constraintDate")),
         e.Bool("wet"), e.PredefinedType, e.Str("notes"),
         TaskRule.Read(e.Attrs["rule"]), PartOf(e.Str("part")), Ids(e.Attrs["add"]), Ids(e.Attrs["remove"]),
         WorkCalendar.ParseDate(e.Str("actualStart")), WorkCalendar.ParseDate(e.Str("actualFinish")),
         e.NumOrNull("complete") is { } pc && double.IsFinite(pc) ? Math.Clamp(pc, 0, 100) : null, ElementMark.ReadAll(e.Attrs["marks"]), TaskBaseline.Read(e.Attrs["baseline"]),
-        WorkCalendar.ParseDate(e.Str("levelStart")));
+        WorkCalendar.ParseDate(e.Str("levelStart")),
+        e.Str("effort") == LevelOfEffort ? LevelOfEffort : null, e.Str("effortFrom"), e.Str("effortTo"));
 
     static string? PartOf(string? s) { try { return TaskParts.Parse(s); } catch (CommandException) { return null; } }
 

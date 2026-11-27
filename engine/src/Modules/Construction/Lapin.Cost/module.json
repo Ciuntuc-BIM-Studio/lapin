@@ -1,1 +1,1 @@
-{ "id": "cost", "name": "Cost", "assembly": "Lapin.Cost.dll", "requires": ["core", "architecture"] }
+{ "id": "cost", "name": "Cost", "assembly": "Lapin.Cost.dll", "requires": ["core", "architecture"], "api": 1 }

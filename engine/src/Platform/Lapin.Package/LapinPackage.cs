@@ -20,13 +20,28 @@ public sealed record PackageManifest(
     /// <summary>The entries of other tools kept with the project (<see cref="PackageForeign"/>); left out when there are none, so an older Lapin reads the manifest as before.</summary>
     IReadOnlyList<PackagePart>? Foreign = null);
 
-public sealed record PackageModule(string Id, int SchemaVersion);
+/// <summary>
+/// A module the project was written with: its id and the schema of its part; <see cref="Extension"/> the extension it came
+/// in (an extension module from Lapin Extensions, docs/plan-extension-modules.md §4.4), none for a module of the edition;
+/// <see cref="Absent"/> true when the edition that wrote the file did not have it and carried the record over from the file
+/// it read (the project still holds its content). Both left out otherwise, so a manifest reads and writes as before.
+/// </summary>
+public sealed record PackageModule(string Id, int SchemaVersion, PackageExtension? Extension = null, bool? Absent = null);
+
+/// <summary>An extension a module came in: its catalogue id and version.</summary>
+public sealed record PackageExtension(string Id, string Version);
 
 /// <summary>A text a module writes into the package beside the model (<see cref="LapinPackage.TextFolders"/>): its path, its text (UTF-8), the module.</summary>
 public sealed record ModuleText(string Path, string Text, string Module);
 
 /// <summary>A project as read from a package.</summary>
-public sealed record PackageContent(IReadOnlyList<Entity> Entities, IReadOnlyList<Relation> Relations, IReadOnlyDictionary<string, string> Classes, JsonObject Document, PackageManifest Manifest);
+public sealed record PackageContent(IReadOnlyList<Entity> Entities, IReadOnlyList<Relation> Relations, IReadOnlyDictionary<string, string> Classes, JsonObject Document, PackageManifest Manifest)
+{
+    /// <summary>The extension modules the file was written with (loaded then, or carried over), by module id.</summary>
+    public IReadOnlyDictionary<string, Lapin.Model.FileExtension> Extensions =>
+        (Manifest.Modules ?? []).Where(m => m.Extension is { Id.Length: > 0 }).GroupBy(m => m.Id, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => new Lapin.Model.FileExtension(g.Key, g.First().SchemaVersion, g.First().Extension!.Id, g.First().Extension!.Version ?? ""), StringComparer.Ordinal);
+}
 
 /// <summary>
 /// What a save could not carry over from the package the project was read from (a version's part or an issued file, gone or
@@ -208,7 +223,7 @@ public static class LapinPackage
         }
         // The text parts of a module this edition lacks (decision 484), as the file had them: written back with the model it keeps.
         var mine = build.Parts.Select(p => p.Part.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var loaded = build.Manifest.Modules.Select(m => m.Id).ToHashSet(StringComparer.Ordinal);
+        var loaded = build.Manifest.Modules.Where(m => m.Absent != true).Select(m => m.Id).ToHashSet(StringComparer.Ordinal);
         var absent = (foreign?.ModuleParts ?? []).Where(p => p.Module is { } m && !loaded.Contains(m) && IsTextPath(p.Path) && mine.Add(p.Path)).ToList();
         var allParts = absent.Count == 0 ? build.Parts : [.. build.Parts, .. absent.Select(p => (p.Part with { Module = p.Module }, p.Bytes))];
         // Another tool's entry where Lapin writes its own (a script of the same name in scripts/): Lapin's is the project's.

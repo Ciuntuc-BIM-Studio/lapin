@@ -47,7 +47,8 @@ public sealed class ScheduleIfc : IIfcProcesses
         foreach (var t in p.Rows)
         {
             var tm = r.Times.GetValueOrDefault(t.Id);
-            var milestone = !p.IsSummary(t.Id) && (t.Milestone || t.Duration == 0);
+            var loe = Cpm.IsLoe(p, t.Id);
+            var milestone = !p.IsSummary(t.Id) && !loe && (t.Milestone || t.Duration == 0);
             var pr = p.ProgressOf(t.Id);
             IfcTaskTimeData? time = tm == null ? null : new IfcTaskTimeData(milestone ? 0 : tm.Duration,
                 At(tm.Start, dayStart), At(tm.Finish, milestone ? dayStart : dayEnd),
@@ -57,6 +58,14 @@ public sealed class ScheduleIfc : IIfcProcesses
                 tm.Status == "started" ? tm.Remaining : null);
             var props = new List<(string, string)>();
             if (t.Constraint != null && t.ConstraintDate is { } cd) { props.Add(("Constraint", t.Constraint)); props.Add(("ConstraintDate", WorkCalendar.Date(cd))); }
+            else if (t.Constraint == "alap") props.Add(("Constraint", "alap"));
+            // A level of effort task (IFC's IfcTaskTypeEnum has no such kind): Lapin's own fields, the tasks it spans by their GlobalIds.
+            if (loe)
+            {
+                props.Add(("Effort", Plan.LevelOfEffort));
+                if (t.EffortFrom is { } ef && p.ById.ContainsKey(ef)) props.Add(("EffortFrom", ef));
+                if (t.EffortTo is { } et && p.ById.ContainsKey(et)) props.Add(("EffortTo", et));
+            }
             if (t.Wet) props.Add(("Wet", "true"));
             props.Add(("Duration", $"{(milestone ? 0 : t.Duration)}"));
             // Its elements: the ones it takes now, as IFC's assignments; how it finds them (rule, part, exceptions) in the set, so Lapin reads the rule back.
@@ -70,6 +79,12 @@ public sealed class ScheduleIfc : IIfcProcesses
             if (t.ActualFinish is { } oaf) props.Add(("ActualFinish", WorkCalendar.Date(oaf)));
             if (t.Marks.Count > 0) props.Add(("Marks", new System.Text.Json.Nodes.JsonObject(t.Marks.Select(kv => KeyValuePair.Create(kv.Key, (System.Text.Json.Nodes.JsonNode?)kv.Value.ToJson()))).ToJsonString()));
             if (t.Baseline is { } bl) props.Add(("Baseline", bl.ToJson().ToJsonString()));
+            // Left out of location-based charts, and the phase of the works it belongs to (procurement): Lapin's own fields.
+            if (query.Model.Get(t.Id) is { } te)
+            {
+                if (!Plan.InCharts(te)) props.Add(("Chart", "false"));
+                if (te.Str("phase") is { } phase) props.Add(("Phase", phase));
+            }
             List<string>? elements = links?.ByTask.TryGetValue(t.Id, out var own) == true ? [.. own.Keys] : null;
             var acts = t.Kind is "DEMOLITION" or "REMOVAL" or "DISMANTLE" or "DISPOSAL";
             tasks.Add(new IfcTaskData(t.Id, t.Name, t.Notes, p.Wbs[t.Id], t.Parent is { } par && p.ById.ContainsKey(par) ? par : null, milestone, t.Kind, time, TaskSet, props,
@@ -164,9 +179,10 @@ public sealed class ScheduleIfc : IIfcProcesses
             double? pc = lapin ? (double.TryParse(Prop("Complete"), NumberStyles.Float, CultureInfo.InvariantCulture, out var own2) ? own2 : null)
                 : !summary && afi == null && t.Time?.Completion is { } frac && frac > 0 ? Math.Min(100, frac <= 1 ? frac * 100 : frac) : null;
             var baseline = TaskBaseline.Read(Parsed(Prop("Baseline"))) ?? baselineOf.GetValueOrDefault(t.Id);
-            tasks.Add(new ImportedTask(t.Id, t.Id, t.Name, t.Parent, t.IsMilestone ? 0 : Math.Max(0, duration), t.IsMilestone, cdate != null ? constraint : null, cdate,
+            var loe = Prop("Effort") == Plan.LevelOfEffort;
+            tasks.Add(new ImportedTask(t.Id, t.Id, t.Name, t.Parent, t.IsMilestone ? 0 : Math.Max(0, duration), t.IsMilestone, cdate != null || constraint == "alap" ? constraint : null, constraint == "alap" ? null : cdate,
                 t.Time?.ScheduleStart is { } st ? DateOnly.FromDateTime(st) : null, Prop("Wet") == "true", t.Predefined, t.Description, LinksOf(idOf, t, Prop, ref missing),
-                ast, afi, pc, baseline));
+                ast, afi, pc, baseline, loe, loe ? Prop("EffortFrom") : null, loe ? Prop("EffortTo") : null, Prop("Chart") == "false" ? false : null, Prop("Phase") is { Length: > 0 } ph ? ph : null));
         }
         // Parents before their children, siblings in the file's order.
         var byKey = tasks.ToDictionary(t => t.Key);

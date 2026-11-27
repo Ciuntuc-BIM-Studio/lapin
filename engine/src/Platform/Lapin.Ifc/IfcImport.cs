@@ -302,8 +302,10 @@ public static partial class IfcImport
                 }
                 foreach (var obj in Refs(r[4]))
                 {
-                    if (f.Get(obj) is not { } fe || Str(fe[0]) is not { } gid || edit.Model.Get(gid) is not { } target) continue;
-                    var refs = Classifications.RefsOf(target).Where(x => x.System != system.Id).Append((system.Id, code)).ToList();
+                    // The related objects are entity numbers (Refs), read as such; a code an element carried in its own attributes
+                    // for a system this project does not hold (the project the file came from) gives way to the file's.
+                    if (f.Entities.GetValueOrDefault(obj) is not { } fe || Str(fe[0]) is not { } gid || edit.Model.Get(gid) is not { } target) continue;
+                    var refs = Classifications.RefsOf(target).Where(x => x.System != system.Id && edit.Model.Get(x.System) is { Class: Classifications.Class }).Append((system.Id, code)).ToList();
                     var attrs = target.CloneAttrs();
                     attrs[Classifications.Key] = new JsonArray(refs.Select(x => (JsonNode)new JsonObject { ["system"] = x.Item1, ["code"] = x.Item2 }).ToArray());
                     edit.Replace(target.With(attrs: attrs));

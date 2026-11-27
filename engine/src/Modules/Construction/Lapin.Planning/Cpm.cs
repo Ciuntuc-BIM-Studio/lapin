@@ -33,6 +33,22 @@ public sealed record CpmResult(IReadOnlyDictionary<string, TaskTimes> Times, Dat
 /// progress is reported through (MS Project's status date); the work left starts after it.
 /// A task already started or done holds nothing back in the backward pass. A task not started keeps the start a resource
 /// levelling gave it (<see cref="PlanTask.LevelStart"/>) unless asked for the schedule without it (<c>levelled: false</c>).
+/// <para>
+/// As late as possible (<c>constraint: "alap"</c>): once both passes are done, each such task not started is moved, the
+/// last first, as late as its successors (at the dates they now have) and the project's finish let it, so it delays
+/// nothing: a task with nothing after it goes to its late dates, one before others as far as their starts allow (its free
+/// float used up: its free float is 0 then, its predecessors' grows). Its total float and critical flag stay those of the
+/// as-soon-as-possible schedule, so the project's finish and its critical path do not change.
+/// </para>
+/// <para>
+/// Level of effort (a hammock, <see cref="PlanTask.Loe"/>): left out of both passes (it drives nothing and nothing it
+/// is linked to waits for it); then it starts at the start of its "from" task (<see cref="PlanTask.EffortFrom"/>; else the
+/// earliest its SS or FS predecessors give, with their lags) and finishes at the finish of its "to" task
+/// (<see cref="PlanTask.EffortTo"/>; else the latest its FF or SF predecessors give), at the dates those have once placed
+/// (so it follows them when they move); with no finish given, its own duration on from its start; with no start, the
+/// project's. It has no float and is never critical; its duration is the working days it spans. A summary over it spans it
+/// too, but takes its floats and critical flag from its other tasks. A plan without either is worked out as before.
+/// </para>
 /// </summary>
 public static class Cpm
 {
@@ -45,11 +61,17 @@ public static class Cpm
         var o = new List<(PlanLink, string, string)>();
         foreach (var l in p.Links)
             if (p.ById.ContainsKey(l.From) && p.ById.ContainsKey(l.To) && !Plan.Nested(p, l))
-                foreach (var a in p.LeavesOf(l.From))
-                    foreach (var b in p.LeavesOf(l.To))
+                foreach (var a in Leaves(p, l.From))
+                    foreach (var b in Leaves(p, l.To))
                         if (a != b) o.Add((l, a, b));
         return o;
     }
+
+    /// <summary>Whether a task is a level of effort leaf (a summary marked so is a summary).</summary>
+    public static bool IsLoe(Plan p, string id) => p.ById.TryGetValue(id, out var t) && t.Loe && !p.IsSummary(id);
+
+    /// <summary>The leaves under a task that the passes schedule: level of effort tasks left out.</summary>
+    static IEnumerable<string> Leaves(Plan p, string id) => p.LeavesOf(id).Where(x => !IsLoe(p, x));
 
     /// <summary>The leaves in an order where every predecessor comes first; null when the links make a loop.</summary>
     static List<string>? Topological(IReadOnlyList<string> leaves, List<(PlanLink Link, string From, string To)> edges)
@@ -77,18 +99,19 @@ public static class Cpm
     {
         var edges = Edges(p);
         if (extra != null)
-            foreach (var a in p.LeavesOf(extra.From))
-                foreach (var b in p.LeavesOf(extra.To))
+            foreach (var a in Leaves(p, extra.From))
+                foreach (var b in Leaves(p, extra.To))
                     edges.Add((extra, a, b));
         if (edges.Any(e => e.From == e.To)) return true;
-        var leaves = p.Rows.Where(t => !p.IsSummary(t.Id)).Select(t => t.Id).ToList();
+        var leaves = p.Rows.Where(t => !p.IsSummary(t.Id) && !IsLoe(p, t.Id)).Select(t => t.Id).ToList();
         return Topological(leaves, edges) == null;
     }
 
     public static CpmResult Solve(Plan p, bool levelled = true)
     {
         var cal = p.Calendar;
-        var leaves = p.Rows.Where(t => !p.IsSummary(t.Id)).Select(t => t.Id).ToList();
+        var leaves = p.Rows.Where(t => !p.IsSummary(t.Id) && !IsLoe(p, t.Id)).Select(t => t.Id).ToList();
+        var loes = p.Rows.Where(t => IsLoe(p, t.Id)).Select(t => t.Id).ToList();
         var edges = Edges(p);
         var order = Topological(leaves, edges) ?? throw new CommandException("The links make a loop: a task waits for itself.");
         var incoming = leaves.ToDictionary(x => x, _ => new List<(PlanLink Link, string From)>());
@@ -110,7 +133,7 @@ public static class Cpm
 
         // A predecessor's start and finish as a link reads them: a summary's are its first leaf's start and its last leaf's finish.
         (DateOnly S, DateOnly F) Early(string task) =>
-            p.IsSummary(task) ? (p.LeavesOf(task).Min(x => es[x]), p.LeavesOf(task).Max(x => ef[x])) : (es[task], ef[task]);
+            p.IsSummary(task) ? (Leaves(p, task).Min(x => es[x]), Leaves(p, task).Max(x => ef[x])) : (es[task], ef[task]);
 
         // ── Forward: each leaf as early as its links, its constraint and the project's start let it.
         foreach (var id in order)
@@ -217,6 +240,40 @@ public static class Cpm
             return cal.Offset(s, d, wet);
         }
 
+        // ── As late as possible: each task not started so marked, the last first, as late as its successors (where they are
+        // now) and the project's finish let it. Its resume day (the total float's base) stays the early one.
+        for (var i = order.Count - 1; i >= 0; i--)
+        {
+            var id = order[i];
+            if (p.ById[id].Constraint != "alap" || status[id] != "planned") continue;
+            var d = Dur(id);
+            var wet = Wet(id);
+            var latest = finish;
+            foreach (var (l, to) in outgoing[id])
+            {
+                if (status[to] != "planned") continue;
+                var c = l.Type switch
+                {
+                    "SS" => Fwd(cal.Offset(es[to], -l.Lag), d, wet),
+                    "FF" => cal.Offset(ef[to], -l.Lag),
+                    "SF" => Fwd(cal.Offset(ef[to], -l.Lag), d, wet),
+                    _ => cal.Offset(es[to], -l.Lag),
+                };
+                if (c < latest) latest = c;
+            }
+            if (d == 0)
+            {
+                // A milestone on the last working day it may take (never before its early day).
+                var m = latest;
+                while (m > es[id] && !cal.Working(m, wet)) m = m.AddDays(-1);
+                if (m > es[id]) { es[id] = m; ef[id] = m; }
+                continue;
+            }
+            var end = cal.PrevEnd(latest, wet);
+            var s = cal.Offset(end, -d, wet);
+            if (s > es[id]) { es[id] = s; ef[id] = end; }
+        }
+
         var times = new Dictionary<string, TaskTimes>();
         var criticalLinks = new HashSet<string>();
         foreach (var id in order)
@@ -263,6 +320,46 @@ public static class Cpm
             };
             if (cal.WorkingDays(need, es[b]) <= 0) criticalLinks.Add(l.Id);
         }
+        // Level of effort: from its "from" task's start (or its SS / FS predecessors') to its "to" task's finish (or its FF / SF predecessors').
+        if (loes.Count > 0)
+        {
+            (DateOnly S, DateOnly F)? Span(string task)
+            {
+                if (!p.ById.ContainsKey(task) || IsLoe(p, task)) return null;
+                var under = Leaves(p, task).Where(es.ContainsKey).ToList();
+                return under.Count == 0 ? null : (under.Min(x => es[x]), under.Max(x => ef[x]));
+            }
+            foreach (var id in loes)
+            {
+                var t = p.ById[id];
+                var wet = Wet(id);
+                var starts = new List<DateOnly>();
+                var finishes = new List<DateOnly>();
+                var drivers = new List<string>();
+                if (t.EffortFrom is { } fromId && fromId != id && Span(fromId) is { } fs) { starts.Add(fs.S); drivers.Add(fromId); }
+                if (t.EffortTo is { } toId && toId != id && Span(toId) is { } ts) { finishes.Add(ts.F); drivers.Add(toId); }
+                foreach (var l in p.Links)
+                {
+                    if (l.To != id || l.From == id || Span(l.From) is not { } sp) continue;
+                    drivers.Add(l.From);
+                    switch (l.Type)
+                    {
+                        case "SS" when t.EffortFrom == null: starts.Add(cal.Offset(sp.S, l.Lag)); break;
+                        case "FS" when t.EffortFrom == null: starts.Add(cal.Offset(sp.F, l.Lag)); break;
+                        case "FF" when t.EffortTo == null: finishes.Add(cal.Offset(sp.F, l.Lag)); break;
+                        case "SF" when t.EffortTo == null: finishes.Add(cal.Offset(sp.S, l.Lag)); break;
+                    }
+                }
+                var s = cal.NextWorking(starts.Count > 0 ? starts.Min() : start, wet);
+                var f = finishes.Count > 0 ? finishes.Max() : Dur(id) == 0 ? s : cal.Offset(s, Dur(id), wet);
+                if (f < s) f = s;
+                var under = drivers.SelectMany(x => Leaves(p, x)).Where(status.ContainsKey).Distinct().ToList();
+                var st = under.Count > 0 && under.All(x => status[x] == "done") ? "done" : under.Any(x => status[x] != "planned") ? "started" : "planned";
+                var days = cal.WorkingDays(s, f, wet);
+                var left = st == "done" ? 0 : st == "started" && dataDate is { } dd && dd >= s ? Math.Max(0, cal.WorkingDays(dd.AddDays(1), f, wet)) : days;
+                times[id] = new TaskTimes(s, f, s, f, 0, 0, false, days, st, left);
+            }
+        }
         // Summaries span their leaves.
         foreach (var t in p.Rows.Where(t => p.IsSummary(t.Id)))
         {
@@ -270,7 +367,7 @@ public static class Cpm
             if (under.Count == 0) { times[t.Id] = new TaskTimes(start, start, start, start, 0, 0, false, 0); continue; }
             var s = under.Min(x => times[x].EarlyStart);
             var f = under.Max(x => times[x].EarlyFinish);
-            var open = under.Where(x => times[x].Status != "done").ToList();
+            var open = under.Where(x => times[x].Status != "done" && !IsLoe(p, x)).ToList();
             var tf = open.Count > 0 ? open.Min(x => times[x].TotalFloat) : 0;
             var st = under.All(x => times[x].Status == "done") ? "done" : under.Any(x => times[x].Status != "planned") ? "started" : "planned";
             times[t.Id] = new TaskTimes(s, f, under.Min(x => times[x].LateStart), under.Max(x => times[x].LateFinish), tf,

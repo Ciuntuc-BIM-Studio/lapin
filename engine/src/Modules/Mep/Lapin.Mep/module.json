@@ -1,1 +1,1 @@
-{ "id": "mep", "name": "MEP", "assembly": "Lapin.Mep.dll", "requires": ["core", "architecture", "drafting"] }
+{ "id": "mep", "name": "MEP", "assembly": "Lapin.Mep.dll", "requires": ["core", "architecture", "drafting"], "api": 1 }

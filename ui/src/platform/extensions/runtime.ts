@@ -28,6 +28,7 @@ import { hasModule } from '../brand';
 import { download, installExtension, uninstallExtension, type ContentInstaller, type InstalledExtension, type InstalledStore } from './install';
 import { readIndex, type AppFacts, type ExtensionKind, type Manifest } from './manifest';
 import { STORE_KEYS } from './keys';
+import { moduleInstaller } from './moduleKind';
 import { afterCheck, checkLicenceKey, dueForCheck, LicenceError, type LicenceRecord, type StoreAnswer } from './licence';
 import { isPaid } from './manifest';
 import { catalogueTrust, trustProblem, type CatalogueTrust } from './signature';
@@ -241,6 +242,9 @@ export async function uninstall(id: string): Promise<void> {
 // ------------------------------------------------------------ the shell's own kinds: project templates, scripts
 
 const text = (bytes: Uint8Array) => new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+
+/** An extension module (C# engine half and interface plug-in): checked, unpacked and loaded by the desktop's engine (moduleKind.ts). */
+addContentInstaller(moduleInstaller);
 
 /** A Python script: kept as it is, never run here; the console (scripting module) will list it under My scripts. */
 addContentInstaller({

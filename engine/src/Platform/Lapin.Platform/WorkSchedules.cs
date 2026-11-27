@@ -60,8 +60,8 @@ public sealed class ScheduleTimes(string? id, string name, DateOnly start, DateO
 
     /// <summary>
     /// How long a span lasts in a time unit (<see cref="MeasureUnits"/>): calendar days (both ends counted), working days by
-    /// the calendar (its weekdays, holidays and exceptions), working hours (those days times the day's hours), or months (whole
-    /// calendar months from its start, the rest as the part of its month: 1 March to 31 May is 3).
+    /// the calendar (its weekdays, holidays and exceptions), working hours (those days times the day's hours), weeks (calendar
+    /// days over seven), or months (whole calendar months from its start, the rest as the part of its month: 1 March to 31 May is 3).
     /// </summary>
     public double Length(DateOnly from, DateOnly to, string unit) => unit switch
     {
@@ -69,6 +69,7 @@ public sealed class ScheduleTimes(string? id, string name, DateOnly start, DateO
         MeasureUnits.WorkingDays => WorkedDays(from, to).Count,
         MeasureUnits.Hours => WorkedDays(from, to).Count * hoursPerDay,
         MeasureUnits.Months => Months(from, to.AddDays(1)),
+        MeasureUnits.Weeks => (to.DayNumber - from.DayNumber + 1) / 7.0,
         _ => throw new ArgumentException($"No such time unit: {unit}."),
     };
 

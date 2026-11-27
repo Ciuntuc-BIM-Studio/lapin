@@ -22,6 +22,8 @@ public sealed partial class Session
     /// <summary>What each read id is read by: the elements to rebuild when it changes.</summary>
     readonly Dictionary<string, HashSet<string>> _readers = [];
     readonly Dictionary<string, string> _foreignClasses = [];
+    /// <summary>The extension modules the file opened was written with (by module id): those this edition lacks are reported and written back.</summary>
+    readonly Dictionary<string, FileExtension> _fileExtensions = new(StringComparer.Ordinal);
     long _version;
 
     /// <summary>An element as built: its geometry, what it read, its render item as the tessellator made it (its edges before the seams go), and its box.</summary>
@@ -215,6 +217,7 @@ public sealed partial class Session
     {
         RefuseDuringStep(ownerToo: true);
         _foreignClasses.Clear();
+        _fileExtensions.Clear();
         ForgetMeshes();
         _history.Load([], []);
         _history.Execute("New project", edit =>
@@ -278,6 +281,17 @@ public sealed partial class Session
         return [.. o];
     }
 
+    /// <summary>
+    /// The extension modules the project was written with that this edition has not loaded (an extension not installed, or
+    /// disabled), in module order: the interface offers to install them; their content is kept as for any absent module,
+    /// and the next save records them again (docs/plan-extension-modules.md §4.4).
+    /// </summary>
+    public IReadOnlyList<FileExtension> AbsentExtensions()
+    {
+        var loaded = _catalog.Modules.Select(m => m.Id).ToHashSet();
+        return [.. _fileExtensions.Values.Where(x => !loaded.Contains(x.Module)).OrderBy(x => x.Module, StringComparer.Ordinal)];
+    }
+
     /// <summary>Classes a file's content brought in through an edit (a version restored): which module wrote each, for the next save.</summary>
     public void AdoptClasses(IReadOnlyDictionary<string, string> classModules)
     {
@@ -286,10 +300,14 @@ public sealed partial class Session
     }
 
     /// <summary>Replaces the model with one read from a file (no undo step). <paramref name="classModules"/>: which module wrote each class.</summary>
-    public Diff Load(IEnumerable<Entity> entities, IEnumerable<Relation> relations, string? path, IReadOnlyDictionary<string, string>? classModules = null)
+    /// <param name="extensions">The extension modules the file was written with (<see cref="FileExtension"/>), by module id.</param>
+    public Diff Load(IEnumerable<Entity> entities, IEnumerable<Relation> relations, string? path, IReadOnlyDictionary<string, string>? classModules = null,
+        IReadOnlyDictionary<string, FileExtension>? extensions = null)
     {
         RefuseDuringStep(ownerToo: true);
         _foreignClasses.Clear();
+        _fileExtensions.Clear();
+        foreach (var (module, x) in extensions ?? new Dictionary<string, FileExtension>()) _fileExtensions[module] = x;
         foreach (var (cls, module) in classModules ?? new Dictionary<string, string>())
             if (_catalog.OwnerOf(cls) == null) _foreignClasses[cls] = module;
         var (es, rs) = Upgraded(entities, relations);

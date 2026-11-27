@@ -26,6 +26,7 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
     readonly List<ILapinModule> _modules = [];
     readonly List<(OverrideInfo Info, Delegate Handler)> _pending = [];
     readonly List<OverrideInfo> _overrides = [];
+    readonly Dictionary<string, (string Id, string Version)> _extensions = new(StringComparer.Ordinal);
 
     public IReadOnlyList<ILapinModule> Modules => _modules;
     /// <summary>What the modules override of each other's (<see cref="IModuleRegistry.Override"/>), in load order: none in the editions of this repository.</summary>
@@ -36,7 +37,28 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
     public IEnumerable<string> QueryNames => _queries.Keys;
     public IReadOnlyDictionary<string, JsonNode> Catalogs => _catalogs;
 
-    public static ModuleCatalog Create(IEnumerable<ILapinModule> modules)
+    /// <summary>The modules loaded from extensions (docs/plan-extension-modules.md §2.1), by module id: the extension's id and version, recorded in the projects they save.</summary>
+    public IReadOnlyDictionary<string, (string Id, string Version)> Extensions => _extensions;
+
+    /// <summary>A loaded module marked as the one an extension brought (the extension loader calls it once the module registered).</summary>
+    public void MarkExtension(string moduleId, string extensionId, string version)
+    {
+        if (!_modules.Any(m => m.Id == moduleId)) throw new InvalidOperationException($"Module „{moduleId}” is not loaded.");
+        if (string.IsNullOrWhiteSpace(extensionId) || string.IsNullOrWhiteSpace(version)) throw new ArgumentException("An extension has an id and a version.");
+        _extensions[moduleId] = (extensionId, version);
+    }
+
+    public static ModuleCatalog Create(IEnumerable<ILapinModule> modules) => Create(modules, [], (_, _) => { });
+
+    /// <summary>
+    /// The product's modules, then extension modules (docs/plan-extension-modules.md §2.1, step 5). An extension's <c>Register</c>
+    /// runs against a recording registry, and what it recorded is committed only when it returned: one that throws (a
+    /// <see cref="TypeLoadException"/> or <see cref="MissingMethodException"/> from an extension built against an API that has
+    /// changed), or whose additions clash with what is there, leaves nothing in the catalog and is reported to
+    /// <paramref name="failed"/>; the others and the engine go on. An extension names everything under its own id and overrides
+    /// nothing of other modules (stage 2).
+    /// </summary>
+    public static ModuleCatalog Create(IEnumerable<ILapinModule> modules, IEnumerable<ILapinModule> extensions, Action<ILapinModule, Exception> failed)
     {
         var c = new ModuleCatalog();
         foreach (var m in modules.Prepend(new CoreModule()))
@@ -44,6 +66,25 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
             if (c._modules.Any(x => x.Id == m.Id)) throw new InvalidOperationException($"Module „{m.Id}” is loaded twice.");
             c._modules.Add(m);
             m.Register(new Registry(c, m.Id));
+        }
+        foreach (var x in extensions)
+        {
+            if (c._modules.Any(y => y.Id == x.Id)) { failed(x, new InvalidOperationException($"Module „{x.Id}” is loaded already.")); continue; }
+            var recorded = new RecordingRegistry();
+            try { x.Register(recorded); }
+            catch (Exception e) { failed(x, e is System.Reflection.TargetInvocationException { InnerException: { } inner } ? inner : e); continue; }
+            var undo = new List<Action>();
+            try
+            {
+                var r = new Registry(c, x.Id, undo);
+                foreach (var call in recorded.Calls) call(r);
+                c._modules.Add(x);
+            }
+            catch (Exception e)
+            {
+                for (var i = undo.Count - 1; i >= 0; i--) undo[i]();
+                failed(x, e);
+            }
         }
         // Overrides wrap what every module registered, whichever loaded first: each one round the one before it.
         foreach (var (info, handler) in c._pending) c.Wrap(info, handler);
@@ -289,60 +330,108 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
 
     public IReadOnlyList<T> All<T>() where T : class => _services.Where(s => s.Contract == typeof(T)).Select(s => (T)s.Implementation).ToList();
 
-    sealed class Registry(ModuleCatalog c, string module) : IModuleRegistry
+    /// <summary>What an extension's <c>Register</c> asks for, kept until it returns (docs/plan-extension-modules.md §2.1, step 5).</summary>
+    sealed class RecordingRegistry : IModuleRegistry
     {
-        string Qualified(string name) => name.Contains('.') ? name : $"{module}.{name}";
+        public readonly List<Action<IModuleRegistry>> Calls = [];
+        public void Class(ClassDescriptor descriptor) => Calls.Add(r => r.Class(descriptor));
+        public void Command(string name, string label, CommandHandler handler) => Calls.Add(r => r.Command(name, label, handler));
+        public void Query(string name, QueryHandler handler) => Calls.Add(r => r.Query(name, handler));
+        public void Geometry(string ifcClass, GeometryProducer producer) => Calls.Add(r => r.Geometry(ifcClass, producer));
+        public void Quantities(string ifcClass, QuantityProducer producer) => Calls.Add(r => r.Quantities(ifcClass, producer));
+        public void Cutter(string ifcClass, int priority, EnvelopeProducer? envelope) => Calls.Add(r => r.Cutter(ifcClass, priority, envelope));
+        public void PathElement(string ifcClass, PathFrame frame) => Calls.Add(r => r.PathElement(ifcClass, frame));
+        public void Catalog(string name, JsonNode data) => Calls.Add(r => r.Catalog(name, data));
+        public void Service<T>(T implementation) where T : class => Calls.Add(r => r.Service(implementation));
+        public void Override(string command, CommandOverride handler) => Calls.Add(r => r.Override(command, handler));
+        public void OverrideQuery(string query, QueryOverride handler) => Calls.Add(r => r.OverrideQuery(query, handler));
+    }
+
+    /// <summary>
+    /// Registers a module's additions. With <paramref name="undo"/> it registers an extension's: each addition leaves how to take it
+    /// back, names must be under the extension's own id, and overrides are refused.
+    /// </summary>
+    sealed class Registry(ModuleCatalog c, string module, List<Action>? undo = null) : IModuleRegistry
+    {
+        bool Extension => undo != null;
+
+        string Qualified(string name)
+        {
+            var q = name.Contains('.') ? name : $"{module}.{name}";
+            if (Extension && !q.StartsWith(module + ".", StringComparison.Ordinal)) throw new InvalidOperationException($"The extension „{module}” names „{name}” outside its own id.");
+            return q;
+        }
+
+        void Set<TKey, TValue>(Dictionary<TKey, TValue> d, TKey key, TValue value) where TKey : notnull
+        {
+            if (undo != null)
+            {
+                if (d.TryGetValue(key, out var old)) undo.Add(() => d[key] = old);
+                else undo.Add(() => d.Remove(key));
+            }
+            d[key] = value;
+        }
 
         public void Class(ClassDescriptor d)
         {
             if (c._classes.TryGetValue(d.Class, out var owner)) throw new InvalidOperationException($"{d.Class} is owned by „{owner.Module}”; „{module}” cannot own it too.");
             if (module != CoreModule.ModuleId && CoreModule.Owns(d.Class)) throw new InvalidOperationException($"{d.Class} belongs to the platform.");
-            c._classes[d.Class] = (d, module);
+            Set(c._classes, d.Class, (d, module));
         }
 
         public void Command(string name, string label, CommandHandler handler)
         {
             var q = Qualified(name);
-            if (!c._commands.TryAdd(q, new CommandEntry(q, label, module, handler))) throw new InvalidOperationException($"Command {q} is registered twice.");
+            if (c._commands.ContainsKey(q)) throw new InvalidOperationException($"Command {q} is registered twice.");
+            Set(c._commands, q, new CommandEntry(q, label, module, handler));
         }
 
         public void Query(string name, QueryHandler handler)
         {
             var q = Qualified(name);
-            if (!c._queries.TryAdd(q, handler)) throw new InvalidOperationException($"Query {q} is registered twice.");
+            if (c._queries.ContainsKey(q)) throw new InvalidOperationException($"Query {q} is registered twice.");
+            Set(c._queries, q, handler);
         }
 
         public void Geometry(string ifcClass, GeometryProducer producer)
         {
             if (c.OwnerOf(ifcClass) != module) throw new InvalidOperationException($"„{module}” builds the geometry of {ifcClass}, which it does not own.");
-            c._geometry[ifcClass] = producer;
+            Set(c._geometry, ifcClass, producer);
         }
 
         public void Quantities(string ifcClass, QuantityProducer producer)
         {
             if (c.OwnerOf(ifcClass) != module) throw new InvalidOperationException($"„{module}” measures {ifcClass}, which it does not own.");
-            c._quantities[ifcClass] = producer;
+            Set(c._quantities, ifcClass, producer);
         }
 
         public void Cutter(string ifcClass, int priority, EnvelopeProducer? envelope)
         {
             if (c.OwnerOf(ifcClass) != module) throw new InvalidOperationException($"„{module}” gives cut priorities to {ifcClass}, which it does not own.");
-            c._cutters[ifcClass] = (priority, envelope);
+            Set(c._cutters, ifcClass, (priority, envelope));
         }
 
         public void PathElement(string ifcClass, PathFrame frame)
         {
             if (c.OwnerOf(ifcClass) != module) throw new InvalidOperationException($"„{module}” makes {ifcClass} a path element, which it does not own.");
-            c._paths[ifcClass] = frame;
+            Set(c._paths, ifcClass, frame);
         }
 
-        public void Catalog(string name, JsonNode data) => c._catalogs[Qualified(name)] = data;
+        public void Catalog(string name, JsonNode data) => Set(c._catalogs, Qualified(name), data);
 
-        public void Service<T>(T implementation) where T : class => c._services.Add((typeof(T), implementation));
+        public void Service<T>(T implementation) where T : class
+        {
+            // Undone last-first, so the index still holds this one.
+            var at = c._services.Count;
+            c._services.Add((typeof(T), implementation));
+            undo?.Add(() => c._services.RemoveAt(at));
+        }
 
-        public void Override(string command, CommandOverride handler) => c._pending.Add((new OverrideInfo("command", Full(command, "command"), module), handler));
+        public void Override(string command, CommandOverride handler) => (Extension ? throw NoOverride(command) : c._pending).Add((new OverrideInfo("command", Full(command, "command"), module), handler));
 
-        public void OverrideQuery(string query, QueryOverride handler) => c._pending.Add((new OverrideInfo("query", Full(query, "query"), module), handler));
+        public void OverrideQuery(string query, QueryOverride handler) => (Extension ? throw NoOverride(query) : c._pending).Add((new OverrideInfo("query", Full(query, "query"), module), handler));
+
+        InvalidOperationException NoOverride(string name) => new($"The extension „{module}” overrides „{name}”: extensions override nothing of other modules yet.");
 
         string Full(string name, string kind) => name.Contains('.') ? name
             : throw new InvalidOperationException($"„{module}” overrides the {kind} „{name}”: name it in full, with its module („architecture.addWall”).");

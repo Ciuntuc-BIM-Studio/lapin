@@ -21,9 +21,11 @@ import { bars, cleanSpec, DEMOLITION, moveStep, normLabel, quantityText, stepFor
 import { openGantt, useSchedule } from './schedule';
 import { DraftConditions } from '../../shell/ConditionsEditor';
 import { FieldPicker } from '../../shell/FieldPicker';
+import { generatorSections, sectionValue, withSectionValue } from './generatorSections';
 
 const TABS = [['start', 'Start'], ['sequence', 'Sequence'], ['durations', 'Durations'], ['calendar', 'Calendar']] as const;
-type Tab = (typeof TABS)[number][0];
+/** A tab of its own, or a section another module added (generatorSections.ts), by its id. */
+type Tab = string;
 
 interface ClassOption { id: string; name: string; count: number }
 
@@ -197,6 +199,10 @@ export function GenerateDialog() {
     );
   };
 
+  // The tabs: its own, the sections other modules added (an extension's) before Calendar.
+  const added = generatorSections();
+  const tabs: (readonly [string, string])[] = [...TABS.slice(0, -1), ...added.map((x) => [x.id, x.label] as const), TABS[TABS.length - 1]];
+
   if (!spec) return null;
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="Generate schedule">
@@ -228,7 +234,7 @@ export function GenerateDialog() {
           </div>
           <div className="roof-edit">
             <div className="tabs-inline" role="tablist">
-              {TABS.map(([k, l]) => <button key={k} type="button" role="tab" data-tab={`gen-${k}`} aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
+              {tabs.map(([k, l]) => <button key={k} type="button" role="tab" data-tab={`gen-${k}`} aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
             </div>
             <div className="joinery-edit">
               <div className="joinery-form gen-form">
@@ -293,6 +299,11 @@ export function GenerateDialog() {
                     </tbody>
                   </table>
                 </>}
+                {added.filter((x) => x.id === tab).map((x) => {
+                  const Section = x.component;
+                  return <Section key={x.id} value={sectionValue(x, spec)} onChange={(v) => change(withSectionValue(x, spec, v))} spec={spec}
+                    defaults={options?.contributors?.[x.id]} options={options} preview={preview} />;
+                })}
                 {tab === 'calendar' && schedule && <>
                   <dl className="fields roof-summary">
                     <dt>Calendar</dt><dd data-no-i18n>{schedule.calendar.name}</dd>

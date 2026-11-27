@@ -17,7 +17,8 @@ export interface GenStep {
   conditions?: Condition[]; splitBy?: string[]; durationField?: string; quantityField?: string;
 }
 
-export interface GenSpec { template: string; steps: GenStep[]; byStorey: boolean; demolition: boolean; formwork: boolean; scaffolding: boolean }
+/** The generator's spec; any other key is a contributor's part (an extension's), kept as it came (generatorSections.ts). */
+export interface GenSpec { template: string; steps: GenStep[]; byStorey: boolean; demolition: boolean; formwork: boolean; scaffolding: boolean; [part: string]: unknown }
 
 export interface Template { id: string; label: string; description: string; spec: GenSpec }
 export interface OwnStyle { id: string; label: string; spec: GenSpec }
@@ -27,20 +28,24 @@ export interface NormsDto { count: number; source: string | null; indicative: bo
 
 export interface GeneratorOptions {
   suggested: string; spec: GenSpec; generated: boolean; start: string; tasks: number; styles: OwnStyle[]; norms: NormsDto;
+  /** The engine's generator contributors in this edition, by key, with what their sections start from. */
+  contributors?: Record<string, unknown>;
 }
 
 export interface PreviewTask {
   id: string; name: string; level: number; summary: boolean; start: string; finish: string; duration: number; critical: boolean; count: number;
-  source?: 'norm' | 'default'; quantity?: number; unit?: string; norm?: string; crew?: number; kept?: boolean;
+  source?: string; quantity?: number; unit?: string; norm?: string; crew?: number; kept?: boolean; phase?: string;
 }
 
 export interface PreviewSummary {
   tasks: number; start: string; finish: string; workingDays: number; total: number; linked: number; none: string[]; partial: string[];
   unlinkedClasses: string[]; fromNorms: number; byDefault: number; noNorm: string[]; indicative: boolean;
   formwork: number; scaffolds: number; demolished: number; kept: number; removed: number;
+  /** The tasks each contributor made (not its summaries), by its key. */
+  contributed?: Record<string, number>;
 }
 
-export interface PreviewDto { spec: GenSpec; tasks: PreviewTask[]; problem: string | null; summary: PreviewSummary }
+export interface PreviewDto { spec: GenSpec; tasks: PreviewTask[]; problem: string | null; summary: PreviewSummary; notes?: string[] }
 
 /** The demolition step's key: its elements are those the phases demolish, not kinds. */
 export const DEMOLITION = 'demolition';

@@ -92,6 +92,12 @@ Devizul e în **RON** sau **EUR**. **1 EUR =** e cursul proiectului: o listă de
 
 Bara de unelte arată și ce nu e prețuit: **N tip(uri) fără preț** (un clic deschide Atribuie articole) și codurile pe care nu le are nicio listă. **Un rând al tău** adaugă o lucrare care nu e în model (împrejmuirea șantierului, o provizie): scrie-i codul, denumirea, unitatea, cantitatea și prețurile. Un rând cu cod și fără prețuri le ia din lista de prețuri.
 
+### Rânduri legate de timp
+
+Unele costuri țin cât țin lucrările: șeful de șantier, dirigenția, baraca de șantier, o macara închiriată, paza. Un procent de cheltuieli indirecte nu poate spune că o întârziere le face mai scumpe. **Un rând legat de timp (tarif × durată)**, sub rânduri, adaugă unul: un tarif pe **săptămână**, pe **lună**, pe **zi lucrătoare** sau pe **zi calendaristică** (îl alegi lângă descriere) înmulțit cu cât ține sarcina lui. Alege sarcina lângă el: de obicei o [sarcină de nivel de efort](planning.md) (conducerea șantierului de la primele lucrări la predare), orice sarcină sau **Tot proiectul**. Cantitatea lui e timpul acela, calculat din program la fiecare schimbare, iar zilele pe care le acoperă apar lângă descriere: când lucrările întârzie, rândul ține mai mult și costă mai mult. Scrie-i tariful în coloanele de preț (Material pentru un tarif global, Manoperă pentru oamenii plătiți pe șantier, cum îl prețuiești).
+
+Intră în capitolul lui, **Time-related / preliminaries**, dacă nu-i dai altul, și se adaugă la cheltuielile directe ca orice rând. Cheltuielile indirecte, profitul și TVA-ul rămân procente, ca înainte: un rând legat de timp stă lângă ele, nu în locul lor. Fără program (sau fără modulul Planificare), cantitatea lui e cea scrisă, iar o notă spune de ce.
+
 ## Formularele
 
 ![Lista cantităților de lucrări (F3) a aceluiași deviz](shots/estimate-f3.webp)
@@ -120,7 +126,7 @@ Când proiectul are un program al lucrărilor (tabul **Execuție**), devizul se 
 - deasupra, **bugetul la terminare** (cheltuielile directe ale devizului), **costul la zi** și ce e **neprogramat**, dacă e ceva: rânduri ale căror elemente nu le construiește nicio sarcină (un clic deschide devizul);
 - dedesubt, **tabelul lunar**: costul fiecărui capitol pe lună, ce e neprogramat și totalul lui.
 
-Valorile sunt cheltuieli directe, ca rândurile devizului. Gantt-ul arată costul fiecărei sarcini în coloana **Cost** (vezi [Planificare](planning.md)).
+Un rând legat de timp se întinde pe zilele lucrătoare ale sarcinii lui sau, dacă nu numește niciuna, ale întregului proiect; pe tot proiectul, partea lui realizată e partea acelor zile până la data de stare. Valorile sunt cheltuieli directe, ca rândurile devizului. Gantt-ul arată costul fiecărei sarcini în coloana **Cost** (vezi [Planificare](planning.md)).
 
 ![Curba S pe o planșă](shots/cost-curve-sheet.webp)
 
@@ -134,4 +140,4 @@ Situațiile de lucrări lunare, valoarea câștigată și mai multe linii de baz
 
 **Fișier → Exportă → Exportă IFC, Fragments sau BOS…** scrie devizul ca **IfcCostSchedule**: capitolele și rândurile ca **IfcCostItem**, cantitatea fiecărui rând și prețurile lui unitare ca patru **IfcCostValue** (Material, Labour, Equipment, Transport), elementele pe care le măsoară fiecare rând atribuite lui (**IfcRelAssignsToControl**), moneda ca **IfcMonetaryUnit** al proiectului. La import, un deviz își păstrează rândurile cum le are fișierul, cu aceleași totaluri. Bifează **Rânduri din model** ca să adaugi rândurile pe care le dă modelul tău.
 
-Cu un program al lucrărilor, fiecare rând e atribuit și sarcinilor în care se execută (**IfcRelAssignsToControl** spre **IfcTask**-urile lor). La import, rândurile își păstrează sarcinile, deci curba S revine la fel. Un rând prețuit după timpul pe șantier își scrie **Time** și **Duration** în **Lapin_CostItem**.
+Cu un program al lucrărilor, fiecare rând e atribuit și sarcinilor în care se execută (**IfcRelAssignsToControl** spre **IfcTask**-urile lor). La import, rândurile își păstrează sarcinile, deci curba S revine la fel. Un rând prețuit după timpul pe șantier își scrie **Time** și **Duration** în **Lapin_CostItem**. Un rând legat de timp își scrie acolo și unitatea tarifului (**Per**), iar sarcina lui ca sarcina rândului, deci citit înapoi urmează mai departe programul.

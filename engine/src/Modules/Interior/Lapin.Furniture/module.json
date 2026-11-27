@@ -1,1 +1,1 @@
-{ "id": "furniture", "name": "Furniture", "assembly": "Lapin.Furniture.dll", "requires": ["core", "architecture"] }
+{ "id": "furniture", "name": "Furniture", "assembly": "Lapin.Furniture.dll", "requires": ["core", "architecture"], "api": 1 }

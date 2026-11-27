@@ -22,6 +22,8 @@ import { ElementTasksSection, inSomeTask, TaskLinksSection } from './TaskLinksSe
 import { ganttOnSheet, SimulationCard, SimulationLooks, toggleSimulation, ViewDateSection } from './SimulationView';
 import { addTask, assignSelection, clearBaseline, exportMsp, exportXlsx, importMsp, importProgress, retimeFromFields, indent, linkSelected, markSelection, openGantt, outdent, saveBaseline, selectUnlinked, taskElementsOf, unlinkSelected } from './schedule';
 import { lazyPart } from '../../platform/lazyPart';
+import { dateOf, dayOf, dragDays, namesOf, showDate, ticks } from './gantt';
+import { addGeneratorSection } from './generatorSections';
 import { TaskResourcesSection } from './TaskResourcesSection';
 import { level, openHistogram, openResources } from './resources';
 
@@ -127,6 +129,9 @@ const planning: LapinModule = {
   ],
   expandSelection: taskElementsOf,
   overlays: [SelectionToTask, SimulationCard],
+  // For extension modules (docs/plan-extension-modules.md §6.3): the Gantt's date helpers, the Gantt, the generator's sections.
+  api: 1,
+  exports: { gantt: { dateOf, dayOf, ticks, showDate, namesOf, dragDays }, openGantt, addGeneratorSection },
 };
 
 export default planning;

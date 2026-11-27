@@ -23,6 +23,19 @@ public static class MsProject
     /// <summary>MS Project's custom field Text1 (its field id), which carries a task's elements under the name <see cref="LinksAlias"/>.</summary>
     const string LinksField = "188743731", LinksAlias = "Lapin elements";
 
+    /// <summary>
+    /// MS Project's custom field Text2, which marks a level of effort task (MS Project has no hammock) under the name
+    /// <see cref="EffortAlias"/>: <c>loe</c>, then the row (UID) of its from and to tasks (<c>loe;from=3;to=7</c>). MS Project
+    /// sees a task of the days it spans starting no earlier than its start; Lapin reads it back as a level of effort task.
+    /// </summary>
+    const string EffortField = "188743734", EffortAlias = "Lapin effort";
+    /// <summary>MS Project's custom field Flag1 (its field id), Yes on a task left out of location-based charts, named <see cref="ChartAlias"/>.</summary>
+    const string ChartField = "188743752", ChartAlias = "Lapin not in charts";
+    /// <summary>MS Project's Text3, which shows a task's products (the PBS codes its rule names, „40.20”) under <see cref="PbsAlias"/>: for reading and grouping in MS Project only, Text1 carries the rule.</summary>
+    const string PbsField = "188743737", PbsAlias = "Lapin PBS";
+
+    static string? PbsText(PlanTask t) => t.Rule is { Products.Count: > 0 } r ? string.Join(", ", r.Products.Select(p => p.Code)) : null;
+
     static string Dt(DateOnly d, string time) => $"{WorkCalendar.Date(d)}T{time}:00";
 
     static string Time(TimeOnly t) => t.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
@@ -34,7 +47,7 @@ public static class MsProject
         return $"PT{minutes / 60}H{minutes % 60}M0S";
     }
 
-    public static string Write(Plan p, CpmResult r)
+    public static string Write(Plan p, CpmResult r, IModelView? model = null)
     {
         var cal = p.Calendar;
         var dayStart = TimeOnly.ParseExact(cal.DayStart, "HH:mm", CultureInfo.InvariantCulture);
@@ -64,14 +77,46 @@ public static class MsProject
 
         // The tasks' elements (their rule, part and exceptions) in the custom field Text1, named so (stage 2).
         var withLinks = p.Rows.Any(t => TaskLinkData.Of(t) != null);
-        if (withLinks)
+        var withEffort = p.Rows.Any(t => Cpm.IsLoe(p, t.Id));
+        // The tasks left out of location-based charts, in the flag Flag1 (only when there are some: a file as before otherwise).
+        var hidden = model == null ? [] : p.Rows.Where(t => model.Get(t.Id) is { } e && !Plan.InCharts(e)).Select(t => t.Id).ToHashSet();
+        var withPbs = p.Rows.Any(t => PbsText(t) != null);
+        if (withLinks || withEffort || withPbs || hidden.Count > 0)
         {
             w.WriteStartElement("ExtendedAttributes", Ns);
-            w.WriteStartElement("ExtendedAttribute", Ns);
-            E("FieldID", LinksField);
-            E("FieldName", "Text1");
-            E("Alias", LinksAlias);
-            w.WriteEndElement();
+            if (withLinks)
+            {
+                w.WriteStartElement("ExtendedAttribute", Ns);
+                E("FieldID", LinksField);
+                E("FieldName", "Text1");
+                E("Alias", LinksAlias);
+                w.WriteEndElement();
+            }
+            if (withEffort)
+            {
+                w.WriteStartElement("ExtendedAttribute", Ns);
+                E("FieldID", EffortField);
+                E("FieldName", "Text2");
+                E("Alias", EffortAlias);
+                w.WriteEndElement();
+            }
+            if (hidden.Count > 0)
+            {
+                w.WriteStartElement("ExtendedAttribute", Ns);
+                E("FieldID", ChartField);
+                E("FieldName", "Flag1");
+                E("Alias", ChartAlias);
+                w.WriteEndElement();
+            }
+            // The tasks' products (Product × Location) in Text2, when any task's rule names one.
+            if (withPbs)
+            {
+                w.WriteStartElement("ExtendedAttribute", Ns);
+                E("FieldID", PbsField);
+                E("FieldName", "Text3");
+                E("Alias", PbsAlias);
+                w.WriteEndElement();
+            }
             w.WriteEndElement();
         }
 
@@ -158,9 +203,11 @@ public static class MsProject
         {
             var tm = r.Times.GetValueOrDefault(t.Id);
             var summary = p.IsSummary(t.Id);
-            var milestone = !summary && (t.Milestone || t.Duration == 0);
-            // A task's own duration (one under way keeps it: what is left is its RemainingDuration); a summary's from its tasks.
-            var dur = summary ? tm?.Duration ?? t.Duration : t.Duration;
+            var loe = Cpm.IsLoe(p, t.Id);
+            var milestone = !summary && !loe && (t.Milestone || t.Duration == 0);
+            // A task's own duration (one under way keeps it: what is left is its RemainingDuration); a summary's from its tasks,
+            // a level of effort task's the days it spans.
+            var dur = summary || loe ? tm?.Duration ?? t.Duration : t.Duration;
             w.WriteStartElement("Task", Ns);
             E("UID", $"{uid[t.Id]}");
             if (GlobalId.IsValid(t.Id)) E("GUID", GlobalId.ToGuid(t.Id).ToString("D").ToUpperInvariant());
@@ -195,9 +242,14 @@ public static class MsProject
             if (pr.ActualStart is { } ast) E("ActualStart", Dt(ast, startTime));
             if (pr.ActualFinish is { } afi) E("ActualFinish", Dt(afi, milestone ? startTime : endTime));
             if (tm != null && tm.Status == "started") E("RemainingDuration", Duration(tm.Remaining, cal.Hours));
-            // ConstraintType: 0 as soon as possible, 2 must start on, 4 start no earlier than.
-            E("ConstraintType", t.Constraint switch { "mso" => "2", "snet" => "4", _ => "0" });
-            if (t.Constraint != null && t.ConstraintDate is { } cd) E("ConstraintDate", Dt(cd, startTime));
+            // ConstraintType: 0 as soon as possible, 1 as late as possible, 2 must start on, 4 start no earlier than; a level of
+            // effort task starts no earlier than the start it is given (MS Project then shows it where Lapin does).
+            if (loe && tm != null) { E("ConstraintType", "4"); E("ConstraintDate", Dt(tm.Start, startTime)); }
+            else
+            {
+                E("ConstraintType", t.Constraint switch { "mso" => "2", "snet" => "4", "alap" => "1", _ => "0" });
+                if (t.Constraint != null && t.ConstraintDate is { } cd && Plan.DatedConstraints.Contains(t.Constraint)) E("ConstraintDate", Dt(cd, startTime));
+            }
             if (!string.IsNullOrWhiteSpace(t.Notes)) E("Notes", t.Notes!);
             foreach (var l in incoming.GetValueOrDefault(t.Id) ?? [])
             {
@@ -211,11 +263,35 @@ public static class MsProject
                 E("LagFormat", "7");
                 w.WriteEndElement();
             }
+            if (loe)
+            {
+                w.WriteStartElement("ExtendedAttribute", Ns);
+                E("FieldID", EffortField);
+                var mark = Plan.LevelOfEffort;
+                if (t.EffortFrom is { } ef && uid.TryGetValue(ef, out var fu)) mark += $";from={fu}";
+                if (t.EffortTo is { } et && uid.TryGetValue(et, out var tu)) mark += $";to={tu}";
+                E("Value", mark);
+                w.WriteEndElement();
+            }
             if (TaskLinkData.Of(t) is { } links)
             {
                 w.WriteStartElement("ExtendedAttribute", Ns);
                 E("FieldID", LinksField);
                 E("Value", links.ToJsonString());
+                w.WriteEndElement();
+            }
+            if (hidden.Contains(t.Id))
+            {
+                w.WriteStartElement("ExtendedAttribute", Ns);
+                E("FieldID", ChartField);
+                E("Value", "1");
+                w.WriteEndElement();
+            }
+            if (PbsText(t) is { } pbsText)
+            {
+                w.WriteStartElement("ExtendedAttribute", Ns);
+                E("FieldID", PbsField);
+                E("Value", pbsText);
                 w.WriteEndElement();
             }
             if (t.Baseline is { } bl)
@@ -310,6 +386,8 @@ public static class MsProject
         // The field Lapin wrote the tasks' elements in (by its name; Text1 when the file has the field without it).
         var fields = Els(El(project, "ExtendedAttributes"), "ExtendedAttribute").ToList();
         var linksField = fields.FirstOrDefault(x => Val(x, "Alias") == LinksAlias) is { } fa ? Val(fa, "FieldID") : fields.Count == 0 ? LinksField : null;
+        var effortField = fields.FirstOrDefault(x => Val(x, "Alias") == EffortAlias) is { } fe ? Val(fe, "FieldID") : null;
+        var chartField = fields.FirstOrDefault(x => Val(x, "Alias") == ChartAlias) is { } fc ? Val(fc, "FieldID") : null;
         var stack = new List<(int Level, string Key)>();
         var summaryKeys = new HashSet<string>();
         foreach (var t in rows)
@@ -324,9 +402,15 @@ public static class MsProject
             var hours = Hours(Val(t, "Duration"));
             var duration = milestone ? 0 : (int)Math.Round(hours / hoursPerDay);
             if (!milestone && duration == 0 && hours > 0) duration = 1;
-            var constraint = Int(t, "ConstraintType") switch { 2 => "mso", 4 => "snet", _ => null };
+            var constraint = Int(t, "ConstraintType") switch { 1 => "alap", 2 => "mso", 4 => "snet", _ => null };
             var constraintDate = When(Val(t, "ConstraintDate")) is { } cd ? DateOnly.FromDateTime(cd) : (DateOnly?)null;
-            if (constraintDate == null) constraint = null;
+            if (constraint == "alap") constraintDate = null;
+            else if (constraintDate == null) constraint = null;
+            // A level of effort task Lapin wrote (Text2 "loe;from=…;to=…"): its start constraint was for MS Project only.
+            var effort = effortField == null ? null : Els(t, "ExtendedAttribute").FirstOrDefault(x => Val(x, "FieldID") == effortField) is { } ea ? Val(ea, "Value") : null;
+            var loe = effort?.Split(';')[0] == Plan.LevelOfEffort;
+            string? Part(string name) => effort?.Split(';').FirstOrDefault(x => x.StartsWith(name + "=", StringComparison.Ordinal))?[(name.Length + 1)..];
+            if (loe) { constraint = null; constraintDate = null; }
             string? id = Guid.TryParse(Val(t, "GUID"), out var g) ? GlobalId.FromGuid(g) : null;
             var elementLinks = linksField == null ? null : TaskLinkData.Parse(Els(t, "ExtendedAttribute").FirstOrDefault(x => Val(x, "FieldID") == linksField) is { } xa ? Val(xa, "Value") : null);
             // Its progress, unless its elements' marks give it (Lapin wrote them with the elements); a summary's comes from its tasks.
@@ -343,7 +427,8 @@ public static class MsProject
                 baseline = new TaskBaseline(DateOnly.FromDateTime(bs), DateOnly.FromDateTime(bf), (int)Math.Round(Hours(Val(bx, "Duration")) / hoursPerDay));
             tasks.Add(new ImportedTask(key, id, Val(t, "Name") ?? "", parent, duration, milestone && duration == 0, constraint, constraintDate,
                 When(Val(t, "Start")) is { } s ? DateOnly.FromDateTime(s) : null, Notes: Val(t, "Notes"), Links: elementLinks,
-                ActualStart: actualStart, ActualFinish: actualFinish, Complete: pc, Baseline: baseline));
+                ActualStart: actualStart, ActualFinish: actualFinish, Complete: pc, Baseline: baseline,
+                Loe: loe, EffortFromKey: loe ? Part("from") : null, EffortToKey: loe ? Part("to") : null, Chart: chartField != null && Els(t, "ExtendedAttribute").Any(x => Val(x, "FieldID") == chartField && Val(x, "Value") is "1" or "Yes" or "true") ? false : null));
         }
         var links = new List<ImportedLink>();
         foreach (var t in rows)

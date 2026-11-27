@@ -1,1 +1,1 @@
-{ "id": "wood", "name": "Wood", "assembly": "Lapin.Wood.dll", "requires": ["core", "architecture"] }
+{ "id": "wood", "name": "Wood", "assembly": "Lapin.Wood.dll", "requires": ["core", "architecture"], "api": 1 }

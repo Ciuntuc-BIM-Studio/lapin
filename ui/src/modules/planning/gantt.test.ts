@@ -146,3 +146,33 @@ describe('the window grouped by a field', () => {
     expect(groupRows(tasks, 'Zona', new Set(['group:A']), 'none').map((r) => r.id)).toEqual(['group:A', 'group:B', 'b', 'group:', 'c']);
   });
 });
+
+describe('level of effort and as late as possible tasks', () => {
+  it('draw a level of effort task as a thin line with a tick at each end, its duration not typed', async () => {
+    const { durationTyped, isLoe, loePath, datedConstraint } = await import('./gantt');
+    const loe = task('pm', null, '2026-01-05', '2026-01-11', { effort: 'loe', duration: 7 });
+    expect(isLoe(loe)).toBe(true);
+    expect(durationTyped(loe)).toBe(false);
+    expect(durationTyped(task('a', null, '2026-01-05', '2026-01-07'))).toBe(true);
+    // A summary marked so is a summary.
+    expect(isLoe(task('s', null, '2026-01-05', '2026-01-07', { effort: 'loe', summary: true }))).toBe(false);
+    const b = barOf(loe, 2, dayOf('2026-01-05'), 10, 24);
+    expect(b).toEqual({ x: 0, w: 70, y: 54, h: 12 });
+    expect(loePath(b)).toBe('M0,54 v12 M0,60 h70 M70,54 v12');
+    expect(datedConstraint('snet')).toBe(true);
+    expect(datedConstraint('alap')).toBe(false);
+    expect(datedConstraint(undefined)).toBe(false);
+  });
+
+  it('span a selection from the task that starts first to the one that finishes last', async () => {
+    const { loeSpanOf } = await import('./gantt');
+    const tasks = [
+      task('a', null, '2026-01-05', '2026-01-07', { row: 1 }), task('b', null, '2026-01-08', '2026-01-20', { row: 2 }),
+      task('c', null, '2026-01-06', '2026-01-12', { row: 3 }), task('pm', null, '2026-01-05', '2026-01-20', { row: 4, effort: 'loe' }),
+    ];
+    expect(loeSpanOf(tasks, ['c', 'b', 'a'])).toEqual({ from: 'a', to: 'b' });
+    expect(loeSpanOf(tasks, ['c'])).toEqual({ from: 'c', to: 'c' });
+    expect(loeSpanOf(tasks, ['pm'])).toBeNull();
+    expect(loeSpanOf(tasks, [])).toBeNull();
+  });
+});

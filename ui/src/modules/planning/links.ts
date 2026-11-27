@@ -65,6 +65,8 @@ export function ruleSummary(t: Pick<TaskDto, 'rule' | 'part' | 'added' | 'remove
       if (v?.length) bits.push(v.map((x) => (k === 'classes' ? classLabel(x) : nameOf(x) ?? x)).join(', '));
     }
     for (const c of t.rule.conditions ?? []) bits.push(`${c.field} ${c.op}${c.value == null ? '' : ` ${c.value}`}`);
+    if (t.rule.products?.length) bits.push(t.rule.products.map((p) => (typeof p === 'string' ? p : p.code)).join(', '));
+    if (t.rule.locations?.length) bits.push(t.rule.locations.map((x) => nameOf(x) ?? x).join(', '));
     if (!bits.length) bits.push('every element');
   }
   const part = partLabel(t.part, nameOf);
@@ -90,4 +92,11 @@ export function dropOf(data: string, shift: boolean): { ids: string[]; remove: b
 export function frameDistance(min: { x: number; y: number; z: number }, max: { x: number; y: number; z: number }, fov: number): number {
   const d = Math.hypot(max.x - min.x, max.y - min.y, max.z - min.z);
   return Math.max(3, (d * 0.6) / Math.tan(fov / 2));
+}
+
+/** The elements without a task counted by product (the PBS's code; „no code” for none), most first: „40.20 Doors 3, no code 2”. */
+export function byProductText(groups: readonly { code: string; title: string; count: number }[] | undefined): string {
+  if (!groups?.length) return '';
+  return [...groups].sort((a, b) => b.count - a.count || a.code.localeCompare(b.code))
+    .map((g) => (g.code ? `${g.code}${g.title ? ` ${g.title}` : ''} ${g.count}` : `no code ${g.count}`)).join(', ');
 }

@@ -44,6 +44,8 @@ public sealed class CostIfc : IIfcControls
                     // "× duration": the time the quantity was multiplied by and the duration used.
                     if (l.Time is { } time) props.Add(("Time", time));
                     if (l.Duration is { } dur) props.Add(("Duration", dur));
+                    // A time-related item: the unit of its rate (its quantity, the time its tasks or the project last).
+                    if (l.Per is { } per) props.Add(("Per", per));
                     items.Add(new IfcCostItemData($"{e.Id}/line/{l.Key.Replace('\u001f', '/')}", l.Name, l.Code, chId, l.Qty, Units.KindOf(l.Basis), values,
                         l.Elements.ToList(), "Lapin_CostItem", props, over?.LineTasks.GetValueOrDefault(l.Key)));
                 }
@@ -81,6 +83,7 @@ public sealed class CostIfc : IIfcControls
                     ["qty"] = it.Quantity,
                     ["m"] = V("material"), ["l"] = V("labour"), ["e"] = V("equipment"), ["t"] = V("transport"),
                 };
+                if (p.TryGetValue("Per", out var per) && TimeRelated.Units.Contains(per)) o["per"] = per;
                 if (p.TryGetValue("Hours", out var hs) && double.TryParse(hs, NumberStyles.Float, CultureInfo.InvariantCulture, out var hv)) o["hours"] = hv;
                 var els = it.Elements.Select(idOf).OfType<string>().Distinct().ToList();
                 if (els.Count > 0) o["elements"] = new JsonArray(els.Select(x => (JsonNode)x).ToArray());
