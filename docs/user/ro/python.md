@@ -192,3 +192,16 @@ Un invitat al unei sesiuni partajate nu poate rula scripturi pe calculatorul tă
 Ce oferă `lapin` (comenzile, interogările, loturile, modelul, evenimentele) e descris în ghidul pentru dezvoltatori, *Lapin from Python* (`docs/python.md` în depozitul lui Lapin); pachetul e pe PyPI ca `lapinbim`.
 
 Un program de pe calculatorul tău găsește Lapin pe portul **14912**; un al doilea Lapin deschis în același timp ia 14913, și tot așa. Cu mai multe deschise, programul întreabă care (`lapin.connect(project="Casa")`); ca să impui unul, setează `LAPIN_PORT`.
+
+### Notebook-uri Jupyter
+
+Un notebook din afara lui Lapin poate comanda Lapin-ul deschis, fără panoul Script: `pip install lapinbim` în Python-ul notebook-ului (3.11 sau mai nou), apoi
+
+```python
+import lapinbim as lapin
+lapin.info().product.name
+with lapin.batch("Din notebook"):
+    lapin.execute("architecture.addWall", {"x1": 0, "y1": 0, "x2": 3, "y2": 0})
+```
+
+Pereții apar imediat în fereastră, iar lotul e un singur pas de undo. Merge într-un kernel Jupyter ca în orice program (testat cu ipykernel). Merge doar cu aplicația desktop, nu cu Lapin în browser, iar Python-ul notebook-ului are drepturile tale, ca în nota de siguranță de mai sus.

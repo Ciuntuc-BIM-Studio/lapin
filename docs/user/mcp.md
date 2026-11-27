@@ -81,3 +81,5 @@ In an `mcpServers` setting, add `"env": { "LAPIN_PROJECT": "House" }` beside `co
 - The agent only reaches Lapin on **your own computer**: the engine listens on 127.0.0.1 and nothing is sent anywhere by the script. What the AI client itself sends to its provider is that client's matter, so read its terms before you let it see a project that is confidential.
 - An agent can make mistakes. Look at what it did, and undo any step you do not want.
 - This is separate from the **CDE server's MCP address**, which lets an AI client reach a project's documents and issues on Atrium Server, with no Lapin open. That one is set up in [Working on a CDE server](cde-server.md).
+
+From a Python notebook instead of an agent, see [Jupyter notebooks](python.md#jupyter-notebooks): the same Lapin can be driven by both at once.

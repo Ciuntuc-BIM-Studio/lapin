@@ -81,3 +81,5 @@ claude mcp add lapin -e LAPIN_PROJECT=Casa -- node "<calea>"
 - Agentul ajunge doar la Lapin pe **propriul tău calculator**: motorul ascultă pe 127.0.0.1 și scriptul nu trimite nimic nicăieri. Ce trimite clientul AI însuși furnizorului lui ține de acel client, așa că citește-i condițiile înainte să-l lași să vadă un proiect confidențial.
 - Un agent poate greși. Uită-te la ce a făcut și anulează orice pas nu îl vrei.
 - Este separat de **adresa MCP a serverului CDE**, care lasă un client AI să ajungă la documentele și problemele unui proiect de pe Atrium Server, fără Lapin deschis. Aceea se configurează în [Lucrul pe un server CDE](cde-server.md).
+
+Dintr-un notebook Python, nu de la un agent, vezi [Notebook-uri Jupyter](python.md#notebook-uri-jupyter): același Lapin poate fi comandat de ambele deodată.
