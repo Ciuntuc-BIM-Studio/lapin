@@ -1856,8 +1856,31 @@ public static partial class IfcExport
                 return;
             }
             if (grouped) return;
-            var mats = parts.Select(p => p.Material).OfType<string>().Distinct().ToList();
+            // A script's element (element.createBody): a part naming no material is of its element's; its parts of several, a constituent set.
+            var ownMaterial = ExternalBodies.MaterialOfElement(m, e);
+            var mats = parts.Select(p => p.Material ?? ownMaterial).OfType<string>().Distinct().ToList();
             if (mats.Count == 1) UseMaterial(mats[0], entity);
+            else if (mats.Count > 1 && ExternalBodies.IsOwned(e) && PartConstituentsOf(e, parts, ownMaterial) is { } partSet) Associate(partSet, entity);
+        }
+
+        /// <summary>
+        /// A script's element of several materials (element.createBody, its parts' own): an IfcMaterialConstituentSet, one constituent per
+        /// part that is made of a project material (named by the part, a part with none of its own in its element's), one set per
+        /// combination, shared. Null when fewer than two parts are.
+        /// </summary>
+        string? PartConstituentsOf(Entity e, List<GeometryPart> parts, string? own)
+        {
+            var list = new List<(string Name, string Material)>();
+            foreach (var p in parts)
+                if ((p.Material ?? own) is { } mat && m.Get(mat) is { Class: IfcClass.Material } && !list.Any(x => x.Name == p.Name && x.Material == mat))
+                    list.Add((p.Name, mat));
+            if (list.Count < 2) return null;
+            var signature = "parts|" + string.Join("|", list.Select(x => x.Name + "=" + x.Material));
+            if (constituentSets.TryGetValue(signature, out var known)) return known.Ref;
+            var constituents = list.Select(x => f.Add("IFCMATERIALCONSTITUENT", S(x.Name), Null, Material(x.Material), Null, Null)).ToArray();
+            var set = f.Add("IFCMATERIALCONSTITUENTSET", S(e.Name), Null, L(constituents));
+            constituentSets[signature] = (set, Gid(e.Id, "constituents"), []);
+            return set;
         }
 
         // ─── Parts, openings ────────────────────────────────────────────────

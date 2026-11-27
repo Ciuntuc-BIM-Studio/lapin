@@ -259,6 +259,78 @@ public class ExternalBodyTests : IDisposable
         Assert.Equal(1, g.Session.Quantities(gid).SelectMany(s => s.Quantities).Single(q => q.Name == "NetVolume").Value, 4);
     }
 
+    static JsonObject WithMaterial(JsonObject part, JsonNode? material, string? name = null)
+    {
+        if (material != null) part["material"] = material;
+        if (name != null) part["name"] = name;
+        return part;
+    }
+
+    /// <summary>The patterns a plan's cut bands of an element draw with, by its parts' materials (the view's own graphics).</summary>
+    static List<string?> PlanHatches(Fixture f, string id)
+    {
+        var plan = Views.Find(f.Model, "plan:" + f.Storey)!;
+        var (d, _, problem) = Views.Generate(f.Session.Reader, plan);
+        Assert.True(d != null, problem);
+        var looks = ViewMaterialGraphics.For(f.Model, plan, "plan", 100);
+        return [.. d!.Cuts.Where(c => c.Element == id).Select(c => looks.Band(c)?.Hatch).OrderBy(h => h)];
+    }
+
+    [Fact]
+    public void Its_parts_keep_their_materials_and_a_part_of_none_draws_in_its_elements()
+    {
+        var f = Make();
+        var body = new JsonObject { ["parts"] = new JsonArray(
+            WithMaterial(Box(1, 1, 3), "Concrete C30/37", "Pier"),
+            WithMaterial(Box(1, 1, 3, 2), null, "Bearing plate")) };
+        var r = f.Run("element.createBody", new JsonObject { ["ifcClass"] = "IfcColumn", ["storey"] = f.Storey, ["body"] = body, ["material"] = "Structural steel" })!;
+        var id = (string)r["id"]!;
+        Assert.Empty(r["notes"]!.AsArray());
+        var concrete = Materials.Find(f.Model, "Concrete C30/37")!;
+        var steel = Materials.Find(f.Model, "Structural steel")!;
+        // The part's material is kept with the part; the element's is its IfcRelAssociatesMaterial.
+        var parts = f.Model.Get((string)r["shared"]!)!.Attrs[StoredBodies.Key]!["parts"]!.AsArray();
+        Assert.Equal(concrete.Id, (string?)parts[0]!["material"]);
+        Assert.Null(parts[1]!["material"]);
+        Assert.Equal(steel.Id, f.Model.RelatingOf(id, IfcClass.RelAssociatesMaterial)!.Id);
+        // Cut in a plan: the pier in its concrete, the plate that names none in its element's steel.
+        Assert.Equal(["CONCRETE", "STEEL"], PlanHatches(f, id));
+        // The same triangles in another material are another body.
+        var other = new JsonObject { ["parts"] = new JsonArray(WithMaterial(Box(1, 1, 3), "Masonry", "Pier"), WithMaterial(Box(1, 1, 3, 2), null, "Bearing plate")) };
+        var r2 = f.Run("element.createBody", new JsonObject { ["ifcClass"] = "IfcColumn", ["storey"] = f.Storey, ["body"] = other })!;
+        Assert.NotEqual((string)r["shared"]!, (string)r2["shared"]!);
+        // With no material of its own, a part of none draws as before: no hatch.
+        Assert.Equal([null, "MASONRY"], PlanHatches(f, (string)r2["id"]!));
+
+        // Its IFC: the materials of its parts as a constituent set.
+        var path = Path.Combine(_dir, "materials.ifc");
+        IfcExport.Write(f.Session, path, new IfcExportOptions(Schema: "IFC4"));
+        var text = File.ReadAllText(path);
+        Assert.Contains("IFCMATERIALCONSTITUENTSET(", text);
+        Assert.Contains("IFCMATERIALCONSTITUENT('Pier'", text);
+        Assert.Contains("IFCMATERIALCONSTITUENT('Bearing plate'", text);
+        Assert.Contains("IFCMATERIAL('Structural steel'", text);
+    }
+
+    [Fact]
+    public void A_material_given_as_an_object_says_what_a_new_one_is_and_an_existing_one_keeps_its_own()
+    {
+        var f = Make();
+        var spec = new JsonObject { ["name"] = "Neoprene", ["color"] = "#202020", ["category"] = "other" };
+        var r = f.Run("element.createBody", new JsonObject { ["ifcClass"] = "IfcBearing", ["storey"] = f.Storey, ["body"] = Box(0.4, 0.4, 0.05), ["material"] = spec })!;
+        var neoprene = Materials.Find(f.Model, "Neoprene")!;
+        Assert.Equal("#202020", neoprene.Str("color"));
+        Assert.Equal("Other", neoprene.Str("category"));
+        Assert.Empty(r["notes"]!.AsArray());
+        // A material the project has keeps what it says; the note tells the program.
+        var again = new JsonObject { ["name"] = "Neoprene", ["category"] = "Structure" };
+        var r2 = f.Run("element.createBody", new JsonObject { ["ifcClass"] = "IfcBearing", ["storey"] = f.Storey, ["body"] = Box(0.4, 0.4, 0.05, 1), ["material"] = again })!;
+        Assert.Equal("Other", Materials.Find(f.Model, "Neoprene")!.Str("category"));
+        Assert.Contains(r2["notes"]!.AsArray(), n => n!.ToString().Contains("keeps its category"));
+        Assert.Throws<CommandException>(() => f.Run("element.createBody", new JsonObject { ["ifcClass"] = "IfcBearing", ["body"] = Box(1, 1, 1), ["material"] = new JsonObject { ["name"] = "X", ["category"] = "Rubber" } }));
+        Assert.Throws<CommandException>(() => f.Run("element.createBody", new JsonObject { ["ifcClass"] = "IfcBearing", ["body"] = Box(1, 1, 1), ["material"] = new JsonObject { ["color"] = "#000000" } }));
+    }
+
     [Fact]
     public void Saved_and_opened_it_is_still_the_programs()
     {

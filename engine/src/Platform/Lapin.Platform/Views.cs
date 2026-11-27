@@ -557,10 +557,13 @@ public static class Views
         // layers; fine, the layers with the details of doors and windows, and the bars a linked structural model brings.
         var building = lod;
         var coreMaterials = new Dictionary<string, string?>();
+        // A script's element (element.createBody): a part that names no material is drawn in its element's (IfcRelAssociatesMaterial).
+        var ownMaterials = new Dictionary<string, string?>();
+        string? OwnMaterial(Entity e) => ownMaterials.TryGetValue(e.Id, out var om) ? om : ownMaterials[e.Id] = ExternalBodies.MaterialOfElement(m, e);
         string? MaterialOf(Entity e, GeometryPart p) =>
             building <= PlanDetail.Lod100 && p.Key is { } k && k.StartsWith("layer:", StringComparison.Ordinal)
                 ? (coreMaterials.TryGetValue(e.Id, out var cm) ? cm : coreMaterials[e.Id] = CoreMaterial(m, e)) ?? p.Material
-                : p.Material;
+                : p.Material ?? OwnMaterial(e);
         bool Detailed(Entity e, GeometryPart p) => PlanDetail.Shows(e.Class, p.Key, building);
         // At LOD 100 a steel member is a single line on its axis (decision 405), where the view sees it along its length.
         var sticks = building <= PlanDetail.Lod100 ? q.Services.All<IStickAxes>() : [];

@@ -37,6 +37,13 @@ public static class ExternalBodies
     /// <summary>Whether the element's body is a program's (made by <c>element.createBody</c>).</summary>
     public static bool IsOwned(Entity e) => e.Attrs[OwnerKey] is JsonValue && StoredBodies.Has(e);
 
+    /// <summary>
+    /// The material a program's element is associated with (IfcRelAssociatesMaterial to an IfcMaterial): what its parts that name
+    /// none of their own are drawn in and exported as; null for any other element, or one with none.
+    /// </summary>
+    public static string? MaterialOfElement(IModelView m, Entity e) =>
+        IsOwned(e) && m.RelatingOf(e.Id, IfcClass.RelAssociatesMaterial) is { Class: IfcClass.Material } mat ? mat.Id : null;
+
     public static void Register(IModuleRegistry r)
     {
         r.Command("element.createBody", "Create body", (ctx, a) => Create(ctx, a));
@@ -61,7 +68,7 @@ public static class ExternalBodies
         var scale = UnitsOf(a["units"]);
         var body = Read(a["body"], scale);
         var xf = PlacementOf(a["placement"], scale) ?? Identity;
-        var (sharedId, hash) = SharedFor(ctx, body);
+        var (sharedId, hash) = SharedFor(ctx, body, notes);
         var attrs = new JsonObject
         {
             [StoredBodies.BodyOf] = sharedId,
@@ -79,11 +86,8 @@ public static class ExternalBodies
             if (ctx.Describe(type.Class)?.Kind != "type" && !type.Class.EndsWith("Type", StringComparison.Ordinal)) throw new CommandException($"„{type.Name}” is not a type.");
             ctx.Relate(IfcClass.RelDefinesByType, type.Id, e.Id);
         }
-        if ((string?)a["material"] is { Length: > 0 } material)
-        {
-            var m = ctx.Model.Get(material) is { Class: IfcClass.Material } byId ? byId : Materials.Ensure(ctx, material);
-            ctx.Relate(IfcClass.RelAssociatesMaterial, m.Id, e.Id);
-        }
+        // Its material (IfcRelAssociatesMaterial): what its parts that name none are drawn in, and its IFC's.
+        if (MaterialOf(a["material"], "material") is { } material) ctx.Relate(IfcClass.RelAssociatesMaterial, Resolve(ctx, material, notes), e.Id);
         return Result(e.Id, sharedId, hash, body, notes);
     }
 
@@ -96,7 +100,8 @@ public static class ExternalBodies
         var body = Read(a["body"], scale);
         var xf = PlacementOf(a["placement"], scale) ?? (StoredBodies.InstanceOf(e) is var (_, was) ? was : Identity);
         var old = StoredBodies.InstanceOf(e)?.Body;
-        var (sharedId, hash) = SharedFor(ctx, body);
+        var notes = new List<string>();
+        var (sharedId, hash) = SharedFor(ctx, body, notes);
         var attrs = e.CloneAttrs();
         attrs.Remove(StoredBodies.Key);
         attrs[StoredBodies.BodyOf] = sharedId;
@@ -104,7 +109,7 @@ public static class ExternalBodies
         ctx.Replace(e.With(attrs: attrs));
         // The body it had goes when no element uses it any more (as element.delete leaves none behind).
         if (old != null && old != sharedId && !ctx.Model.Entities.Any(x => x.Str(StoredBodies.BodyOf) == old)) ctx.Remove(old);
-        return Result(e.Id, sharedId, hash, body, []);
+        return Result(e.Id, sharedId, hash, body, notes);
     }
 
     static JsonObject Result(string id, string shared, string hash, Body body, List<string> notes) => new()
@@ -130,10 +135,17 @@ public static class ExternalBodies
         return gid;
     }
 
-    /// <summary>The shared body holding <paramref name="body"/>: the one with its content hash, else a new one.</summary>
-    static (string Id, string Hash) SharedFor(ICommandContext ctx, Body body)
+    /// <summary>
+    /// The shared body holding <paramref name="body"/>: the one with its content hash, else a new one. Each part's material (a
+    /// project material's id, or a name: the material of that name, made when the project has none) is kept with the part, so
+    /// a plan, a section and an elevation draw the part's band in it; it is part of the content, so the same triangles in
+    /// another material are another shared body.
+    /// </summary>
+    static (string Id, string Hash) SharedFor(ICommandContext ctx, Body body, List<string> notes)
     {
-        var stored = StoredBodies.Write(body.Parts.Select(p => (p.Name, p.Color, (IReadOnlyList<Vec3>)p.Vertices, (IReadOnlyList<(int, int, int)>)p.Triangles)));
+        var materials = body.Parts.Select(p => p.Material is { } spec ? Resolve(ctx, spec, notes) : null).ToList();
+        var stored = StoredBodies.Write(body.Parts.Select(p => (p.Name, p.Color, (IReadOnlyList<Vec3>)p.Vertices, (IReadOnlyList<(int, int, int)>)p.Triangles)),
+            materials.Any(x => x != null) ? materials : null);
         var hash = Lapin.Model.Hashes.Sha256Hex(stored.ToJsonString());
         if (ctx.Model.OfClass(StoredBodies.SharedClass).FirstOrDefault(x => x.Str(HashKey) == hash) is { } found) return (found.Id, hash);
         var shared = new Entity(ctx.NewId(), StoredBodies.SharedClass, "Script body (shared)", new JsonObject { [StoredBodies.Key] = stored, [HashKey] = hash, ["source"] = "script" });
@@ -207,14 +219,68 @@ public static class ExternalBodies
 
     // ------------------------------------------------------------ the body
 
-    public sealed record Part(string Name, string Color, List<Vec3> Vertices, List<(int A, int B, int C)> Triangles);
+    public sealed record Part(string Name, string Color, List<Vec3> Vertices, List<(int A, int B, int C)> Triangles)
+    {
+        /// <summary>The material it is made of, as given; null: none (it draws in its element's material).</summary>
+        public MaterialSpec? Material { get; init; }
+    }
+
+    /// <summary>
+    /// A material as a program names it: a project material's id or a name (<see cref="Name"/>), and what a material it makes
+    /// says of itself: its colour, its category (<see cref="Materials.Categories"/>).
+    /// </summary>
+    public sealed record MaterialSpec(string Name, string? Color = null, string? Category = null);
+
+    /// <summary>A material given as text (an id or a name) or as <c>{name, color?, category?}</c>; null: none given.</summary>
+    public static MaterialSpec? MaterialOf(JsonNode? n, string what)
+    {
+        switch (n)
+        {
+            case null: return null;
+            case JsonValue v when v.TryGetValue<string>(out var text): return text.Trim() is { Length: > 0 } t ? new MaterialSpec(Checked(t, what)) : null;
+            case JsonObject o:
+            {
+                var name = ((string?)(o["name"] ?? o["id"]))?.Trim() is { Length: > 0 } nm ? Checked(nm, what) : throw new CommandException($"{what}: a material is a name, or {{name, color?, category?}}.");
+                var color = (string?)o["color"] is { } c ? (System.Text.RegularExpressions.Regex.IsMatch(c, "^#[0-9a-fA-F]{6}$") ? c.ToLowerInvariant() : throw new CommandException($"{what}: a colour is #rrggbb.")) : null;
+                var category = ((string?)o["category"])?.Trim() is { Length: > 0 } cat
+                    ? Materials.Categories.FirstOrDefault(x => x.Equals(cat, StringComparison.OrdinalIgnoreCase)) ?? throw new CommandException($"{what}: „{cat}” is not a material category ({string.Join(", ", Materials.Categories)}).")
+                    : null;
+                return new MaterialSpec(name, color, category);
+            }
+            default: throw new CommandException($"{what}: a material is a name, or {{name, color?, category?}}.");
+        }
+        static string Checked(string name, string what) => name.Length <= 200 ? name : throw new CommandException($"{what}: a material's name is 200 characters at most.");
+    }
+
+    /// <summary>
+    /// The project material a program names: the one of that id, else of that name, else a new one of that name (its colour the
+    /// one given). What it says of itself (its category) a material that says nothing of it takes; one that says otherwise keeps
+    /// its own, as the person set it, and a note says so.
+    /// </summary>
+    static string Resolve(ICommandContext ctx, MaterialSpec spec, List<string> notes)
+    {
+        var m = ctx.Model.Get(spec.Name) is { Class: IfcClass.Material } byId ? byId : Materials.Ensure(ctx, spec.Name, spec.Color);
+        var attrs = m.CloneAttrs();
+        var changed = false;
+        foreach (var (key, value) in Given(spec))
+        {
+            if (value == null) continue;
+            if (attrs[key] is not JsonValue had) { attrs[key] = value; changed = true; }
+            else if (!string.Equals((string?)had, value, StringComparison.OrdinalIgnoreCase) && !notes.Any(n => n.StartsWith($"„{m.Name}” keeps its {key}", StringComparison.Ordinal)))
+                notes.Add($"„{m.Name}” keeps its {key} „{(string?)had}” (the project's; not „{value}”).");
+        }
+        if (changed) ctx.Replace(m.With(attrs: attrs));
+        return m.Id;
+    }
+
+    static IEnumerable<(string Key, string? Value)> Given(MaterialSpec spec) => [("category", spec.Category)];
 
     /// <summary>A body read and checked: its parts, whether it is closed, its triangles, what was said of it.</summary>
     public sealed record Body(IReadOnlyList<Part> Parts, bool Closed, int Triangles, IReadOnlyList<string> Notes);
 
     /// <summary>
     /// A body as given: <c>{positions, indices}</c> (a mesh), <c>{faces: [{outer, holes?}]}</c> (planar polygons, points
-    /// [x, y, z]), or <c>{parts: [{name?, color?, …one of those}]}</c>. Refused, saying why, when it is not one.
+    /// [x, y, z]), or <c>{parts: [{name?, color?, material?, …one of those}]}</c>. Refused, saying why, when it is not one.
     /// </summary>
     public static Body Read(JsonNode? n, double scale = 1)
     {
@@ -234,7 +300,7 @@ public static class ExternalBodies
             total += t.Count;
             if (total > MaxTriangles) throw new CommandException($"A body has at most {MaxTriangles:N0} triangles.");
             if (t.Count == 0) throw new CommandException($"{name} has no triangle with an area.");
-            parts.Add(Weld(name, color, v, t));
+            parts.Add(Weld(name, color, v, t) with { Material = MaterialOf(p["material"], name) });
         }
         var closed = parts.All(IsClosed);
         var notes = new List<string>();

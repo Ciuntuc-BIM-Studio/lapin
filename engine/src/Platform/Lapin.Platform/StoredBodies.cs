@@ -77,27 +77,36 @@ public static class StoredBodies
     /// was some fifty bytes: a 6.8 million triangle body was 31 million nodes. Bodies written before
     /// (<c>v</c>, <c>t</c> as arrays) are read as they are (<see cref="ReadPart"/>).
     /// </summary>
-    public static JsonObject Write(IEnumerable<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)> parts)
+    /// <param name="materials">Each part's material (a material's id, or a name), by the parts' order; null, or a null in it: none (it draws by its element's).</param>
+    public static JsonObject Write(IEnumerable<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)> parts, IReadOnlyList<string?>? materials = null)
     {
         var list = new JsonArray();
+        var index = 0;
         foreach (var p in parts)
         {
+            var material = materials != null && index < materials.Count ? materials[index] : null;
+            index++;
             var v = new double[p.Vertices.Count * 3];
             for (var i = 0; i < p.Vertices.Count; i++) { var q = p.Vertices[i]; v[3 * i] = Math.Round(q.X, 4); v[3 * i + 1] = Math.Round(q.Y, 4); v[3 * i + 2] = Math.Round(q.Z, 4); }
             var t = new int[p.Triangles.Count * 3];
             for (var i = 0; i < p.Triangles.Count; i++) { var (a, b, c) = p.Triangles[i]; t[3 * i] = a; t[3 * i + 1] = b; t[3 * i + 2] = c; }
-            list.Add((JsonNode)WritePart(p.Name, p.Color, v, t));
+            list.Add((JsonNode)WritePart(p.Name, p.Color, v, t, material));
         }
         return new JsonObject { ["parts"] = list };
     }
 
-    /// <summary>One part: its name, colour, coordinates (x y z …) and triangles (a b c …).</summary>
-    public static JsonObject WritePart(string name, string color, double[] v, int[] t) => new()
+    /// <summary>One part: its name, colour, coordinates (x y z …) and triangles (a b c …); its material when it has one.</summary>
+    public static JsonObject WritePart(string name, string color, double[] v, int[] t, string? material = null)
     {
-        ["name"] = name, ["color"] = color,
-        ["v64"] = Convert.ToBase64String(System.Runtime.InteropServices.MemoryMarshal.AsBytes(v.AsSpan())),
-        ["t64"] = Convert.ToBase64String(System.Runtime.InteropServices.MemoryMarshal.AsBytes(t.AsSpan())),
-    };
+        var o = new JsonObject
+        {
+            ["name"] = name, ["color"] = color,
+            ["v64"] = Convert.ToBase64String(System.Runtime.InteropServices.MemoryMarshal.AsBytes(v.AsSpan())),
+            ["t64"] = Convert.ToBase64String(System.Runtime.InteropServices.MemoryMarshal.AsBytes(t.AsSpan())),
+        };
+        if (material != null) o["material"] = material;
+        return o;
+    }
 
     /// <summary>A part's coordinates and triangles, as written now (base64) or before (arrays).</summary>
     public static (double[] V, int[] T) ReadPart(JsonObject p)

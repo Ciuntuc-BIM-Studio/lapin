@@ -91,7 +91,7 @@ public static class SiteFeatures
                             var q = t.Point(new Vec2(v[i], v[i + 1]));
                             v[i] = Math.Round(q.X, 4); v[i + 1] = Math.Round(q.Y, 4);
                         }
-                        parts[k] = StoredBodies.WritePart((string?)part["name"] ?? "Body", (string?)part["color"] ?? "#c9ced6", v, tris);
+                        parts[k] = StoredBodies.WritePart((string?)part["name"] ?? "Body", (string?)part["color"] ?? "#c9ced6", v, tris, (string?)part["material"]);
                     }
             ctx.Replace(e.With(attrs: attrs));
         }
