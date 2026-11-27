@@ -13522,6 +13522,28 @@ export const SV: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Inloggning via webbläsaren kräver skrivbordsappen.",
   "This server offers no sign-in through the browser: sign in with your password.": "Den här servern erbjuder ingen inloggning via webbläsaren: logga in med ditt lösenord.",
   "The browser could not be opened here.": "Webbläsaren kunde inte öppnas här.",
+  // Forum topics 291, 293, 295, 296
+  'Dynamic input': 'Dynamisk inmatning',
+  'show length, angle and coordinate input at the cursor': 'visa längd, vinkel och koordinater vid markören',
+  'draw every line one pixel wide on screen': 'rita varje linje en pixel bred på skärmen',
+  'Show circle and arc centerpoints permanently (off: show on hover and selection)': 'Visa cirkel- och bågcentrum permanent',
+  'Absolute coordinates (#x,y or x,y); type @ for relative': 'Absoluta koordinater (#x,y eller x,y); @ för relativa',
+  'Relative coordinates (@dx,dy); type # for absolute': 'Relativa koordinater (@dx,dy); # för absoluta',
+  'Building element types': 'Byggdelstyper',
+  'Arc (3-point)': 'Båge (3-punkt)',
+  'Arc / Circle (Centre)': 'Båge / Cirkel (Centrum)',
+  'Arc (Tangent)': 'Båge (Tangent)',
+  'Arc (2 Tangents + Pt)': 'Båge (2 Tangenter + Pkt)',
+  'Model (3D)': 'Modell (3D)',
+  '2D / View': '2D / Vy',
+  'Data / Info': 'Data / Info',
+  '4D / 5D': '4D / 5D',
+  'Quick actions': 'Snabbåtgärder',
+  'Match properties (MA)': 'Matcha egenskaper (MA)',
+  'Isolate selection': 'Isolera markering',
+  'No 2D or view overrides for this element.': 'Inga 2D- eller vyåsidosättanden för detta element.',
+  'Phasing, scheduling and cost sections appear here when active for this element.': 'Faser, tidplan och kostnad visas här när de är aktiva.',
+
 };
 
 /** Phrases with a number or a name in them. */

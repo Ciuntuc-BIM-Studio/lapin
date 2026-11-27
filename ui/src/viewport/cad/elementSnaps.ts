@@ -71,6 +71,27 @@ export function elementCurves(items: readonly PlanLike[], nodes: ReadonlyMap<str
       const s = arcShape(edgeArc({ pts, arcs }, i));
       if (s.type === 'arc') out.push(s);
     }
+    // An open polyline with curved segments (railing, feature line, channel, kerb: forum topic 293).
+    const pPts = fromPairs(n.props.points);
+    const pArcs = pPts.length >= 2 ? arcsOf(n.props.arcs, pPts.length - 1) : undefined;
+    if (pArcs) for (let i = 0; i + 1 < pPts.length; i++) if (Math.abs(pArcs[i]) > 1e-6) {
+      const s = arcShape({ a: pPts[i], b: pPts[i + 1], rise: pArcs[i] });
+      if (s.type === 'arc') out.push(s);
+    }
+  }
+  return out;
+}
+
+/** Unique centerpoints of all curved elements currently shown (forum topic 293). */
+export function elementCenters(items: readonly PlanLike[], nodes: ReadonlyMap<string, NodeDto>): Vec2[] {
+  const out: Vec2[] = [];
+  const seen = new Set<string>();
+  for (const s of elementCurves(items, nodes)) {
+    if (s.type !== 'arc' && s.type !== 'circle') continue;
+    const key = `${Math.round(s.c.x * 1e4)},${Math.round(s.c.y * 1e4)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(s.c);
   }
   return out;
 }

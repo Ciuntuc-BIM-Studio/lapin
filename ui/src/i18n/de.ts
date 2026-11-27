@@ -7363,6 +7363,28 @@ export const DE: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Die Anmeldung über den Browser braucht die Desktop-App.",
   "This server offers no sign-in through the browser: sign in with your password.": "Dieser Server bietet keine Anmeldung über den Browser: Melden Sie sich mit Ihrem Passwort an.",
   "The browser could not be opened here.": "Der Browser konnte hier nicht geöffnet werden.",
+  // Forum topics 291, 293, 295, 296
+  'Dynamic input': 'Dynamische Eingabe',
+  'show length, angle and coordinate input at the cursor': 'Länge, Winkel und Koordinaten am Cursor anzeigen',
+  'draw every line one pixel wide on screen': 'alle Linien mit einem Pixel Breite anzeigen',
+  'Show circle and arc centerpoints permanently (off: show on hover and selection)': 'Kreis- und Bogenmittelpunkte dauerhaft anzeigen (aus: bei Auswahl/Hover)',
+  'Absolute coordinates (#x,y or x,y); type @ for relative': 'Absolute Koordinaten (#x,y oder x,y); @ für relativ',
+  'Relative coordinates (@dx,dy); type # for absolute': 'Relative Koordinaten (@dx,dy); # für absolut',
+  'Building element types': 'Bauteiltypen',
+  'Arc (3-point)': 'Bogen (3-Punkt)',
+  'Arc / Circle (Centre)': 'Bogen / Kreis (Mittelpunkt)',
+  'Arc (Tangent)': 'Bogen (Tangente)',
+  'Arc (2 Tangents + Pt)': 'Bogen (2 Tangenten + Pkt)',
+  'Model (3D)': 'Modell (3D)',
+  '2D / View': '2D / Ansicht',
+  'Data / Info': 'Daten / Info',
+  '4D / 5D': '4D / 5D',
+  'Quick actions': 'Schnellaktionen',
+  'Match properties (MA)': 'Eigenschaften übertragen (MA)',
+  'Isolate selection': 'Auswahl isolieren',
+  'No 2D or view overrides for this element.': 'Keine 2D- oder Ansichtsüberschreibungen für dieses Element.',
+  'Phasing, scheduling and cost sections appear here when active for this element.': 'Phasen-, Termin- und Kostenbereiche erscheinen hier, wenn sie aktiv sind.',
+
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

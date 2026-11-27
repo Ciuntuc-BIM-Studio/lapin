@@ -13,6 +13,8 @@ import { create } from 'zustand';
 import type { Vec2 } from '../platform/module';
 import { formatLength as formatByProject, parseLength as parseByProject, unit as projectUnit, type Unit } from '../engine/unitsStore';
 import { angleFrom, directionAt, type AngleRef } from './angleDims';
+import { fromFrame, isIdentity, toFrame, type Frame } from '../app/frame';
+import { ucsOf, useLocation } from '../app/location';
 
 /** A length in metres as the interface shows it (the project's unit: mm unless set otherwise). */
 export const formatLength = (m: number) => formatByProject(m);
@@ -37,8 +39,8 @@ export function parseAngle(text: string): number | null {
 
 /** `rel`: the angle to the reference at the segment's start (decision 738: the previous segment, the wall or beam it starts on). */
 export type LiveField = 'len' | 'ang' | 'rel';
-/** What the two fields mean: a segment's length and angle, or (a rectangle) its width and height; `len` holds the first, `ang` the second. */
-export type LiveMode = 'polar' | 'rect';
+/** What the two fields mean: polar length/angle, rectangle width/height, absolute X/Y, or relative ΔX/ΔY; `len` holds the first, `ang` the second. */
+export type LiveMode = 'polar' | 'rect' | 'abs' | 'rel';
 
 interface LiveState {
   /** Who asked for it ("tool", "grip", "cad"); null: nothing is being drawn. */
@@ -159,8 +161,26 @@ export function liveToggleMode(): void {
   useLive.setState({ mode, len: '', ang: '', rel: '', focus: 'len' });
 }
 
-/** Where the segment ends: the typed length and angle, else the cursor's. */
-export function livePoint(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'> & { mode?: LiveMode; measure?: boolean; rel?: string; ref?: AngleRef | null; lock?: AlongLine | null } = useLive.getState()): Vec2 | null {
+/** Switch live input to absolute (X, Y) or relative (ΔX, ΔY) Cartesian coordinates (forum topic 295). */
+export function liveSwitchCoord(mode: 'abs' | 'rel', keepLen = false): void {
+  const s = useLive.getState();
+  if (!s.owner || s.measure || s.lock) return;
+  if (keepLen) {
+    useLive.setState({ mode, focus: 'ang', ang: '', rel: '' });
+  } else {
+    useLive.setState({ mode, len: '', ang: '', rel: '', focus: 'len' });
+  }
+}
+
+/** Clear typed values in the live box and restore the tool's default mode (polar or rect). */
+export function liveClear(): void {
+  const s = useLive.getState();
+  const mode: LiveMode = s.rect ? modes.get(s.rect) ?? defaultMode(s.rect) : 'polar';
+  useLive.setState({ len: '', ang: '', rel: '', mode, focus: 'len' });
+}
+
+/** Where the segment ends: the typed length and angle (or absolute/relative coordinates), else the cursor's. */
+export function livePoint(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'> & { mode?: LiveMode; measure?: boolean; rel?: string; ref?: AngleRef | null; lock?: AlongLine | null; frame?: Frame | null } = useLive.getState()): Vec2 | null {
   if (!s.base) return null;
   const c = s.cursor ?? { x: s.base.x + 1, y: s.base.y };
   if (s.lock) {
@@ -177,6 +197,26 @@ export function livePoint(s: Pick<LiveState, 'base' | 'cursor' | 'len' | 'ang'> 
   // Measuring: the point is the cursor's; what is typed is the true distance, not where the point goes.
   if (s.measure) return c;
   const dx = c.x - s.base.x, dy = c.y - s.base.y;
+  if (s.mode === 'abs') {
+    const x = parseLength(s.len), y = parseLength(s.ang);
+    if (x == null && y == null) return c;
+    const f = s.frame !== undefined ? s.frame : ucsOf(useLocation.getState().loc);
+    if (f && !isIdentity(f)) {
+      const cf = toFrame(f, c);
+      return fromFrame(f, { x: x ?? cf.x, y: y ?? cf.y });
+    }
+    return { x: x ?? c.x, y: y ?? c.y };
+  }
+  if (s.mode === 'rel') {
+    const rdx = parseLength(s.len), rdy = parseLength(s.ang);
+    if (rdx == null && rdy == null) return c;
+    const f = s.frame !== undefined ? s.frame : ucsOf(useLocation.getState().loc);
+    if (f && !isIdentity(f)) {
+      const bf = toFrame(f, s.base), cf = toFrame(f, c);
+      return fromFrame(f, { x: bf.x + (rdx ?? (cf.x - bf.x)), y: bf.y + (rdy ?? (cf.y - bf.y)) });
+    }
+    return { x: s.base.x + (rdx ?? dx), y: s.base.y + (rdy ?? dy) };
+  }
   if (s.mode === 'rect') {
     // Width and height, signed as on the command line (@2000,-1500): a field left empty follows the cursor.
     const w = parseLength(s.len), h = parseLength(s.ang);
@@ -223,8 +263,9 @@ export function liveTaken(cursor: Vec2, owners: readonly string[] = ['tool', 'ca
   if (!s.owner || !owners.includes(s.owner) || !s.base || !liveTyped(s)) return null;
   const point = livePoint({ ...s, cursor });
   if (!point) return null;
-  const typed = s.mode === 'rect' ? undefined : parseLength(s.len) ?? undefined;
-  useLive.setState({ len: '', ang: '', rel: '' });
+  const typed = s.mode === 'polar' ? parseLength(s.len) ?? undefined : undefined;
+  const restoreMode: LiveMode = s.rect ? modes.get(s.rect) ?? defaultMode(s.rect) : 'polar';
+  useLive.setState({ len: '', ang: '', rel: '', mode: restoreMode, focus: 'len' });
   return { point, typed };
 }
 
@@ -237,7 +278,8 @@ export function liveAcceptAtCursor(): boolean {
   if (!s.commit || !s.base || !s.cursor) return false;
   const commit = s.commit;
   const p = livePoint(s) ?? s.cursor;
-  useLive.setState({ len: '', ang: '', rel: '' });
+  const restoreMode: LiveMode = s.rect ? modes.get(s.rect) ?? defaultMode(s.rect) : 'polar';
+  useLive.setState({ len: '', ang: '', rel: '', mode: restoreMode, focus: 'len' });
   commit(p);
   return true;
 }
@@ -249,10 +291,11 @@ export function liveCommit(): boolean {
   const p = livePoint(s);
   if (!p) return false;
   const commit = s.commit;
-  const typed = s.mode === 'rect' ? undefined : parseLength(s.len) ?? undefined;
+  const typed = s.mode === 'polar' ? parseLength(s.len) ?? undefined : undefined;
   // An angle to the reference typed is handed on as the angle from X it came to.
-  const typedAngle = s.mode === 'rect' ? undefined : parseAngle(s.ang) ?? (s.rel && parseAngle(s.rel) != null ? (Math.atan2(p.y - s.base.y, p.x - s.base.x) * 180) / Math.PI : undefined);
-  useLive.setState({ len: '', ang: '', rel: '' });
+  const typedAngle = s.mode === 'polar' ? parseAngle(s.ang) ?? (s.rel && parseAngle(s.rel) != null ? (Math.atan2(p.y - s.base.y, p.x - s.base.x) * 180) / Math.PI : undefined) : undefined;
+  const restoreMode: LiveMode = s.rect ? modes.get(s.rect) ?? defaultMode(s.rect) : 'polar';
+  useLive.setState({ len: '', ang: '', rel: '', mode: restoreMode, focus: 'len' });
   commit(p, typed, typedAngle);
   return true;
 }

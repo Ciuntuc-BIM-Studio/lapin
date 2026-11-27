@@ -7406,6 +7406,28 @@ export const PL: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Logowanie przez przeglądarkę wymaga aplikacji na komputer.",
   "This server offers no sign-in through the browser: sign in with your password.": "Ten serwer nie oferuje logowania przez przeglądarkę: zaloguj się hasłem.",
   "The browser could not be opened here.": "Nie udało się tu otworzyć przeglądarki.",
+  // Forum topics 291, 293, 295, 296
+  'Dynamic input': 'Wprowadzanie dynamiczne',
+  'show length, angle and coordinate input at the cursor': 'pokaż długość, kąt i współrzędne przy kursorze',
+  'draw every line one pixel wide on screen': 'rysuj każdą linię o szerokości jednego piksela',
+  'Show circle and arc centerpoints permanently (off: show on hover and selection)': 'Pokaż środki okręgów i łuków na stałe',
+  'Absolute coordinates (#x,y or x,y); type @ for relative': 'Współrzędne bezwzględne (#x,y lub x,y); @ dla względnych',
+  'Relative coordinates (@dx,dy); type # for absolute': 'Współrzędne względne (@dx,dy); # dla bezwzględnych',
+  'Building element types': 'Typy elementów budowlanych',
+  'Arc (3-point)': 'Łuk (3-punktowy)',
+  'Arc / Circle (Centre)': 'Łuk / Okrąg (Środek)',
+  'Arc (Tangent)': 'Łuk (Styczny)',
+  'Arc (2 Tangents + Pt)': 'Łuk (2 Styczne + Pkt)',
+  'Model (3D)': 'Model (3D)',
+  '2D / View': '2D / Widok',
+  'Data / Info': 'Dane / Info',
+  '4D / 5D': '4D / 5D',
+  'Quick actions': 'Szybkie akcje',
+  'Match properties (MA)': 'Kopiuj właściwości (MA)',
+  'Isolate selection': 'Izoluj zaznaczenie',
+  'No 2D or view overrides for this element.': 'Brak nadpisań 2D lub widoku dla tego elementu.',
+  'Phasing, scheduling and cost sections appear here when active for this element.': 'Sekcje faz, harmonogramu i kosztów pojawiają się tutaj, gdy są aktywne.',
+
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

@@ -13522,6 +13522,28 @@ export const TH: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "การลงชื่อเข้าใช้ผ่านเบราว์เซอร์ต้องใช้แอปเดสก์ท็อป.",
   "This server offers no sign-in through the browser: sign in with your password.": "เซิร์ฟเวอร์นี้ไม่มีการลงชื่อเข้าใช้ผ่านเบราว์เซอร์: ลงชื่อเข้าใช้ด้วยรหัสผ่าน.",
   "The browser could not be opened here.": "ไม่สามารถเปิดเบราว์เซอร์ที่นี่ได้.",
+  // Forum topics 291, 293, 295, 296
+  'Dynamic input': 'ป้อนค่าแบบไดนามิก',
+  'show length, angle and coordinate input at the cursor': 'แสดงความยาว มุม และพิกัดที่เคอร์เซอร์',
+  'draw every line one pixel wide on screen': 'วาดทุกเส้นกว้างหนึ่งพิกเซลบนหน้าจอ',
+  'Show circle and arc centerpoints permanently (off: show on hover and selection)': 'แสดงจุดศูนย์กลางวงกลมและส่วนโค้งถาวร',
+  'Absolute coordinates (#x,y or x,y); type @ for relative': 'พิกัดสัมบูรณ์ (#x,y หรือ x,y); พิมพ์ @ สำหรับพิกัดสัมพัทธ์',
+  'Relative coordinates (@dx,dy); type # for absolute': 'พิกัดสัมพัทธ์ (@dx,dy); พิมพ์ # สำหรับพิกัดสัมบูรณ์',
+  'Building element types': 'ประเภทองค์ประกอบอาคาร',
+  'Arc (3-point)': 'ส่วนโค้ง (3 จุด)',
+  'Arc / Circle (Centre)': 'ส่วนโค้ง / วงกลม (ศูนย์กลาง)',
+  'Arc (Tangent)': 'ส่วนโค้ง (เส้นสัมผัส)',
+  'Arc (2 Tangents + Pt)': 'ส่วนโค้ง (2 เส้นสัมผัส + จุด)',
+  'Model (3D)': 'โมเดล (3D)',
+  '2D / View': '2D / มุมมอง',
+  'Data / Info': 'ข้อมูล',
+  '4D / 5D': '4D / 5D',
+  'Quick actions': 'การกระทำด่วน',
+  'Match properties (MA)': 'คัดลอกคุณสมบัติ (MA)',
+  'Isolate selection': 'แยกส่วนที่เลือก',
+  'No 2D or view overrides for this element.': 'ไม่มีการตั้งค่า 2D หรือมุมมองสำหรับองค์ประกอบนี้.',
+  'Phasing, scheduling and cost sections appear here when active for this element.': 'ส่วนเฟส ตารางเวลา และต้นทุนจะแสดงที่นี่เมื่อเปิดใช้งาน.',
+
 };
 
 /** Phrases with a number or a name in them. */

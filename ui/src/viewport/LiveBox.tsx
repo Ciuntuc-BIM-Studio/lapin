@@ -9,10 +9,11 @@
 
 import { useLayoutEffect, useRef } from 'react';
 import type { Vec2 } from '../platform/module';
-import { formatAngle, formatLength, liveAcceptAtCursor, liveCommit, liveFields, liveHintSeen, liveMeasure, liveToggleMode, useLive, type LiveField } from './liveInput';
+import { formatAngle, formatLength, liveAcceptAtCursor, liveCommit, liveFields, liveHintSeen, liveMeasure, liveSwitchCoord, liveToggleMode, useLive, type LiveField } from './liveInput';
 import { segmentArc } from './angleDims';
 import { unitLabel } from '../engine/unitsStore';
 import { useInterface } from '../app/interface';
+import { usePrefs } from '../app/prefs';
 import { t } from '../i18n';
 import { autoholdOn, useAutohold } from '../app/autohold';
 import { useUi } from '../app/store';
@@ -28,6 +29,7 @@ function relAngle(live: ReturnType<typeof useLive.getState>, end: Vec2): number 
 
 export function LiveBox({ toScreen }: { toScreen: ToScreen }) {
   const live = useLive();
+  const dynamicInput = usePrefs((s) => s.dynamicInput);
   const autohold = useAutohold((s) => s.on);
   // What the tool drawing adds beside the cursor (an MEP run's plane and elevation).
   const Info = useUi((s) => (s.tool ? findTool(s.tool)?.cursorInfo : undefined));
@@ -42,7 +44,7 @@ export function LiveBox({ toScreen }: { toScreen: ToScreen }) {
   // A move's Δx and Δy at the cursor; in the status line instead when the prompt goes there (Compact): the inline bar shows them.
   const deltaHere = useInterface((s) => s.parts.prompt !== 'commandLine') && live.delta;
   const m = live.owner ? liveMeasure(live) : null;
-  if (!live.owner || !m || !live.cursor) return null;
+  if (!dynamicInput || !live.owner || !m || !live.cursor) return null;
   /** From a temporary reference point (viewport/datum.ts): the two fields are the offsets ΔX and ΔY from it. */
   const datum = !!live.rect?.startsWith('datum:');
   const rel = relAngle(live, m.end);
@@ -54,7 +56,7 @@ export function LiveBox({ toScreen }: { toScreen: ToScreen }) {
   );
   return (
     <div ref={box} className={`live-box${deltaHere ? ' move' : ''}`} style={{ left: at.x + 18, top: at.y + 18 }} aria-live="polite">
-      {deltaHere && <>
+      {deltaHere && live.mode !== 'abs' && live.mode !== 'rel' && <>
         <span className="live-cell ro"><span className="live-label">Δx</span>{formatLength(m.dx)}<span className="live-unit">{unitLabel()}</span></span>
         <span className="live-cell ro"><span className="live-label">Δy</span>{formatLength(m.dy)}<span className="live-unit">{unitLabel()}</span></span>
       </>}
@@ -62,6 +64,14 @@ export function LiveBox({ toScreen }: { toScreen: ToScreen }) {
         {/* Measuring (Scale image): the distance the two points are apart now, and the true one typed beside it. */}
         <span className="live-cell ro" title={t('Measured')}><span className="live-label">↔</span>{formatLength(m.len)}<span className="live-unit">{unitLabel()}</span></span>
         {cell('len', '=', '?', live.len ? '' : unitLabel())}
+      </> : live.mode === 'abs' ? <>
+        <span className="live-tag" data-testid="live-coord-mode" title={t('Absolute coordinates (#x,y or x,y); type @ for relative')}>ABS</span>
+        {cell('len', 'X', formatLength(m.end.x), unitLabel())}
+        {cell('ang', 'Y', formatLength(m.end.y), unitLabel())}
+      </> : live.mode === 'rel' ? <>
+        <span className="live-tag" data-testid="live-coord-mode" title={t('Relative coordinates (@dx,dy); type # for absolute')}>REL</span>
+        {cell('len', 'ΔX', formatLength(m.dx), unitLabel())}
+        {cell('ang', 'ΔY', formatLength(m.dy), unitLabel())}
       </> : live.mode === 'rect' ? <>
         {cell('len', datum ? 'ΔX' : 'W', formatLength(m.dx), unitLabel())}
         {cell('ang', datum ? 'ΔY' : 'H', formatLength(m.dy), unitLabel())}
@@ -96,7 +106,12 @@ export function LiveBar({ inline }: { inline?: boolean }) {
         onChange={(e) => useLive.setState({ [f]: e.target.value })}
         onKeyDown={(e) => {
           if (e.key === ' ' && live.rect) { e.preventDefault(); liveToggleMode(); return; }
-          if (e.key === ',' && live.rect && live.mode === 'rect' && f === 'len') { e.preventDefault(); useLive.setState({ focus: 'ang' }); return; }
+          if (e.key === '#' && !live.len && !live.ang) { e.preventDefault(); liveSwitchCoord('abs'); return; }
+          if (e.key === '@' && !live.len && !live.ang) { e.preventDefault(); liveSwitchCoord('rel'); return; }
+          if (e.key === ',' && f === 'len') {
+            if (live.mode === 'abs' || live.mode === 'rel' || (live.rect && live.mode === 'rect')) { e.preventDefault(); useLive.setState({ focus: 'ang' }); return; }
+            if (!live.rect && live.mode === 'polar' && live.len) { e.preventDefault(); liveSwitchCoord('abs', true); return; }
+          }
           if (e.key === 'Enter') { e.preventDefault(); if (!liveCommit() && autoholdOn()) liveAcceptAtCursor(); }
           if (e.key === 'Tab') { e.preventDefault(); if (e.repeat) return; const fs = liveFields(live); useLive.setState({ focus: fs[(fs.indexOf(f) + 1) % fs.length] }); }
           if (e.key === 'Escape') (e.target as HTMLInputElement).blur();
@@ -109,6 +124,12 @@ export function LiveBar({ inline }: { inline?: boolean }) {
       {live.measure ? <>
         <span className="live-ro"><span>{t('Measured')}</span>{formatLength(m.len)}</span>
         {field('len', `${t('True distance')}${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.len))}
+      </> : live.mode === 'abs' ? <>
+        {field('len', `X${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.end.x))}
+        {field('ang', `Y${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.end.y))}
+      </> : live.mode === 'rel' ? <>
+        {field('len', `ΔX${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.dx))}
+        {field('ang', `ΔY${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.dy))}
       </> : live.mode === 'rect' ? <>
         {field('len', `${datum ? 'ΔX' : t('Width')}${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.dx))}
         {field('ang', `${datum ? 'ΔY' : t('Height')}${unitLabel() ? ` (${unitLabel()})` : ''}`, formatLength(m.dy))}

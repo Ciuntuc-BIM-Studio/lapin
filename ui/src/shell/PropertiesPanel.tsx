@@ -7,7 +7,7 @@
 
 import { ColourField } from './ColourField';
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
-import { AlignHorizontalJustifyCenter, ChevronRight, Code2, EyeOff, ListOrdered, Search, Trash2 } from 'lucide-react';
+import { AlignHorizontalJustifyCenter, ChevronRight, Code2, CopyCheck, EyeOff, Focus, ListOrdered, Pipette, Search, Trash2 } from 'lucide-react';
 import { Cell, LengthCell } from './cells';
 import { panelFocus, panelKeys, parseNumber } from './cellKeys';
 import { useUi } from '../app/store';
@@ -38,6 +38,10 @@ import { MaterialPicker } from '../modules/core/MaterialPicker';
 import { hiddenHere, useShownHere } from '../viewport/cad/shown';
 import { ElementMarkField, hasMark, TypeMarkField } from '../modules/core/MarkField';
 import { PartBoundary } from './PartBoundary';
+import { DimensionDiagram, isAdvancedModelSection, PROPS_TABS, propsTabOf, type PropsTab } from './propsTabs';
+import { startCommand } from '../viewport/cad/session';
+import { isolateSelection } from '../viewport/temporary';
+import { selectSimilarHere } from './selectionMenu';
 
 /** An input that commits on Enter or when it loses focus, not on every key. */
 function Commit({ value, onCommit, suffix, className }: { value: string; onCommit: (v: string) => void; suffix?: string; className?: string }) {
@@ -100,17 +104,28 @@ export function FieldRow({ node, field }: { node: NodeDto; field: FieldDescripto
 
 const CLOSED_KEY = 'lapin.props.closed';
 const readClosed = (): Set<string> => { try { return new Set(JSON.parse(localStorage.getItem(CLOSED_KEY) ?? '[]') as string[]); } catch { return new Set(); } };
-function Group({ id, label, children }: { id: string; label: string; children: ReactNode }) {
-  const [open, setOpen] = useState(() => !readClosed().has(id));
+function Group({ id, label, badge, defaultClosed, children }: { id: string; label: string; badge?: string; defaultClosed?: boolean; children: ReactNode }) {
+  const [open, setOpen] = useState(() => {
+    const closed = readClosed();
+    return defaultClosed ? closed.has(`!${id}`) : !closed.has(id);
+  });
   const toggle = () => {
     const closed = readClosed();
-    if (open) closed.add(id); else closed.delete(id);
+    if (defaultClosed) {
+      if (open) closed.delete(`!${id}`); else closed.add(`!${id}`);
+    } else {
+      if (open) closed.add(id); else closed.delete(id);
+    }
     try { localStorage.setItem(CLOSED_KEY, JSON.stringify([...closed])); } catch { /* remembered for this session only */ }
     setOpen(!open);
   };
   return (
     <section className={`sect group-sect${open ? '' : ' closed'}`} data-group={id}>
-      <button type="button" className="sect-head" onClick={toggle} aria-expanded={open}><ChevronRight size={12} className="chev" /><span className="eyebrow">{label}</span></button>
+      <button type="button" className="sect-head" onClick={toggle} aria-expanded={open}>
+        <ChevronRight size={12} className="chev" />
+        <span className="eyebrow">{label}</span>
+        {badge && <span className="group-badge">{badge}</span>}
+      </button>
       {open && <div className="sect-body">{children}</div>}
     </section>
   );
@@ -298,13 +313,33 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
   const info = useSession((s) => s.info);
   const selectedCount = useUi((s) => s.selected.length);
   const [filter, setFilter] = useState('');
+  const defaultTab: PropsTab = node.type === 'LapinView' ? 'view' : 'model';
+  const [tab, setTab] = useState<PropsTab>(defaultTab);
+  const [matchedTabs, setMatchedTabs] = useState<Set<PropsTab>>(() => new Set());
   const body = useRef<HTMLElement>(null);
-  useFilter(body, filter, [node, nodes]);
+  useEffect(() => { setTab(node.type === 'LapinView' ? 'view' : 'model'); }, [node.id, node.type]);
+  useFilter(body, filter, [node, nodes, tab]);
+  // Track which tabs contain filter matches so non-active tabs highlight when searching (forum topic 296).
+  useEffect(() => {
+    const q = filter.trim().toLowerCase();
+    if (!q || !body.current) { setMatchedTabs(new Set()); return; }
+    const hits = new Set<PropsTab>();
+    for (const pane of body.current.querySelectorAll<HTMLElement>('[data-props-tab]')) {
+      const id = pane.dataset.propsTab as PropsTab;
+      if ((pane.textContent ?? '').toLowerCase().includes(q)) hits.add(id);
+    }
+    setMatchedTabs(hits);
+  }, [filter, node, nodes]);
   const cls = info?.nodeTypes.find((t) => t.type === node.type);
   const model = { nodes, relations };
   const type = typeOf(model, node.id);
   const storey = relatingOf(model, node.id, 'IfcRelContainedInSpatialStructure');
   const sections = propertySections(node.type).filter((s) => !s.shows || s.shows(node));
+  const modelBasic = sections.filter((s) => propsTabOf(s.id) === 'model' && !isAdvancedModelSection(s.id));
+  const modelAdvanced = sections.filter((s) => propsTabOf(s.id) === 'model' && isAdvancedModelSection(s.id));
+  const viewSections = sections.filter((s) => propsTabOf(s.id) === 'view');
+  const dataSections = sections.filter((s) => propsTabOf(s.id) === 'data');
+  const planSections = sections.filter((s) => propsTabOf(s.id) === 'plan');
   // While it is dragged up or down in a section or an elevation, its offset follows the drag (decision 454).
   const rise = useLiveRise((s) => (s.ids.includes(node.id) ? s.dz : 0));
   const level = node.editable ? elevationOf(node, storey, type, cls?.fields.map((f) => f.key) ?? []) : null;
@@ -313,114 +348,178 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
   // Selected from a list (the project browser, a schedule, a link) though the view in front hides it (decision 498): said, not silent.
   useShownHere((s) => s.version);
   const notShown = !inFront && hiddenHere(node.id);
+  const canQuickAct = !inFront && node.type !== 'LapinView' && node.type !== 'IfcProject' && node.type !== 'IfcSite' && node.type !== 'IfcBuilding';
+  const dimFields = cls && cls.fields.length > 0 && node.editable && !sections.some((s) => s.replacesFields?.(node))
+    ? fieldsShown(cls.fields, sections, node, sameKind(node).map((id) => nodes.get(id)).filter((n): n is NodeDto => !!n)).filter((f) => f.key !== elevation?.key)
+    : [];
+  const renderSection = (s: PropertySectionDef) => (
+    <Group key={s.id} id={s.id} label={s.label}><PartBoundary part={`Properties: ${s.label}`} compact resetKey={node.id}><s.component node={node} /></PartBoundary></Group>
+  );
   return (
-    <aside className="panel props" aria-label="Properties" ref={body} onKeyDown={panelKeys} onFocus={panelFocus}>
+    <aside className="panel props props-tabbed" aria-label="Properties" ref={body} onKeyDown={panelKeys} onFocus={panelFocus}>
       <div className="props-resize" onPointerDown={startResize} title="Drag to widen the panel" />
-      <div className="panel-head">
-        <span className="eyebrow"><span data-i18n-ctx="class">{cls?.label ?? node.type}</span>{selectedCount > 1 ? ` · ${selectedCount} selected` : ''}</span>
-        {node.editable
-          ? <Commit className="panel-title-input" value={node.name} onCommit={(name) => void execute('element.rename', { id: node.id, name })} />
-          : <span className="panel-title">{node.name}</span>}
-        {/* Its own mark (forum topic 177), its type's shown while it has none. */}
-        {hasMark(node) && <ElementMarkField node={node} />}
+      <div className="props-shell">
+        <div className="props-main">
+          <div className="props-pinned-head">
+            <div className="props-head-top">
+              <div className="props-head-title">
+                <span className="eyebrow"><span data-i18n-ctx="class">{cls?.label ?? node.type}</span>{selectedCount > 1 ? ` · ${selectedCount} selected` : ''}</span>
+                {node.editable
+                  ? <Commit className="panel-title-input" value={node.name} onCommit={(name) => void execute('element.rename', { id: node.id, name })} />
+                  : <span className="panel-title">{node.name}</span>}
+              </div>
+              {canQuickAct && (
+                <div className="props-quick-actions" role="toolbar" aria-label="Quick actions">
+                  <button type="button" className="icon" title="Match properties (MA)" onClick={() => void startCommand('MATCHPROP')}><Pipette size={14} /></button>
+                  <button type="button" className="icon" title="Isolate selection" onClick={() => isolateSelection()}><Focus size={14} /></button>
+                  <button type="button" className="icon" title="Select similar" onClick={() => selectSimilarHere()}><CopyCheck size={14} /></button>
+                </div>
+              )}
+            </div>
+            <div className="props-head-sub">
+              {hasMark(node) && <ElementMarkField node={node} />}
+              <label className="props-filter"><Search size={12} /><input placeholder="Filter properties" value={filter} onChange={(e) => setFilter(e.target.value)} onKeyDown={(e) => { if (e.key === 'Escape') setFilter(''); }} /></label>
+            </div>
+          </div>
+          <div className="props-content">
+            {notShown && <p className="muted small pad props-not-shown" data-testid="not-shown-here"><EyeOff size={12} /> Not shown in this view: hidden by its graphics, a filter, a phase, Hide / Isolate, its range or a level put away. A click or a box here does not take it.</p>}
+            {!node.editable && <p className="muted small pad">This element belongs to a module this edition does not have: it is shown and kept, not edited.</p>}
+            {node.props.scriptOwned === true && <p className="muted small pad props-script-owned" data-testid="script-owned"><Code2 size={12} /> <span>Made by a script:</span> <b>{String(node.props.owner ?? '')}</b><br /><span>Its shape is changed in the script; here it moves, turns, copies and is cut like any element.</span></p>}
+
+            {/* ── Tab 1: Model (3D) ─────────────────────────────────────────── */}
+            <div data-props-tab="model" className={tab === 'model' ? 'props-pane' : 'props-pane props-pane-hidden'}>
+              {modelBasic.map(renderSection)}
+              {dimFields.length > 0 && (
+                <Group id="dimensions" label="Dimensions" badge={`${dimFields.length}`}>
+                  <dl className="fields">{dimFields.map((f) => <FieldRow key={f.key} node={node} field={f} />)}</dl>
+                  <DimensionDiagram node={node} />
+                </Group>
+              )}
+              {node.editable && storey && node.type !== 'IfcBuildingStorey' && (
+                <Group id="placement" label="Placement" badge={storey.name}>
+                  <dl className="fields">
+                    <dt title="Moves the selection there, with the level (Modify › Move to storey keeps it in place)">Storey</dt>
+                    <dd>
+                      <select className="cell" value={storey.id} onChange={(e) => void execute('element.moveToStorey', { ids: useUi.getState().selected.includes(node.id) ? useUi.getState().selected : [node.id], storeyId: e.target.value })}>
+                        {storeys(model).map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
+                      </select>
+                    </dd>
+                    <dt title="A pinned element stays where it is: it is not moved, turned, mirrored, sent to another storey nor deleted until it is unpinned. Its other fields still change">Pinned</dt>
+                    <dd><input type="checkbox" data-field="pinned" checked={isPinned(node)} onChange={(e) => void setPinned(useUi.getState().selected.includes(node.id) ? useUi.getState().selected : [node.id], e.target.checked)} /></dd>
+                    {(() => {
+                      const targets = [
+                        ...ofClass(model, 'IfcGrid').flatMap((g) => ((g.props.axes as { tag: string }[] | undefined) ?? []).map((ax) => ({
+                          key: `axis:${g.id}:${ax.tag}`, label: `Axis ${ax.tag}`, target: { kind: 'axis', gridId: g.id, tag: ax.tag },
+                        }))),
+                        ...ofClass(model, 'LapinView').filter((v) => v.props.kind === 'plane').map((v) => ({
+                          key: `plane:${v.id}`, label: `Ref plane · ${v.name}`, target: { kind: 'plane', id: v.id },
+                        })),
+                      ];
+                      if (targets.length === 0) return null;
+                      const lt = node.props.lockedTo as { kind?: string; gridId?: string; tag?: string; id?: string } | undefined;
+                      const lockKey = lt?.kind === 'axis' && lt.gridId && lt.tag ? `axis:${lt.gridId}:${lt.tag}` : lt?.kind === 'plane' && lt.id ? `plane:${lt.id}` : '';
+                      const targetIds = useUi.getState().selected.includes(node.id) ? useUi.getState().selected : [node.id];
+                      return (
+                        <>
+                          <dt title="Link this locked element to a grid axis or reference plane so it moves or stretches when that axis or plane moves">Linked to</dt>
+                          <dd>
+                            <select className="cell" data-field="locked-to" value={lockKey} onChange={(e) => {
+                              const hit = targets.find((x) => x.key === e.target.value);
+                              void execute('element.lockTo', { ids: targetIds, target: hit?.target ?? null });
+                            }}>
+                              <option value="">None</option>
+                              {targets.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
+                            </select>
+                          </dd>
+                        </>
+                      );
+                    })()}
+                    {elevation && <>
+                      {/* A beam's offset is from its level's top, not its base (forum topic 190): said in the label. */}
+                      {elevation.key === 'topOffset' && node.type === 'IfcBeam'
+                        ? <dt title="The beam's top stands at the top of its level (the level's Top level, where the level above starts) plus this offset: 0 puts its top there, a negative offset lowers it. The Top elevation below follows it">Top offset (from the level above)</dt>
+                        : <dt title="The level's elevation and this offset from it: the figure below follows it">Offset from level</dt>}
+                      <dd><LengthCell metres={elevation.offset} onCommit={(v) => void execute('element.update', { ids: sameKind(node), attrs: { [elevation.key]: v } })} /></dd>
+                      <dt title={elevation.of === 'top' ? 'The top of the element, above ±0.00: type it to move the element there' : elevation.of === 'bottom' ? 'The bottom of the element, above ±0.00: type it to move the element there' : 'The base of the element, above ±0.00: type it to move the element there'}>{elevation.of === 'top' ? 'Top elevation' : elevation.of === 'bottom' ? 'Bottom elevation' : 'Base elevation'}</dt>
+                      <dd><LengthCell metres={elevation.absolute} onCommit={(v) => { if (v != null) void toElevation(node, v, cls?.fields.map((f) => f.key) ?? []); }} /></dd>
+                    </>}
+                  </dl>
+                </Group>
+              )}
+              {modelAdvanced.length > 0 && (
+                <Group id="modelAdvanced" label="Advanced" badge={`${modelAdvanced.length}`} defaultClosed>
+                  {modelAdvanced.map(renderSection)}
+                </Group>
+              )}
+              {node.editable && type && (
+                <Group id="typeParams" label="Type parameters" badge={type.name}>
+                  <p className="muted small pad">Every element of the type has these; a change here changes them all ({relatedOf(model, type.id, 'IfcRelDefinesByType').length}).</p>
+                  {/* The type's mark (forum topic 177), as its type editor has it at the top. */}
+                  <div className="pad"><TypeMarkField typeId={type.id} /></div>
+                  {TypeFields && <TypeFields type={type} node={node} />}
+                  <ClassificationSection node={type} ids={() => [type.id]} />
+                  <ParamsSection node={type} ids={() => [type.id]} shadowed={new Set(((Array.isArray(node.props.params) ? node.props.params : []) as unknown as Param[]).map(paramKey))} />
+                </Group>
+              )}
+              {node.editable && node.type !== 'IfcProject' && node.type !== 'IfcSite' && node.type !== 'IfcBuilding' && (
+                <section className="sect actions">
+                  <button type="button" className="btn" disabled={isPinned(node)} title={isPinned(node) ? 'Pinned: unpin it to delete it' : undefined} onClick={() => void deleteElements([node.id])}><Trash2 size={14} />Delete</button>
+                </section>
+              )}
+            </div>
+
+            {/* ── Tab 2: 2D / View ──────────────────────────────────────────── */}
+            <div data-props-tab="view" className={tab === 'view' ? 'props-pane' : 'props-pane props-pane-hidden'}>
+              {viewSections.map(renderSection)}
+              {node.editable && hasHatchOrigin(node) && <Group id="hatchOrigin" label="Hatch origin"><HatchOriginSection node={node} /></Group>}
+              {/* Graphics in the view in front (decision 718): hatch, fill and lines over the material's, for any element a view draws. */}
+              {node.editable && (node.storeyId || typeof node.props.viewId === 'string') && !node.type.endsWith('Type') && node.type !== 'LapinView' && <Group id="elementGraphics" label="Graphics in view"><ElementGraphicsSection node={node} /></Group>}
+              {viewSections.length === 0 && !(node.editable && hasHatchOrigin(node)) && !(node.editable && (node.storeyId || typeof node.props.viewId === 'string') && !node.type.endsWith('Type') && node.type !== 'LapinView') && (
+                <p className="muted small pad">No 2D or view overrides for this element.</p>
+              )}
+            </div>
+
+            {/* ── Tab 3: Data / Info ────────────────────────────────────────── */}
+            <div data-props-tab="data" className={tab === 'data' ? 'props-pane' : 'props-pane props-pane-hidden'}>
+              {dataSections.map(renderSection)}
+              {node.editable && <Group id="params" label="Parameters"><ParamsSection node={node} /></Group>}
+              {/* The codes of the classification systems the project holds (docs/plan-user-extensibility.md §7.3). */}
+              {node.editable && node.type !== 'IfcProject' && <Group id="classification" label="Classification"><ClassificationSection node={node} /></Group>}
+              <DependenciesSection node={node} />
+              <IfcPropertiesSection node={node} />
+              <details className="sect advanced">
+                <summary><ChevronRight size={12} /> <span className="eyebrow">Advanced · IFC data</span></summary>
+                <dl className="fields">
+                  <dt>Class</dt><dd>{node.type}{typeof node.props.predefinedType === 'string' ? ` · ${node.props.predefinedType}` : ''}</dd>
+                  <dt>GlobalId</dt><dd className="mono">{node.id}</dd>
+                  {type && <><dt>Type</dt><dd>{type.type} · {type.name}</dd></>}
+                  {storey && <><dt>Storey</dt><dd>{storey.name}</dd></>}
+                  <dt>Module</dt><dd>{node.module ?? '—'}</dd>
+                </dl>
+              </details>
+            </div>
+
+            {/* ── Tab 4: 4D / 5D ────────────────────────────────────────────── */}
+            <div data-props-tab="plan" className={tab === 'plan' ? 'props-pane' : 'props-pane props-pane-hidden'}>
+              {planSections.map(renderSection)}
+              <QuantitiesSection node={node} />
+              {planSections.length === 0 && (
+                <p className="muted small pad">Phasing, scheduling and cost sections appear here when active for this element.</p>
+              )}
+            </div>
+          </div>
+        </div>
+        <nav className="props-vtabs" role="tablist" aria-label="Property categories" aria-orientation="vertical">
+          {PROPS_TABS.map((pt) => (
+            <button key={pt.id} type="button" role="tab" aria-selected={tab === pt.id} data-testid={`props-tab-${pt.id}`}
+              className={`props-vtab${tab === pt.id ? ' on' : ''}${matchedTabs.has(pt.id) ? ' has-match' : ''}`}
+              onClick={() => setTab(pt.id)}>
+              <span>{pt.label}</span>
+              {matchedTabs.has(pt.id) && <span className="props-vtab-dot" aria-hidden="true" />}
+            </button>
+          ))}
+        </nav>
       </div>
-      <label className="props-filter"><Search size={12} /><input placeholder="Filter properties" value={filter} onChange={(e) => setFilter(e.target.value)} onKeyDown={(e) => { if (e.key === 'Escape') setFilter(''); }} /></label>
-      {notShown && <p className="muted small pad props-not-shown" data-testid="not-shown-here"><EyeOff size={12} /> Not shown in this view: hidden by its graphics, a filter, a phase, Hide / Isolate, its range or a level put away. A click or a box here does not take it.</p>}
-      {!node.editable && <p className="muted small pad">This element belongs to a module this edition does not have: it is shown and kept, not edited.</p>}
-      {node.props.scriptOwned === true && <p className="muted small pad props-script-owned" data-testid="script-owned"><Code2 size={12} /> <span>Made by a script:</span> <b>{String(node.props.owner ?? '')}</b><br /><span>Its shape is changed in the script; here it moves, turns, copies and is cut like any element.</span></p>}
-      {sections.map((s) => (
-        <Group key={s.id} id={s.id} label={s.label}><PartBoundary part={`Properties: ${s.label}`} compact resetKey={node.id}><s.component node={node} /></PartBoundary></Group>
-      ))}
-      {node.editable && storey && node.type !== 'IfcBuildingStorey' && (
-        <Group id="placement" label="Placement">
-          <dl className="fields">
-            <dt title="Moves the selection there, with the level (Modify › Move to storey keeps it in place)">Storey</dt>
-            <dd>
-              <select className="cell" value={storey.id} onChange={(e) => void execute('element.moveToStorey', { ids: useUi.getState().selected.includes(node.id) ? useUi.getState().selected : [node.id], storeyId: e.target.value })}>
-                {storeys(model).map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
-              </select>
-            </dd>
-            <dt title="A pinned element stays where it is: it is not moved, turned, mirrored, sent to another storey nor deleted until it is unpinned. Its other fields still change">Pinned</dt>
-            <dd><input type="checkbox" data-field="pinned" checked={isPinned(node)} onChange={(e) => void setPinned(useUi.getState().selected.includes(node.id) ? useUi.getState().selected : [node.id], e.target.checked)} /></dd>
-            {(() => {
-              const targets = [
-                ...ofClass(model, 'IfcGrid').flatMap((g) => ((g.props.axes as { tag: string }[] | undefined) ?? []).map((ax) => ({
-                  key: `axis:${g.id}:${ax.tag}`, label: `Axis ${ax.tag}`, target: { kind: 'axis', gridId: g.id, tag: ax.tag },
-                }))),
-                ...ofClass(model, 'LapinView').filter((v) => v.props.kind === 'plane').map((v) => ({
-                  key: `plane:${v.id}`, label: `Ref plane · ${v.name}`, target: { kind: 'plane', id: v.id },
-                })),
-              ];
-              if (targets.length === 0) return null;
-              const lt = node.props.lockedTo as { kind?: string; gridId?: string; tag?: string; id?: string } | undefined;
-              const lockKey = lt?.kind === 'axis' && lt.gridId && lt.tag ? `axis:${lt.gridId}:${lt.tag}` : lt?.kind === 'plane' && lt.id ? `plane:${lt.id}` : '';
-              const targetIds = useUi.getState().selected.includes(node.id) ? useUi.getState().selected : [node.id];
-              return (
-                <>
-                  <dt title="Link this locked element to a grid axis or reference plane so it moves or stretches when that axis or plane moves">Linked to</dt>
-                  <dd>
-                    <select className="cell" data-field="locked-to" value={lockKey} onChange={(e) => {
-                      const hit = targets.find((x) => x.key === e.target.value);
-                      void execute('element.lockTo', { ids: targetIds, target: hit?.target ?? null });
-                    }}>
-                      <option value="">None</option>
-                      {targets.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
-                    </select>
-                  </dd>
-                </>
-              );
-            })()}
-            {elevation && <>
-              {/* A beam's offset is from its level's top, not its base (forum topic 190): said in the label. */}
-              {elevation.key === 'topOffset' && node.type === 'IfcBeam'
-                ? <dt title="The beam's top stands at the top of its level (the level's Top level, where the level above starts) plus this offset: 0 puts its top there, a negative offset lowers it. The Top elevation below follows it">Top offset (from the level above)</dt>
-                : <dt title="The level's elevation and this offset from it: the figure below follows it">Offset from level</dt>}
-              <dd><LengthCell metres={elevation.offset} onCommit={(v) => void execute('element.update', { ids: sameKind(node), attrs: { [elevation.key]: v } })} /></dd>
-              <dt title={elevation.of === 'top' ? 'The top of the element, above ±0.00: type it to move the element there' : elevation.of === 'bottom' ? 'The bottom of the element, above ±0.00: type it to move the element there' : 'The base of the element, above ±0.00: type it to move the element there'}>{elevation.of === 'top' ? 'Top elevation' : elevation.of === 'bottom' ? 'Bottom elevation' : 'Base elevation'}</dt>
-              <dd><LengthCell metres={elevation.absolute} onCommit={(v) => { if (v != null) void toElevation(node, v, cls?.fields.map((f) => f.key) ?? []); }} /></dd>
-            </>}
-          </dl>
-        </Group>
-      )}
-      {node.editable && hasHatchOrigin(node) && <Group id="hatchOrigin" label="Hatch origin"><HatchOriginSection node={node} /></Group>}
-      {/* Graphics in the view in front (decision 718): hatch, fill and lines over the material's, for any element a view draws. */}
-      {node.editable && (node.storeyId || typeof node.props.viewId === 'string') && !node.type.endsWith('Type') && node.type !== 'LapinView' && <Group id="elementGraphics" label="Graphics in view"><ElementGraphicsSection node={node} /></Group>}
-      {cls && cls.fields.length > 0 && node.editable && !sections.some((s) => s.replacesFields?.(node)) && (
-        <Group id="dimensions" label="Dimensions">
-          <dl className="fields">{fieldsShown(cls.fields, sections, node, sameKind(node).map((id) => nodes.get(id)).filter((n): n is NodeDto => !!n)).filter((f) => f.key !== elevation?.key).map((f) => <FieldRow key={f.key} node={node} field={f} />)}</dl>
-        </Group>
-      )}
-      {node.editable && <Group id="params" label="Parameters"><ParamsSection node={node} /></Group>}
-      {/* The codes of the classification systems the project holds (docs/plan-user-extensibility.md §7.3). */}
-      {node.editable && node.type !== 'IfcProject' && <Group id="classification" label="Classification"><ClassificationSection node={node} /></Group>}
-      {node.editable && type && (
-        <Group id="typeParams" label={`Type parameters · ${type.name}`}>
-          <p className="muted small pad">Every element of the type has these; a change here changes them all ({relatedOf(model, type.id, 'IfcRelDefinesByType').length}).</p>
-          {/* The type's mark (forum topic 177), as its type editor has it at the top. */}
-          <div className="pad"><TypeMarkField typeId={type.id} /></div>
-          {TypeFields && <TypeFields type={type} node={node} />}
-          <ClassificationSection node={type} ids={() => [type.id]} />
-          <ParamsSection node={type} ids={() => [type.id]} shadowed={new Set(((Array.isArray(node.props.params) ? node.props.params : []) as unknown as Param[]).map(paramKey))} />
-        </Group>
-      )}
-      <QuantitiesSection node={node} />
-      <DependenciesSection node={node} />
-      <IfcPropertiesSection node={node} />
-      {node.editable && node.type !== 'IfcProject' && node.type !== 'IfcSite' && node.type !== 'IfcBuilding' && (
-        <section className="sect actions">
-          <button type="button" className="btn" disabled={isPinned(node)} title={isPinned(node) ? 'Pinned: unpin it to delete it' : undefined} onClick={() => void deleteElements([node.id])}><Trash2 size={14} />Delete</button>
-        </section>
-      )}
-      <details className="sect advanced">
-        <summary><ChevronRight size={12} /> <span className="eyebrow">Advanced · IFC data</span></summary>
-        <dl className="fields">
-          <dt>Class</dt><dd>{node.type}{typeof node.props.predefinedType === 'string' ? ` · ${node.props.predefinedType}` : ''}</dd>
-          <dt>GlobalId</dt><dd className="mono">{node.id}</dd>
-          {type && <><dt>Type</dt><dd>{type.type} · {type.name}</dd></>}
-          {storey && <><dt>Storey</dt><dd>{storey.name}</dd></>}
-          <dt>Module</dt><dd>{node.module ?? '—'}</dd>
-        </dl>
-      </details>
     </aside>
   );
 }

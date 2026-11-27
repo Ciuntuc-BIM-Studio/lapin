@@ -7,7 +7,7 @@ using Lapin.Model;
 namespace Lapin.Platform;
 
 /// <summary>
-/// A view's sun shadows (docs/plan-visualisation.md, vector shadows), free: elevations, sections and site plans draw the
+/// A view's sun shadows (docs/plan-visualisation.md, vector shadows), free: floor plans, elevations, sections and site plans draw the
 /// shadows the sun casts on the faces they see, as a filled area under their lines (<see cref="SunShadows"/>), so they
 /// print on sheets and in PDF and DXF. Each view says where its sun is, as Archicad's elevations do:
 /// <list type="bullet">
@@ -18,7 +18,7 @@ namespace Lapin.Platform;
 /// rays along a cube's diagonal (45°, 35.26°), so a shadow is as deep as what casts it stands out. A plan's default comes from the
 /// sheet's top left (135°).</item>
 /// </list>
-/// A section casts only what lies beyond its cut; a storey plan draws none (its cut walls would cast short shadows).
+/// A section or floor plan casts only what lies beyond its cut; reflected ceiling plans (<c>look = "up"</c>) draw none.
 /// </summary>
 public static class ViewShadows
 {
@@ -32,8 +32,8 @@ public static class ViewShadows
 
     public static string ModeOf(Entity view) => view.Str(Attr) is { } m && Modes.Contains(m) ? m : None;
 
-    /// <summary>Whether a view of this kind may draw shadows: an elevation, a section, a site plan.</summary>
-    public static bool Allowed(Entity view) => view.Str("kind") is "elevation" or "section" || SitePlans.Of(view) != null;
+    /// <summary>Whether a view of this kind may draw shadows: a floor plan (looking down), an elevation, a section, or a site plan.</summary>
+    public static bool Allowed(Entity view) => view.Str("kind") is "elevation" or "section" || (view.Str("kind") is "plan" or null && view.Str("look") != "up");
 
     /// <summary>The direction towards the view's sun (world, unit), or null when it draws none or the sun is down.</summary>
     public static Vec3? SunOf(IModelView m, Entity view, ViewFrame frame)
@@ -93,8 +93,7 @@ public static class ViewShadows
     /// </summary>
     public static ViewFaces Scene(ViewSpec spec, IReadOnlyList<DrawPart> parts, ViewDrawing? drawing = null, IReadOnlyList<ViewFaces.Face>? faces = null)
     {
-        var plan = spec.Kind == "plan";
-        var cut = spec.Cut && !plan;
+        var cut = spec.Cut;
         faces ??= ViewFaces.FacesOf(parts.Select((p, i) => (p.Solid, i)).ToList());
         return new ViewFaces(faces, spec.Frame, cut, cut ? spec.Below : double.PositiveInfinity, cut && drawing != null ? drawing.Cuts.Select(c => c.Loops) : null, spec.Span);
     }
@@ -105,22 +104,23 @@ public static class ViewShadows
         r.Command("view.setShadows", "Sun shadows", (ctx, a) =>
         {
             var view = Views.Find(ctx.Model, (string?)a["id"] ?? "") ?? throw new CommandException("There is no such view.");
-            if (!Allowed(view)) throw new CommandException("Shadows are drawn in elevations, sections and site plans.");
-            var attrs = view.CloneAttrs();
-            if ((string?)a["mode"] is { } mode)
+            if (!Allowed(view)) throw new CommandException("Shadows are drawn in floor plans, elevations, sections and site plans.");
+            var id = Views.OwnView(ctx, view, attrs =>
             {
-                if (!Modes.Contains(mode)) throw new CommandException($"A view's shadows are {string.Join(", ", Modes)}.");
-                if (mode == None) attrs.Remove(Attr); else attrs[Attr] = mode;
-            }
-            if (Json.Number(a["azimuth"]) is { } az) attrs["shadowAzimuth"] = Math.Round(((az % 360) + 540) % 360 - 180, 3);
-            if (Json.Number(a["altitude"]) is { } alt) attrs["shadowAltitude"] = alt is > 0 and < 90 ? alt : throw new CommandException("The sun's altitude is above 0° and below 90°.");
-            if ((string?)a["date"] is { } date)
-                attrs["shadowDate"] = DateOnly.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _) ? date : throw new CommandException("The day is written YYYY-MM-DD.");
-            if (Json.Number(a["hour"]) is { } hour) attrs["shadowHour"] = hour is >= 0 and < 24 ? hour : throw new CommandException("The hour is 0 to 24.");
-            if ((string?)a["color"] is { } color) attrs["shadowColor"] = color is { Length: 7 } && color[0] == '#' ? color : throw new CommandException("A colour is written #rrggbb.");
-            if (a.ContainsKey("reset")) { attrs.Remove("shadowAzimuth"); attrs.Remove("shadowAltitude"); }
-            ctx.Replace(view.With(attrs: attrs));
-            return null;
+                if ((string?)a["mode"] is { } mode)
+                {
+                    if (!Modes.Contains(mode)) throw new CommandException($"A view's shadows are {string.Join(", ", Modes)}.");
+                    if (mode == None) attrs.Remove(Attr); else attrs[Attr] = mode;
+                }
+                if (Json.Number(a["azimuth"]) is { } az) attrs["shadowAzimuth"] = Math.Round(((az % 360) + 540) % 360 - 180, 3);
+                if (Json.Number(a["altitude"]) is { } alt) attrs["shadowAltitude"] = alt is > 0 and < 90 ? alt : throw new CommandException("The sun's altitude is above 0° and below 90°.");
+                if ((string?)a["date"] is { } date)
+                    attrs["shadowDate"] = DateOnly.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _) ? date : throw new CommandException("The day is written YYYY-MM-DD.");
+                if (Json.Number(a["hour"]) is { } hour) attrs["shadowHour"] = hour is >= 0 and < 24 ? hour : throw new CommandException("The hour is 0 to 24.");
+                if ((string?)a["color"] is { } color) attrs["shadowColor"] = color is { Length: 7 } && color[0] == '#' ? color : throw new CommandException("A colour is written #rrggbb.");
+                if (a.ContainsKey("reset")) { attrs.Remove("shadowAzimuth"); attrs.Remove("shadowAltitude"); }
+            });
+            return new JsonObject { ["id"] = id };
         });
     }
 }

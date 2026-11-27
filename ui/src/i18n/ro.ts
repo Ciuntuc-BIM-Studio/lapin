@@ -7359,6 +7359,28 @@ export const RO: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Autentificarea prin browser are nevoie de aplicația desktop.",
   "This server offers no sign-in through the browser: sign in with your password.": "Acest server nu oferă autentificare prin browser: autentifică-te cu parola.",
   "The browser could not be opened here.": "Browserul nu a putut fi deschis aici.",
+  // Forum topics 291, 293, 295, 296
+  'Dynamic input': 'Introducere dinamică',
+  'show length, angle and coordinate input at the cursor': 'afișează lungimea, unghiul și coordonatele la cursor',
+  'draw every line one pixel wide on screen': 'desenează fiecare linie de un pixel pe ecran',
+  'Show circle and arc centerpoints permanently (off: show on hover and selection)': 'Afișează permanent centrele cercurilor și arcelor (oprit: doar la survol și selecție)',
+  'Absolute coordinates (#x,y or x,y); type @ for relative': 'Coordonate absolute (#x,y sau x,y); tastează @ pentru relative',
+  'Relative coordinates (@dx,dy); type # for absolute': 'Coordonate relative (@dx,dy); tastează # pentru absolute',
+  'Building element types': 'Tipuri de elemente de construcție',
+  'Arc (3-point)': 'Arc (3 puncte)',
+  'Arc / Circle (Centre)': 'Arc / Cerc (Centru)',
+  'Arc (Tangent)': 'Arc (Tangent)',
+  'Arc (2 Tangents + Pt)': 'Arc (2 Tangente + Punct)',
+  'Model (3D)': 'Model (3D)',
+  '2D / View': '2D / Vedere',
+  'Data / Info': 'Date / Info',
+  '4D / 5D': '4D / 5D',
+  'Quick actions': 'Acțiuni rapide',
+  'Match properties (MA)': 'Copiază proprietăți (MA)',
+  'Isolate selection': 'Izolează selecția',
+  'No 2D or view overrides for this element.': 'Nicio suprascriere 2D sau de vedere pentru acest element.',
+  'Phasing, scheduling and cost sections appear here when active for this element.': 'Secțiunile de faze, planificare și cost apar aici când sunt active pentru acest element.',
+
 };
 
 /** Phrases with a number or a name in them. */

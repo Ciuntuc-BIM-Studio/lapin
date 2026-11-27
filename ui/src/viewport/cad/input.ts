@@ -33,7 +33,9 @@ function parseInPlan(text: string, last: Vec2 | null): Parsed | null {
   const o = { last };
   let t = text.trim();
   if (!t) return null;
-  const rel = t.startsWith('@');
+  const abs = t.startsWith('#');
+  const rel = !abs && t.startsWith('@');
+  if (abs) t = t.slice(1).trim();
   if (rel) {
     if (!o.last) return null;
     t = t.slice(1).trim();

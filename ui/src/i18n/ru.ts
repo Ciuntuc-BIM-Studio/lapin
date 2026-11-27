@@ -13504,6 +13504,28 @@ export const RU: Record<string, string> = {
   "Afterwards, File → Collaborate → Get latest from Archicad brings only what changed in Archicad since; the status bar says when it changed.": "Затем Файл → Совместная работа → Получить последнее из Archicad приносит только то, что изменилось в Archicad с тех пор; строка состояния сообщает, когда это произошло.",
   "From IFC": "Из IFC",
   "What the model's own project information says that no field above takes, kept as it said it (read-only; replaced when it is received again).": "То, что информация о проекте самой модели сообщает и что не подходит ни одному полю выше, сохранено как есть (только чтение; заменяется при повторном получении).",
+  // Forum topics 291, 293, 295, 296
+  'Dynamic input': 'Динамический ввод',
+  'show length, angle and coordinate input at the cursor': 'показывать длину, угол и координаты у курсора',
+  'draw every line one pixel wide on screen': 'отображать все линии толщиной в один пиксель',
+  'Show circle and arc centerpoints permanently (off: show on hover and selection)': 'Постоянно показывать центры окружностей и дуг',
+  'Absolute coordinates (#x,y or x,y); type @ for relative': 'Абсолютные координаты (#x,y или x,y); @ для относительных',
+  'Relative coordinates (@dx,dy); type # for absolute': 'Относительные координаты (@dx,dy); # для абсолютных',
+  'Building element types': 'Типы строительных элементов',
+  'Arc (3-point)': 'Дуга (3 точки)',
+  'Arc / Circle (Centre)': 'Дуга / Круг (Центр)',
+  'Arc (Tangent)': 'Дуга (Касательная)',
+  'Arc (2 Tangents + Pt)': 'Дуга (2 касательные + точка)',
+  'Model (3D)': 'Модель (3D)',
+  '2D / View': '2D / Вид',
+  'Data / Info': 'Данные / Инфо',
+  '4D / 5D': '4D / 5D',
+  'Quick actions': 'Быстрые действия',
+  'Match properties (MA)': 'Копировать свойства (MA)',
+  'Isolate selection': 'Изолировать выбор',
+  'No 2D or view overrides for this element.': 'Нет переопределений 2D или вида для этого элемента.',
+  'Phasing, scheduling and cost sections appear here when active for this element.': 'Разделы стадий, графика и стоимости появляются здесь при активации.',
+
 };
 /** The Russian plural: one → n%10 = 1 and n%100 ≠ 11; few → n%10 in 2–4 and n%100 not in 12–14; many → the rest. */
 const form = (count: string, one: string, few: string, many: string) => {

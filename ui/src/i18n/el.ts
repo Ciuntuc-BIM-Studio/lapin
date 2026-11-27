@@ -13524,6 +13524,28 @@ export const EL: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Η σύνδεση μέσω προγράμματος περιήγησης χρειάζεται την εφαρμογή υπολογιστή.",
   "This server offers no sign-in through the browser: sign in with your password.": "Αυτός ο διακομιστής δεν προσφέρει σύνδεση μέσω προγράμματος περιήγησης: συνδεθείτε με τον κωδικό σας.",
   "The browser could not be opened here.": "Δεν ήταν δυνατό να ανοίξει το πρόγραμμα περιήγησης εδώ.",
+  // Forum topics 291, 293, 295, 296
+  'Dynamic input': 'Δυναμική εισαγωγή',
+  'show length, angle and coordinate input at the cursor': 'εμφάνιση μήκους, γωνίας και συντεταγμένων στον δρομέα',
+  'draw every line one pixel wide on screen': 'σχεδίαση κάθε γραμμής με πλάτος ένα pixel',
+  'Show circle and arc centerpoints permanently (off: show on hover and selection)': 'Μόνιμη εμφάνιση κέντρων κύκλων και τόξων',
+  'Absolute coordinates (#x,y or x,y); type @ for relative': 'Απόλυτες συντεταγμένες (#x,y ή x,y)· @ για σχετικές',
+  'Relative coordinates (@dx,dy); type # for absolute': 'Σχετικές συντεταγμένες (@dx,dy)· # για απόλυτες',
+  'Building element types': 'Τύποι δομικών στοιχείων',
+  'Arc (3-point)': 'Τόξο (3 σημεία)',
+  'Arc / Circle (Centre)': 'Τόξο / Κύκλος (Κέντρο)',
+  'Arc (Tangent)': 'Τόξο (Εφαπτόμενο)',
+  'Arc (2 Tangents + Pt)': 'Τόξο (2 Εφαπτόμενες + Σημ.)',
+  'Model (3D)': 'Μοντέλο (3D)',
+  '2D / View': '2D / Όψη',
+  'Data / Info': 'Δεδομένα / Πληρ.',
+  '4D / 5D': '4D / 5D',
+  'Quick actions': 'Γρήγορες ενέργειες',
+  'Match properties (MA)': 'Αντιγραφή ιδιοτήτων (MA)',
+  'Isolate selection': 'Απομόνωση επιλογής',
+  'No 2D or view overrides for this element.': 'Δεν υπάρχουν παρακάμψεις 2D ή όψης για αυτό το στοιχείο.',
+  'Phasing, scheduling and cost sections appear here when active for this element.': 'Οι ενότητες φάσεων, χρονοδιαγράμματος και κόστους εμφανίζονται εδώ όταν είναι ενεργές.',
+
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

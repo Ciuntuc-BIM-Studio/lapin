@@ -268,7 +268,9 @@ export function useGripEditor(o: GripEditorOptions) {
     (e.target as Element).setPointerCapture?.(e.pointerId);
     setDrag({ group: g, members: insert ? [first] : who, at: g.at, moved: false, copy, insert });
     // Its length and angle can be typed while dragging; Enter puts it there.
-    liveBegin('grip', g.at, (p) => { void dropGrips(movers(g, pickOf(g), alt.current), p); setDrag(null); endPreview(); liveEnd('grip'); traceEnd('grip'); }, { delta: true });
+    // For radial/angular arc & circle grips with `center` (forum topic 293), measure radius and angle directly from the centre.
+    const liveBase = first.center ?? g.at;
+    liveBegin('grip', liveBase, (p) => { void dropGrips(movers(g, pickOf(g), alt.current), p); setDrag(null); endPreview(); liveEnd('grip'); traceEnd('grip'); }, { delta: !first.center });
     // In 2D the move's trace: the ghost of what the grip moves left where it is (a move grip carries it along).
     if (!o.zOf) traceBegin('grip', g.at, ghostOf(who), who[0].kind === 'move');
     return true;

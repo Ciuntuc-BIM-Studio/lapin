@@ -14,8 +14,10 @@ import { arcLength, axisLine, isArc, middle, pointAt, project, riseThrough, type
 
 export const railing: ToolDef = {
   id: 'architecture.railing', label: 'Railing', icon: RailingIcon, shortcut: 'RL',
-  gesture: { kind: 'polyline' },
-  complete: async ({ points }, ctx) => { await ctx.execute('architecture.addRailing', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]) }); },
+  gesture: { kind: 'polyline', arcs: true },
+  complete: async ({ points, arcs }, ctx) => {
+    await ctx.execute('architecture.addRailing', { storeyId: ctx.storeyId, points: points.map((p) => [p.x, p.y]), ...(arcs?.some((r) => Math.abs(r) > 1e-6) ? { arcs } : {}) });
+  },
 };
 
 /** Each segment's rise off its chord (segment i from point i to i + 1, left of it positive), straight ones 0. */

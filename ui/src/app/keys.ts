@@ -20,7 +20,8 @@ import { select, useUi } from './store';
 import { findTool, hotbarIds, useToolTick } from '../platform/modules';
 import { reach } from './hotbar';
 import { cancel, spaceStep, submit, useCad } from '../viewport/cad/session';
-import { liveAcceptAtCursor, liveCommit, liveFields, liveToggleMode, useLive } from '../viewport/liveInput';
+import { liveAcceptAtCursor, liveClear, liveCommit, liveFields, liveSwitchCoord, liveToggleMode, useLive, type LiveField, type LiveMode } from '../viewport/liveInput';
+import { usePrefs } from './prefs';
 import { chordOf, isBareKey, matchSequence, PendingSequence, type Keymap } from './shortcuts';
 import { keymap, runCommand } from './commands';
 import { useKeymap } from './shortcuts';
@@ -73,8 +74,10 @@ export interface KeySnapshot {
   letters?: boolean;
   /** The command line takes all typing (the ` key). */
   takeAll?: boolean;
+  /** Dynamic input at the cursor is enabled (F12, forum topic 295); false sends typing straight to the command line. */
+  dynamicInput?: boolean;
   /** A segment being drawn from a base: its length and angle can be typed (the focused field's text). */
-  live?: { active: boolean; /** Who owns the box: "drag" and "grip" are drags (autohold, issue 86). */ owner?: string | null; /** A drag is held by autohold. */ autohold?: boolean; text: string; typed: boolean; /** A rectangle tool: Space switches length/angle with width/height. */ rect?: boolean; mode?: 'polar' | 'rect'; /** An end grip is kept on its own line (decision 865): `=` types a total length. */ lock?: boolean };
+  live?: { active: boolean; /** Who owns the box: "drag" and "grip" are drags (autohold, issue 86). */ owner?: string | null; /** A drag is held by autohold. */ autohold?: boolean; text: string; typed: boolean; /** A rectangle tool: Space switches length/angle with width/height. */ rect?: boolean; mode?: LiveMode; focus?: LiveField; /** An end grip is kept on its own line (decision 865): `=` types a total length. */ lock?: boolean };
   /** The letters the active tool takes as its options now (ToolDef.letters), while its segment is drawn. */
   toolLetters?: string;
   /** A 3D tool waits for a typed value (valueOwner.ts): what is typed so far. */
@@ -101,7 +104,7 @@ export type KeyIntent =
   | { kind: 'valueType'; key: string } | { kind: 'valueBack' } | { kind: 'valueEnter' }
   /** Tab in a drag: autohold on (issue 86); the box's next field comes with the next Tab. */
   | { kind: 'autohold' } | { kind: 'liveAccept' }
-  | { kind: 'liveType'; key: string } | { kind: 'liveBack' } | { kind: 'liveFocus'; field?: 'len' | 'ang' | 'rel' } | { kind: 'liveClear' } | { kind: 'liveCommit' } | { kind: 'liveMode' };
+  | { kind: 'liveType'; key: string } | { kind: 'liveBack' } | { kind: 'liveFocus'; field?: 'len' | 'ang' | 'rel' } | { kind: 'liveClear' } | { kind: 'liveCommit' } | { kind: 'liveMode' } | { kind: 'liveCoord'; coord: 'abs' | 'rel'; keepLen?: boolean };
 
 /** The units a typed length may end in (parseLength reads them). */
 const UNIT_SUFFIXES = ['mm', 'cm', 'dm', 'm', 'in', 'ft', "'", '"'];
@@ -163,20 +166,25 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
     if (e.key === 'Backspace' && s.value.text) return { kind: 'valueBack' };
     if (valueKey(s.value.text, e.key)) return { kind: 'valueType', key: e.key };
   }
-  // Drawing a segment, nothing on the command line: its length and angle are typed at the cursor.
-  if (s.live?.active && !s.buffer && !all) {
+  // Drawing a segment, nothing on the command line: its length, angle or coordinates are typed at the cursor (when Dynamic input is on).
+  if (s.live?.active && s.dynamicInput !== false && !s.buffer && !all) {
     if (e.key === 'Tab') return tabMeaning(s.live.owner, !!s.live.autohold) === 'autohold' ? { kind: 'autohold' } : { kind: 'liveFocus' };
     if (e.key === '<') return { kind: 'liveFocus', field: 'ang' };
-    // A rectangle: Space switches length/angle with width/height; in width/height a comma goes on to the height.
+    // Explicit absolute (#x,y) or relative (@dx,dy) coordinate entry in the cursor box (forum topic 295).
+    if (e.key === '#' && !s.live.typed) return { kind: 'liveCoord', coord: 'abs' };
+    if (e.key === '@' && !s.live.typed) return { kind: 'liveCoord', coord: 'rel' };
+    // A rectangle: Space switches length/angle with width/height; in width/height or X/Y coordinate mode a comma goes on to the second field.
     if (e.key === ' ' && s.live.rect) return { kind: 'liveMode' };
-    if (e.key === ',' && s.live.rect && s.live.mode === 'rect') return { kind: 'liveFocus', field: 'ang' };
+    if (e.key === ',' && (s.live.mode === 'abs' || s.live.mode === 'rel' || (s.live.rect && s.live.mode === 'rect'))) return { kind: 'liveFocus', field: 'ang' };
+    // Typing `10,10` in polar mode (non-rectangle): comma switches the cursor box to absolute X,Y coordinates (forum topic 295).
+    if (e.key === ',' && !s.live.rect && (!s.live.mode || s.live.mode === 'polar') && s.live.text && s.live.focus !== 'ang') return { kind: 'liveCoord', coord: 'abs', keepLen: true };
     if (e.key === 'Enter' && s.live.typed) return { kind: 'liveCommit' };
     // A drag held by autohold, nothing typed: Enter drops it where the pointer is.
     if (e.key === 'Enter' && enterEffect(!!s.live.autohold, s.live.typed) === 'pointer') return { kind: 'liveAccept' };
     if (e.key === 'Escape' && s.live.typed) return { kind: 'liveClear' };
     if (e.key === 'Backspace' && s.live.text) return { kind: 'liveBack' };
     if (e.key === '=' && s.live.lock && !s.live.text) return { kind: 'liveType', key: '=' };
-    if (/^[0-9.,+]$/.test(e.key) || (e.key === '-' && (s.live.text || (s.live.rect && s.live.mode === 'rect')))) return { kind: 'liveType', key: e.key };
+    if (/^[0-9.,+]$/.test(e.key) || (e.key === '-' && (s.live.text || s.live.mode === 'abs' || s.live.mode === 'rel' || (s.live.rect && s.live.mode === 'rect')))) return { kind: 'liveType', key: e.key };
     if (unitKey(s.live.text, e.key)) return { kind: 'liveType', key: e.key.toLowerCase() };
     // The tool's option letters (a run's F, C, W, E), once a point is placed: after a unit's letter (2400c is cm), before the shortcuts.
     if (s.toolLetters && s.live.owner === 'tool' && !e.shiftKey && /^[a-z]$/i.test(e.key) && s.toolLetters.includes(e.key.toUpperCase())) return { kind: 'toolLetter', key: e.key.toUpperCase() };
@@ -205,7 +213,7 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
     return { kind: 'command', id: bound };
   }
   // A text step takes any character; otherwise letters, digits and the coordinate signs.
-  const allowed = s.step?.want === 'text' ? e.key.length === 1 : /^[\w@<.,\-+]$/.test(e.key);
+  const allowed = s.step?.want === 'text' ? e.key.length === 1 : /^[\w@#<.,\-+]$/.test(e.key);
   if (!allowed) return null;
   const buffer = s.buffer + e.key;
   // Letters that are a shortcut's sequence start its command (when no command is running).
@@ -229,8 +237,8 @@ function snapshot(): KeySnapshot {
   return {
     screen: ui.screen, dialog: openDialog(ui.dialog, !!document.querySelector('[role="dialog"]')), tool: ui.tool ?? toolAtKeydown, selected: ui.selected, toolSpace: !!(ui.tool && findTool(ui.tool)?.space),
     buffer: cad.buffer, step: cad.step ? { want: cad.step.want, space: !!cad.step.space } : null, hasLast: !!cad.last,
-    hotbar: reach(hotbarIds()), keymap: keymap(), letters: useKeymap.getState().letters, takeAll: cad.takeAll,
-    live: (() => { const l = useLive.getState(); return { active: !!l.owner, owner: l.owner, autohold: autoholdOn(), text: l[l.focus], typed: !!(l.len || l.ang || l.rel), rect: !!l.rect, mode: l.mode, lock: !!l.lock }; })(),
+    hotbar: reach(hotbarIds()), keymap: keymap(), letters: useKeymap.getState().letters, takeAll: cad.takeAll, dynamicInput: usePrefs.getState().dynamicInput,
+    live: (() => { const l = useLive.getState(); return { active: !!l.owner, owner: l.owner, autohold: autoholdOn(), text: l[l.focus], typed: !!(l.len || l.ang || l.rel), rect: !!l.rect, mode: l.mode, focus: l.focus, lock: !!l.lock }; })(),
     value: (() => { const o = valueOwner(); return o ? { text: o.text() } : null; })(),
     toolLetters: (ui.tool ? findTool(ui.tool)?.letters?.keys() : undefined) || undefined,
     nudge: nudgeReady(nudgeState()),
@@ -286,11 +294,12 @@ export function carryOut(intent: KeyIntent): void {
     // A measuring gesture has its one field, the true distance.
     // Tab: the next field (length → angle → the angle to the reference, when there is one: decision 738).
     case 'liveFocus': useLive.setState((l) => { const fs = liveFields(l); return { focus: intent.field && fs.includes(intent.field) ? intent.field : fs[(fs.indexOf(l.focus) + 1) % fs.length] }; }); break;
-    case 'liveClear': useLive.setState({ len: '', ang: '', rel: '' }); break;
+    case 'liveClear': liveClear(); break;
     case 'liveCommit': liveCommit(); break;
     case 'autohold': autoholdTab(); break;
     case 'liveAccept': liveAcceptAtCursor(); break;
     case 'liveMode': liveToggleMode(); break;
+    case 'liveCoord': liveSwitchCoord(intent.coord, intent.keepLen); break;
   }
 }
 

@@ -7402,6 +7402,28 @@ export const ZH: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "通过浏览器登录需要桌面应用。",
   "This server offers no sign-in through the browser: sign in with your password.": "此服务器不提供通过浏览器登录：请使用密码登录。",
   "The browser could not be opened here.": "无法在此打开浏览器。",
+  // Forum topics 291, 293, 295, 296
+  'Dynamic input': '动态输入',
+  'show length, angle and coordinate input at the cursor': '在光标处显示长度、角度和坐标输入',
+  'draw every line one pixel wide on screen': '在屏幕上以单像素宽度绘制所有线条',
+  'Show circle and arc centerpoints permanently (off: show on hover and selection)': '永久显示圆和圆弧的圆心（关闭：悬停和选中时显示）',
+  'Absolute coordinates (#x,y or x,y); type @ for relative': '绝对坐标 (#x,y 或 x,y)；输入 @ 切换为相对坐标',
+  'Relative coordinates (@dx,dy); type # for absolute': '相对坐标 (@dx,dy)；输入 # 切换为绝对坐标',
+  'Building element types': '建筑构件类型',
+  'Arc (3-point)': '圆弧（三点）',
+  'Arc / Circle (Centre)': '圆弧 / 圆（圆心）',
+  'Arc (Tangent)': '圆弧（相切）',
+  'Arc (2 Tangents + Pt)': '圆弧（双切线+点）',
+  'Model (3D)': '模型 (3D)',
+  '2D / View': '2D / 视图',
+  'Data / Info': '数据 / 信息',
+  '4D / 5D': '4D / 5D',
+  'Quick actions': '快捷操作',
+  'Match properties (MA)': '匹配属性 (MA)',
+  'Isolate selection': '隔离所选',
+  'No 2D or view overrides for this element.': '此构件没有 2D 或视图替换。',
+  'Phasing, scheduling and cost sections appear here when active for this element.': '阶段、进度和成本部分在启用时显示于此。',
+
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

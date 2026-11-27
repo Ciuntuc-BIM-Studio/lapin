@@ -7459,6 +7459,28 @@ export const LO: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "ການເຂົ້າສູ່ລະບົບຜ່ານບຣາວເຊີຕ້ອງການແອັບເດັສທັອບ.",
   "This server offers no sign-in through the browser: sign in with your password.": "ເຊີບເວີນີ້ບໍ່ມີການເຂົ້າສູ່ລະບົບຜ່ານບຣາວເຊີ: ເຂົ້າສູ່ລະບົບດ້ວຍລະຫັດຜ່ານ.",
   "The browser could not be opened here.": "ບໍ່ສາມາດເປີດບຣາວເຊີຢູ່ທີ່ນີ້ໄດ້.",
+  // Forum topics 291, 293, 295, 296
+  'Dynamic input': 'ປ້ອນຂໍ້ມູນແບບໄດນາມິກ',
+  'show length, angle and coordinate input at the cursor': 'ສະແດງຄວາມຍາວ, ມຸມ ແລະ ພິກັດຢູ່ເຄີເຊີ',
+  'draw every line one pixel wide on screen': 'ແຕ້ມທຸກເສັ້ນກວ້າງໜຶ່ງພິກເຊວ',
+  'Show circle and arc centerpoints permanently (off: show on hover and selection)': 'ສະແດງຈຸດສູນກາງວົງມົນ ແລະ ເສັ້ນໂຄ້ງຖາວອນ',
+  'Absolute coordinates (#x,y or x,y); type @ for relative': 'ພິກັດສົມບູນ (#x,y ຫຼື x,y); ພິມ @ ສຳລັບສຳພັດ',
+  'Relative coordinates (@dx,dy); type # for absolute': 'ພິກັດສຳພັດ (@dx,dy); ພິມ # ສຳລັບສົມບູນ',
+  'Building element types': 'ປະເພດອົງປະກອບອາຄານ',
+  'Arc (3-point)': 'ເສັ້ນໂຄ້ງ (3 ຈຸດ)',
+  'Arc / Circle (Centre)': 'ເສັ້ນໂຄ້ງ / ວົງມົນ (ສູນກາງ)',
+  'Arc (Tangent)': 'ເສັ້ນໂຄ້ງ (ສຳຜັດ)',
+  'Arc (2 Tangents + Pt)': 'ເສັ້ນໂຄ້ງ (2 ເສັ້ນສຳຜັດ + ຈຸດ)',
+  'Model (3D)': 'ໂມເດວ (3D)',
+  '2D / View': '2D / ມຸມມອງ',
+  'Data / Info': 'ຂໍ້ມູນ',
+  '4D / 5D': '4D / 5D',
+  'Quick actions': 'ຄຳສັ່ງດ່ວນ',
+  'Match properties (MA)': 'ຄັດລອກຄຸນສົມບັດ (MA)',
+  'Isolate selection': 'ແຍກສ່ວນທີ່ເລືອກ',
+  'No 2D or view overrides for this element.': 'ບໍ່ມີການຕັ້ງຄ່າ 2D ຫຼື ມຸມມອງສຳລັບອົງປະກອບນີ້.',
+  'Phasing, scheduling and cost sections appear here when active for this element.': 'ພາກສ່ວນໄລຍະ, ຕາຕະລາງ ແລະ ຄ່າໃຊ້ຈ່າຍຈະສະແດງຢູ່ນີ້ເມື່ອເປີດໃຊ້.',
+
 };
 
 /** Phrases with a number or a name in them. */

@@ -1,8 +1,8 @@
 /**
- * A view's sun shadows in its properties (docs/plan-visualisation.md, vector shadows): an elevation, a section or a
- * site plan draws the shadows the sun casts on what it sees, filled under its lines, so they print. The sun is none,
- * the project's on the view's own day and hour, or the view's own (azimuth from the way it looks, altitude), by
- * default the drawing convention: over the left shoulder, along a cube's diagonal.
+ * A view's sun shadows in its properties (docs/plan-visualisation.md, vector shadows): a floor plan (looking down),
+ * an elevation, a section or a site plan draws the shadows the sun casts on what it sees, filled under its lines, so
+ * they print. The sun is none, the project's on the view's own day and hour, or the view's own (azimuth from the way
+ * it looks, altitude), by default the drawing convention: over the left shoulder, along a cube's diagonal.
  */
 
 import { ColourField } from '../../shell/ColourField';
@@ -22,8 +22,9 @@ export function shadowModeOf(view: NodeDto): ShadowMode {
   return m === 'project' || m === 'view' ? m : 'none';
 }
 
-/** Whether a view of this kind draws shadows: an elevation, a section, a site plan. */
-export const shadowsAllowed = (view: NodeDto) => view.props.kind === 'elevation' || view.props.kind === 'section' || (view.props.kind === 'plan' && typeof view.props.site === 'string');
+/** Whether a view of this kind draws shadows: a floor plan (looking down), an elevation, a section, or a site plan. */
+export const shadowsAllowed = (view: NodeDto) =>
+  view.props.kind === 'elevation' || view.props.kind === 'section' || (view.props.kind === 'plan' && view.props.look !== 'up');
 
 export function ViewShadowFields({ view }: { view: NodeDto }) {
   const mode = shadowModeOf(view);

@@ -7403,6 +7403,28 @@ export const PT: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Entrar pelo navegador precisa do aplicativo para desktop.",
   "This server offers no sign-in through the browser: sign in with your password.": "Este servidor não oferece entrada pelo navegador: entre com sua senha.",
   "The browser could not be opened here.": "Não foi possível abrir o navegador aqui.",
+  // Forum topics 291, 293, 295, 296
+  'Dynamic input': 'Entrada dinâmica',
+  'show length, angle and coordinate input at the cursor': 'mostrar comprimento, ângulo e coordenadas no cursor',
+  'draw every line one pixel wide on screen': 'desenhar cada linha com um pixel de largura',
+  'Show circle and arc centerpoints permanently (off: show on hover and selection)': 'Mostrar centros de círculos e arcos permanentemente',
+  'Absolute coordinates (#x,y or x,y); type @ for relative': 'Coordenadas absolutas (#x,y ou x,y); @ para relativas',
+  'Relative coordinates (@dx,dy); type # for absolute': 'Coordenadas relativas (@dx,dy); # para absolutas',
+  'Building element types': 'Tipos de elementos de construção',
+  'Arc (3-point)': 'Arco (3 pontos)',
+  'Arc / Circle (Centre)': 'Arco / Círculo (Centro)',
+  'Arc (Tangent)': 'Arco (Tangente)',
+  'Arc (2 Tangents + Pt)': 'Arco (2 Tangentes + Pto)',
+  'Model (3D)': 'Modelo (3D)',
+  '2D / View': '2D / Vista',
+  'Data / Info': 'Dados / Info',
+  '4D / 5D': '4D / 5D',
+  'Quick actions': 'Ações rápidas',
+  'Match properties (MA)': 'Igualar propriedades (MA)',
+  'Isolate selection': 'Isolar seleção',
+  'No 2D or view overrides for this element.': 'Sem substituições 2D ou de vista para este elemento.',
+  'Phasing, scheduling and cost sections appear here when active for this element.': 'As secções de fases, planeamento e custos aparecem aqui quando ativas.',
+
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

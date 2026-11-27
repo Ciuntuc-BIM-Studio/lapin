@@ -88,6 +88,10 @@ export interface Prefs {
   snapDistance: number;
   /** A crosshair across the whole drawing area, as AutoCAD's cursor (forum topic 226); off by default. */
   crosshair: boolean;
+  /** Dynamic input box at the cursor while drawing or moving (forum topic 295, F12); off sends typing to the command line. */
+  dynamicInput: boolean;
+  /** Permanently show circle and arc centerpoints with snapping (forum topic 293); off shows them on hover/selection. */
+  showArcCenters: boolean;
   /** The arrow keys' nudge step, metres (forum topic 212): 0 follows the zoom (about four pixels), else this one; Shift is ten times as far. */
   nudgeStep: number;
   /** Subtle synthetic tactile sounds on snap, placement, undo and mission completion (docs/plan-ux-game-like.md, P9); off by default. */
@@ -137,6 +141,8 @@ export const DEFAULT_PREFS: Prefs = {
   snapDivisions: [3, 4],
   snapDistance: 0.5,
   crosshair: false,
+  dynamicInput: true,
+  showArcCenters: false,
   tactileSounds: false,
   viewCube: true, selectionToolbar: true, healthRadar: true, microTips: true, quickWalkSplit: true,
   keycapHints: true, ghostPreview: true, xrayPeek: true, scrubFields: true, roleCards: true, precisionTools: true, roleHotbars: false,
@@ -188,6 +194,8 @@ export function readPrefs(stored: unknown): Prefs {
     snapDivisions: divisionsOf(o.snapDivisions) ?? d.snapDivisions,
     snapDistance: typeof o.snapDistance === 'number' && Number.isFinite(o.snapDistance) && o.snapDistance > 0 ? Math.min(1000, o.snapDistance) : d.snapDistance,
     crosshair: o.crosshair === true,
+    dynamicInput: o.dynamicInput !== false,
+    showArcCenters: o.showArcCenters === true,
     tactileSounds: o.tactileSounds === true,
     // Until the user chose them, the Flow extras are on: settings kept while they were off by default hold false for each.
     ...(Object.fromEntries(FLOW_EXTRAS.map((k) => [k, o.flowChosen === true ? o[k] === true : true])) as Record<FlowExtra, boolean>),

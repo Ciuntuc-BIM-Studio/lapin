@@ -27,9 +27,11 @@ export type Gesture =
   /** `ghost`: what the click would put there, as lines on the plan (metres), redrawn as the cursor moves (a family's outline, turned and mirrored). */
   | { kind: 'point'; ghost?: (at: Vec2) => Vec2[][] }
   | { kind: 'rectangle' }
-  /** Two points, then a third (a dimension's line; with `arc`, a point the arc passes through). */
+  /** Two points, then a third (a dimension's line; with `arc`, a point the arc passes through, or extended arc modes: forum topic 293). */
   | {
     kind: 'threePoints'; arc?: boolean;
+    /** Extended arc drawing mode (forum topic 293): 3pt (default), center (centre+start+end, double-click start = circle), tangent (tangent to previous/existing element), tanTanPt (2 tangent lines + point). */
+    arcMode?: '3pt' | 'center' | 'tangent' | 'tanTanPt';
     /** Where the next point may go, given the points placed (a detour's points kept on the leg picked): the aimed point moved onto what is allowed. */
     constrain?: (placed: Vec2[], aimed: Vec2) => Vec2;
     /** What the tool would make, drawn as the cursor moves (a detour's bypass); null: the gesture's own preview. */
@@ -84,6 +86,8 @@ export interface ToolInput {
   heights?: number[];
   /** Screen rotation of the active 2D view (degrees, counter-clockwise): text tools align to the screen X-axis (forum #110). */
   rotation?: number;
+  /** True when a centre-start-end arc gesture completed as a full circle (e.g. double-click on start point: forum topic 293). */
+  fullCircle?: boolean;
 }
 
 /** What a tool's completion can use: the storey it draws on, and the engine. */
@@ -230,6 +234,8 @@ export interface Grip {
   kind?: 'end' | 'vertex' | 'edgeMid' | 'centre' | 'radius' | 'move' | 'rotate' | 'flip' | 'anchor' | 'slope';
   /** A flip arrow's or slope indicator's direction (model units); drawn a little way out/in from `at` along it. */
   dir?: Vec2;
+  /** Arc or circle centre for radial / angular grip drags (forum topic 293): live input measures radius and angle from this centre. */
+  center?: Vec2;
   /** A flip arrow or slope indicator: what a click does. */
   click?: () => GripStep | null;
   /** A slope indicator's label (e.g. `30°` or `G`). */

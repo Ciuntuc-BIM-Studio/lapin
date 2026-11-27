@@ -3,10 +3,10 @@
 import { runSteps } from '../../viewport/grips';
 import { LibraryImportHost } from '../../platform/ImportPreview';
 import { StoreySection } from './StoreySection';
-import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
+import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
 import { calibrateTool } from './cloudCalibrate';
-import { Aperture, AlignStartVertical, Columns3, Columns3Cog, ArrowLeftRight, CornerDownRight, CopyPlus, Slash, Scale, Braces, Tags, Pin, PinOff, Printer, PackageOpen, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, ListFilter, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, Shapes, SlidersHorizontal, Square, Table2, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2, ListChecks, FileCheck2 } from 'lucide-react';
+import { Aperture, AlignStartVertical, Columns3, Columns3Cog, ArrowLeftRight, CornerDownRight, CopyPlus, Slash, Scale, Braces, Tags, Pin, PinOff, Printer, PackageOpen, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, ListFilter, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, Shapes, SlidersHorizontal, Square, Table2, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2, ListChecks, FileCheck2 } from 'lucide-react';
 import { openTempDimProperties, TEMP_DIM_DIALOG } from '../../viewport/tempDimProps';
 import { AngleDims } from '../../viewport/AngleTempDims';
 import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
@@ -16,7 +16,7 @@ import { useRenderProfile } from '../../viewport/render3d';
 import { toggleRendering } from '../../viewport/renderMode';
 import { nextVisualStyle, XRAY_NOTICE } from '../../app/visualStyle';
 import { ribbonTabs, similarFor } from '../../platform/modules';
-import { openPulldown } from '../../shell/pulldown';
+import { openPulldown, pulldownTool } from '../../shell/pulldown';
 import { PlaceCatalogDialog, openPlaceCatalog } from '../../shell/PlaceCatalog';
 import { corePlaceSources } from './placeSources';
 import { registerCommand, startCommand } from '../../viewport/cad/session';
@@ -154,10 +154,20 @@ const allTypesTool: ToolDef = {
   id: 'manage.types', label: 'All types', icon: Layers3,
   get items() {
     const seen = new Set<string>(['manage.types']);
-    return ribbonTabs().flatMap((t) => t.groups.filter((g) => g.label === 'Types').flatMap((g) => [...g.tools, ...(g.small ?? [])])).filter((t) => !seen.has(t.id) && !!seen.add(t.id));
+    return ribbonTabs()
+      .flatMap((t) => t.groups.filter((g) => g.label === 'Types').flatMap((g) => [...g.tools, ...(g.small ?? [])]))
+      .flatMap((x) => (x.items?.length ? [...x.items] : [x]))
+      .filter((t) => !seen.has(t.id) && !!seen.add(t.id));
   },
   run: () => openPulldown(allTypesTool),
 };
+
+/** Materials, Material graphics sets, and Material standards combined in one Manage dropdown (forum topic 296). */
+const materialsMenuTool: ToolDef = pulldownTool('manage.materialsMenu', 'Materials', Palette, [
+  { id: 'manage.materials', label: 'Materials', icon: Palette, run: () => useUi.setState({ dialog: 'materials' }) },
+  { id: 'manage.materialGraphicsSets', label: 'Material graphics sets', icon: Palette, run: () => useUi.setState({ dialog: 'materialGraphicsSets' }) },
+  { id: 'manage.materialStandards', label: 'Material standards', icon: Palette, run: () => useUi.setState({ dialog: 'materialStandards' }) },
+]);
 
 /** Create Similar: the selected element's tool, set up like it. */
 /** Whether the selection is something Create similar can start from (an element of a class a module has a "similar" for). */
@@ -268,12 +278,10 @@ const core: LapinModule = {
     id: 'manage', label: 'Manage', order: 80,
     groups: [
       { label: 'Settings', tools: [
-        { id: 'manage.materials', label: 'Materials', icon: Palette, run: () => useUi.setState({ dialog: 'materials' }) },
+        materialsMenuTool,
         allTypesTool,
         { id: 'manage.standards', label: 'Drafting standards', icon: Hash, run: () => useUi.setState({ dialog: 'standards' }) },
         { id: 'manage.hatchPatterns', label: 'Hatch patterns', icon: Grid3x3, run: () => useUi.setState({ dialog: 'hatchPatterns' }) },
-        { id: 'manage.materialGraphicsSets', label: 'Material graphics sets', icon: Palette, run: () => useUi.setState({ dialog: 'materialGraphicsSets' }) },
-        { id: 'manage.materialStandards', label: 'Material standards', icon: Palette, run: () => useUi.setState({ dialog: 'materialStandards' }) },
         { id: 'manage.objectStyles', label: 'Object styles', icon: PenTool, run: () => useUi.setState({ dialog: 'objectStyles' }) },
         { id: 'manage.location', label: 'Location', icon: MapPin, run: () => useUi.setState({ dialog: 'location' }) },
         { id: 'manage.cutOrder', label: 'Cut order', icon: Scissors, run: () => useUi.setState({ dialog: 'cutOrder' }) },
@@ -388,7 +396,7 @@ const core: LapinModule = {
         { id: 'view.grid', label: 'Grid', icon: Grid3x3, run: toggleGrid },
         // The internal origin, the project base point and the survey point in plans and 3D (decision 445): the project's switch, one undo step.
         { id: 'view.locationPoints', label: 'Coordinate points', icon: MapPin, run: () => { const shown = !useLocation.getState().loc.show; void setLocationShown(shown); notify(shown ? 'The internal origin, the base point and the survey point are shown in plans and 3D.' : 'The project\'s points are hidden.'); } },
-        { id: 'view.thinLines', label: 'Thin lines', icon: Minus, shortcut: 'TL', run: toggleThinLines },
+        // Thin lines lives in the status/command bar toggle (THIN, shortcut TL) to save ribbon space (forum topic 296).
         // The shapes drafted on plans, sections and reference planes, as lines on their planes in 3D (decision 312).
         { id: 'view.drafts3d', label: 'Drafts in 3D', icon: PenLine, run: toggleDrafts3d },
         // An imported DXF's drawing on its view's plane in 3D (decision 382), on by default; each import and link has its own switch too.

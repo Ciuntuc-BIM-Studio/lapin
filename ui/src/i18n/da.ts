@@ -7400,6 +7400,28 @@ export const DA: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Login gennem browseren kræver skrivebordsappen.",
   "This server offers no sign-in through the browser: sign in with your password.": "Denne server tilbyder ikke login gennem browseren: log ind med din adgangskode.",
   "The browser could not be opened here.": "Browseren kunne ikke åbnes her.",
+  // Forum topics 291, 293, 295, 296
+  'Dynamic input': 'Dynamisk input',
+  'show length, angle and coordinate input at the cursor': 'vis længde, vinkel og koordinater ved markøren',
+  'draw every line one pixel wide on screen': 'tegn alle linjer én pixel brede på skærmen',
+  'Show circle and arc centerpoints permanently (off: show on hover and selection)': 'Vis cirkel- og buecentre permanent',
+  'Absolute coordinates (#x,y or x,y); type @ for relative': 'Absolutte koordinater (#x,y eller x,y); @ for relative',
+  'Relative coordinates (@dx,dy); type # for absolute': 'Relative koordinater (@dx,dy); # for absolutte',
+  'Building element types': 'Bygningsdelstyper',
+  'Arc (3-point)': 'Bue (3-punkt)',
+  'Arc / Circle (Centre)': 'Bue / Cirkel (Centrum)',
+  'Arc (Tangent)': 'Bue (Tangent)',
+  'Arc (2 Tangents + Pt)': 'Bue (2 Tangenter + Pkt)',
+  'Model (3D)': 'Model (3D)',
+  '2D / View': '2D / Visning',
+  'Data / Info': 'Data / Info',
+  '4D / 5D': '4D / 5D',
+  'Quick actions': 'Hurtige handlinger',
+  'Match properties (MA)': 'Match egenskaber (MA)',
+  'Isolate selection': 'Isoler markering',
+  'No 2D or view overrides for this element.': 'Ingen 2D- eller visningstilsidesættelser for dette element.',
+  'Phasing, scheduling and cost sections appear here when active for this element.': 'Faser, tidsplan og økonomi vises her, når de er aktive.',
+
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

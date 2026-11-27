@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { liveBegin, liveLock, liveCommit, liveEnd, liveMeasure, livePoint, liveToggleMode, parseAngle, parseLength, useLive } from './liveInput';
+import { liveBegin, liveClear, liveLock, liveCommit, liveEnd, liveMeasure, livePoint, liveSwitchCoord, liveToggleMode, parseAngle, parseLength, useLive } from './liveInput';
 
 describe('live input', () => {
   it('reads lengths in mm unless they say, with sums', () => {
@@ -159,5 +159,38 @@ describe('an end grip kept on its own line (decision 865)', () => {
     expect(useLive.getState().lock).toBeNull();
     liveEnd();
     expect(useLive.getState().lock).toBeNull();
+  });
+});
+
+describe('absolute and relative coordinates in the cursor box (forum topic 295)', () => {
+  it('evaluates abs mode in world coordinates regardless of base, and rel mode as offsets from base', () => {
+    const base = { x: 2, y: 3 }, cursor = { x: 4, y: 5 };
+    const abs = livePoint({ base, cursor, len: '10000', ang: '10000', mode: 'abs', frame: null })!;
+    expect(abs.x).toBeCloseTo(10, 9);
+    expect(abs.y).toBeCloseTo(10, 9);
+    const absNeg = livePoint({ base, cursor, len: '-5000', ang: '2500', mode: 'abs', frame: null })!;
+    expect(absNeg.x).toBeCloseTo(-5, 9);
+    expect(absNeg.y).toBeCloseTo(2.5, 9);
+    const rel = livePoint({ base, cursor, len: '1000', ang: '-500', mode: 'rel', frame: null })!;
+    expect(rel.x).toBeCloseTo(3, 9);
+    expect(rel.y).toBeCloseTo(2.5, 9);
+  });
+
+  it('switches to abs keeping len on comma and resets mode on commit or clear', () => {
+    const got: { x: number; y: number }[] = [];
+    liveBegin('cad', { x: 2, y: 3 }, (p) => got.push(p));
+    useLive.setState({ cursor: { x: 4, y: 5 }, len: '10000' });
+    liveSwitchCoord('abs', true);
+    expect(useLive.getState()).toMatchObject({ mode: 'abs', len: '10000', ang: '', focus: 'ang' });
+    useLive.setState({ ang: '10000' });
+    expect(liveCommit()).toBe(true);
+    expect(got[0].x).toBeCloseTo(10, 9);
+    expect(got[0].y).toBeCloseTo(10, 9);
+    expect(useLive.getState().mode).toBe('polar');
+    liveSwitchCoord('rel');
+    expect(useLive.getState()).toMatchObject({ mode: 'rel', len: '', ang: '', focus: 'len' });
+    liveClear();
+    expect(useLive.getState().mode).toBe('polar');
+    liveEnd('cad');
   });
 });

@@ -13504,6 +13504,28 @@ export const UK: Record<string, string> = {
   "Afterwards, File → Collaborate → Get latest from Archicad brings only what changed in Archicad since; the status bar says when it changed.": "Потім Файл → Спільна робота → Отримати останнє з Archicad приносить лише те, що змінилося в Archicad відтоді; рядок стану повідомляє, коли це сталося.",
   "From IFC": "З IFC",
   "What the model's own project information says that no field above takes, kept as it said it (read-only; replaced when it is received again).": "Те, що інформація про проєкт самої моделі повідомляє і що не підходить жодному полю вище, збережено як є (лише читання; замінюється під час повторного отримання).",
+  // Forum topics 291, 293, 295, 296
+  'Dynamic input': 'Динамічне введення',
+  'show length, angle and coordinate input at the cursor': 'показувати довжину, кут і координати біля курсора',
+  'draw every line one pixel wide on screen': 'відображати всі лінії товщиною один піксель',
+  'Show circle and arc centerpoints permanently (off: show on hover and selection)': 'Постійно показувати центри кіл і дуг',
+  'Absolute coordinates (#x,y or x,y); type @ for relative': 'Абсолютні координати (#x,y або x,y); @ для відносних',
+  'Relative coordinates (@dx,dy); type # for absolute': 'Відносні координати (@dx,dy); # для абсолютних',
+  'Building element types': 'Типи будівельних елементів',
+  'Arc (3-point)': 'Дуга (3 точки)',
+  'Arc / Circle (Centre)': 'Дуга / Коло (Центр)',
+  'Arc (Tangent)': 'Дуга (Дотична)',
+  'Arc (2 Tangents + Pt)': 'Дуга (2 дотичні + точка)',
+  'Model (3D)': 'Модель (3D)',
+  '2D / View': '2D / Вигляд',
+  'Data / Info': 'Дані / Інфо',
+  '4D / 5D': '4D / 5D',
+  'Quick actions': 'Швидкі дії',
+  'Match properties (MA)': 'Копіювати властивості (MA)',
+  'Isolate selection': 'Ізолювати вибір',
+  'No 2D or view overrides for this element.': 'Немає перевизначень 2D або вигляду для цього елемента.',
+  'Phasing, scheduling and cost sections appear here when active for this element.': 'Розділи стадій, графіка та вартості з\'являються тут, коли активні.',
+
 };
 /** The Ukrainian plural: 1 (not 11) → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

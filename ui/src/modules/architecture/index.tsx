@@ -19,6 +19,7 @@ import { alongShift, anchorFor, shiftedAlong } from '../../platform/anchor';
 import { AnchorPicker } from '../../shell/AnchorPicker';
 import { fillFlips, fillGhost, flipFillHand, useFillHand, type PanelLike } from './fillPlacing';
 import { activate, useToolTick } from '../../platform/modules';
+import { pulldownTool } from '../../shell/pulldown';
 import { gateGroup } from './gates/tools';
 import { GateSection } from './gates/GateSection';
 import { CLASS as GATE_CLASS, TYPE_CLASS as GATE_TYPE, gateGrips, overallOf, useGateTypesDialog } from './gates/gates';
@@ -205,15 +206,18 @@ function WallLineOption() {
 
 /** The old Curved wall: the Wall tool, in Arc. */
 const curvedWall: ToolDef = arcAlias({ id: 'architecture.curvedWall', label: 'Curved wall', icon: CurvedWallIcon, shortcut: 'WC' }, wall);
-/** A curtain wall: two points (chained), of the type picked in the configurator, else the project's first. */
-const curtainWall: ToolDef = {
+/** A curtain wall: straight or curved (chainTool, forum topic 293), of the type picked in the configurator, else the project's first. */
+const curtainWall: ToolDef = chainTool({
   id: 'architecture.curtainWall', label: 'Curtain wall', icon: CurtainWallIcon, shortcut: 'CW', properties: newElement('IfcCurtainWallType', 'curtainTypeId', 'curtainWalls'), typed: typedBy('IfcCurtainWallType', 'curtainTypeId', 'curtainWalls'),
-  gesture: { kind: 'twoPoints', repeat: true },
-  complete: async ({ points: [a, b] }, ctx) => {
+  line: async (a, b, ctx) => {
     const typeId = useUi.getState().curtainTypeId;
     await ctx.execute('architecture.addCurtainWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, ...(typeId ? { typeId } : {}) });
   },
-};
+  arc: async (a, b, p, ctx) => {
+    const typeId = useUi.getState().curtainTypeId;
+    await ctx.execute('architecture.addCurtainWall', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y, ...(typeId ? { typeId } : {}) });
+  },
+});
 const curtainTypes: ToolDef = { id: 'architecture.curtainTypes', label: 'Curtain walls', icon: Settings2, run: () => useUi.setState({ dialog: 'curtainWalls' }) };
 
 /** The selected walls. */
@@ -755,6 +759,18 @@ const underStairSchedule: ToolDef = {
   run: () => void execute('architecture.createSchedule', { kind: 'underStairs' }).then((r) => { if (r) notify('Under-stair schedule made: it is in the project browser, under Schedules.'); }),
 };
 const slabTypes: ToolDef = { id: 'architecture.slabTypes', label: 'Floor types', icon: Layers3, run: () => useUi.setState({ dialog: 'slabTypes' }) };
+/** All architecture building element type managers gathered into one Ribbon dropdown (forum topic 296). */
+const buildingElementTypes: ToolDef = pulldownTool('architecture.buildingElementTypes', 'Building element types', Layers3, [
+  wallTypes, slabTypes, joineryTypes, curtainTypes, sunshadeTypes, windowSillSchedule, stairTypes, ceilingTypes, skirtingTypes,
+]);
+/** Secondary wall tools dropdown (forum topic 296: selecting an item makes it the active tool). */
+const wallSecondaryTools: ToolDef = pulldownTool('architecture.wallTools', 'Wall from solids', wallFromSolids.icon, [
+  wallFromSolids, curvedWall,
+]);
+/** Fillet & Chamfer dropdown (forum topic 296: selecting an item makes it the active tool). */
+const filletChamferTools: ToolDef = pulldownTool('architecture.filletChamfer', 'Fillet', filletTool.icon, [
+  filletTool, chamferTool,
+]);
 
 const architecture: LapinModule = {
   id: 'architecture',
@@ -765,13 +781,13 @@ const architecture: LapinModule = {
   tabs: [{
     id: 'architecture', label: 'Architecture', order: 20, include: ['modify', 'groups', 'joins'],
     groups: [
-      { label: 'Build', tools: [wall, opening, slab, roof], small: [wallFromSolids, curtainWall, roofConfigurator, downpipe, railing] },
-      { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes, sunshadeTypes, windowSillSchedule] },
+      { label: 'Build', tools: [wall, opening, slab, roof], small: [wallSecondaryTools, curtainWall, roofConfigurator, downpipe, railing] },
+      { label: 'Types', tools: [buildingElementTypes] },
       // Sunshades (report #56): on a window, along a facade; their schedule.
       { label: 'Sunshades', tools: [sunshade], small: [sunshadeAlong, sunshadeSchedule] },
       // Profiles swept along a wall's face: added (a cornice, a band) or taken out (a reveal), decision 297.
       { label: 'Sweeps', tools: [wallSweep, wallReveal], small: [sweepSelected, revealSelected, wallSweepSchedule] },
-      { label: 'Joins', tools: [join], small: [mitreNew, filletTool, chamferTool, attachRoof, detachRoof, editLayers] },
+      { label: 'Joins', tools: [join], small: [mitreNew, filletChamferTools, attachRoof, detachRoof, editLayers] },
       { label: 'Room', tools: [room], small: [roomOutline, roomDividers, updateRooms, roomTag] },
       // Floor slopes and falls (forum topic 157, docs/plan-floor-slopes.md): drains, edge slopes, level points and lines, regions, a room's.
       { label: 'Slopes', tools: [floorDrain, floorEdgeSlope], small: [slopeRoom, floorChannel, floorSlopePoint, floorSlopeLine, floorSlopeArrow, floorSlopeRegion] },

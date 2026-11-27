@@ -11,6 +11,7 @@ import { cycleTab, select, useUi } from './store';
 import { toggleBothPanels, togglePanel, showOverlay, showPropsTab, usePanels, applyPanelsPart } from './panels';
 import { assistantAvailable } from '../assistant/available';
 import { toggleGrid, toggleThinLines } from './display';
+import { setPrefs, usePrefs } from './prefs';
 import { chooseWorkspace, onInterfaceChange, useInterface, WORKSPACE_IDS, WORKSPACE_LABELS } from './interface';
 import { effectiveBindings, formatBinding, resolveAlias, resolveKeymap, useKeymap, type Binding, type CommandDef, type Keymap } from './shortcuts';
 import { anchorFor, setAnchor, stepAnchor } from '../platform/anchor';
@@ -139,6 +140,7 @@ function appCommands(): CommandDef[] {
     { id: 'app.anchorPrev', label: 'Insertion anchor: previous', category: draw, defaults: ['Shift+F4'], run: () => stepToolAnchor(-1) },
     { id: 'app.datum', label: 'Temporary reference point at the cursor (again: drop it)', category: draw, defaults: ['F6'], run: () => { if (!datumHere()) notify('Start a drawing or placing tool, point at a spot, then press this key: the next point is measured from it.'); } },
     { id: 'app.polar', label: 'Polar tracking', category: draw, defaults: ['F10'], run: () => useCad.setState((s) => ({ polar: !s.polar })) },
+    { id: 'app.dynamicInput', label: 'Dynamic input', category: draw, defaults: ['F12'], run: () => setPrefs({ dynamicInput: !usePrefs.getState().dynamicInput }) },
     { id: 'app.zoomIn', label: 'Zoom in', category: views, defaults: ['Plus', '='], same: 'ZI', run: zoom((h) => h.zoomBy(1.25)) },
     { id: 'app.zoomOut', label: 'Zoom out', category: views, defaults: ['-'], same: 'ZO', run: zoom((h) => h.zoomBy(0.8)) },
     { id: 'app.zoomSelection', label: 'Zoom to the selection', category: views, defaults: ['Shift+Z'], same: 'ZS', run: zoom((h) => h.fitSelection()) },

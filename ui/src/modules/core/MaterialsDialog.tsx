@@ -173,8 +173,8 @@ export function MaterialsDialog() {
   const ownLook = (key: string) => (node ? key in node.props : false);
 
   return (
-    <div className="dialog-backdrop" role="dialog" aria-label="Materials">
-      <div className="dialog wide materials-dialog">
+    <div className="dialog-backdrop materials-backdrop" role="dialog" aria-label="Materials">
+      <div className="dialog materials-dialog">
         <header className="dialog-head">
           <span className="panel-title">Materials</span>
           {returnTo && <button type="button" className="btn" data-testid="materials-back" onClick={returnToDialog}><ArrowLeft size={13} />{returnTo === 'slabTypes' ? 'Back to Floor types' : 'Back to Wall types'}</button>}

@@ -68,7 +68,7 @@ import { placeAlong } from '../platform/anchor';
 import { setDatum, useDatum } from './datum';
 import { DatumMark } from './DatumMark';
 import { snapShapes, useCadCanvas, type Aimed } from './cad/aim';
-import { WALL_CLASSES, elementCurves, gridAxisShapes, wallAxes, wallAxisPoints } from './cad/elementSnaps';
+import { WALL_CLASSES, elementCenters, elementCurves, gridAxisShapes, wallAxes, wallAxisPoints } from './cad/elementSnaps';
 import { clearShown, hiddenInDrawing, publishShown, shownItems, shownWholeOf } from './cad/shown';
 import { CommandLine } from './cad/CommandLine';
 import './cad/ucs';
@@ -84,7 +84,7 @@ import { actualScale, boundsOf, coreBounds, framing, middleDouble, popHistory, p
 import { ScaleChip, ScalePicker, StructurePicker } from './ScaleChip';
 import { DASHES, onPaper, planDetail, shownAt } from './planDetail';
 import { useLineTypes } from '../modules/core/lineTypes/lineTypes';
-import { arcOf, axisLine, riseThrough } from './arc';
+import { arcFromCenterStartEnd, arcLength, arcOf, arcTangentFrom, axisLine, circleFromTwoTangentsAndPoint, isArc, middle, riseThrough, tangentAt } from './arc';
 import { PICKED, arrivingDir, circleOutline, ellipseOutline, loopOf, pickOutline, rectangleOutline, tangentRise, useOutlineShape } from './outlineShape';
 import { useLang } from '../i18n';
 import { others, reportPresence, useShare } from '../engine/share';
@@ -465,23 +465,95 @@ export function PlanView() {
 
   /** The start of the piece a chain tool drew last (its next piece's angle is measured from it); none when the chain starts again. */
   const chainPrev = useRef<Vec2 | null>(null);
-  useEffect(() => { if (pts.length === 0) chainPrev.current = null; }, [pts.length]);
-  useEffect(() => { chainPrev.current = null; }, [toolId]);
+  /** The departing tangent direction for tangent-arc mode (forum topic 293). */
+  const tangentDir = useRef<Vec2 | null>(null);
+  /** The two picked tangent lines for 2-tangents+point arc mode (forum topic 293). */
+  const tanLines = useRef<{ a: Vec2; b: Vec2 }[]>([]);
+  useEffect(() => { if (pts.length === 0) { chainPrev.current = null; tangentDir.current = null; tanLines.current = []; } }, [pts.length]);
+  useEffect(() => { chainPrev.current = null; tangentDir.current = null; tanLines.current = []; }, [toolId]);
+
+  /** Find the departing tangent direction at point `at` if it matches the endpoint of any shown line or arc element (forum topic 293). */
+  const tangentAtEnd = useCallback((at: Vec2): Vec2 | null => {
+    const tol = Math.max(0.05, 12 / view.scale);
+    for (const r of items) {
+      const n = nodes.get(r.nodeId);
+      if (!n) continue;
+      const c = arcOf(n.props);
+      if (c) {
+        const l = arcLength(c);
+        if (Math.hypot(c.b.x - at.x, c.b.y - at.y) <= tol) return tangentAt(c, l);
+        if (Math.hypot(c.a.x - at.x, c.a.y - at.y) <= tol) { const t = tangentAt(c, 0); return { x: -t.x, y: -t.y }; }
+      }
+      if (n.type === 'IfcAnnotation' && typeof n.props.shape === 'string') {
+        try {
+          const sh = JSON.parse(n.props.shape) as Shape;
+          if (sh.type === 'line') {
+            const dx = sh.b.x - sh.a.x, dy = sh.b.y - sh.a.y, d = Math.hypot(dx, dy);
+            if (d > 1e-6) {
+              if (Math.hypot(sh.b.x - at.x, sh.b.y - at.y) <= tol) return { x: dx / d, y: dy / d };
+              if (Math.hypot(sh.a.x - at.x, sh.a.y - at.y) <= tol) return { x: -dx / d, y: -dy / d };
+            }
+          } else if (sh.type === 'arc') {
+            const pa = { x: sh.c.x + Math.cos(sh.start) * sh.r, y: sh.c.y + Math.sin(sh.start) * sh.r };
+            const pb = { x: sh.c.x + Math.cos(sh.end) * sh.r, y: sh.c.y + Math.sin(sh.end) * sh.r };
+            if (Math.hypot(pb.x - at.x, pb.y - at.y) <= tol) return { x: -Math.sin(sh.end), y: Math.cos(sh.end) };
+            if (Math.hypot(pa.x - at.x, pa.y - at.y) <= tol) return { x: Math.sin(sh.start), y: -Math.cos(sh.start) };
+          }
+        } catch { /* ignore malformed draft */ }
+      }
+    }
+    return null;
+  }, [items, nodes, view.scale]);
+
+  /** Pick the straight axis line of an element near `at` for 2-tangents+point mode (forum topic 293). */
+  const pickTangentLine = useCallback((at: Vec2): { a: Vec2; b: Vec2 } | null => {
+    const e = pick(at);
+    if (e) {
+      const c = arcOf(e.props);
+      if (c && !isArc(c)) return { a: c.a, b: c.b };
+      if (typeof e.props.shape === 'string') {
+        try {
+          const sh = JSON.parse(e.props.shape) as Shape;
+          if (sh.type === 'line') return { a: sh.a, b: sh.b };
+        } catch { /* ignore */ }
+      }
+    }
+    // Fallback: check nearest straight wall/draft segment within tolerance.
+    const tol = Math.max(0.2, 18 / view.scale);
+    let best: { a: Vec2; b: Vec2; d: number } | null = null;
+    for (const r of items) {
+      const n = nodes.get(r.nodeId);
+      if (!n) continue;
+      const c = arcOf(n.props);
+      if (!c || isArc(c)) continue;
+      const dx = c.b.x - c.a.x, dy = c.b.y - c.a.y, l2 = dx * dx + dy * dy;
+      if (l2 < 1e-12) continue;
+      const t = Math.max(0, Math.min(1, ((at.x - c.a.x) * dx + (at.y - c.a.y) * dy) / l2));
+      const d = Math.hypot(at.x - (c.a.x + dx * t), at.y - (c.a.y + dy * t));
+      if (d <= tol && (!best || d < best.d)) best = { a: c.a, b: c.b, d };
+    }
+    return best ? { a: best.a, b: best.b } : null;
+  }, [pick, items, nodes, view.scale]);
 
   /** The element a pick-then-point gesture took with its first click. */
   const picked = useRef<NodeDto | undefined>(undefined);
   useEffect(() => { picked.current = undefined; }, [toolId]);
 
-  const complete = useCallback(async (points: Vec2[], entity?: NodeDto, face?: FaceHit, typed?: number, arcs?: number[], ellipses?: unknown[]) => {
+  const complete = useCallback(async (points: Vec2[], entity?: NodeDto, face?: FaceHit, typed?: number, arcs?: number[], ellipses?: unknown[], fullCircle?: boolean) => {
     if (!tool) return;
     picked.current = undefined;
     // An annotation drawn over an inset view goes on its source, in its own coordinates (decision 576); the model's tools stay on the plan.
     const inset = drawsThroughInsets(tool.id) ? insetUnder(drawing?.marks, points) : null;
-    if (inset) await completeTool(tool, { points: points.map(inset.map), entity, typed, ...(rot ? { rotation: rot } : {}) }, inset.source);
-    else await completeTool(tool, { points, entity, face, typed, ...(rot ? { rotation: rot } : {}), ...(arcs?.some((r) => Math.abs(r) > 1e-6) ? { arcs } : {}), ...(ellipses?.some(Boolean) ? { ellipses } : {}) });
+    if (inset) await completeTool(tool, { points: points.map(inset.map), entity, typed, ...(rot ? { rotation: rot } : {}), ...(fullCircle ? { fullCircle } : {}) }, inset.source);
+    else await completeTool(tool, { points, entity, face, typed, ...(rot ? { rotation: rot } : {}), ...(arcs?.some((r) => Math.abs(r) > 1e-6) ? { arcs } : {}), ...(ellipses?.some(Boolean) ? { ellipses } : {}), ...(fullCircle ? { fullCircle } : {}) });
     // A chain goes on from the last point: the piece just drawn is what the next one's angle is measured from (decision 738).
     if (tool.gesture?.kind === 'twoPoints' && tool.gesture.repeat) { chainPrev.current = points.length >= 2 ? points[points.length - 2] : null; setPts([points[points.length - 1]]); }
-    else setPts([]);
+    else if (tool.gesture?.kind === 'threePoints' && tool.gesture.arcMode === 'tangent' && points.length >= 3) {
+      // Chain tangent arcs continuously from the end of the just-created arc (forum topic 293).
+      const a = { a: points[0], b: points[1], rise: riseThrough(points[0], points[1], points[2]) };
+      tangentDir.current = tangentAt(a, arcLength(a));
+      setPts([points[1]]);
+    } else setPts([]);
   }, [tool, drawing, rot]);
 
   /** The rise of the edge from the last point to q: an arc going on tangent from the edge before (straight after the first point). */
@@ -546,10 +618,47 @@ export function PlanView() {
         // A measuring gesture hands on the true distance typed (Scale image, forum 143).
         else void complete([pts[0], p], undefined, undefined, g.kind === 'twoPoints' && g.measure ? typed : undefined);
         break;
-      case 'threePoints':
+      case 'threePoints': {
+        if (g.arc && g.arcMode === 'center') {
+          if (pts.length < 2) { setPts([...pts, p]); break; }
+          // Clicking/double-clicking the start point again creates a full circle (forum topic 293).
+          if (Math.hypot(p.x - pts[1].x, p.y - pts[1].y) <= Math.max(0.05, 10 / view.scale)) {
+            void complete([pts[0], pts[1]], undefined, undefined, undefined, undefined, undefined, true);
+          } else {
+            const a = arcFromCenterStartEnd(pts[0], pts[1], p, true);
+            if (a) void complete([a.a, a.b, middle(a)]);
+          }
+          break;
+        }
+        if (g.arc && g.arcMode === 'tangent') {
+          if (pts.length === 0) {
+            const dir = tangentAtEnd(p);
+            tangentDir.current = dir ?? { x: 1, y: 0 };
+            setPts([p]);
+          } else {
+            const dir = tangentDir.current ?? { x: 1, y: 0 };
+            const a = arcTangentFrom(pts[0], dir, p);
+            if (a) void complete([a.a, a.b, middle(a)]);
+            else void complete([pts[0], p]);
+          }
+          break;
+        }
+        if (g.arc && g.arcMode === 'tanTanPt') {
+          if (tanLines.current.length < 2) {
+            const line = pickTangentLine(raw);
+            if (line) { tanLines.current = [...tanLines.current, line]; setPts([...pts, p]); }
+            else useSession.setState({ error: 'Pick a straight line or wall as a tangent.' });
+          } else {
+            const sol = circleFromTwoTangentsAndPoint(tanLines.current[0], tanLines.current[1], p);
+            if (sol) void complete([sol.t1, sol.t2, p]);
+            else useSession.setState({ error: 'No tangent arc found for that point.' });
+          }
+          break;
+        }
         if (pts.length < 2) setPts([...pts, p]);
         else void complete([pts[0], pts[1], p]);
         break;
+      }
       case 'polygon': {
         // A shaped outline (forum topic 97): a rectangle, a circle, inside walls, or a polygon whose edges may be arcs.
         const shaped = g.shapes ? useOutlineShape.getState() : null;
@@ -1032,7 +1141,64 @@ export function PlanView() {
       );
     }
     if (tool.gesture.kind === 'threePoints' && tool.gesture.arc && pts.length >= 1) {
-      // An arc: its ends, then through the cursor.
+      const am = tool.gesture.arcMode ?? '3pt';
+      if (am === 'center') {
+        if (pts.length === 1) {
+          const c = toScreen(pts[0]), b = toScreen(cur);
+          const r = Math.hypot(cur.x - pts[0].x, cur.y - pts[0].y);
+          return (
+            <g className="plan-preview">
+              <line x1={c.x} y1={c.y} x2={b.x} y2={b.y} strokeDasharray="4 3" />
+              <circle cx={c.x} cy={c.y} r={r * view.scale} fill="none" strokeDasharray="4 4" opacity={0.5} />
+              <text x={(c.x + b.x) / 2 + 8} y={(c.y + b.y) / 2 - 8}>{`R ${lengthText(r)}`}</text>
+            </g>
+          );
+        }
+        const c = toScreen(pts[0]);
+        const r = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        const full = Math.hypot(cur.x - pts[1].x, cur.y - pts[1].y) <= Math.max(0.05, 10 / view.scale);
+        const a = full ? null : arcFromCenterStartEnd(pts[0], pts[1], cur, true);
+        const line = a ? axisLine(a) : [];
+        const ps = line.map(toScreen);
+        return (
+          <g className="plan-preview">
+            {a && body(a)}
+            {full ? <circle cx={c.x} cy={c.y} r={r * view.scale} fill="none" /> : <polyline points={ps.map((p) => `${p.x},${p.y}`).join(' ')} />}
+            <text x={c.x + 10} y={c.y - 8}>{full ? `Circle R ${lengthText(r)}` : `R ${lengthText(r)}`}</text>
+          </g>
+        );
+      }
+      if (am === 'tangent' && pts.length === 1) {
+        const dir = tangentDir.current ?? { x: 1, y: 0 };
+        const a = arcTangentFrom(pts[0], dir, cur);
+        const line = a ? axisLine(a) : [pts[0], cur];
+        const ps = line.map(toScreen);
+        const m = toScreen(line[Math.floor(line.length / 2)]);
+        return (
+          <g className="plan-preview">
+            {a ? body(a) : body({ a: pts[0], b: cur, rise: 0 })}
+            <polyline points={ps.map((p) => `${p.x},${p.y}`).join(' ')} />
+            <text x={m.x + 8} y={m.y - 8}>{a ? `R ${lengthText(Math.abs(radiusOf(a.a, a.b, middle(a))))}` : lengthText(Math.hypot(cur.x - pts[0].x, cur.y - pts[0].y))}</text>
+          </g>
+        );
+      }
+      if (am === 'tanTanPt' && tanLines.current.length === 2) {
+        const sol = circleFromTwoTangentsAndPoint(tanLines.current[0], tanLines.current[1], cur);
+        if (sol) {
+          const arc = { a: sol.t1, b: sol.t2, rise: riseThrough(sol.t1, sol.t2, cur) };
+          const line = axisLine(arc);
+          const ps = line.map(toScreen);
+          const cs = toScreen(sol.c);
+          return (
+            <g className="plan-preview">
+              {body(arc)}
+              <polyline points={ps.map((p) => `${p.x},${p.y}`).join(' ')} />
+              <text x={cs.x + 8} y={cs.y - 8}>{`R ${lengthText(sol.r)}`}</text>
+            </g>
+          );
+        }
+      }
+      // 3-point arc: its ends, then through the cursor.
       const b = pts[1] ?? cur;
       const line = pts.length === 2 ? axisLine({ a: pts[0], b, rise: riseThrough(pts[0], b, cur) }) : [pts[0], b];
       const ps = line.map(toScreen);
@@ -1129,6 +1295,7 @@ export function PlanView() {
   const workspace = useInterface((s) => s.workspace);
   const ghostTargets = obOpen ? missionTargets(workspace) : [];
   const precisionTools = usePrefs((p) => p.precisionTools);
+  const showArcCenters = usePrefs((p) => p.showArcCenters);
   const magnets = useMemo(() => {
     if (!precisionTools || !hover || !tool?.gesture || !storey) return [];
     const anchors = storeyAnchorPoints(nodes.values(), storey.id);
@@ -1261,6 +1428,27 @@ export function PlanView() {
           <path key={p.key} className="plan-mark selected" d={p.d} />
         ))}
         {pts.map((p, i) => { const s = toScreen(p); return <circle key={i} cx={s.x} cy={s.y} r={3} className="plan-vertex" />; })}
+        {/* Permanent or hover/selection arc & circle centerpoints (forum topic 293). */}
+        {(() => {
+          const activeItems = showArcCenters ? items : items.filter((r) => shown.has(r.nodeId) || r.nodeId === hoverId);
+          if (!activeItems.length) return null;
+          const centers = elementCenters(activeItems, nodes);
+          if (!centers.length) return null;
+          return (
+            <g className="plan-arc-centers" aria-hidden="true" data-testid="arc-centers">
+              {centers.map((c, i) => {
+                const s = toScreen(c);
+                return (
+                  <g key={i} transform={`translate(${s.x} ${s.y})`}>
+                    <line x1={-6} y1={0} x2={6} y2={0} stroke="var(--accent, #2563eb)" strokeWidth={1} opacity={0.8} />
+                    <line x1={0} y1={-6} x2={0} y2={6} stroke="var(--accent, #2563eb)" strokeWidth={1} opacity={0.8} />
+                    <circle cx={0} cy={0} r={3} fill="none" stroke="var(--accent, #2563eb)" strokeWidth={1} opacity={0.75} />
+                  </g>
+                );
+              })}
+            </g>
+          );
+        })()}
         {editor.render}
         <PlanOverlays toScreen={toScreen} toWorld={toWorld} scale={view.scale} rotation={rot} view={{ id: ownPlan ?? null, storeyId: storey?.id ?? null }} />
         {ghostTargets.map((gt) => {

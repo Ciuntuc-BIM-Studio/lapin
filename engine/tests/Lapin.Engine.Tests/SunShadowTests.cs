@@ -280,7 +280,32 @@ public class SunShadowTests
         // At noon the sun is high in the south: a shadow again.
         f.Run("view.setShadows", new JsonObject { ["id"] = south, ["hour"] = 13 });
         Assert.NotNull(Shadows());
-        // A storey plan draws none.
-        Assert.Throws<CommandException>(() => f.Run("view.setShadows", new JsonObject { ["id"] = "plan:" + f.Storey, ["mode"] = "view" }));
+        // A reflected ceiling plan (look = "up") draws none.
+        var rcp = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        f.Run("view.setRange", new JsonObject { ["id"] = rcp, ["look"] = "up" });
+        Assert.Throws<CommandException>(() => f.Run("view.setShadows", new JsonObject { ["id"] = rcp, ["mode"] = "view" }));
+    }
+
+    [Fact]
+    public void A_floor_plan_draws_shadows_below_its_cut_plane_and_caps_cut_walls()
+    {
+        var f = new Fixture();
+        // A floor slab from (0,0) to (10,10) at z = 0, a wall along y = 5 from x = 2 to x = 8, and a roof slab above cutZ at z = 3.
+        f.Run("architecture.addSlab", new JsonObject { ["storeyId"] = f.Storey, ["points"] = new JsonArray(new JsonArray(0, 0), new JsonArray(10, 0), new JsonArray(10, 10), new JsonArray(0, 10)) });
+        f.Wall(2, 5, 8, 5);
+        var upper = (string)f.Run("storey.create", new JsonObject { ["name"] = "Roof", ["elevation"] = 3 })!["id"]!;
+        f.Run("architecture.addSlab", new JsonObject { ["storeyId"] = upper, ["points"] = new JsonArray(new JsonArray(0, 0), new JsonArray(10, 0), new JsonArray(10, 10), new JsonArray(0, 10)) });
+
+        // Enabling shadows on the implicit storey plan saves it as a floor plan view and draws shadows on the floor slab.
+        var planId = (string)f.Run("view.setShadows", new JsonObject { ["id"] = "plan:" + f.Storey, ["mode"] = "view" })!["id"]!;
+        var pen = Views.Render(f.Session.Reader, Views.Find(f.Model, planId)!).Pens.FirstOrDefault(p => p.Layer == ViewShadows.Layer);
+        Assert.NotNull(pen);
+        Assert.Equal(ViewShadows.DefaultColor, pen!.Fill);
+        // The roof at z = 3 is above cutZ (1.2 m) so it must not shade the entire 100 m² floor; the wall's shadow is a compact band.
+        var totalArea = pen.Loops.Sum(l => Math.Abs(Polygon2.SignedArea(l)));
+        Assert.InRange(totalArea, 4.0, 20.0);
+        // Project sun at night draws no shadows.
+        f.Run("view.setShadows", new JsonObject { ["id"] = planId, ["mode"] = "project", ["date"] = "2026-06-21", ["hour"] = 2 });
+        Assert.Null(Views.Render(f.Session.Reader, Views.Find(f.Model, planId)!).Pens.FirstOrDefault(p => p.Layer == ViewShadows.Layer));
     }
 }

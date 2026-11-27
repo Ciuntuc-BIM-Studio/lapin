@@ -18,6 +18,7 @@ import { ROLES, findCommand, roleLabel, useCad } from './session';
 import { useLayers } from './layers';
 import { GridStepChip, openSnapMenu, UcsChip, useSnapSummary } from '../../shell/CursorCoords';
 import { setPrefs, usePrefs } from '../../app/prefs';
+import { toggleThinLines, useDisplay } from '../../app/display';
 import { t } from '../../i18n';
 
 /** The prompt, what is typed, the switches and the layer: the part both kinds of line have. */
@@ -28,6 +29,9 @@ export function CadPrompt({ inline }: { inline?: boolean }) {
   const snaps = useSnapSummary();
   const polarStep = usePrefs((s) => s.polarStep);
   const constrain = usePrefs((s) => s.constrainWhileDrawing);
+  const dynamicInput = usePrefs((s) => s.dynamicInput);
+  const showArcCenters = usePrefs((s) => s.showArcCenters);
+  const thinLines = useDisplay((s) => s.thinLines);
   const view = useUi((s) => s.view);
   const promptHere = useInterface((s) => s.parts.prompt === 'commandLine');
   useBindings();
@@ -55,6 +59,12 @@ export function CadPrompt({ inline }: { inline?: boolean }) {
       <button type="button" className={`cad-toggle${ortho ? ' on' : ''}`} title={bindingText('app.ortho') ? `Ortho (${bindingText('app.ortho').split(', ')[0]}; hold Shift)` : 'Ortho (hold Shift)'} onClick={() => useCad.setState({ ortho: !ortho })}>ORTHO</button>
       <UcsChip />
       <button type="button" className={`cad-toggle${polar ? ' on' : ''}`} title={`${t('Polar tracking every')} ${polarStep}°${key('app.polar')}`} onClick={() => useCad.setState({ polar: !polar })}>POLAR</button>
+      <button type="button" className={`cad-toggle${dynamicInput ? ' on' : ''}`} data-testid="dyn-toggle" aria-pressed={dynamicInput}
+        title={`${t('Dynamic input')}${key('app.dynamicInput')}: ${t('show length, angle and coordinate input at the cursor')}`} onClick={() => setPrefs({ dynamicInput: !dynamicInput })}>DYN</button>
+      <button type="button" className={`cad-toggle${thinLines ? ' on' : ''}`} data-testid="thin-lines-toggle" aria-pressed={thinLines}
+        title={`${t('Thin lines')}${key('app.thinLines')}: ${t('draw every line one pixel wide on screen')}`} onClick={toggleThinLines}>THIN</button>
+      {twoD && <button type="button" className={`cad-toggle${showArcCenters ? ' on' : ''}`} data-testid="arc-centers-toggle" aria-pressed={showArcCenters}
+        title={t('Show circle and arc centerpoints permanently (off: show on hover and selection)')} onClick={() => setPrefs({ showArcCenters: !showArcCenters })}>CEN</button>}
       {twoD && <button type="button" className={`cad-toggle${constrain ? ' on' : ''}`} data-testid="constrain-toggle" aria-pressed={constrain}
         title="Constrain while drawing: in a sketch, snaps and typed values become constraints (hold Ctrl on a click for a free point)" onClick={() => setPrefs({ constrainWhileDrawing: !constrain })}>CNSTR</button>}
       {(!inline || twoD) && <>

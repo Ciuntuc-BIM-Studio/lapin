@@ -343,7 +343,7 @@ export function StandardsDialog() {
   );
   return (
     <div className="dialog-backdrop" role="dialog" aria-label="Drafting standards">
-      <div className="dialog wide">
+      <div className="dialog wide standards-dialog">
         <header className="dialog-head">
           <span className="panel-title">Drafting standards</span>
           <button type="button" className="icon" onClick={() => useUi.setState({ dialog: null })} title="Close"><X size={15} /></button>

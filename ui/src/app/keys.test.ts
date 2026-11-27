@@ -369,3 +369,22 @@ describe('Shift+Tab while a tool picks (forum topic 149)', () => {
     expect(keyIntent(k, state({ keymap: map, buffer: 'L', step: { want: 'point' } }))).toBeNull();
   });
 });
+
+describe('dynamic input toggle and absolute/relative coordinates (forum topic 295)', () => {
+  it('switches to abs on comma or # and rel on @ in the cursor box', () => {
+    const live = (more: Partial<NonNullable<KeySnapshot['live']>> = {}) => state({ live: { active: true, owner: 'cad', text: '', typed: false, mode: 'polar', focus: 'len', ...more }, hotbar: 9 });
+    expect(keyIntent(press('#'), live())).toEqual({ kind: 'liveCoord', coord: 'abs' });
+    expect(keyIntent(press('@'), live())).toEqual({ kind: 'liveCoord', coord: 'rel' });
+    expect(keyIntent(press(','), live({ text: '10', typed: true }))).toEqual({ kind: 'liveCoord', coord: 'abs', keepLen: true });
+    expect(keyIntent(press(','), live({ text: '10', typed: true, mode: 'abs' }))).toEqual({ kind: 'liveFocus', field: 'ang' });
+    expect(keyIntent(press('-'), live({ mode: 'abs' }))).toEqual({ kind: 'liveType', key: '-' });
+    expect(keyIntent(press('-'), live({ mode: 'rel' }))).toEqual({ kind: 'liveType', key: '-' });
+  });
+
+  it('sends typing straight to the command line when dynamic input is off', () => {
+    const off = state({ dynamicInput: false, step: { want: 'point' }, live: { active: true, owner: 'cad', text: '', typed: false, mode: 'polar', focus: 'len' }, hotbar: 9 });
+    expect(keyIntent(press('1'), off)).toEqual({ kind: 'type', buffer: '1' });
+    expect(keyIntent(press('#'), off)).toEqual({ kind: 'type', buffer: '#' });
+    expect(keyIntent(press('@'), off)).toEqual({ kind: 'type', buffer: '@' });
+  });
+});

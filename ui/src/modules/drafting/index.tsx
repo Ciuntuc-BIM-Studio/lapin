@@ -6,7 +6,7 @@ import { openTempDimProperties } from '../../viewport/tempDimProps';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, EllipseIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import { openPlaceCatalog } from '../../shell/placeCatalogStore';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
-import { alongOfChain, axisGrips, axisRef, keepLine, outlineGrips, pt } from '../../viewport/gripKit';
+import { alongOf, alongOfChain, axisGrips, axisRef, keepLine, outlineGrips, pt } from '../../viewport/gripKit';
 import type { NodeDto } from '../../engine/protocol';
 import { notify, select, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
@@ -17,7 +17,7 @@ import { stackedAt, stackSpacingMm } from './dimStack';
 import { DimensionOptions, isSamePoint, pickDirection, segmentLabels, setStringMode, stringMode, useDimTool, type StringMode } from './dimensionTool';
 import { DIM_KINDS, SmartDimensionOptions, setDimensionExtras, startDimension, useSmartDim, type DimKind } from './smartDimension';
 import { DraftSection } from './DraftSection';
-import { ellipseAt, fromJson, keyPoints, toJson, type Shape } from '../../viewport/cad/shapes';
+import { arcThrough, ellipseAt, fromJson, keyPoints, toJson, type Shape } from '../../viewport/cad/shapes';
 import { sketchPartOf } from '../../viewport/cad/constraints';
 import { viewHasConstraints } from '../../viewport/cad/sketchStore';
 import { frontView } from '../../viewport/frontView';
@@ -726,7 +726,20 @@ function draftGrips(node: NodeDto): Grip[] {
   const on = (r: number, t: number): Vec2 => (s.type === 'arc' || s.type === 'circle' ? { x: s.c.x + Math.cos(t) * r, y: s.c.y + Math.sin(t) * r } : { x: 0, y: 0 });
   const grips: Grip[] = (() => {
     switch (s.type) {
-      case 'line': return axisGrips(s.a, s.b, (a, b) => save({ ...s, a, b }));
+      case 'line': {
+        const mid = { x: (s.a.x + s.b.x) / 2, y: (s.a.y + s.b.y) / 2 };
+        return [
+          { key: 'start', kind: 'end', at: s.a, step: (to: Vec2) => save({ ...s, a: to }), ...keepLine(alongOf(s.b, s.a)) },
+          { key: 'end', kind: 'end', at: s.b, step: (to: Vec2) => save({ ...s, b: to }), ...keepLine(alongOf(s.a, s.b)) },
+          {
+            key: 'arc', kind: 'radius', at: mid, title: 'Drag to curve into a 3-point arc',
+            step: (to: Vec2) => {
+              const a = arcThrough(s.a, to, s.b);
+              return a ? save(a) : save(s);
+            },
+          },
+        ];
+      }
       case 'polyline': {
         if (s.closed && s.pts.length >= 3) return outlineGrips({ pts: s.pts }, (o) => save({ ...s, pts: o.pts }));
         const out: Grip[] = s.pts.map((q, i) => ({
@@ -750,18 +763,57 @@ function draftGrips(node: NodeDto): Grip[] {
         }
         return out;
       }
-      case 'circle': return [
-        { key: 'c', kind: 'centre', at: s.c, step: (p: Vec2) => save({ ...s, c: p }) },
-        ...keyPoints(s).quadrants.map((q, i) => ({ key: `q${i}`, kind: 'radius' as const, at: q, step: (p: Vec2) => save({ ...s, r: Math.max(1e-3, Math.hypot(p.x - s.c.x, p.y - s.c.y)) }) })),
-      ];
-      case 'arc': {
-        const mid = s.start + (((s.end - s.start) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) / 2;
-        const angle = (p: Vec2) => Math.atan2(p.y - s.c.y, p.x - s.c.x);
+      case 'circle': {
+        const norm = (a: number) => ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+        const angle = (p: Vec2) => norm(Math.atan2(p.y - s.c.y, p.x - s.c.x));
+        const rp = on(s.r, Math.PI / 4);
         return [
-          { key: 'c', kind: 'centre', at: s.c, step: (p: Vec2) => save({ ...s, c: p }) },
-          { key: 's', kind: 'end', at: on(s.r, s.start), step: (p: Vec2) => save({ ...s, start: angle(p) }) },
-          { key: 'e', kind: 'end', at: on(s.r, s.end), step: (p: Vec2) => save({ ...s, end: angle(p) }) },
-          { key: 'm', kind: 'radius', at: on(s.r, mid), step: (p: Vec2) => save({ ...s, r: Math.max(1e-3, Math.hypot(p.x - s.c.x, p.y - s.c.y)) }) },
+          { key: 'c', kind: 'centre', at: s.c, title: 'Circle centre: drag to move', step: (p: Vec2) => save({ ...s, c: p }) },
+          { key: 'rp', kind: 'radius', at: rp, center: s.c, title: 'Drag to adjust radius (or type radius)', step: (p: Vec2) => save({ ...s, r: Math.max(1e-3, Math.hypot(p.x - s.c.x, p.y - s.c.y)) }) },
+          ...keyPoints(s).quadrants.map((q, i) => {
+            const qAng = (i * Math.PI) / 2;
+            return {
+              key: `q${i}`, kind: 'end' as const, at: q, center: s.c,
+              title: 'Drag along circle (CCW or CW) to open into an arc, or radially to change radius',
+              step: (p: Vec2) => {
+                const pa = angle(p);
+                let diff = pa - qAng;
+                while (diff > Math.PI) diff -= 2 * Math.PI;
+                while (diff < -Math.PI) diff += 2 * Math.PI;
+                if (Math.abs(diff) <= 0.05) return save({ ...s, r: Math.max(1e-3, Math.hypot(p.x - s.c.x, p.y - s.c.y)) });
+                // Dragging CCW opens gap [qAng, pa] -> arc from pa to qAng; dragging CW opens gap [pa, qAng] -> arc from qAng to pa.
+                return save({
+                  type: 'arc',
+                  c: s.c, r: s.r,
+                  start: diff > 0 ? pa : qAng,
+                  end: diff > 0 ? qAng : pa,
+                });
+              },
+            };
+          }),
+        ];
+      }
+      case 'arc': {
+        const sweep = (((s.end - s.start) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+        const mid = s.start + sweep / 2;
+        const angle = (p: Vec2) => Math.atan2(p.y - s.c.y, p.x - s.c.x);
+        const startPt = on(s.r, s.start), endPt = on(s.r, s.end);
+        const closeTol = Math.max(0.05, s.r * 0.035);
+        return [
+          { key: 'c', kind: 'centre', at: s.c, title: 'Arc centre: drag to move', step: (p: Vec2) => save({ ...s, c: p }) },
+          {
+            key: 's', kind: 'end', at: startPt, center: s.c, title: 'Drag to adjust arc angle (drag to other end for full circle)',
+            step: (p: Vec2) => Math.hypot(p.x - endPt.x, p.y - endPt.y) <= closeTol
+              ? save({ type: 'circle', c: s.c, r: s.r })
+              : save({ ...s, start: angle(p) }),
+          },
+          {
+            key: 'e', kind: 'end', at: endPt, center: s.c, title: 'Drag to adjust arc angle (drag to other end for full circle)',
+            step: (p: Vec2) => Math.hypot(p.x - startPt.x, p.y - startPt.y) <= closeTol
+              ? save({ type: 'circle', c: s.c, r: s.r })
+              : save({ ...s, end: angle(p) }),
+          },
+          { key: 'm', kind: 'radius', at: on(s.r, mid), center: s.c, title: 'Drag to adjust radius (or type radius)', step: (p: Vec2) => save({ ...s, r: Math.max(1e-3, Math.hypot(p.x - s.c.x, p.y - s.c.y)) }) },
         ];
       }
       case 'ellipse': {

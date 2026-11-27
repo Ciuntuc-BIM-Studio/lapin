@@ -2499,9 +2499,38 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .ucs-icon .ucs-origin { fill: none; stroke: var(--ink, #333); stroke-width: 1; }
 .ucs-icon .ucs-label { font-size: 11px; font-weight: 600; fill: var(--ink, #333); }
 
-/* File → Preferences… (decision 445): the pages on the left, the page on the right. */
-.prefs-dialog { width: min(760px, calc(100vw - 32px)); }
-.prefs-body { display: flex; gap: 16px; min-height: 360px; }
+/* File → Preferences… (decision 445; fixed size, forum topic 296): the pages on the left, the page on the right. */
+.prefs-dialog { width: min(780px, calc(100vw - 32px)); height: min(560px, calc(100vh - 64px)); }
+.prefs-body { display: flex; gap: 16px; flex: 1; min-height: 0; overflow: hidden; }
+/* Drafting standards: fixed size so switching tabs never resizes the dialog (forum topic 296). */
+.standards-dialog { width: min(920px, calc(100vw - 32px)); height: min(620px, calc(100vh - 64px)); }
+.standards-dialog .dialog-body { flex: 1; min-height: 0; }
+/* Materials dialog: compact, fixed size, docked to the side with a transparent non-blocking backdrop so the drawing stays visible (forum topic 296). */
+.dialog-backdrop.materials-backdrop { background: transparent; pointer-events: none; place-items: center end; padding-right: 16px; }
+.materials-dialog { width: min(640px, calc(100vw - 32px)); height: min(580px, calc(100vh - 64px)); pointer-events: auto; }
+.materials-dialog .dialog-body.split { flex: 1; min-height: 0; grid-template-columns: 200px 1fr; overflow: hidden; }
+.materials-dialog .material-side, .materials-dialog .material-detail { min-height: 0; overflow-y: auto; }
+
+/* Tabbed Properties panel with pinned header, quick actions, vertical side tabs & dimension diagram (forum topic 296). */
+.panel.props.props-tabbed { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+.props-shell { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+.props-main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+.props-pinned-head { flex-shrink: 0; padding: 8px 10px 6px; border-bottom: 1px solid var(--rule); background: var(--panel); display: flex; flex-direction: column; gap: 6px; }
+.props-head-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+.props-head-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.props-quick-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.props-head-sub { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.props-head-sub .props-filter { flex: 1; min-width: 110px; margin: 0; border-radius: 999px; }
+.props-content { flex: 1; min-height: 0; overflow-y: auto; }
+.props-pane-hidden { display: none; }
+.props-vtabs { width: 26px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; padding: 6px 0; border-left: 1px solid var(--rule); background: var(--wash); }
+.props-vtab { position: relative; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 11px; font-weight: 500; writing-mode: vertical-rl; text-orientation: mixed; padding: 10px 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; border-radius: 0 4px 4px 0; transition: background 0.12s, color 0.12s; }
+.props-vtab:hover { background: var(--panel); color: var(--ink); }
+.props-vtab.on { background: var(--panel); color: var(--ink); font-weight: 600; box-shadow: inset 2px 0 0 var(--accent); margin-left: -1px; border-left: 1px solid var(--panel); }
+.props-vtab.has-match { color: var(--accent); font-weight: 600; }
+.props-vtab-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.group-badge { margin-left: auto; font-size: 10px; font-weight: 500; padding: 1px 6px; border-radius: 999px; background: var(--wash); color: var(--muted); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.props-diagram { display: flex; justify-content: center; padding: 6px 8px 2px; border-top: 1px solid var(--rule); margin-top: 6px; }
 .prefs-nav { display: flex; flex-direction: column; gap: 2px; min-width: 150px; border-right: 1px solid var(--rule); padding-right: 8px; }
 .prefs-tab { text-align: left; padding: 6px 10px; border: 0; background: none; color: var(--ink); font: inherit; border-radius: 3px; cursor: pointer; }
 .prefs-tab:hover { background: var(--wash); }

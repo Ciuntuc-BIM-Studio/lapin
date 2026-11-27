@@ -24,7 +24,7 @@ import { TabStrip, WorkspaceSwitch } from './TabStrip';
 import { useInterface, visibleTabIds } from '../app/interface';
 import { MY_TAB } from '../app/myTools';
 import { MyToolsBand, toolDragProps, toolMenu } from './MyToolsBand';
-import { pressTool } from './pulldown';
+import { pressTool, shownPulldownTool, usePulldownActive } from './pulldown';
 import { bindingText, hint, useBindings } from '../app/commands';
 import { recordToolClick } from '../app/microTips';
 import type { FileAction, RibbonTabDef, ToolDef } from '../platform/module';
@@ -152,6 +152,7 @@ function useTight(): [React.RefObject<HTMLDivElement>, boolean] {
 /** The band of the tab: large tools with their names and keys, or icons only. */
 function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: boolean; onPicked?: () => void; drop?: boolean }) {
   const tool = useUi((s) => s.tool);
+  const pulldownLast = usePulldownActive();
   // A tool that works for some selections only (`enabled`) is asked again as the selection or the model changes.
   useUi((s) => s.selected);
   useSession((s) => s.version);
@@ -215,11 +216,14 @@ function Band({ tab: all, icons, onPicked, drop }: { tab: RibbonTabDef; icons: b
             })}
             {g.small && g.small.length > 0 && (
               <div className="small-tools">
-                {g.small.map((tl) => (
-                  <button type="button" key={tl.id} className={`tool small${on(tl) ? ' on' : ''}`} disabled={off(tl)} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(tl.id, tl.label)} aria-label={tl.label} data-pulldown={tl.items?.length ? tl.id : undefined}>
-                    <tl.icon size={14} strokeWidth={1.6} /><span>{tl.label}</span>{tl.items?.length ? <ChevronDown size={10} strokeWidth={2} aria-hidden /> : null}
-                  </button>
-                ))}
+                {g.small.map((tl) => {
+                  const shown = tl.items?.length ? shownPulldownTool(tl, tool, pulldownLast) : tl;
+                  return (
+                    <button type="button" key={tl.id} className={`tool small${on(tl) ? ' on' : ''}`} disabled={off(tl)} onClick={(e) => press(tl, e.currentTarget)} {...dragTool(tl)} title={hint(shown.id, shown.label)} aria-label={shown.label} data-pulldown={tl.items?.length ? tl.id : undefined}>
+                      <shown.icon size={14} strokeWidth={1.6} /><span>{shown.label}</span>{tl.items?.length ? <ChevronDown size={10} strokeWidth={2} aria-hidden /> : null}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>

@@ -179,11 +179,22 @@ export function findSnap(p: Vec2, shapes: readonly Shape[], index: SnapIndex | n
         const cur = best.get('center');
         if (!cur) best.set('center', { point: c, mode: 'center', shape: i });
       }
-    if (o.from) for (const pr of prims(s)) if (pr.kind === 'seg') {
-      const dx = pr.b.x - pr.a.x, dy = pr.b.y - pr.a.y, l2 = dx * dx + dy * dy;
-      if (l2 < 1e-18) continue;
-      const t = ((o.from.x - pr.a.x) * dx + (o.from.y - pr.a.y) * dy) / l2;
-      if (t >= 0 && t <= 1) offer('perpendicular', { x: pr.a.x + dx * t, y: pr.a.y + dy * t }, i);
+    if (o.from) for (const pr of prims(s)) {
+      if (pr.kind === 'seg') {
+        const dx = pr.b.x - pr.a.x, dy = pr.b.y - pr.a.y, l2 = dx * dx + dy * dy;
+        if (l2 < 1e-18) continue;
+        const t = ((o.from.x - pr.a.x) * dx + (o.from.y - pr.a.y) * dy) / l2;
+        if (t >= 0 && t <= 1) offer('perpendicular', { x: pr.a.x + dx * t, y: pr.a.y + dy * t }, i);
+      } else if (pr.kind === 'arc') {
+        // Radial perpendicular to an arc or circle (forum topic 293).
+        const dx = o.from.x - pr.c.x, dy = o.from.y - pr.c.y, d = Math.hypot(dx, dy);
+        if (d > 1e-9) {
+          for (const sign of [1, -1]) {
+            const q = { x: pr.c.x + (dx / d) * pr.r * sign, y: pr.c.y + (dy / d) * pr.r * sign };
+            if (pr.full || nearestOnShape(s, q).dist < 1e-4) offer('perpendicular', q, i);
+          }
+        }
+      }
     }
     if (o.from && (s.type === 'circle' || s.type === 'arc' || s.type === 'ellipse')) for (const q of tangentPoints(s, o.from)) offer('tangent', q, i);
     offer('nearest', nearestOnShape(s, p).point, i);
@@ -191,8 +202,33 @@ export function findSnap(p: Vec2, shapes: readonly Shape[], index: SnapIndex | n
   if (o.modes.has('intersection'))
     for (let a = 0; a < near.length; a++) for (let b = a + 1; b < near.length; b++)
       for (const q of intersectShapes(shapes[near[a]], shapes[near[b]])) offer('intersection', q, near[a]);
-  if (o.from && o.modes.has('tangent'))
-    for (const c of o.curves ?? []) for (const q of tangentPoints(c, o.from)) offerAs('tangent', { point: q, mode: 'tangent', shape: -1, on: c });
+  for (const c of o.curves ?? []) {
+    // Model element curves (curved walls, beams, curtain walls, railings, slab edges): center, quadrant, tangent and radial perpendicular snaps (forum topic 293).
+    const kc = keyPoints(c);
+    if (o.modes.has('center')) {
+      for (const cen of kc.centers) {
+        if (nearestOnShape(c, p).dist <= tol || dist(cen, p) <= tol) {
+          const cur = best.get('center');
+          if (!cur || dist(cen, p) < dist(cur.point, p)) best.set('center', { point: cen, mode: 'center', shape: -1, on: c });
+        }
+      }
+    }
+    if (o.modes.has('quadrant')) {
+      for (const q of kc.quadrants) offerAs('quadrant', { point: q, mode: 'quadrant', shape: -1, on: c });
+    }
+    if (o.from && o.modes.has('tangent')) {
+      for (const q of tangentPoints(c, o.from)) offerAs('tangent', { point: q, mode: 'tangent', shape: -1, on: c });
+    }
+    if (o.from && o.modes.has('perpendicular') && (c.type === 'arc' || c.type === 'circle')) {
+      const dx = o.from.x - c.c.x, dy = o.from.y - c.c.y, d = Math.hypot(dx, dy);
+      if (d > 1e-9) {
+        for (const sign of [1, -1]) {
+          const q = { x: c.c.x + (dx / d) * c.r * sign, y: c.c.y + (dy / d) * c.r * sign };
+          if (c.type === 'circle' || nearestOnShape(c, q).dist < 1e-4) offerAs('perpendicular', { point: q, mode: 'perpendicular', shape: -1, on: c });
+        }
+      }
+    }
+  }
   if (o.modes.has('wallAxis'))
     for (const ax of o.wallAxes ?? []) {
       const k = keyPoints(ax);

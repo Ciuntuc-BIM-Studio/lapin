@@ -7,7 +7,7 @@
 
 import type { Grip, GripStep, RefLine, Vec2 } from '../platform/module';
 import { anticlockwise, arcsOf, edgeArc, edgeMiddles, insertVertex, moveVertex, offsetEdge, outlinePoints, removeVertex, setArc, toPairs, type Outline } from './contour';
-import { arcLength, axisLine, isArc, middle, pointAt, riseThrough, tangentAt, type Arc } from './arc';
+import { arcFrame, arcLength, arcWithEndAngle, arcWithRadius, axisLine, isArc, middle, pointAt, riseThrough, tangentAt, type Arc } from './arc';
 export { pt } from '../platform/vec';
 
 
@@ -46,18 +46,34 @@ export function axisGrips(a: Vec2, b: Vec2, step: (start: Vec2, end: Vec2) => Gr
 export const axisRef = (a: Vec2, b: Vec2): RefLine => ({ points: [a, b], closed: false, kind: 'axis' });
 
 /**
- * A path's grips, straight or curved: its ends (an arc keeps its rise), a
- * middle that moves it whole (on a curved one, on its chord) and, on a curved
- * one, its arc's middle, dragged to bend it through the point.
+ * A path's grips, straight or curved (forum topic 293):
+ * - Straight: ends (with own-angle lock) and midpoint dragged to curve into a 3-point arc.
+ * - Curved: centre (moves element by centre), ends (adjust arc angle maintaining centre & radius),
+ *   and perimeter middle (adjusts radius maintaining centre, with numerical radius input).
  */
 export function pathGrips(c: Arc, step: (start: Vec2, end: Vec2, rise: number) => GripStep): Grip[] {
-  if (!isArc(c)) return axisGrips(c.a, c.b, (s, e) => step(s, e, 0));
-  const chordMid = { x: (c.a.x + c.b.x) / 2, y: (c.a.y + c.b.y) / 2 };
+  if (!isArc(c)) {
+    const mid = { x: (c.a.x + c.b.x) / 2, y: (c.a.y + c.b.y) / 2 };
+    return [
+      { key: 'start', kind: 'end', at: c.a, step: (to) => step(to, c.b, 0), ...keepLine(alongOf(c.b, c.a)) },
+      { key: 'end', kind: 'end', at: c.b, step: (to) => step(c.a, to, 0), ...keepLine(alongOf(c.a, c.b)) },
+      { key: 'arc', kind: 'radius', at: mid, title: 'Drag to curve into a 3-point arc', step: (to) => step(c.a, c.b, riseThrough(c.a, c.b, to)) },
+    ];
+  }
+  const f = arcFrame(c);
   return [
-    { key: 'start', kind: 'end', at: c.a, step: (to) => step(to, c.b, c.rise) },
-    { key: 'end', kind: 'end', at: c.b, step: (to) => step(c.a, to, c.rise) },
-    { key: 'move', kind: 'move', at: chordMid, step: (to) => { const d = { x: to.x - chordMid.x, y: to.y - chordMid.y }; return step({ x: c.a.x + d.x, y: c.a.y + d.y }, { x: c.b.x + d.x, y: c.b.y + d.y }, c.rise); } },
-    { key: 'arc', kind: 'radius', at: middle(c), title: 'Drag to bend the arc through the point', step: (to) => step(c.a, c.b, riseThrough(c.a, c.b, to)) },
+    { key: 'centre', kind: 'centre', at: f.centre, title: 'Arc centre: drag to move', step: (to) => { const d = { x: to.x - f.centre.x, y: to.y - f.centre.y }; return step({ x: c.a.x + d.x, y: c.a.y + d.y }, { x: c.b.x + d.x, y: c.b.y + d.y }, c.rise); } },
+    { key: 'start', kind: 'end', at: c.a, center: f.centre, title: 'Drag to adjust arc angle around centre', step: (to) => { const r = arcWithEndAngle(c, 'start', to); return step(r.arc.a, r.arc.b, r.arc.rise); } },
+    { key: 'end', kind: 'end', at: c.b, center: f.centre, title: 'Drag to adjust arc angle around centre', step: (to) => { const r = arcWithEndAngle(c, 'end', to); return step(r.arc.a, r.arc.b, r.arc.rise); } },
+    {
+      key: 'arc', kind: 'radius', at: middle(c), center: f.centre,
+      title: 'Drag to adjust radius around centre (or type radius)',
+      step: (to) => {
+        const next = arcWithRadius(c, Math.hypot(to.x - f.centre.x, to.y - f.centre.y));
+        return next ? step(next.a, next.b, next.rise) : step(c.a, c.b, c.rise);
+      },
+      menu: [{ label: 'Make straight', run: () => step(c.a, c.b, 0) }],
+    },
   ];
 }
 

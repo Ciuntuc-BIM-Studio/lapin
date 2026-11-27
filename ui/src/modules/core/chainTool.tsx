@@ -9,8 +9,9 @@ import { create } from 'zustand';
 import { useUi } from '../../app/store';
 import { activate, useToolTick } from '../../platform/modules';
 import type { Gesture, ToolContext, ToolDef, ToolInput, Vec2 } from '../../platform/module';
+import { circleAsTwoArcs, middle } from '../../viewport/arc';
 
-export type ChainMode = 'line' | 'arc';
+export type ChainMode = 'line' | 'arc' | 'arcCenter' | 'arcTangent' | 'arcTanTanPt';
 
 /** The mode each chain tool is in, by its id (a tool not set is in Line). */
 const useChain = create<Record<string, ChainMode>>(() => ({}));
@@ -22,14 +23,17 @@ export function setChainMode(id: string, mode: ChainMode): void {
 }
 
 
-/** The Line / Arc choice in the command line's bar. */
+/** The Line / Arc mode choice in the command line's bar (forum topic 293). */
 function ModeOption({ id }: { id: string }) {
   const mode = useChain((s) => s[id] ?? 'line');
   return (
-    <select className={`cad-layer${mode === 'arc' ? ' on' : ''}`} value={mode} data-testid={`chain-mode-${id}`} title="Straight pieces, each starting where the last ended, or an arc: its start, its end, then a point it passes through"
+    <select className={`cad-layer${mode !== 'line' ? ' on' : ''}`} value={mode} data-testid={`chain-mode-${id}`} title="Choose straight line or curve drawing mode (3-point, centre-start-end, tangent, or 2 tangents + point)"
       onChange={(e) => setChainMode(id, e.target.value as ChainMode)}>
       <option value="line">Line</option>
-      <option value="arc">Arc</option>
+      <option value="arc">Arc (3-point)</option>
+      <option value="arcCenter">Arc / Circle (Centre)</option>
+      <option value="arcTangent">Arc (Tangent)</option>
+      <option value="arcTanTanPt">Arc (2 Tangents + Pt)</option>
     </select>
   );
 }
@@ -50,13 +54,41 @@ export function chainTool(spec: ChainSpec): ToolDef {
   const { line, arc, more: More, body, ...def } = spec;
   const id = def.id;
   const LINE: Gesture = { kind: 'twoPoints', repeat: true, ...(body ? { body } : {}) };
-  const ARC: Gesture = { kind: 'threePoints', arc: true, ...(body ? { body } : {}) };
+  const ARC_3PT: Gesture = { kind: 'threePoints', arc: true, arcMode: '3pt', ...(body ? { body } : {}) };
+  const ARC_CENTER: Gesture = { kind: 'threePoints', arc: true, arcMode: 'center', hint: 'pick centre, start point, then end point (click start again for full circle)', ...(body ? { body } : {}) };
+  const ARC_TANGENT: Gesture = { kind: 'threePoints', arc: true, arcMode: 'tangent', hint: 'pick start at an element end (or continue tangentially), then end point', ...(body ? { body } : {}) };
+  const ARC_TTP: Gesture = { kind: 'threePoints', arc: true, arcMode: 'tanTanPt', hint: 'pick first tangent line, second tangent line, then a point on the arc', ...(body ? { body } : {}) };
+  const gestureFor = (m: ChainMode): Gesture => {
+    switch (m) {
+      case 'arc': return ARC_3PT;
+      case 'arcCenter': return ARC_CENTER;
+      case 'arcTangent': return ARC_TANGENT;
+      case 'arcTanTanPt': return ARC_TTP;
+      default: return LINE;
+    }
+  };
   const tool: ToolDef = {
     ...def,
-    get gesture(): Gesture { return chainMode(id) === 'arc' ? ARC : LINE; },
+    get gesture(): Gesture { return gestureFor(chainMode(id)); },
     mode: () => chainMode(id),
     complete: async (input: ToolInput, ctx: ToolContext) => {
-      if (chainMode(id) === 'arc') { const [a, b, p] = input.points; if (p) await arc(a, b, p, ctx); } else { const [a, b] = input.points; if (b) await line(a, b, ctx); }
+      const m = chainMode(id);
+      if (m === 'line') {
+        const [a, b] = input.points;
+        if (b) await line(a, b, ctx);
+        return;
+      }
+      if (m === 'arcCenter' && input.fullCircle && input.points.length >= 2) {
+        const pair = circleAsTwoArcs(input.points[0], input.points[1]);
+        if (pair) {
+          await arc(pair[0].a, pair[0].b, middle(pair[0]), ctx);
+          await arc(pair[1].a, pair[1].b, middle(pair[1]), ctx);
+        }
+        return;
+      }
+      const [a, b, p] = input.points;
+      if (p) await arc(a, b, p, ctx);
+      else if (b) await line(a, b, ctx);
     },
     options: () => <><ModeOption id={id} />{More && <More />}</>,
   };

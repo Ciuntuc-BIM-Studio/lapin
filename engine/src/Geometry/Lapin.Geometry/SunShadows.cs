@@ -44,6 +44,19 @@ public static class SunShadows
             var all = loops.SelectMany(l => l).ToList();
             casters.Add((f, loops, new Vec3(all.Min(p => p.X), all.Min(p => p.Y), all.Min(p => p.Z)), new Vec3(all.Max(p => p.X), all.Max(p => p.Y), all.Max(p => p.Z))));
         }
+        if (cutCasters)
+        {
+            // Cut solids are open at the cut plane after Beyond clips away their original top/front face; include their
+            // cut caps as casters so walls and columns in floor plans and sections cast watertight shadows.
+            foreach (var s in scene.SeenFaces)
+            {
+                if (s.Face.Owner >= 0 || Vec3.Dot(s.Face.Normal, sun) <= 0.02) continue;
+                var loops = s.Face.Loops;
+                if (loops.Count == 0) continue;
+                var all = loops.SelectMany(l => l).ToList();
+                casters.Add((s.Face, loops, new Vec3(all.Min(p => p.X), all.Min(p => p.Y), all.Min(p => p.Z)), new Vec3(all.Max(p => p.X), all.Max(p => p.Y), all.Max(p => p.Z))));
+            }
+        }
         // Each face seen is worked out on its own, in parallel; the areas kept in the faces' order (a section's caps receive nothing).
         var seen = scene.SeenFaces.Where(s => s.Face.Owner >= 0).ToList();
         var results = new List<Vec2[]>[seen.Count];
