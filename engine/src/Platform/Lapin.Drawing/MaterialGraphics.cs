@@ -263,6 +263,33 @@ public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchSc
 /// apart (<see cref="ElevationFromName"/>: brick, stone, boards, never BATT).
 /// <c>hatch</c> null (JSON null) means "no hatch", absent means "from the name".
 /// </summary>
+/// <summary>
+/// What a material draws as by the project's material standard whatever language its name is in (forum: a bridge modeller naming
+/// its materials in Italian, „Conglomerato bituminoso” taken for a membrane by „bitum”): a material's <c>drawsAs</c>, one of
+/// <see cref="Kinds"/>, makes the standard read an English name of that kind (every built-in standard has its rules in English)
+/// instead of the material's own. A material without one is read by its name, as before.
+/// </summary>
+public static class DrawsAs
+{
+    public const string Key = "drawsAs";
+
+    /// <summary>The kinds, each with the English name the standard reads for it (<c>none</c>: a name no rule matches, so no pattern).</summary>
+    public static readonly (string Kind, string Name)[] Kinds =
+    [
+        ("concrete", "concrete"), ("reinforcedConcrete", "reinforced concrete"), ("masonry", "masonry"), ("block", "block"), ("aeratedBlock", "aerated block"),
+        ("stone", "stone"), ("steel", "steel"), ("timber", "timber"), ("engineeredWood", "plywood"), ("rigidInsulation", "xps"), ("insulation", "mineral wool"),
+        ("membrane", "membrane"), ("glass", "glass"), ("plaster", "plaster"), ("tile", "ceramic tile"), ("sand", "sand"), ("gravel", "gravel"), ("earth", "earth"),
+        ("asphalt", "asfalto"), ("elastomer", "elastomero"), ("none", ""),
+    ];
+
+    /// <summary>A kind as Lapin spells it (any case given); null when it is none.</summary>
+    public static string? Kind(string? given) => given?.Trim() is { Length: > 0 } g ? Kinds.FirstOrDefault(k => k.Kind.Equals(g, StringComparison.OrdinalIgnoreCase)).Kind : null;
+
+    /// <summary>The name a standard's rules read for a material: its kind's when it has one, else <paramref name="name"/> (its own).</summary>
+    public static string NameFor(Entity? material, string name) =>
+        material?.Str(Key) is { } k && Kinds.FirstOrDefault(x => x.Kind == k) is { Kind: not null } kind ? kind.Name : name;
+}
+
 public static class MaterialGraphics
 {
     public static readonly string[] Kinds = ["section", "plan", "elevation"];
@@ -461,14 +488,16 @@ public static class MaterialGraphics
     {
         name ??= material?.Name ?? "";
         standard ??= MaterialStandard.Lapin;
+        // The name the standard reads: the material's kind's when it says what it draws as (whatever its name's language), else its name.
+        var match = DrawsAs.NameFor(material, name);
         var (own, step) = Own(material, kind, scale);
         var elevation = kind == "elevation";
         var category = material?.Str("category");
         // The standard's tier: its rule for the name (a project before decision 679 under Lapin's: the paper facades).
         ViewGraphics? std;
         StandardRule? rule;
-        if (elevation && paperSurfaces && standard.IsLapin) (std, rule) = (new ViewGraphics(ElevationFromName(name, true) ?? ""), null);
-        else (std, rule) = standard.For(kind, name, category, scale);
+        if (elevation && paperSurfaces && standard.IsLapin) (std, rule) = (new ViewGraphics(ElevationFromName(match, true) ?? ""), null);
+        else (std, rule) = standard.For(kind, match, category, scale);
         if (std != null && own?.Hatch != null) std = std with { HatchScale = null, HatchAngle = null, HatchUnits = null };
         if (std != null && own?.BackgroundHatch?.Hatch != null) std = std with { BackgroundHatch = null };
         var g = Merge(std, own);

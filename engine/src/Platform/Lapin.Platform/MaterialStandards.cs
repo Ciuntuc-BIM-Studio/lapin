@@ -165,8 +165,8 @@ public static class MaterialStandards
         var attrs = mat.CloneAttrs();
         var cleared = new JsonObject();
         var category = mat.Str("category");
-        var cut = s.CutRule(mat.Name, category);
-        var el = s.ElevationRule(mat.Name, category);
+        var cut = s.CutRule(DrawsAs.NameFor(mat, mat.Name), category);
+        var el = s.ElevationRule(DrawsAs.NameFor(mat, mat.Name), category);
         if (overwrite)
         {
             IEnumerable<string> Pens() => (s.HatchPen != null ? new[] { "hatchColor", "hatchWeight", "hatchLineType" } : []).Concat(s.CutPen != null ? ["cutLine"] : []);

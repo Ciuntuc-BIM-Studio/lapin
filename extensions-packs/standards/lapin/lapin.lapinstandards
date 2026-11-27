@@ -8,17 +8,92 @@
       {
         "id": "lapin",
         "name": "Lapin",
-        "description": "Lapin's default look: the cut patterns of common default materials (masonry 45° lines, concrete speckle, blocks crosshatched, insulation, timber grain), drawn by Lapin's own patterns, and facades at the object's real size. One look recognised everywhere, not a country's norm. Version 1.1 (projects made since 18.11.2026) balances the tones: rigid insulation's grid and the blocks' crosshatch drawn wider, the concrete speckle closer; floor coverings seen from above (parquet, carpet, sheet floors, poured floors, floor tiles). Indicative: check it against the standard your drawings must follow.",
+        "description": "Lapin's default look: the cut patterns of common default materials (masonry 45° lines, concrete speckle, blocks crosshatched, insulation, timber grain), drawn by Lapin's own patterns, and facades at the object's real size. One look recognised everywhere, not a country's norm. Version 1.1 (projects made since 18.11.2026) balances the tones: rigid insulation's grid and the blocks' crosshatch drawn wider, the concrete speckle closer; floor coverings seen from above (parquet, carpet, sheet floors, poured floors, floor tiles). Version 1.2 (27.11.2026) reads Italian names too, and keeps asphalt and elastomer bearings named in Italian, Spanish, French, German, Portuguese or Polish from being taken for a membrane („bituminoso”) or concrete („armato”); English and Romanian names draw as in 1.1. A material's „Draws as” sets what it is whatever its name's language. Indicative: check it against the standard your drawings must follow.",
         "author": "Lapin",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "license": "MIT",
         "languages": [
           "en",
-          "ro"
+          "ro",
+          "it",
+          "es",
+          "fr",
+          "de",
+          "pt",
+          "pl"
         ],
         "indicative": true,
         "fold": "ro",
         "rules": [
+          {
+            "match": {
+              "names": {
+                "it": [
+                  "conglomerato bituminoso",
+                  "asfalto",
+                  "tappeto d'usura",
+                  "strato di usura",
+                  "binder bituminoso"
+                ],
+                "es": [
+                  "mezcla bituminosa",
+                  "aglomerado asf[aá]ltico",
+                  "mezcla asf[aá]ltica"
+                ],
+                "fr": [
+                  "enrob[eé]",
+                  "b[eé]ton bitumineux"
+                ],
+                "de": [
+                  "asphaltbeton",
+                  "gussasphalt",
+                  "walzasphalt",
+                  "asphalttragschicht",
+                  "asphaltdeckschicht"
+                ],
+                "pt": [
+                  "mistura betuminosa",
+                  "bet[aã]o betuminoso",
+                  "concreto asf[aá]ltico"
+                ],
+                "pl": [
+                  "beton asfaltowy",
+                  "asfaltobeton",
+                  "mieszanka mineralno-asfaltowa"
+                ]
+              }
+            },
+            "membrane": false,
+            "category": "Other"
+          },
+          {
+            "match": {
+              "names": {
+                "it": [
+                  "elast[oó]mero",
+                  "neoprene armato",
+                  "appoggio in gomma"
+                ],
+                "es": [
+                  "elast[oó]mero"
+                ],
+                "fr": [
+                  "[eé]lastom[eè]re"
+                ],
+                "de": [
+                  "elastomerlager"
+                ],
+                "pt": [
+                  "elast[oô]mero"
+                ],
+                "pl": [
+                  "elastomerow"
+                ]
+              }
+            },
+            "membrane": false,
+            "category": "Other"
+          },
           {
             "match": {
               "names": {
@@ -35,6 +110,13 @@
                 "ro": [
                   "folie",
                   "barier"
+                ],
+                "it": [
+                  "guaina",
+                  "membrana",
+                  "barriera al vapore",
+                  "freno al vapore",
+                  "impermeabilizza"
                 ]
               }
             },
@@ -56,6 +138,10 @@
                   "polistiren",
                   "extrudat",
                   "expandat"
+                ],
+                "it": [
+                  "polistirolo",
+                  "poliuretano"
                 ]
               }
             },
@@ -78,6 +164,13 @@
                 "ro": [
                   "vata",
                   "izola"
+                ],
+                "it": [
+                  "isolante",
+                  "lana di roccia",
+                  "lana di vetro",
+                  "lana minerale",
+                  "fibra di legno"
                 ]
               }
             },
@@ -100,6 +193,12 @@
                   "geam",
                   "\\baer\\b",
                   "lama de aer"
+                ],
+                "it": [
+                  "vetro",
+                  "vetrat",
+                  "intercapedine",
+                  "camera d'aria"
                 ]
               }
             },
@@ -120,6 +219,12 @@
                   "bca",
                   "boltari",
                   "blocuri"
+                ],
+                "it": [
+                  "blocchi",
+                  "blocco",
+                  "calcestruzzo cellulare",
+                  "gasbeton"
                 ]
               }
             },
@@ -142,6 +247,15 @@
                   "caramid",
                   "zidari",
                   "piatra"
+                ],
+                "it": [
+                  "muratura",
+                  "mattone",
+                  "mattoni",
+                  "laterizio",
+                  "pietra",
+                  "terracotta",
+                  "tufo"
                 ]
               }
             },
@@ -163,6 +277,13 @@
                   "beton",
                   "sapa",
                   "armat"
+                ],
+                "it": [
+                  "calcestruzzo",
+                  "\\bcls\\b",
+                  "massetto",
+                  "cemento armato",
+                  "conglomerato cementizio"
                 ]
               }
             },
@@ -182,6 +303,12 @@
                 ],
                 "ro": [
                   "placaj"
+                ],
+                "it": [
+                  "compensato",
+                  "xlam",
+                  "x-lam",
+                  "multistrato"
                 ]
               }
             },
@@ -201,6 +328,12 @@
                 ],
                 "ro": [
                   "lemn"
+                ],
+                "it": [
+                  "legno",
+                  "lamellare",
+                  "abete",
+                  "larice"
                 ]
               }
             },
@@ -219,6 +352,12 @@
                 ],
                 "ro": [
                   "otel"
+                ],
+                "it": [
+                  "acciaio",
+                  "alluminio",
+                  "inox",
+                  "carpenteria metallica"
                 ]
               }
             },
@@ -235,6 +374,9 @@
                 ],
                 "ro": [
                   "nisip"
+                ],
+                "it": [
+                  "sabbia"
                 ]
               }
             },
@@ -252,6 +394,12 @@
                 ],
                 "ro": [
                   "pietris"
+                ],
+                "it": [
+                  "ghiaia",
+                  "pietrisco",
+                  "misto granulare",
+                  "stabilizzato"
                 ]
               }
             },
@@ -269,6 +417,10 @@
                 ],
                 "ro": [
                   "pamant"
+                ],
+                "it": [
+                  "terreno",
+                  "\\bterra\\b"
                 ]
               }
             },
@@ -288,6 +440,12 @@
                 "ro": [
                   "tencuial",
                   "gips"
+                ],
+                "it": [
+                  "intonaco",
+                  "gesso",
+                  "cartongesso",
+                  "rasatura"
                 ]
               }
             },
@@ -308,6 +466,10 @@
                   "faianta",
                   "tigla",
                   "olan"
+                ],
+                "it": [
+                  "piastrell",
+                  "\\bgres\\b"
                 ]
               }
             },
@@ -331,6 +493,11 @@
                   "olan",
                   "sindrila",
                   "ardezie"
+                ],
+                "it": [
+                  "coppi",
+                  "tegol",
+                  "ardesia"
                 ]
               }
             },
@@ -353,6 +520,13 @@
                 "ro": [
                   "folie",
                   "barier"
+                ],
+                "it": [
+                  "guaina",
+                  "membrana",
+                  "barriera al vapore",
+                  "freno al vapore",
+                  "impermeabilizza"
                 ]
               }
             },
@@ -375,6 +549,13 @@
                 "ro": [
                   "vata",
                   "izola"
+                ],
+                "it": [
+                  "isolante",
+                  "lana di roccia",
+                  "lana di vetro",
+                  "lana minerale",
+                  "polistirolo"
                 ]
               }
             },
@@ -398,6 +579,14 @@
                   "gips",
                   "vopsea",
                   "adeziv"
+                ],
+                "it": [
+                  "intonaco",
+                  "gesso",
+                  "pittura",
+                  "tinteggiatura",
+                  "rasatura",
+                  "collante"
                 ]
               }
             },
@@ -416,6 +605,10 @@
                 ],
                 "ro": [
                   "bca"
+                ],
+                "it": [
+                  "calcestruzzo cellulare",
+                  "gasbeton"
                 ]
               }
             },
@@ -432,6 +625,10 @@
                 ],
                 "ro": [
                   "boltari"
+                ],
+                "it": [
+                  "blocchi",
+                  "blocco"
                 ]
               }
             },
@@ -450,6 +647,13 @@
                 "ro": [
                   "caramid",
                   "zidari"
+                ],
+                "it": [
+                  "muratura",
+                  "mattone",
+                  "mattoni",
+                  "laterizio",
+                  "faccia vista"
                 ]
               }
             },
@@ -473,6 +677,12 @@
                   "piatra",
                   "marmura",
                   "calcar"
+                ],
+                "it": [
+                  "pietra",
+                  "marmo",
+                  "arenaria",
+                  "calcare"
                 ]
               }
             },
@@ -497,6 +707,13 @@
                   "lemn",
                   "lambriu",
                   "scandura"
+                ],
+                "it": [
+                  "legno",
+                  "doghe",
+                  "perline",
+                  "larice",
+                  "abete"
                 ]
               }
             },
@@ -525,6 +742,14 @@
                   "cupru",
                   "faltuit",
                   "cutat"
+                ],
+                "it": [
+                  "lamiera",
+                  "rivestimento metallico",
+                  "zinco",
+                  "\\brame\\b",
+                  "aggraffat",
+                  "grecata"
                 ]
               }
             },
@@ -547,6 +772,11 @@
                   "sapa",
                   "beton slefuit",
                   "pardoseala turnata"
+                ],
+                "it": [
+                  "resina",
+                  "pavimento in resina",
+                  "massetto"
                 ]
               }
             },
@@ -565,6 +795,11 @@
                 "ro": [
                   "beton",
                   "sapa"
+                ],
+                "it": [
+                  "calcestruzzo",
+                  "\\bcls\\b",
+                  "massetto"
                 ]
               }
             },
@@ -580,6 +815,9 @@
                 ],
                 "ro": [
                   "nisip"
+                ],
+                "it": [
+                  "sabbia"
                 ]
               }
             },
@@ -597,6 +835,10 @@
                 ],
                 "ro": [
                   "pietris"
+                ],
+                "it": [
+                  "ghiaia",
+                  "pietrisco"
                 ]
               }
             },
@@ -614,6 +856,10 @@
                 ],
                 "ro": [
                   "pamant"
+                ],
+                "it": [
+                  "terreno",
+                  "\\bterra\\b"
                 ]
               }
             },
@@ -634,6 +880,11 @@
                   "parchet",
                   "laminat",
                   "dusumea"
+                ],
+                "it": [
+                  "parquet",
+                  "listoni",
+                  "pavimento in legno"
                 ]
               }
             },
@@ -651,6 +902,10 @@
                 "ro": [
                   "mocheta",
                   "covor"
+                ],
+                "it": [
+                  "moquette",
+                  "tessile"
                 ]
               }
             },
@@ -670,6 +925,10 @@
                 ],
                 "ro": [
                   "cauciuc"
+                ],
+                "it": [
+                  "vinilico",
+                  "gomma"
                 ]
               }
             },
@@ -687,6 +946,10 @@
                 ],
                 "ro": [
                   "gresie"
+                ],
+                "it": [
+                  "gres porcellanato",
+                  "pavimento in ceramica"
                 ]
               }
             },
@@ -705,6 +968,10 @@
                 "ro": [
                   "gresie",
                   "faianta"
+                ],
+                "it": [
+                  "piastrell",
+                  "ceramica"
                 ]
               }
             },

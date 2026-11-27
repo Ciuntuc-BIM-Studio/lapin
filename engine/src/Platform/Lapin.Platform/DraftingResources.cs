@@ -291,6 +291,13 @@ public static class DraftingResources
         if (a["color"] is { } c) attrs["color"] = (string?)c is { } cs && System.Text.RegularExpressions.Regex.IsMatch(cs, "^#[0-9a-fA-F]{6}$") ? cs : throw new CommandException("A colour is #rrggbb.");
         MaterialLook.Apply(attrs, a);
         if (a.ContainsKey("category")) { if ((string?)a["category"] is { Length: > 0 } cat) attrs["category"] = cat; else attrs.Remove("category"); }
+        // What it draws as by the project's standard, whatever its name's language (DrawsAs): a kind, or null back to its name.
+        if (a.ContainsKey(DrawsAs.Key))
+        {
+            if (((string?)a[DrawsAs.Key])?.Trim() is { Length: > 0 } given)
+                attrs[DrawsAs.Key] = DrawsAs.Kind(given) ?? throw new CommandException($"„{given}” is not what a material draws as: {string.Join(", ", DrawsAs.Kinds.Select(k => k.Kind))}.");
+            else attrs.Remove(DrawsAs.Key);
+        }
         // Its look in 3D: a texture (brick, concrete, wood, plaster, stone, metal, insulation, earth, tiles; "none"; null: guessed from its hatch and name).
         // Its faces along it (texture), its ends (textureEnd: where a wall is cut across, a brick's holes) and its top and bottom (textureTop); the ends and top follow the faces unless given.
         foreach (var key in new[] { "texture", "textureEnd", "textureTop" })
@@ -667,7 +674,7 @@ public static class DraftingResources
         var align = MaterialHatchUpgrade.AlignDefault(q.Model);
         return new JsonArray(q.Model.OfClass(IfcClass.Material).OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase).Select(mat =>
         {
-            var o = new JsonObject { ["id"] = mat.Id, ["name"] = mat.Name, ["color"] = Materials.ColorOf(q.Model, mat.Id), ["inUse"] = InUse(q.Model, mat.Id), ["category"] = mat.Str("category") };
+            var o = new JsonObject { ["id"] = mat.Id, ["name"] = mat.Name, ["color"] = Materials.ColorOf(q.Model, mat.Id), ["inUse"] = InUse(q.Model, mat.Id), ["category"] = mat.Str("category"), [DrawsAs.Key] = mat.Str(DrawsAs.Key) };
             // How it renders: its own values and, for the rest, what its name gives.
             o["look"] = MaterialLook.Of(mat).ToJson(mat);
             foreach (var kind in MaterialGraphics.Kinds)

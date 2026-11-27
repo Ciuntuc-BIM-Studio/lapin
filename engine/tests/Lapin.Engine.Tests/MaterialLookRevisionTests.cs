@@ -30,7 +30,7 @@ public class MaterialLookRevisionTests
         var f = new Fixture();
         Assert.Equal(MaterialStandards.LookRev, (int)(double)Json.Number(Spatial.Project(f.Model)!.Attrs[MaterialStandards.LookRevKey])!);
         Assert.Same(MaterialStandard.LapinCurrent, MaterialStandards.Of(f.Model));
-        Assert.Equal("1.1.0", MaterialStandards.Of(f.Model).Version);
+        Assert.Equal("1.2.0", MaterialStandards.Of(f.Model).Version);
         f.Type("W", ("Concrete", 0.2, true), ("EPS board", 0.1, false), ("Concrete block", 0.2, false), ("Brick masonry", 0.25, false));
         double Scale(Fixture x, string name) => MaterialGraphics.Resolve(x.Model.Get(Mat(x, name)), "section", standard: MaterialStandards.Of(x.Model)).HatchScale;
         Assert.Equal((0.75, 1.5, 1.25, 1.0), (Scale(f, "Concrete"), Scale(f, "EPS board"), Scale(f, "Concrete block"), Scale(f, "Brick masonry")));
@@ -38,7 +38,7 @@ public class MaterialLookRevisionTests
         foreach (var name in new[] { "Concrete", "EPS board", "Concrete block", "Brick masonry", "Mineral wool", "Gypsum plaster", "Oak", "Steel" })
             Assert.Equal(MaterialStandard.Lapin.CutRule(name)?.Section?.Hatch, MaterialStandard.LapinCurrent.CutRule(name)?.Section?.Hatch);
         // The lists show the version the project draws by.
-        Assert.Equal("1.1.0", (string?)f.Session.Query("standards.materialList", [])!["standards"]![0]!["version"]);
+        Assert.Equal("1.2.0", (string?)f.Session.Query("standards.materialList", [])!["standards"]![0]!["version"]);
 
         MakeOld(f);
         Assert.Same(MaterialStandard.Lapin, MaterialStandards.Of(f.Model));
@@ -50,7 +50,7 @@ public class MaterialLookRevisionTests
         Assert.False((bool)f.Session.Query("standards.readPack", new JsonObject { ["text"] = text })!["materialStandards"]![0]!["same"]!);
         f.Run("standards.importFrom", new JsonObject { ["text"] = text });
         var copy = MaterialStandards.Own(Spatial.Project(f.Model)).Single();
-        Assert.Equal("1.1.0", copy.Version);
+        Assert.Equal("1.2.0", copy.Version);
         f.Run("standards.applyMaterials", new JsonObject { ["id"] = copy.Id });
         Assert.Equal(0.75, Scale(f, "Concrete"));
     }

@@ -177,7 +177,7 @@ public static class MaterialGraphicsSets
 
     /// <summary>The category a material's set entries see: its own, else what the project's standard says of its name.</summary>
     public static string? CategoryOf(Entity? material, string name, MaterialStandard standard) =>
-        material?.Str("category") ?? standard.CutRule(name)?.Category ?? standard.ElevationRule(name)?.Category;
+        material?.Str("category") ?? standard.CutRule(DrawsAs.NameFor(material, name))?.Category ?? standard.ElevationRule(DrawsAs.NameFor(material, name))?.Category;
 
     /// <summary>
     /// A set given by a command or a file, checked against the project: its fields (<see cref="Read"/>), a material id one of its

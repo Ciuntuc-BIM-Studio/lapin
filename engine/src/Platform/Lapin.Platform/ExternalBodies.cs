@@ -227,11 +227,12 @@ public static class ExternalBodies
 
     /// <summary>
     /// A material as a program names it: a project material's id or a name (<see cref="Name"/>), and what a material it makes
-    /// says of itself: its colour, its category (<see cref="Materials.Categories"/>).
+    /// says of itself: its colour, its category (<see cref="Materials.Categories"/>), what it draws as whatever its name's language
+    /// (<see cref="Lapin.Drawing.DrawsAs"/>).
     /// </summary>
-    public sealed record MaterialSpec(string Name, string? Color = null, string? Category = null);
+    public sealed record MaterialSpec(string Name, string? Color = null, string? Category = null, string? DrawsAs = null);
 
-    /// <summary>A material given as text (an id or a name) or as <c>{name, color?, category?}</c>; null: none given.</summary>
+    /// <summary>A material given as text (an id or a name) or as <c>{name, color?, category?, drawsAs?}</c>; null: none given.</summary>
     public static MaterialSpec? MaterialOf(JsonNode? n, string what)
     {
         switch (n)
@@ -245,7 +246,10 @@ public static class ExternalBodies
                 var category = ((string?)o["category"])?.Trim() is { Length: > 0 } cat
                     ? Materials.Categories.FirstOrDefault(x => x.Equals(cat, StringComparison.OrdinalIgnoreCase)) ?? throw new CommandException($"{what}: „{cat}” is not a material category ({string.Join(", ", Materials.Categories)}).")
                     : null;
-                return new MaterialSpec(name, color, category);
+                var drawsAs = ((string?)o[Lapin.Drawing.DrawsAs.Key])?.Trim() is { Length: > 0 } da
+                    ? Lapin.Drawing.DrawsAs.Kind(da) ?? throw new CommandException($"{what}: „{da}” is not what a material draws as ({string.Join(", ", Lapin.Drawing.DrawsAs.Kinds.Select(k => k.Kind))}).")
+                    : null;
+                return new MaterialSpec(name, color, category, drawsAs);
             }
             default: throw new CommandException($"{what}: a material is a name, or {{name, color?, category?}}.");
         }
@@ -254,7 +258,7 @@ public static class ExternalBodies
 
     /// <summary>
     /// The project material a program names: the one of that id, else of that name, else a new one of that name (its colour the
-    /// one given). What it says of itself (its category) a material that says nothing of it takes; one that says otherwise keeps
+    /// one given). What it says of itself (its category, what it draws as) a material that says nothing of it takes; one that says otherwise keeps
     /// its own, as the person set it, and a note says so.
     /// </summary>
     static string Resolve(ICommandContext ctx, MaterialSpec spec, List<string> notes)
@@ -273,7 +277,7 @@ public static class ExternalBodies
         return m.Id;
     }
 
-    static IEnumerable<(string Key, string? Value)> Given(MaterialSpec spec) => [("category", spec.Category)];
+    static IEnumerable<(string Key, string? Value)> Given(MaterialSpec spec) => [("category", spec.Category), (Lapin.Drawing.DrawsAs.Key, spec.DrawsAs)];
 
     /// <summary>A body read and checked: its parts, whether it is closed, its triangles, what was said of it.</summary>
     public sealed record Body(IReadOnlyList<Part> Parts, bool Closed, int Triangles, IReadOnlyList<string> Notes);

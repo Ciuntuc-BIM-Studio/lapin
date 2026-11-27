@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
+using Lapin.Drawing;
 using Lapin.Drafting;
 using Lapin.Geometry;
 using Lapin.Ifc;
@@ -328,6 +329,13 @@ public class ExternalBodyTests : IDisposable
         Assert.Equal("Other", Materials.Find(f.Model, "Neoprene")!.Str("category"));
         Assert.Contains(r2["notes"]!.AsArray(), n => n!.ToString().Contains("keeps its category"));
         Assert.Throws<CommandException>(() => f.Run("element.createBody", new JsonObject { ["ifcClass"] = "IfcBearing", ["body"] = Box(1, 1, 1), ["material"] = new JsonObject { ["name"] = "X", ["category"] = "Rubber" } }));
+        Assert.Throws<CommandException>(() => f.Run("element.createBody", new JsonObject { ["ifcClass"] = "IfcBearing", ["body"] = Box(1, 1, 1), ["material"] = new JsonObject { ["name"] = "X", ["drawsAs"] = "rubber" } }));
+        // What it draws as, whatever the language of its name: asphalt, not the membrane „bituminoso” would make it under ISO 128-50.
+        var deck = new JsonObject { ["parts"] = new JsonArray(WithMaterial(Box(4, 1, 0.08), new JsonObject { ["name"] = "Conglomerato bituminoso", ["drawsAs"] = "asphalt" }, "Pavimentazione")) };
+        f.Run("element.createBody", new JsonObject { ["ifcClass"] = "IfcSlab", ["storey"] = f.Storey, ["body"] = deck });
+        var asphalt = Materials.Find(f.Model, "Conglomerato bituminoso")!;
+        Assert.Equal("asphalt", asphalt.Str(DrawsAs.Key));
+        Assert.False(MaterialGraphics.Resolve(asphalt, "section", standard: MaterialStandard.FindBuiltIn("iso-128-50")).Membrane);
         Assert.Throws<CommandException>(() => f.Run("element.createBody", new JsonObject { ["ifcClass"] = "IfcBearing", ["body"] = Box(1, 1, 1), ["material"] = new JsonObject { ["color"] = "#000000" } }));
     }
 

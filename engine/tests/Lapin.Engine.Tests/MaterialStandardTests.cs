@@ -235,6 +235,76 @@ public class MaterialStandardTests
     }
 
     [Fact]
+    public void Lapins_standard_reads_Italian_and_keeps_asphalt_and_bearings_from_membranes_and_concrete()
+    {
+        // Italian names (Lapin 1.2): the common materials of a bridge.
+        Assert.Equal("CONCRETE", R("lapin", "Calcestruzzo C35/45").Hatch);
+        Assert.Equal("CONCRETE", R("lapin", "Calcestruzzo armato").Hatch);
+        Assert.Equal("STEEL", R("lapin", "Acciaio S355").Hatch);
+        Assert.Equal("MASONRY", R("lapin", "Muratura in laterizio").Hatch);
+        Assert.Equal("BATT", R("lapin", "Lana di roccia").Hatch);
+        Assert.Equal("WOOD", R("lapin", "Legno lamellare").Hatch);
+        Assert.Equal("GRAVEL", R("lapin", "Misto granulare stabilizzato").Hatch);
+        Assert.True(R("lapin", "Guaina bituminosa").Membrane);
+        // Asphalt is not a membrane, whatever „bitum” it has; a reinforced elastomer bearing is not concrete for its „armato”.
+        foreach (var asphalt in new[] { "Conglomerato bituminoso", "Mezcla bituminosa", "Enrobé bitumineux", "Gussasphalt", "Mistura betuminosa", "Beton asfaltowy" })
+        {
+            var g = R("lapin", asphalt);
+            Assert.False(g.Membrane, asphalt);
+            Assert.Null(g.Hatch);
+        }
+        foreach (var bearing in new[] { "Elastomero armato", "Elastómero zunchado", "Élastomère fretté", "Elastomerlager bewehrt" })
+            Assert.Null(R("lapin", bearing).Hatch);
+        // English and Romanian names draw as they did.
+        Assert.True(R("lapin", "Bituminous membrane").Membrane);
+        Assert.True(R("lapin", "Membrană bituminoasă").Membrane);
+        Assert.Equal("CONCRETE", R("lapin", "Reinforced concrete").Hatch);
+        Assert.Equal("CONCRETE", R("lapin", "Beton armat").Hatch);
+        Assert.Equal("CONCRETE", R("lapin", "Asphalt concrete").Hatch);
+        foreach (var n in new[] { "Concrete", "EPS board", "Concrete block", "Brick masonry", "Mineral wool", "Gypsum plaster", "Oak", "Steel", "Vapour barrier", "Zidărie BCA", "Polistiren expandat", "Tablă zincată" })
+            foreach (var kind in new[] { "section", "elevation" })
+            {
+                var (was, now) = (MaterialStandard.Lapin.For(kind, n, null).Rule?.Json.ToJsonString(), MaterialStandard.LapinCurrent.For(kind, n, null).Rule?.Json.ToJsonString());
+                Assert.True(was == null ? now == null : now != null, $"{n} ({kind})");
+            }
+    }
+
+    [Fact]
+    public void What_a_material_draws_as_is_read_whatever_its_names_language()
+    {
+        static Entity M(string name, string? drawsAs) => new("m", IfcClass.Material, name, drawsAs == null ? [] : new JsonObject { [DrawsAs.Key] = drawsAs });
+        ResolvedMaterial G(string std, Entity m, string kind = "section") => MaterialGraphics.Resolve(m, kind, standard: MaterialStandard.FindBuiltIn(std)!);
+        // A name no rule knows, made concrete; one a rule takes for a membrane, made asphalt; one made nothing at all.
+        Assert.Equal("CONCRETE", G("lapin", M("Calcestruzzo speciale XC4", null)).Hatch);
+        Assert.Equal("STEEL", G("lapin", M("Calcestruzzo speciale XC4", "steel")).Hatch);
+        Assert.True(G("iso-128-50", M("Conglomerato bituminoso", null)).Membrane);
+        Assert.False(G("iso-128-50", M("Conglomerato bituminoso", "asphalt")).Membrane);
+        Assert.Equal("RCONCRETE", G("iso-128-50", M("Betong armerad", "reinforcedConcrete")).Hatch);
+        Assert.Equal("CROSS", G("din-1356", M("Hormigón armado", "reinforcedConcrete")).Hatch);
+        var none = G("lapin", M("Vapour barrier", "none"));
+        Assert.False(none.Membrane);
+        Assert.Null(none.Hatch);
+        Assert.Equal("BRICK_240X63", G("lapin", M("Muro", "masonry"), "elevation").Hatch);
+        // Its own graphics still come first.
+        var own = new Entity("m", IfcClass.Material, "X", new JsonObject { [DrawsAs.Key] = "steel", ["section"] = new JsonObject { ["hatch"] = "SAND" } });
+        Assert.Equal("SAND", G("lapin", own).Hatch);
+        // A material graphics set's category entry sees the kind's category.
+        Assert.Equal("Structure", MaterialGraphicsSets.CategoryOf(M("Acero", "steel"), "Acero", MaterialStandard.LapinCurrent));
+
+        // Set and taken off by material.update; listed by material.list.
+        var f = new Fixture();
+        var id = (string)f.Run("material.create", new JsonObject { ["name"] = "Conglomerato bituminoso" })!["id"]!;
+        Assert.True(MaterialGraphics.Resolve(f.Model.Get(id), "section", standard: MaterialStandards.Of(f.Model)).Membrane is false);
+        f.Run("material.update", new JsonObject { ["id"] = id, ["drawsAs"] = "Gravel" });
+        Assert.Equal("gravel", f.Model.Get(id)!.Str(DrawsAs.Key));
+        Assert.Equal("GRAVEL", MaterialGraphics.Resolve(f.Model.Get(id), "section", standard: MaterialStandards.Of(f.Model)).Hatch);
+        Assert.Equal("gravel", (string?)f.Session.Query("material.list", [])!.AsArray().Single(x => (string?)x!["id"] == id)!["drawsAs"]);
+        Assert.Throws<CommandException>(() => f.Run("material.update", new JsonObject { ["id"] = id, ["drawsAs"] = "rubber" }));
+        f.Run("material.update", new JsonObject { ["id"] = id, ["drawsAs"] = null });
+        Assert.Null(f.Model.Get(id)!.Str(DrawsAs.Key));
+    }
+
+    [Fact]
     public void Names_match_in_every_language_a_rule_gives_and_fold_their_diacritics()
     {
         var f = new Fixture();
