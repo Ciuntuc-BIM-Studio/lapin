@@ -7359,6 +7359,32 @@ export const RO: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Autentificarea prin browser are nevoie de aplicația desktop.",
   "This server offers no sign-in through the browser: sign in with your password.": "Acest server nu oferă autentificare prin browser: autentifică-te cu parola.",
   "The browser could not be opened here.": "Browserul nu a putut fi deschis aici.",
+  // Extension modules (docs/plan-extension-modules.md): Installed, the licence questions, the restart, the project notice
+  "Extension modules": "Module de extensie",
+  "Desktop app only.": "Doar în aplicația desktop.",
+  "Runs code with everything you can do on this computer: read and change your files, use the network, start programs": "Rulează cod cu tot ce poți face tu pe acest calculator: citește și modifică fișierele tale, folosește rețeaua, pornește programe",
+  "Runs code with full access: it can read and change your files, use the network and start programs, as you can.": "Rulează cod cu acces deplin: poate citi și modifica fișierele tale, folosi rețeaua și porni programe, ca tine.",
+  "An extension module runs code with everything you can do on this computer. Lapin Extensions reviewed its source and signed it; it is desktop only.": "Un modul de extensie rulează cod cu tot ce poți face tu pe acest calculator. Lapin Extensions i-a verificat sursa și l-a semnat; funcționează doar în aplicația desktop.",
+  "Save the changes to the project before Lapin restarts?": "Salvezi modificările proiectului înainte ca Lapin să repornească?",
+  "Restart without saving? The changes will be lost.": "Repornești fără să salvezi? Modificările se vor pierde.",
+  "Changes to extension modules take effect when Lapin restarts.": "Modificările modulelor de extensie intră în vigoare când Lapin repornește.",
+  "Restart now": "Repornește acum",
+  "Its interface was left out:": "Interfața lui a fost lăsată deoparte:",
+  "Removed when Lapin restarts.": "Se elimină când Lapin repornește.",
+  "Not loaded:": "Neîncărcat:",
+  "Loads when Lapin restarts.": "Se încarcă când Lapin repornește.",
+  "The new version loads when Lapin restarts:": "Versiunea nouă se încarcă când Lapin repornește:",
+  "Turns on when Lapin restarts.": "Se pornește când Lapin repornește.",
+  "Off.": "Oprit.",
+  "Turns off when Lapin restarts.": "Se oprește când Lapin repornește.",
+  "Extension modules run in the desktop app only.": "Modulele de extensie rulează doar în aplicația desktop.",
+  "Not installed: the terms were not accepted.": "Neinstalat: termenii nu au fost acceptați.",
+  "Licence:": "Licență:",
+  "Licence agreement of {name} (version {version}):": "Acordul de licență al {name} (versiunea {version}):",
+  "I accept": "Accept",
+  "Open Extensions": "Deschide Extensii",
+  "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "Acest proiect folosește {name} (extensie), care nu este instalată. Datele ei sunt păstrate neatinse.",
+  "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "Acest proiect folosește {names} (extensii), care nu sunt instalate. Datele lor sunt păstrate neatinse.",
 };
 
 /** Phrases with a number or a name in them. */
@@ -8265,4 +8291,5 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^„(.+)” fills no opening\.$/, (m) => `„${m[1]}” nu umple niciun gol.`],
   [/^Roof type (\d+)$/, (m) => `Tip de acoperiș ${m[1]}`],
   [/^(.+) · (Floor|Walls|Ceiling)$/, (m) => `${m[1]} · ${({ "Floor": "Pardoseală", "Walls": "Pereți", "Ceiling": "Tavan" } as Record<string, string>)[m[2]]}`],
+  [/^Some extensions were left out: (.+)\.$/, (m) => `Unele extensii au fost lăsate deoparte: ${m[1]}.`],
 ];

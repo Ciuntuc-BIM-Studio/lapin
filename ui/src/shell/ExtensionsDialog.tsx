@@ -21,6 +21,7 @@ import { CATEGORY_ORDER, countByKind, filterCatalogue, sizeText, updatesOf, type
 import { compareVersions, compatibility, isNonCommercial, isPaid, isPermissive, KIND_INFO, PERMISSION_LABELS, PROVIDERS, runnable, type ExtensionKind, type Manifest } from '../platform/extensions/manifest';
 import { cleanKey, isRevoked, LICENCE_MESSAGES } from '../platform/extensions/licence';
 import { FULL_ACCESS, isModuleKind, moduleStatus, refreshEngineModules, restartNow, setModuleEnabled, useEngineModules } from '../platform/extensions/moduleKind';
+import { takeExtensionsTab } from '../platform/extensions/absent';
 import { usePluginReport } from '../platform/extensions/plugins';
 import { saveProject } from '../engine/files';
 import { appFacts, contentInstallers, DEFAULT_INDEX, forgetLicence, install, loadCatalogue, setCatalogueAddress, uninstall, useExtensions } from '../platform/extensions/runtime';
@@ -270,7 +271,7 @@ function Installed() {
 }
 
 export function ExtensionsDialog() {
-  const [tab, setTab] = useState<'browse' | 'installed'>('browse');
+  const [tab, setTab] = useState<'browse' | 'installed'>(takeExtensionsTab);
   const { installed, list, chosen, from } = useExtensions();
   const connected = useSession((s) => s.connected);
   const [address, setAddress] = useState(chosen ?? '');

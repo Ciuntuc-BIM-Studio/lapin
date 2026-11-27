@@ -13504,6 +13504,32 @@ export const RU: Record<string, string> = {
   "Afterwards, File → Collaborate → Get latest from Archicad brings only what changed in Archicad since; the status bar says when it changed.": "Затем Файл → Совместная работа → Получить последнее из Archicad приносит только то, что изменилось в Archicad с тех пор; строка состояния сообщает, когда это произошло.",
   "From IFC": "Из IFC",
   "What the model's own project information says that no field above takes, kept as it said it (read-only; replaced when it is received again).": "То, что информация о проекте самой модели сообщает и что не подходит ни одному полю выше, сохранено как есть (только чтение; заменяется при повторном получении).",
+  // Extension modules (docs/plan-extension-modules.md): Installed, the licence questions, the restart, the project notice
+  "Extension modules": "Модули расширений",
+  "Desktop app only.": "Только в настольном приложении.",
+  "Runs code with everything you can do on this computer: read and change your files, use the network, start programs": "Выполняет код со всем, что можете делать вы на этом компьютере: читать и менять ваши файлы, пользоваться сетью, запускать программы",
+  "Runs code with full access: it can read and change your files, use the network and start programs, as you can.": "Выполняет код с полным доступом: может читать и менять ваши файлы, пользоваться сетью и запускать программы, как и вы.",
+  "An extension module runs code with everything you can do on this computer. Lapin Extensions reviewed its source and signed it; it is desktop only.": "Модуль расширения выполняет код со всем, что можете делать вы на этом компьютере. Lapin Extensions проверил его исходный код и подписал его; он работает только в настольном приложении.",
+  "Save the changes to the project before Lapin restarts?": "Сохранить изменения проекта перед перезапуском Lapin?",
+  "Restart without saving? The changes will be lost.": "Перезапустить без сохранения? Изменения будут потеряны.",
+  "Changes to extension modules take effect when Lapin restarts.": "Изменения модулей расширений вступят в силу после перезапуска Lapin.",
+  "Restart now": "Перезапустить сейчас",
+  "Its interface was left out:": "Его интерфейс был пропущен:",
+  "Removed when Lapin restarts.": "Будет удалён при перезапуске Lapin.",
+  "Not loaded:": "Не загружен:",
+  "Loads when Lapin restarts.": "Загрузится при перезапуске Lapin.",
+  "The new version loads when Lapin restarts:": "Новая версия загрузится при перезапуске Lapin:",
+  "Turns on when Lapin restarts.": "Включится при перезапуске Lapin.",
+  "Off.": "Выкл.",
+  "Turns off when Lapin restarts.": "Выключится при перезапуске Lapin.",
+  "Extension modules run in the desktop app only.": "Модули расширений работают только в настольном приложении.",
+  "Not installed: the terms were not accepted.": "Не установлено: условия не приняты.",
+  "Licence:": "Лицензия:",
+  "Licence agreement of {name} (version {version}):": "Лицензионное соглашение {name} (версия {version}):",
+  "I accept": "Принимаю",
+  "Open Extensions": "Открыть Расширения",
+  "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "Этот проект использует {name} (расширение), которое не установлено. Его данные сохранены нетронутыми.",
+  "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "Этот проект использует {names} (расширения), которые не установлены. Их данные сохранены нетронутыми.",
 };
 /** The Russian plural: one → n%10 = 1 and n%100 ≠ 11; few → n%10 in 2–4 and n%100 not in 12–14; many → the rest. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -14252,4 +14278,5 @@ export const RU_PATTERNS: Language['patterns'] = [
   [/^„(.+)” fills no opening\.$/, (m) => `«${m[1]}» не заполняет ни одного проёма.`],
   [/^Roof type (\d+)$/, (m) => `Тип крыши ${m[1]}`],
   [/^(.+) · (Floor|Walls|Ceiling)$/, (m) => `${m[1]} · ${({ "Floor": "Пол", "Walls": "Стены", "Ceiling": "Потолок" } as Record<string, string>)[m[2]]}`],
+  [/^Some extensions were left out: (.+)\.$/, (m) => `Некоторые расширения были пропущены: ${m[1]}.`],
 ];

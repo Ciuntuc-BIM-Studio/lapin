@@ -24,6 +24,7 @@ import { t as tr, useLang } from './i18n';
 import { brand } from './platform/brand';
 import { installTruncationTitles } from './shell/truncTitles';
 import { resolveTheme, setPrefs, usePrefs } from './app/prefs';
+import { AbsentExtensionsNotice } from './shell/AbsentExtensionsNotice';
 import { CursorCoords } from './shell/CursorCoords';
 import { NavStyleMenu } from './shell/NavStyleMenu';
 import { CdeServerStatus } from './shell/CdeStart';
@@ -339,6 +340,7 @@ function PaneBody({ i }: { i: number }) {
           {active && !isTableView(view) && overlays().map((Overlay, k) => <PartBoundary key={k} part={Overlay.displayName ?? Overlay.name ?? 'Overlay'} overlay><Overlay /></PartBoundary>)}
           {active && error && <div className="error" role="alert" onClick={() => useSession.setState({ error: null })}>{error}</div>}
           {active && <Notice />}
+          {active && <AbsentExtensionsNotice />}
         </div>
       </div>
     </PaneContext.Provider>

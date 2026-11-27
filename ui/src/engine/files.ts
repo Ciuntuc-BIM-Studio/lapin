@@ -9,6 +9,7 @@
 import { confirmAction, phrase, promptText } from '../shell/prompts';
 import { forget3d } from '../viewport/viewState3d';
 import { brand } from '../platform/brand';
+import { dismissAbsentExtensions, tellAbsentExtensions } from '../platform/extensions/absent';
 import { activeStorey, engine, engineInBrowser, useSession } from './session';
 import { LONG_TIMEOUT_MS } from './client';
 import { begin, editableText, end, surveyIfc, type EditableReport } from './ifcImport';
@@ -221,6 +222,7 @@ function remember(path: string): void {
 /** Into the project: the ground floor's plan in front, the 3D open in a tab beside it. */
 export function enter(): void {
   select(null);
+  dismissAbsentExtensions();
   // Another project: what the CDE start screen said of the last one (opened read-only, cloned, not saved to the server) goes.
   const cde = useCde.getState();
   if (cde.opened || cde.cloned || cde.unpushed || cde.linked || cde.reference) useCde.setState({ opened: null, cloned: null, unpushed: null, linked: false, reference: null });
@@ -281,14 +283,14 @@ function tellOld(notes: string[]): void {
 /** A project opened from bytes in the browser's engine (a file picked, or a commit's package from a CDE server): false when it failed. */
 async function openBytes(name: string, bytes: Uint8Array, handle: FileSystemFileHandle | null): Promise<boolean> {
   try {
-    const r = await engine.call<{ notes?: string[]; page?: string | null; absent?: string[] } | null>('project.openBytes', { name, data: toBase64(bytes) }, { timeoutMs: LONG_TIMEOUT_MS });
+    const r = await engine.call<{ notes?: string[]; page?: string | null; absent?: string[]; absentExtensions?: unknown } | null>('project.openBytes', { name, data: toBase64(bytes) }, { timeoutMs: LONG_TIMEOUT_MS });
     // An old project (format 2), or one read from a page, opens unsaved: saving must not write over the file it came from.
     const old = !useSession.getState().doc?.path;
     projectHandle = old ? null : handle;
     enter();
     if (!openedFromPage(r?.page)) {
       if (old) tellOld(r?.notes ?? []);
-      else tellAbsent(r?.absent);
+      else { tellAbsent(r?.absent); tellAbsentExtensions(r); }
     }
     return true;
   } catch (e) {
@@ -317,13 +319,13 @@ export async function openProject(path?: string): Promise<void> {
   const target = path ?? (await pickPath('open', undefined, OPEN_FILTERS));
   if (!target) return;
   try {
-    const r = await engine.call<{ notes?: string[]; page?: string | null; absent?: string[] } | null>('project.open', { path: target }, { timeoutMs: LONG_TIMEOUT_MS });
+    const r = await engine.call<{ notes?: string[]; page?: string | null; absent?: string[]; absentExtensions?: unknown } | null>('project.open', { path: target }, { timeoutMs: LONG_TIMEOUT_MS });
     remember(target);
     enter();
     // An old Lapin project (format 2) is rebuilt natively and opens unsaved; say what it left out. A page's project opens unsaved too.
     if (!openedFromPage(r?.page)) {
       if (!useSession.getState().doc?.path) tellOld(r?.notes ?? []);
-      else tellAbsent(r?.absent);
+      else { tellAbsent(r?.absent); tellAbsentExtensions(r); }
     }
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
@@ -537,10 +539,11 @@ export async function openStartupFile(): Promise<void> {
     const name = path.split(/[\\/]/).pop() ?? path;
     // A Lapin project (a linked one opened on its own, to edit there): opened as it is.
     if (/\.lapin$/i.test(name)) {
-      const r = await engine.call<{ absent?: string[] } | null>('project.open', { path }, { timeoutMs: LONG_TIMEOUT_MS });
+      const r = await engine.call<{ absent?: string[]; absentExtensions?: unknown } | null>('project.open', { path }, { timeoutMs: LONG_TIMEOUT_MS });
       remember(path);
       enter();
       tellAbsent(r?.absent);
+      tellAbsentExtensions(r);
       return;
     }
     // An IFC brings its own storeys: the new project starts with a ground floor only.

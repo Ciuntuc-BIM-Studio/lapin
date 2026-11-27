@@ -7405,6 +7405,32 @@ export const ES: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Iniciar sesión con el navegador necesita la aplicación de escritorio.",
   "This server offers no sign-in through the browser: sign in with your password.": "Este servidor no ofrece inicio de sesión con el navegador: entra con tu contraseña.",
   "The browser could not be opened here.": "No se pudo abrir el navegador aquí.",
+  // Extension modules (docs/plan-extension-modules.md): Installed, the licence questions, the restart, the project notice
+  "Extension modules": "Módulos de extensión",
+  "Desktop app only.": "Solo en la aplicación de escritorio.",
+  "Runs code with everything you can do on this computer: read and change your files, use the network, start programs": "Ejecuta código con todo lo que tú puedes hacer en este equipo: leer y modificar tus archivos, usar la red, iniciar programas",
+  "Runs code with full access: it can read and change your files, use the network and start programs, as you can.": "Ejecuta código con acceso total: puede leer y modificar tus archivos, usar la red e iniciar programas, como tú.",
+  "An extension module runs code with everything you can do on this computer. Lapin Extensions reviewed its source and signed it; it is desktop only.": "Un módulo de extensión ejecuta código con todo lo que tú puedes hacer en este equipo. Lapin Extensions revisó su código fuente y lo firmó; solo funciona en la aplicación de escritorio.",
+  "Save the changes to the project before Lapin restarts?": "¿Guardar los cambios del proyecto antes de que Lapin se reinicie?",
+  "Restart without saving? The changes will be lost.": "¿Reiniciar sin guardar? Se perderán los cambios.",
+  "Changes to extension modules take effect when Lapin restarts.": "Los cambios en los módulos de extensión se aplican cuando Lapin se reinicia.",
+  "Restart now": "Reiniciar ahora",
+  "Its interface was left out:": "Se dejó fuera su interfaz:",
+  "Removed when Lapin restarts.": "Se quita cuando Lapin se reinicia.",
+  "Not loaded:": "No cargado:",
+  "Loads when Lapin restarts.": "Se carga cuando Lapin se reinicia.",
+  "The new version loads when Lapin restarts:": "La nueva versión se carga cuando Lapin se reinicia:",
+  "Turns on when Lapin restarts.": "Se activa cuando Lapin se reinicia.",
+  "Off.": "Desactivado.",
+  "Turns off when Lapin restarts.": "Se desactiva cuando Lapin se reinicia.",
+  "Extension modules run in the desktop app only.": "Los módulos de extensión solo funcionan en la aplicación de escritorio.",
+  "Not installed: the terms were not accepted.": "No instalado: no se aceptaron los términos.",
+  "Licence:": "Licencia:",
+  "Licence agreement of {name} (version {version}):": "Acuerdo de licencia de {name} (versión {version}):",
+  "I accept": "Acepto",
+  "Open Extensions": "Abrir Extensiones",
+  "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "Este proyecto usa {name} (extensión), que no está instalada. Sus datos se conservan intactos.",
+  "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "Este proyecto usa {names} (extensiones), que no están instaladas. Sus datos se conservan intactos.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -8313,4 +8339,5 @@ export const ES_PATTERNS: Language['patterns'] = [
   [/^„(.+)” fills no opening\.$/, (m) => `„${m[1]}” no rellena ningún hueco.`],
   [/^Roof type (\d+)$/, (m) => `Tipo de cubierta ${m[1]}`],
   [/^(.+) · (Floor|Walls|Ceiling)$/, (m) => `${m[1]} · ${({ "Floor": "Suelo", "Walls": "Muros", "Ceiling": "Techo" } as Record<string, string>)[m[2]]}`],
+  [/^Some extensions were left out: (.+)\.$/, (m) => `Se dejaron fuera algunas extensiones: ${m[1]}.`],
 ];

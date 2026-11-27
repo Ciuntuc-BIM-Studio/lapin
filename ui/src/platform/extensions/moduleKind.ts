@@ -11,6 +11,7 @@
 import { create } from 'zustand';
 import { engine, engineInBrowser } from '../../engine/session';
 import { toBase64 } from '../../engine/files';
+import { phrase } from '../../shell/prompts';
 import type { ContentInstaller, Receipt } from './install';
 import type { ExtensionKind, Manifest } from './manifest';
 
@@ -86,9 +87,9 @@ export interface Agreement { license: string; licenseText?: string | null; eula?
  * (I accept / Cancel). Pure: the question is asked through `ask`.
  */
 export function acceptTerms(m: Pick<Manifest, 'name'>, a: Agreement, ask: (text: string) => boolean): boolean {
-  const licence = `${m.name}: ${FULL_ACCESS}\n\nLicence: ${a.license}${a.licenseText ? `\n\n${a.licenseText.trim()}` : ''}`;
+  const licence = `${m.name}: ${phrase(FULL_ACCESS)}\n\n${phrase('Licence:')} ${a.license}${a.licenseText ? `\n\n${a.licenseText.trim()}` : ''}`;
   if (!ask(licence)) return false;
-  if (a.eula) return ask(`Licence agreement of ${m.name} (version ${a.eula.version}):\n\n${(a.eula.text ?? '').trim()}\n\nI accept`);
+  if (a.eula) return ask(`${phrase('Licence agreement of {name} (version {version}):', { name: m.name, version: a.eula.version })}\n\n${(a.eula.text ?? '').trim()}\n\n${phrase('I accept')}`);
   return true;
 }
 

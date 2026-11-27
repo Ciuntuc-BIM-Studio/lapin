@@ -7406,6 +7406,32 @@ export const PL: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Logowanie przez przeglądarkę wymaga aplikacji na komputer.",
   "This server offers no sign-in through the browser: sign in with your password.": "Ten serwer nie oferuje logowania przez przeglądarkę: zaloguj się hasłem.",
   "The browser could not be opened here.": "Nie udało się tu otworzyć przeglądarki.",
+  // Extension modules (docs/plan-extension-modules.md): Installed, the licence questions, the restart, the project notice
+  "Extension modules": "Moduły rozszerzeń",
+  "Desktop app only.": "Tylko w aplikacji na komputer.",
+  "Runs code with everything you can do on this computer: read and change your files, use the network, start programs": "Uruchamia kod ze wszystkim, co możesz robić na tym komputerze: czytać i zmieniać twoje pliki, korzystać z sieci, uruchamiać programy",
+  "Runs code with full access: it can read and change your files, use the network and start programs, as you can.": "Uruchamia kod z pełnym dostępem: może czytać i zmieniać twoje pliki, korzystać z sieci i uruchamiać programy, tak jak ty.",
+  "An extension module runs code with everything you can do on this computer. Lapin Extensions reviewed its source and signed it; it is desktop only.": "Moduł rozszerzenia uruchamia kod ze wszystkim, co możesz robić na tym komputerze. Lapin Extensions sprawdził jego kod źródłowy i go podpisał; działa tylko w aplikacji na komputer.",
+  "Save the changes to the project before Lapin restarts?": "Zapisać zmiany w projekcie, zanim Lapin uruchomi się ponownie?",
+  "Restart without saving? The changes will be lost.": "Uruchomić ponownie bez zapisywania? Zmiany zostaną utracone.",
+  "Changes to extension modules take effect when Lapin restarts.": "Zmiany w modułach rozszerzeń zaczną działać po ponownym uruchomieniu Lapin.",
+  "Restart now": "Uruchom ponownie teraz",
+  "Its interface was left out:": "Jego interfejs został pominięty:",
+  "Removed when Lapin restarts.": "Zostanie usunięte po ponownym uruchomieniu Lapin.",
+  "Not loaded:": "Nie załadowano:",
+  "Loads when Lapin restarts.": "Załaduje się po ponownym uruchomieniu Lapin.",
+  "The new version loads when Lapin restarts:": "Nowa wersja załaduje się po ponownym uruchomieniu Lapin:",
+  "Turns on when Lapin restarts.": "Włączy się po ponownym uruchomieniu Lapin.",
+  "Off.": "Wyłączone.",
+  "Turns off when Lapin restarts.": "Wyłączy się po ponownym uruchomieniu Lapin.",
+  "Extension modules run in the desktop app only.": "Moduły rozszerzeń działają tylko w aplikacji na komputer.",
+  "Not installed: the terms were not accepted.": "Nie zainstalowano: warunki nie zostały zaakceptowane.",
+  "Licence:": "Licencja:",
+  "Licence agreement of {name} (version {version}):": "Umowa licencyjna {name} (wersja {version}):",
+  "I accept": "Akceptuję",
+  "Open Extensions": "Otwórz Rozszerzenia",
+  "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "Ten projekt używa {name} (rozszerzenie), które nie jest zainstalowane. Jego dane są zachowane bez zmian.",
+  "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "Ten projekt używa {names} (rozszerzenia), które nie są zainstalowane. Ich dane są zachowane bez zmian.",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -8319,4 +8345,5 @@ export const PL_PATTERNS: Language['patterns'] = [
   [/^„(.+)” fills no opening\.$/, (m) => `„${m[1]}” nie wypełnia żadnego otworu.`],
   [/^Roof type (\d+)$/, (m) => `Typ dachu ${m[1]}`],
   [/^(.+) · (Floor|Walls|Ceiling)$/, (m) => `${m[1]} · ${({ "Floor": "Podłoga", "Walls": "Ściany", "Ceiling": "Sufit" } as Record<string, string>)[m[2]]}`],
+  [/^Some extensions were left out: (.+)\.$/, (m) => `Niektóre rozszerzenia zostały pominięte: ${m[1]}.`],
 ];

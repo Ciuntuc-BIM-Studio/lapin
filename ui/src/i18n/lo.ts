@@ -7459,6 +7459,32 @@ export const LO: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "ການເຂົ້າສູ່ລະບົບຜ່ານບຣາວເຊີຕ້ອງການແອັບເດັສທັອບ.",
   "This server offers no sign-in through the browser: sign in with your password.": "ເຊີບເວີນີ້ບໍ່ມີການເຂົ້າສູ່ລະບົບຜ່ານບຣາວເຊີ: ເຂົ້າສູ່ລະບົບດ້ວຍລະຫັດຜ່ານ.",
   "The browser could not be opened here.": "ບໍ່ສາມາດເປີດບຣາວເຊີຢູ່ທີ່ນີ້ໄດ້.",
+  // Extension modules (docs/plan-extension-modules.md): Installed, the licence questions, the restart, the project notice
+  "Extension modules": "ໂມດູນສ່ວນຂະຫຍາຍ",
+  "Desktop app only.": "ໃຊ້ໄດ້ສະເພາະແອັບເດັສທັອບ.",
+  "Runs code with everything you can do on this computer: read and change your files, use the network, start programs": "ແລ່ນໂຄດດ້ວຍທຸກຢ່າງທີ່ທ່ານເຮັດໄດ້ໃນຄອມພິວເຕີນີ້: ອ່ານ ແລະ ແກ້ໄຂໄຟລ໌ຂອງທ່ານ, ໃຊ້ເຄືອຂ່າຍ, ເລີ່ມໂປຣແກຣມ",
+  "Runs code with full access: it can read and change your files, use the network and start programs, as you can.": "ແລ່ນໂຄດດ້ວຍສິດເຂົ້າເຖິງເຕັມ: ມັນອ່ານ ແລະ ແກ້ໄຂໄຟລ໌ຂອງທ່ານ, ໃຊ້ເຄືອຂ່າຍ ແລະ ເລີ່ມໂປຣແກຣມໄດ້ ຄືກັບທ່ານ.",
+  "An extension module runs code with everything you can do on this computer. Lapin Extensions reviewed its source and signed it; it is desktop only.": "ໂມດູນສ່ວນຂະຫຍາຍແລ່ນໂຄດດ້ວຍທຸກຢ່າງທີ່ທ່ານເຮັດໄດ້ໃນຄອມພິວເຕີນີ້. Lapin Extensions ໄດ້ກວດຊອກໂຄດຕົ້ນສະບັບຂອງມັນ ແລະ ເຊັນຮັບຮອງແລ້ວ; ມັນໃຊ້ໄດ້ສະເພາະແອັບເດັສທັອບ.",
+  "Save the changes to the project before Lapin restarts?": "ບັນທຶກການປ່ຽນແປງຂອງໂຄງການກ່ອນທີ່ Lapin ຈະເລີ່ມໃໝ່ບໍ?",
+  "Restart without saving? The changes will be lost.": "ເລີ່ມໃໝ່ໂດຍບໍ່ບັນທຶກບໍ? ການປ່ຽນແປງຈະສູນຫາຍ.",
+  "Changes to extension modules take effect when Lapin restarts.": "ການປ່ຽນແປງຂອງໂມດູນສ່ວນຂະຫຍາຍມີຜົນເມື່ອ Lapin ເລີ່ມໃໝ່.",
+  "Restart now": "ເລີ່ມໃໝ່ດຽວນີ້",
+  "Its interface was left out:": "ອິນເຕີເຟດຂອງມັນຖືກຂ້າມໄປ:",
+  "Removed when Lapin restarts.": "ຖືກລຶບອອກເມື່ອ Lapin ເລີ່ມໃໝ່.",
+  "Not loaded:": "ບໍ່ໄດ້ໂຫຼດ:",
+  "Loads when Lapin restarts.": "ໂຫຼດເມື່ອ Lapin ເລີ່ມໃໝ່.",
+  "The new version loads when Lapin restarts:": "ເວີຊັນໃໝ່ໂຫຼດເມື່ອ Lapin ເລີ່ມໃໝ່:",
+  "Turns on when Lapin restarts.": "ເປີດເມື່ອ Lapin ເລີ່ມໃໝ່.",
+  "Off.": "ປິດ.",
+  "Turns off when Lapin restarts.": "ປິດເມື່ອ Lapin ເລີ່ມໃໝ່.",
+  "Extension modules run in the desktop app only.": "ໂມດູນສ່ວນຂະຫຍາຍໃຊ້ໄດ້ສະເພາະໃນແອັບເດັສທັອບ.",
+  "Not installed: the terms were not accepted.": "ບໍ່ໄດ້ຕິດຕັ້ງ: ບໍ່ໄດ້ຍອມຮັບເງື່ອນໄຂ.",
+  "Licence:": "ໃບອະນຸຍາດ:",
+  "Licence agreement of {name} (version {version}):": "ຂໍ້ຕົກລົງໃບອະນຸຍາດຂອງ {name} (ເວີຊັນ {version}):",
+  "I accept": "ຂ້ອຍຍອມຮັບ",
+  "Open Extensions": "ເປີດສ່ວນຂະຫຍາຍ",
+  "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "ໂຄງການນີ້ໃຊ້ {name} (ສ່ວນຂະຫຍາຍ) ທີ່ຍັງບໍ່ໄດ້ຕິດຕັ້ງ. ຂໍ້ມູນຂອງມັນຖືກເກັບໄວ້ຢ່າງຄົບຖ້ວນ.",
+  "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "ໂຄງການນີ້ໃຊ້ {names} (ສ່ວນຂະຫຍາຍ) ທີ່ຍັງບໍ່ໄດ້ຕິດຕັ້ງ. ຂໍ້ມູນຂອງພວກມັນຖືກເກັບໄວ້ຢ່າງຄົບຖ້ວນ.",
 };
 
 /** Phrases with a number or a name in them. */
@@ -8365,4 +8391,5 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^„(.+)” fills no opening\.$/, (m) => `„${m[1]}” ບໍ່ໄດ້ເຕີມຊ່ອງເປີດໃດ.`],
   [/^Roof type (\d+)$/, (m) => `ປະເພດຫຼັງຄາ ${m[1]}`],
   [/^(.+) · (Floor|Walls|Ceiling)$/, (m) => `${m[1]} · ${({ "Floor": "ພື້ນ", "Walls": "ຝາ", "Ceiling": "ເພດານ" } as Record<string, string>)[m[2]]}`],
+  [/^Some extensions were left out: (.+)\.$/, (m) => `ສ່ວນຂະຫຍາຍບາງອັນຖືກຂ້າມໄປ: ${m[1]}.`],
 ];

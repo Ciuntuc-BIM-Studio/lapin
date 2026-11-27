@@ -7402,6 +7402,32 @@ export const ZH: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "通过浏览器登录需要桌面应用。",
   "This server offers no sign-in through the browser: sign in with your password.": "此服务器不提供通过浏览器登录：请使用密码登录。",
   "The browser could not be opened here.": "无法在此打开浏览器。",
+  // Extension modules (docs/plan-extension-modules.md): Installed, the licence questions, the restart, the project notice
+  "Extension modules": "扩展模块",
+  "Desktop app only.": "仅限桌面应用。",
+  "Runs code with everything you can do on this computer: read and change your files, use the network, start programs": "以你在这台电脑上所能做的一切运行代码：读取和修改你的文件、使用网络、启动程序",
+  "Runs code with full access: it can read and change your files, use the network and start programs, as you can.": "以完全权限运行代码：它可以像你一样读取和修改你的文件、使用网络和启动程序。",
+  "An extension module runs code with everything you can do on this computer. Lapin Extensions reviewed its source and signed it; it is desktop only.": "扩展模块以你在这台电脑上所能做的一切运行代码。Lapin Extensions 已审查其源代码并签名；它仅限桌面应用。",
+  "Save the changes to the project before Lapin restarts?": "在 Lapin 重启之前保存项目的更改吗?",
+  "Restart without saving? The changes will be lost.": "不保存就重启吗? 更改将会丢失。",
+  "Changes to extension modules take effect when Lapin restarts.": "扩展模块的更改在 Lapin 重启后生效。",
+  "Restart now": "立即重启",
+  "Its interface was left out:": "其界面已被排除:",
+  "Removed when Lapin restarts.": "Lapin 重启时移除。",
+  "Not loaded:": "未加载:",
+  "Loads when Lapin restarts.": "Lapin 重启时加载。",
+  "The new version loads when Lapin restarts:": "新版本在 Lapin 重启时加载:",
+  "Turns on when Lapin restarts.": "Lapin 重启时开启。",
+  "Off.": "关。",
+  "Turns off when Lapin restarts.": "Lapin 重启时关闭。",
+  "Extension modules run in the desktop app only.": "扩展模块仅在桌面应用中运行。",
+  "Not installed: the terms were not accepted.": "未安装: 条款未被接受。",
+  "Licence:": "许可证:",
+  "Licence agreement of {name} (version {version}):": "{name} 的许可协议 (版本 {version}):",
+  "I accept": "我接受",
+  "Open Extensions": "打开扩展",
+  "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "此项目使用 {name} (扩展)，但它尚未安装。其数据原样保留。",
+  "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "此项目使用 {names} (扩展)，但它们尚未安装。其数据原样保留。",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
@@ -8307,4 +8333,5 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^„(.+)” fills no opening\.$/, (m) => `“${m[1]}”没有填充任何洞口。`],
   [/^Roof type (\d+)$/, (m) => `屋顶类型 ${m[1]}`],
   [/^(.+) · (Floor|Walls|Ceiling)$/, (m) => `${m[1]} · ${({ "Floor": "地面", "Walls": "墙面", "Ceiling": "顶棚" } as Record<string, string>)[m[2]]}`],
+  [/^Some extensions were left out: (.+)\.$/, (m) => `部分扩展已被排除: ${m[1]}.`],
 ];

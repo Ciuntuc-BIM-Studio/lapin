@@ -13524,6 +13524,32 @@ export const EL: Record<string, string> = {
   "Signing in through the browser needs the desktop app.": "Η σύνδεση μέσω προγράμματος περιήγησης χρειάζεται την εφαρμογή υπολογιστή.",
   "This server offers no sign-in through the browser: sign in with your password.": "Αυτός ο διακομιστής δεν προσφέρει σύνδεση μέσω προγράμματος περιήγησης: συνδεθείτε με τον κωδικό σας.",
   "The browser could not be opened here.": "Δεν ήταν δυνατό να ανοίξει το πρόγραμμα περιήγησης εδώ.",
+  // Extension modules (docs/plan-extension-modules.md): Installed, the licence questions, the restart, the project notice
+  "Extension modules": "Μονάδες επέκτασης",
+  "Desktop app only.": "Μόνο στην εφαρμογή επιφάνειας εργασίας.",
+  "Runs code with everything you can do on this computer: read and change your files, use the network, start programs": "Εκτελεί κώδικα με ό,τι μπορείτε να κάνετε σε αυτόν τον υπολογιστή: διαβάζει και αλλάζει τα αρχεία σας, χρησιμοποιεί το δίκτυο, ξεκινά προγράμματα",
+  "Runs code with full access: it can read and change your files, use the network and start programs, as you can.": "Εκτελεί κώδικα με πλήρη πρόσβαση: μπορεί να διαβάζει και να αλλάζει τα αρχεία σας, να χρησιμοποιεί το δίκτυο και να ξεκινά προγράμματα, όπως εσείς.",
+  "An extension module runs code with everything you can do on this computer. Lapin Extensions reviewed its source and signed it; it is desktop only.": "Μια μονάδα επέκτασης εκτελεί κώδικα με ό,τι μπορείτε να κάνετε σε αυτόν τον υπολογιστή. Το Lapin Extensions εξέτασε τον πηγαίο κώδικά της και την υπέγραψε· λειτουργεί μόνο στην εφαρμογή επιφάνειας εργασίας.",
+  "Save the changes to the project before Lapin restarts?": "Να αποθηκευτούν οι αλλαγές του έργου πριν γίνει επανεκκίνηση του Lapin?",
+  "Restart without saving? The changes will be lost.": "Επανεκκίνηση χωρίς αποθήκευση? Οι αλλαγές θα χαθούν.",
+  "Changes to extension modules take effect when Lapin restarts.": "Οι αλλαγές στις μονάδες επέκτασης ισχύουν μετά την επανεκκίνηση του Lapin.",
+  "Restart now": "Επανεκκίνηση τώρα",
+  "Its interface was left out:": "Η διεπαφή της παραλείφθηκε:",
+  "Removed when Lapin restarts.": "Αφαιρείται κατά την επανεκκίνηση του Lapin.",
+  "Not loaded:": "Δεν φορτώθηκε:",
+  "Loads when Lapin restarts.": "Φορτώνεται κατά την επανεκκίνηση του Lapin.",
+  "The new version loads when Lapin restarts:": "Η νέα έκδοση φορτώνεται κατά την επανεκκίνηση του Lapin:",
+  "Turns on when Lapin restarts.": "Ενεργοποιείται κατά την επανεκκίνηση του Lapin.",
+  "Off.": "Ανενεργό.",
+  "Turns off when Lapin restarts.": "Απενεργοποιείται κατά την επανεκκίνηση του Lapin.",
+  "Extension modules run in the desktop app only.": "Οι μονάδες επέκτασης λειτουργούν μόνο στην εφαρμογή επιφάνειας εργασίας.",
+  "Not installed: the terms were not accepted.": "Δεν εγκαταστάθηκε: οι όροι δεν έγιναν αποδεκτοί.",
+  "Licence:": "Άδεια χρήσης:",
+  "Licence agreement of {name} (version {version}):": "Συμφωνία άδειας χρήσης του {name} (έκδοση {version}):",
+  "I accept": "Αποδέχομαι",
+  "Open Extensions": "Άνοιγμα Επεκτάσεων",
+  "This project uses {name} (extension), which is not installed. Its data is kept and untouched.": "Αυτό το έργο χρησιμοποιεί το {name} (επέκταση), που δεν είναι εγκατεστημένη. Τα δεδομένα της διατηρούνται ανέγγιχτα.",
+  "This project uses {names} (extensions), which are not installed. Their data is kept and untouched.": "Αυτό το έργο χρησιμοποιεί τα {names} (επεκτάσεις), που δεν είναι εγκατεστημένες. Τα δεδομένα τους διατηρούνται ανέγγιχτα.",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */
@@ -14369,4 +14395,5 @@ export const EL_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^„(.+)” fills no opening\.$/, (m) => `Το «${m[1]}» δεν γεμίζει κανένα άνοιγμα.`],
   [/^Roof type (\d+)$/, (m) => `Τύπος στέγης ${m[1]}`],
   [/^(.+) · (Floor|Walls|Ceiling)$/, (m) => `${m[1]} · ${({ "Floor": "Δάπεδο", "Walls": "Τοίχοι", "Ceiling": "Οροφή" } as Record<string, string>)[m[2]]}`],
+  [/^Some extensions were left out: (.+)\.$/, (m) => `Ορισμένες επεκτάσεις παραλείφθηκαν: ${m[1]}.`],
 ];
