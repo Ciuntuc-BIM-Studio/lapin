@@ -160,7 +160,7 @@ export function StructureTypesDialog() {
     const section = sectionOf();
     // The mark and parameters typed for the new type (issues #146, #147), with it in the same step.
     const extra = draft.args();
-    let r: unknown = null;
+    let r: unknown;
     if ((kind === 'column' || kind === 'beam') && shape === 'library') {
       if (!lib.picked) return;
       r = await execute(kind === 'column' ? 'structure.createColumnType' : 'structure.createBeamType', { name, profile: lib.picked.profile, library: lib.picked.library, material, ...extra });
