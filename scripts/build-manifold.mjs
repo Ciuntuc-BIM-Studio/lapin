@@ -4,7 +4,7 @@
 // Everything is linked statically (manifold, Clipper2, no TBB), so the library
 // depends on the system only and travels next to the engine.
 //
-//   node scripts/build-manifold.mjs        (needs git, cmake and a C++ compiler; on Linux also libstdc++.a: engine/native/README.md)
+//   node scripts/build-manifold.mjs        (needs git, cmake and a C++ compiler; on Linux g++ and libstdc++.a: engine/native/README.md)
 //   node scripts/build-manifold.mjs --browser-wasm
 // The engine in the browser (docs/plan-browser-engine.md): static libraries in
 // engine/native/browser-wasm/, linked into the engine's WebAssembly, built by
@@ -18,8 +18,8 @@
 // after ilammy/msvc-dev-cmd in CI), the C runtime linked in statically (/MT),
 // exporting the functions Lapin.Booleans imports (read from ManifoldBooleans.cs).
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { tmpdir, platform, arch } from 'node:os';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { homedir, platform, arch } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -29,7 +29,24 @@ const rid = `${platform() === 'darwin' ? 'osx' : platform() === 'win32' ? 'win' 
 const mac = platform() === 'darwin';
 const win = platform() === 'win32';
 const lib = mac ? 'libmanifoldc.dylib' : win ? 'manifoldc.dll' : 'libmanifoldc.so';
-const work = join(tmpdir(), `lapin-manifold-${TAG}`);
+// manifold's source is kept in this user's own cache, never in a folder every account can write to such as /tmp, where
+// another account could leave a tree of its own for CMake to run; only while that folder is this user's alone, and only
+// while no folder above it lets another account replace it (a shared folder such as /tmp is fine: it is sticky, so only
+// the owner of a name there can rename it).
+let work = join(win ? (process.env.LOCALAPPDATA || join(homedir(), 'AppData', 'Local')) : (process.env.XDG_CACHE_HOME || join(homedir(), '.cache')), 'lapin', `manifold-${TAG}`);
+mkdirSync(work, { recursive: true, mode: 0o700 });
+if (!win) {
+  work = realpathSync(work);
+  const s = statSync(work);
+  if (s.uid !== process.getuid() || s.mode & 0o022) throw new Error(`build-manifold: ${work} belongs to another account or others can write to it: remove it and run again.`);
+  // Each folder above holds the one below by name, so one another account can write to could have the cache replaced in it.
+  for (let dir = dirname(work); ; dir = dirname(dir)) {
+    const a = statSync(dir), mine = a.uid === process.getuid();
+    if (a.uid !== 0 && !mine) throw new Error(`build-manifold: ${dir} belongs to another account, which could replace the cache under it: set XDG_CACHE_HOME to a folder only you and root can change, or give that folder to yourself.`);
+    if (!(a.mode & 0o1000) && a.mode & 0o022) throw new Error(`build-manifold: other accounts can write to ${dir}, so they could replace the cache under it: take that write access away (chmod go-w "${dir}"), or set XDG_CACHE_HOME to a folder only you can write to.`);
+    if (dir === dirname(dir)) break;
+  }
+}
 const sh = (cmd, args, cwd) => execFileSync(cmd, args, { cwd, stdio: 'inherit' });
 
 if (process.argv.includes('--browser-wasm')) {
@@ -41,10 +58,10 @@ if (process.argv.includes('--browser-wasm')) {
   // Linux has no Python pack: the workload uses the system's python3 there.
   const python = pack('Python', true);
   const sdk = pack('Sdk'), node = join(pack('Node'), 'bin', 'node'), py = python ? join(python, 'bin') : null, cached = pack('Cache', true);
-  const cache = cached ? join(cached, 'emscripten', 'cache') : join(tmpdir(), 'lapin-emscripten-cache');
+  const cache = cached ? join(cached, 'emscripten', 'cache') : join(work, 'emscripten-cache');
   const env = { ...process.env, EMSDK_PATH: sdk, DOTNET_EMSCRIPTEN_LLVM_ROOT: join(sdk, 'bin'), DOTNET_EMSCRIPTEN_BINARYEN_ROOT: sdk, DOTNET_EMSCRIPTEN_NODE_JS: node, EM_CACHE: cache,
     PATH: [join(sdk, 'emscripten'), join(sdk, 'bin'), py, process.env.PATH].filter(Boolean).join(process.platform === 'win32' ? ';' : ':') };
-  const wasmWork = `${work}-wasm`;
+  const wasmWork = join(work, 'wasm');
   const run = (cmd, args, cwd) => execFileSync(cmd, args, { cwd, stdio: 'inherit', env });
   if (!existsSync(join(wasmWork, 'src'))) {
     mkdirSync(wasmWork, { recursive: true });
@@ -66,12 +83,11 @@ if (process.argv.includes('--browser-wasm')) {
   process.exit(0);
 }
 
-// The source is cloned once per machine and kept; each run builds in a folder of its own, removed after, and puts the
+// The source is cloned once per user and kept; each run builds in a folder of its own, removed after, and puts the
 // library in place in one step, so several checkouts may build at once (on Linux the engine's build runs this script when
 // its library is missing: Lapin.Booleans.csproj) and a run stopped half way leaves no library to be taken for a built one.
 const src = join(work, 'src');
 if (!existsSync(src)) {
-  mkdirSync(work, { recursive: true });
   const clone = mkdtempSync(join(work, 'src-'));
   sh('git', ['clone', '--depth', '1', '--branch', TAG, 'https://github.com/elalish/manifold.git', clone], work);
   // Another checkout's clone may have landed first: that one is kept.
