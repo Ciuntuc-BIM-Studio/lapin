@@ -51,7 +51,7 @@ public static class MeshRecognition
         // What no prism reads (an open-web joist), offered whole first to the module that makes it (decision 827).
         var bodies = services.All<IBodyRecognizer>();
         if (recognizers.Count == 0 && bodies.Count == 0) return MeshRecognitionReport.None;
-        var ctx = new RecognitionContext(services) { OutlineSections = outlineSections };
+        var ctx = new RecognitionContext(services) { OutlineSections = outlineSections, GateEnforced = gate.Enforcing };
         var byClass = new Dictionary<string, int>();
         var count = 0;
         // Only what a recogniser takes (a wall, a slab, a column…) and the doors and windows the walls take with them: a federated

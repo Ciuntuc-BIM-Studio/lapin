@@ -335,12 +335,16 @@ public static class Slabs
     public static IReadOnlyList<Vec2> HoleContour(IModelView m, Entity opening) =>
         opening.Str("stairId") is { } stairId && m.Get(stairId) is { Class: IfcClass.Stair or IfcClass.Ramp } stair ? Stairs.StairBuilder.OpeningContour(m, stair) ?? [] : Contour(opening);
 
-    public static Entity AddOpening(IEdit edit, Entity slab, IReadOnlyList<Vec2> contour, IReadOnlyList<double>? rises = null)
+    /// <summary>
+    /// An opening in a floor from its outline; <paramref name="id"/> and <paramref name="name"/> keep the file's when
+    /// recognition has them (a free GlobalId: docs/spec-ifc.md, Golurile plăcilor).
+    /// </summary>
+    public static Entity AddOpening(IEdit edit, Entity slab, IReadOnlyList<Vec2> contour, IReadOnlyList<double>? rises = null, string? id = null, string? name = null)
     {
         var (pts, arcs) = rises != null ? ArcOutline.Check(contour, rises, "An opening") : ([.. CheckContour(contour)], null);
         var attrs = new JsonObject();
         SetOutline(attrs, pts, arcs);
-        var opening = new Entity(edit.NewId(), IfcClass.OpeningElement, "Floor opening", attrs, "OPENING");
+        var opening = new Entity(id is { Length: 22 } given && edit.Model.Get(given) == null ? given : edit.NewId(), IfcClass.OpeningElement, name is { Length: > 0 } n ? n : "Floor opening", attrs, "OPENING");
         edit.Add(opening);
         edit.AddRelation(new Relation(edit.NewId(), IfcClass.RelVoidsElement, slab.Id, [opening.Id]));
         return opening;

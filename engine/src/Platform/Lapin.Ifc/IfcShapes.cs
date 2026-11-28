@@ -113,7 +113,7 @@ public sealed partial class IfcModel
     /// <summary>The most faces a B-rep read as prisms may have.</summary>
     const int MaxPrismFaces = 4000;
 
-    /// <summary>The product's body as prisms; empty with <paramref name="why"/> set when it is not made of prisms.</summary>
+    /// <summary>The product's body as prisms; <paramref name="why"/> set when it, or an item of it, gives none.</summary>
     public IReadOnlyList<ShapePrism> Prisms(int product, out string? why)
     {
         why = null;
@@ -129,7 +129,8 @@ public sealed partial class IfcModel
             foreach (var item in Items(rep[3])) { items++; PrismItem(item, place, false, o, reasons); }
         }
         if (items == 0) why = "no body";
-        else if (o.Count == 0) why = reasons.Count > 0 ? reasons[0] : "not a prism";
+        else if (reasons.Count > 0) why = reasons[0];
+        else if (o.Count == 0) why = "not a prism";
         return o;
     }
 

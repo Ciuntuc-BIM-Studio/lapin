@@ -100,10 +100,11 @@ public static partial class IfcImport
             reader.Apply(edit);
             var brought = edit.Model.Entities.Where(e => !before.Contains(e.Id)).Select(e => e.Id).ToList();
             // Not what the gate has just made a reference again (enforce): its triangles would make the same element.
+            // Nor what a recogniser keeps a reference.
             // A column or beam whose body has no profile (tessellated, a faceted B-rep) is made with its body's own outline as its section,
             // as a Speckle receive's are (decision 826): its type's catalogue profile when that is the outline to 2 mm, a parametric
             // shape when it is one, else the polygon it is; the gate judges each.
-            if (o.Mode == "auto") fromTriangles = MeshRecognition.Recognize(edit, session.Catalog, brought.Where(id => !reader.Reverted.Contains(id)), o.Gate, outlineSections: true);
+            if (o.Mode == "auto") fromTriangles = MeshRecognition.Recognize(edit, session.Catalog, brought.Where(id => !reader.Reverted.Contains(id) && !reader.Kept(id)), o.Gate, outlineSections: true);
             if (o.Editable) editable = EditableReferences.Make(edit, session.Catalog, brought);
             reader.KeepContainmentIds(edit);
         }

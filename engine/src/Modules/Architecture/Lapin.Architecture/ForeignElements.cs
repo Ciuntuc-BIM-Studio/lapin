@@ -593,6 +593,13 @@ public sealed class ForeignElements : IIfcRecognizer
         if (contour.Count < 3) { ctx.Skip("a floor without a readable contour"); return null; }
         var storey = edit.Model.Get(e.StoreyId);
         if (storey == null) { ctx.Skip("a floor without a storey"); return null; }
+        var voids = e.Openings.Select(op => (Opening: op, Ring: op.Fill == null ? ThroughVoid(op, prism) : null)).ToList();
+        if (ctx.GateEnforced && voids.Any(v => v.Ring != null) && (e.OtherVoids || voids.Any(v => v.Ring == null)))
+        {
+            ctx.Kept.Add(e.GlobalId);
+            ctx.Skip("a floor with a through opening and another it cannot take (not an IfcOpeningElement read whole as one vertical void through its depth, or one with a door or window in it)");
+            return null;
+        }
         var offset = Math.Round(prism.TopZ - storey.Num("elevation"), 6);
         var type = SlabType(edit, e, thickness, ctx);
         var slab = new Entity(e.GlobalId, IfcClass.Slab, e.Name ?? type.Name, new JsonObject { ["contour"] = Slabs.ContourJson(contour), ["offset"] = offset }, e.PredefinedType is "ROOF" or "LANDING" or "BASESLAB" ? e.PredefinedType : "FLOOR");
@@ -605,8 +612,36 @@ public sealed class ForeignElements : IIfcRecognizer
             if (ring.Count < 3) continue;
             try { Slabs.AddOpening(edit, slab, ring); } catch (CommandException ex) { ctx.Notes.Add($"Floor {e.Name}: {ex.Message}"); }
         }
+        // What the file voids it with (an IfcOpeningElement's body): a vertical void through its whole depth, its outline in plan
+        // (a recess, a sloped void, one the file clipped, one read only in part, one with holes of its own or one with a door or
+        // window in it is no such opening); the file's GlobalId and name kept, as a wall's opening keeps them. A floor none of
+        // whose openings is carried is the gate's to judge.
+        foreach (var (op, ring) in voids)
+        {
+            if (ring == null) continue;
+            try
+            {
+                var opening = Slabs.AddOpening(edit, slab, ring, id: op.GlobalId, name: op.Name?.Trim());
+                ctx.Made.Add(opening.Id);
+            }
+            catch (CommandException ex) { ctx.Notes.Add($"Floor {e.Name}: {ex.Message}"); }
+        }
         ctx.Made.Add(slab.Id);
         return slab.Id;
+    }
+
+    /// <summary>
+    /// An opening's body as one plan contour through a floor's whole depth (within the gate's millimetre): its one vertical
+    /// prism, the whole of it, not one the file clipped, with no holes of its own; null for any other void.
+    /// </summary>
+    static IReadOnlyList<Vec2>? ThroughVoid(ForeignOpening op, ShapePrism slab)
+    {
+        if (op.Partial || OnePrismOrNull(op.Prisms, p => p.Vertical) is not { } prism || prism.Clipped || prism.Holes.Count > 0) return null;
+        var (slabLow, slabHigh) = (Math.Min(slab.BaseZ, slab.BaseZ + slab.Sweep.Z), Math.Max(slab.BaseZ, slab.BaseZ + slab.Sweep.Z));
+        var (low, high) = (Math.Min(prism.BaseZ, prism.BaseZ + prism.Sweep.Z), Math.Max(prism.BaseZ, prism.BaseZ + prism.Sweep.Z));
+        if (low > slabLow + 0.001 || high < slabHigh - 0.001) return null;
+        var ring = Footprints.Plan(prism.Outer);
+        return ring.Count >= 3 ? ring : null;
     }
 
     Entity SlabType(IEdit edit, ForeignElement e, double thickness, RecognitionContext ctx)
