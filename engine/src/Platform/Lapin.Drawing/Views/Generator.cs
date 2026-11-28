@@ -168,7 +168,7 @@ public static class Generator
     public const string StickRole = "stick";
 
     /// <summary>Classes drawn in plan by their own symbols instead of their cut.</summary>
-    public static readonly HashSet<string> SymbolicInPlan = ["IfcDoor", "IfcWindow", "IfcRoof", "IfcGeographicElement", "IfcStair", "IfcRamp", "IfcPavement", "LapinPlanting", "LapinEntourage", "LapinFeatureLine", "IfcFurniture", "IfcShadingDevice", "IfcTransportElement", "LapinTrack", "LapinPlatform", "LapinTurnout", "LapinCrossing", "LapinLevelCrossing", "IfcVirtualElement", "LapinTunnelLining"];
+    public static readonly ClassSet SymbolicInPlan = ["IfcDoor", "IfcWindow", "IfcRoof", "IfcGeographicElement", "IfcStair", "IfcRamp", "IfcPavement", "LapinPlanting", "LapinEntourage", "LapinFeatureLine", "IfcFurniture", "IfcShadingDevice", "IfcTransportElement", "LapinTrack", "LapinPlatform", "LapinTurnout", "LapinCrossing", "LapinLevelCrossing", "IfcVirtualElement", "LapinTunnelLining"];
 
     /// <summary>
     /// Classes a plan draws dashed when they lie wholly under its range (decision 435, a tester's report #115): foundations
