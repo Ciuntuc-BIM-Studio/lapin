@@ -7644,6 +7644,8 @@ export const LO: Record<string, string> = {
   "Its package is missing: install it again.": "ແພັກເກດຂອງມັນຂາດ: ຕິດຕັ້ງມັນໃໝ່.",
   "Its folder holds another extension or version.": "ໂຟນເດີຂອງມັນມີສ່ວນຂະຫຍາຍ ຫຼື ລຸ້ນອື່ນ.",
   "Extension modules are installed in the desktop app only.": "ໂມດູນສ່ວນຂະຫຍາຍຕິດຕັ້ງໄດ້ໃນແອັບເດັສທັອບເທົ່ານັ້ນ.",
+  "Reset to style": "ກັບຄືນສູ່ຮູບແບບ",
+  "The view follows its style's graphics set again; its own settings are dropped": "ມຸມມອງກັບໄປໃຊ້ຊຸດກຣາຟິກຂອງຮູບແບບຂອງມັນອີກ; ການຕັ້ງຄ່າຂອງມັນເອງຖືກຍົກເລີກ",
 };
 
 /** Phrases with a number or a name in them. */

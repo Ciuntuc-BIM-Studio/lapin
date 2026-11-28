@@ -13707,6 +13707,8 @@ export const SV: Record<string, string> = {
   "Its package is missing: install it again.": "Dess paket saknas: installera den igen.",
   "Its folder holds another extension or version.": "Dess mapp innehåller ett annat tillägg eller en annan version.",
   "Extension modules are installed in the desktop app only.": "Tilläggsmoduler installeras bara i skrivbordsappen.",
+  "Reset to style": "Återställ till stil",
+  "The view follows its style's graphics set again; its own settings are dropped": "Vyn följer åter sin stils grafikuppsättning; dess egna inställningar tas bort",
 };
 
 /** Phrases with a number or a name in them. */

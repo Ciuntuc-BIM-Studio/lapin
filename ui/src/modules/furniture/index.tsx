@@ -13,9 +13,10 @@ import type { Icon } from '../../icons';
 import type { LapinModule, PlaceEntry, ToolDef } from '../../platform/module';
 import { openPlaceCatalog } from '../../shell/placeCatalogStore';
 import { notify, useUi } from '../../app/store';
-import { execute, useSession } from '../../engine/session';
+import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { relatingOf } from '../../engine/model';
+import type { PreviewDto } from './furniture';
 import { CLASS, TYPE_CLASS, chooseType, chosenType, furnitureGrips, sizeOf, specOf, typesOfKind, useFurniturePrefs } from './furniture';
 import { FurnitureSection } from './FurnitureSection';
 import { FurnitureTypesDialog, editType, useKinds } from './FurnitureTypesDialog';
@@ -24,7 +25,8 @@ import { FurnitureLibraryDialog, SaveToLibraryDialog } from './FurnitureLibraryD
 import { refreshLibrary, takeEntry, useFurnitureLibrary } from './library';
 import { addTemplateAddition } from '../../engine/templates';
 import { useEffect } from 'react';
-import { activate, findTool } from '../../platform/modules';
+import { ghostLines, outlineOf } from './ghost';
+import { activate, findTool, useToolTick } from '../../platform/modules';
 import { toolForKind, usePlaceKind } from './placeKind';
 // Lapin Extensions: the content packs this module's libraries take (docs/plan-extensions.md).
 import './extensionKind';
@@ -137,7 +139,30 @@ function KindPicker() {
     </span>
   );
 }
-function PlaceOptions() { const Kind = forKind(optionsOf, usePlaceKind((s) => s.kind), kindOptions); return <><KindPicker /><Kind /></>; }
+/**
+ * The Place tool's ghost: the outline of what a click would place, from the engine's furniture.preview, asked again only when the
+ * kind, the chosen type or its spec change (never per mouse move). The ghost does not reproduce `against`'s snapping to walls: the engine does that on the click.
+ */
+let ghostPreview: PreviewDto | null = null;
+function useGhostFeed() {
+  const kind = usePlaceKind((s) => s.kind);
+  const chosen = useFurniturePrefs((s) => s.types[kind]);
+  const type = useSession((s) => (chosen ? s.nodes.get(chosen) : undefined));
+  const key = JSON.stringify(type ? specOf(type) : { kind });
+  useEffect(() => {
+    let live = true;
+    const timer = setTimeout(() => {
+      const spec = type ? specOf(type) : { kind };
+      void query<PreviewDto>('furniture.preview', { kind: String(spec.kind ?? kind), spec }).then((r) => {
+        if (live && r) { ghostPreview = r; useToolTick.setState((s) => ({ n: s.n + 1 })); }
+      }).catch(() => undefined);
+    }, 120);
+    return () => { live = false; clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind, key]);
+  useEffect(() => () => { ghostPreview = null; }, []);
+}
+function PlaceOptions() { useGhostFeed(); const Kind = forKind(optionsOf, usePlaceKind((s) => s.kind), kindOptions); return <><KindPicker /><Kind /></>; }
 function PlaceProperties() {
   const Kind = forKind(propertiesOf, usePlaceKind((s) => s.kind), kindProperties);
   return <><div className="pad new-element"><label className="field-line"><span className="eyebrow">Place</span><KindPicker /></label></div><Kind /></>;
@@ -146,7 +171,7 @@ function PlaceProperties() {
 /** One tool places every piece of furniture (S8, audit 2026-11-15): the kind is chosen in the bar, one piece at a click. */
 const place: ToolDef = {
   id: 'furniture.place', label: 'Place furniture', icon: Sofa,
-  gesture: { kind: 'point' },
+  gesture: { kind: 'point', ghost: (at) => (ghostPreview ? ghostLines(outlineOf(ghostPreview), at, useFurniturePrefs.getState().rotation) : []) },
   options: PlaceOptions,
   properties: PlaceProperties,
   complete: async ({ points: [p] }, ctx) => {

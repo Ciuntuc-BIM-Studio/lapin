@@ -13709,6 +13709,8 @@ export const EL: Record<string, string> = {
   "Its package is missing: install it again.": "Λείπει το πακέτο του: εγκαταστήστε το ξανά.",
   "Its folder holds another extension or version.": "Ο φάκελός του περιέχει άλλη επέκταση ή έκδοση.",
   "Extension modules are installed in the desktop app only.": "Οι μονάδες επέκτασης εγκαθίστανται μόνο στην εφαρμογή επιφάνειας εργασίας.",
+  "Reset to style": "Επαναφορά στο στυλ",
+  "The view follows its style's graphics set again; its own settings are dropped": "Η όψη ακολουθεί ξανά το σύνολο γραφικών του στυλ της· οι δικές της ρυθμίσεις απορρίπτονται",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

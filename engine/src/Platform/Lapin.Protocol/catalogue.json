@@ -937,6 +937,7 @@
     {"name":"view.objectStyle","module":"core","label":"Object styles","args":[{"name":"category","type":"str"},{"name":"role","type":"str"},{"name":"spec","type":"dict"},{"name":"levelMark","type":"dict"},{"name":"kind","type":"str"},{"name":"hiddenLines","type":"str"}]},
     {"name":"view.penTable","module":"core","label":"Pen table","args":[{"name":"reset","type":"bool"},{"name":"pen","type":"float"},{"name":"scale","type":"float"},{"name":"width","type":"float"}]},
     {"name":"view.removeGraphicsSet","module":"core","label":"Remove graphics set","args":[{"name":"setId","type":"str"}]},
+    {"name":"view.resetGraphicsToStyle","module":"core","label":"Reset graphics to style","args":[{"name":"id","type":"str"}]},
     {"name":"view.saveGraphicsSet","module":"core","label":"Save graphics set","args":[{"name":"id","type":"str"},{"name":"name","type":"str"}]},
     {"name":"view.setCamera","module":"core","label":"View camera","args":[{"name":"id","type":"str"},{"name":"camera"}]},
     {"name":"view.setCrop","module":"core","label":"Crop view","args":[{"name":"id","type":"str"},{"name":"on"},{"name":"min","type":"list"},{"name":"max","type":"list"},{"name":"offset"},{"name":"visible"},{"name":"annotation"}]},

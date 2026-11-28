@@ -7587,6 +7587,8 @@ export const ZH: Record<string, string> = {
   "Its package is missing: install it again.": "其软件包缺失：请重新安装。",
   "Its folder holds another extension or version.": "其文件夹包含另一个扩展或版本。",
   "Extension modules are installed in the desktop app only.": "扩展模块仅在桌面应用中安装。",
+  "Reset to style": "重置为样式",
+  "The view follows its style's graphics set again; its own settings are dropped": "视图重新使用其样式的图形集；其自身的设置被舍弃",
 };
 
 /** The nonlinear solve's and the buckling's messages, translated inside the notes that carry them (S5). */

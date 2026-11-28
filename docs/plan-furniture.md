@@ -115,3 +115,18 @@ Rămas din etapa 1, dacă e cerut: corpuri suprapuse ca elemente separate, colț
 ## Obiectele sanitare (forum topic #245)
 
 Grupa **Sanitary** (`Sanitary.cs`): `toilet` (TOILETPAN), `bidet` (BIDET), `washbasin` și `vanity` (WASHHANDBASIN), `shower` (SHOWER), `bath` (BATH), `kitchenSink` (SINK), scrise ca `IfcSanitaryTerminal` al unui `IfcSanitaryTerminalType` (elementul rămâne `IfcFurniture` cu `exportAs`: clasa e a modulului `mep`); `bathAccessory` rămâne `IfcFurniture` USERDEFINED după obiect (Towel rail, Grab bar, Mirror, Toilet roll holder). Înălțimea tipului e a marginii (capacul WC-ului, marginea lavoarului, a căzii, a chiuvetei; la duș para). Materiale noi pe roluri: ceramic, seat, fittings, screen, steel, mirror. Fiecare fel are `sizes`, dimensiunile uzuale, orientative (`sizesIndicative`). Porturile (`Sanitary.Ports`, în cadrul piesei; `PortsOf`, în proiect) au serviciile MEP (`coldWater`, `hotWater`, `drainage`) și ies în IFC ca `IfcDistributionPort` (`SanitaryNetwork`). Rămase: robinete separate, pisoar, cadă de colț, cabină cu două laturi, legarea la rețeaua MEP, spațiile de folosință, recunoașterea din IFC.
+
+## Plasare vizuală și grip-uri pe planșă (forum topic 299, 27.11.2026)
+
+Cererea (un utilizator): previzualizare fantomă la plasarea mobilierului, ciclarea punctului de inserție, grip-uri pe planșă pentru parametri, aceleași pentru piesele create de utilizator (inclusiv cele doar 2D) și totul și în 3D; modelele sunt blocurile dinamice din AutoCAD și componentele dinamice din SketchUp.
+
+**Ce exista (verificat în cod):** unealta `furniture.place` (`ui/src/modules/furniture/index.tsx`) era una cu un punct, **fără fantomă** (coloana, familiile și simbolurile au `ghost`); grip-urile unei piese erau doar **mutare** și **rotire** (`furnitureGrips`, `furniture.ts`), nu lățime/adâncime; parametrii se schimbă în fila Furniture a proprietăților; piesele Studio au parametri (`PartParams.tsx`), fără grip-uri pe planșă; pentru 3D, `Place3D.tsx` desenează fantoma doar pentru uneltele cu mai multe puncte.
+
+**Etape (în ordinea valorii):**
+1. **Fantoma în plan** la plasare (conturul piesei, rotit cum o va pune motorul, urmărește cursorul). *Făcută 27.11.2026* (`furniture/ghost.ts`). Nu reproduce lipirea de perete (`against`) a motorului.
+2. **Punctul de inserție**: Tab parcurge colțurile, mijloacele laturilor și centrul în timpul plasării; ghostul și clicul folosesc punctul ales. Motorul primește deplasarea (`furniture.place` are azi centrul).
+3. **Grip-uri de parametri pe planșă** pentru piesele proprii: o piesă declară ce parametri sunt „mânere” (lățime, adâncime, înălțime, cu săgeata lor la o margine); tragerea schimbă valoarea printr-un singur pas de undo. Pentru mobilierul din fabrică, lățimea și adâncimea ca grip-uri pe laturi (`furnitureGrips`). Conform principiului din CLAUDE.md, ce se poate configura desenând sau cu formule se configurează și așa: lista mânerelor e a piesei, nu a codului.
+4. **Piese doar 2D** (simboluri, contururi, adnotări): fantoma și grip-urile nu cer corp 3D; piesele de acest fel trec prin aceeași declarație de mânere.
+5. **3D**: fantoma la plasare și grip-uri pe corp în vederea 3D (`Place3D.tsx`, `gesture3d.ts`), după ce etapele 2–3 stau în plan.
+
+Etapele 2–5 nu sunt începute; 3 e cea mai mare (contractul modulelor pentru mânere, `module.ts`) și are nevoie de o decizie asupra formei declarației (după `docs/plan-user-extensibility.md`).

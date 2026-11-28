@@ -13707,6 +13707,8 @@ export const TH: Record<string, string> = {
   "Its package is missing: install it again.": "แพ็กเกจของมันหายไป: ติดตั้งใหม่อีกครั้ง.",
   "Its folder holds another extension or version.": "โฟลเดอร์ของมันมีส่วนขยายหรือรุ่นอื่น.",
   "Extension modules are installed in the desktop app only.": "โมดูลส่วนขยายติดตั้งได้ในแอปเดสก์ท็อปเท่านั้น.",
+  "Reset to style": "รีเซ็ตเป็นสไตล์",
+  "The view follows its style's graphics set again; its own settings are dropped": "มุมมองกลับไปใช้ชุดกราฟิกของสไตล์อีกครั้ง การตั้งค่าของมุมมองเองจะถูกยกเลิก",
 };
 
 /** Phrases with a number or a name in them. */

@@ -7591,6 +7591,8 @@ export const PL: Record<string, string> = {
   "Its package is missing: install it again.": "Brakuje jego pakietu: zainstaluj go ponownie.",
   "Its folder holds another extension or version.": "Jego folder zawiera inne rozszerzenie lub inną wersję.",
   "Extension modules are installed in the desktop app only.": "Moduły rozszerzeń instaluje się tylko w aplikacji desktopowej.",
+  "Reset to style": "Przywróć styl",
+  "The view follows its style's graphics set again; its own settings are dropped": "Widok znów korzysta z zestawu grafiki swojego stylu; jego własne ustawienia zostają odrzucone",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

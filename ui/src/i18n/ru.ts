@@ -13690,6 +13690,8 @@ export const RU: Record<string, string> = {
   "Its package is missing: install it again.": "Его пакет отсутствует: установите его заново.",
   "Its folder holds another extension or version.": "Его папка содержит другое расширение или другую версию.",
   "Extension modules are installed in the desktop app only.": "Модули расширений устанавливаются только в настольном приложении.",
+  "Reset to style": "Сбросить к стилю",
+  "The view follows its style's graphics set again; its own settings are dropped": "Вид снова следует набору графики своего стиля; его собственные настройки отбрасываются",
 };
 /** The Russian plural: one → n%10 = 1 and n%100 ≠ 11; few → n%10 in 2–4 and n%100 not in 12–14; many → the rest. */
 const form = (count: string, one: string, few: string, many: string) => {

@@ -680,6 +680,17 @@ public static class ViewStyles
                     attrs["viewStyle"] = All(ctx.Model).Any(s => s.Id == sid) ? sid : throw new CommandException("There is no such view style.");
                 else attrs.Remove("viewStyle");
             }
+            // A new style is a template (forum topic 255): its graphics set reaches the view. The view's own set gives way to
+            // it, and empty own graphics (only a marker against the old style's set) go; real overrides of its own stay.
+            var before = StyleOf(ctx.Model, v);
+            var after = StyleOf(ctx.Model, v.With(attrs: attrs));
+            if (after.Id != before.Id)
+            {
+                if (attrs["graphics"] is JsonObject { Count: 0 }) attrs.Remove("graphics");
+                if (after.GraphicsSet is { } styleSet && Spatial.Project(ctx.Model)?.Attrs["graphicsSets"] is JsonArray sets
+                    && sets.OfType<JsonObject>().Any(s => (string?)s["id"] == styleSet))
+                    attrs.Remove("graphicsSet");
+            }
             var own = attrs["styleOverrides"]?.DeepClone() as JsonObject ?? [];
             foreach (var f in Fields)
             {

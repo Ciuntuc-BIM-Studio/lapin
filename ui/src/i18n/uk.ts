@@ -13690,6 +13690,8 @@ export const UK: Record<string, string> = {
   "Its package is missing: install it again.": "Його пакета немає: встановіть його знову.",
   "Its folder holds another extension or version.": "Його тека містить інше розширення або іншу версію.",
   "Extension modules are installed in the desktop app only.": "Модулі розширень встановлюються лише в настільному застосунку.",
+  "Reset to style": "Скинути до стилю",
+  "The view follows its style's graphics set again; its own settings are dropped": "Вид знову слідує набору графіки свого стилю; його власні налаштування відкидаються",
 };
 /** The Ukrainian plural: 1 (not 11) → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

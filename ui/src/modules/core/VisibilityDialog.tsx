@@ -49,7 +49,7 @@ interface LinkInfo { id: string; name: string; kind: string; visible: boolean; h
 interface CloudInfo { id: string; name: string; visible: boolean; halftone: boolean; colorMode: string; color: boolean; intensity: boolean; classification: boolean; classes: number[]; splats?: boolean; display?: string | null }
 export interface CloudRow { hidden?: boolean; halftone?: boolean; colorMode?: string; hiddenClasses?: number[]; slice?: number; display?: string; splatColor?: string }
 export interface Visibility {
-  graphics?: Graphics | null; graphicsSet?: string | null; fromStyle?: boolean; style?: string;
+  graphics?: Graphics | null; graphicsSet?: string | null; fromStyle?: boolean; style?: string; styleSet?: string | null;
   /** Its level of development (decision 404): drawn at, its own (null: its style's), its style's. */ detail?: number; ownDetail?: number | null; styleDetail?: number;
   sets: { id: string; name: string }[]; categories: string[]; subcategories?: Record<string, string[]>;
   /** What a subcategory's row may give (decision 682). */ subcategoryFields?: string[];
@@ -305,6 +305,7 @@ export function VisibilityDialog() {
             <button type="button" className="btn" onClick={() => { const name = promptText('The new set\'s name'); if (name?.trim()) void execute('view.saveGraphicsSet', { id: target, name: name.trim() }); }}>Save as a set…</button>
             {v.graphicsSet && !v.fromStyle && <button type="button" className="btn" title="Its views keep its settings as their own" onClick={() => void execute('view.removeGraphicsSet', { setId: v.graphicsSet })}><Trash2 size={13} />Remove the set</button>}
             {v.fromStyle && <button type="button" className="btn" title="Graphics of this view's own, starting from the style's set" onClick={() => void execute('view.useGraphicsSet', { id: target, setId: null })}>Make them this view's own</button>}
+            {v.styleSet && !v.fromStyle && v.graphicsSet !== v.styleSet && <button type="button" className="btn" data-testid="vv-reset-style" title="The view follows its style's graphics set again; its own settings are dropped" onClick={() => void execute('view.resetGraphicsToStyle', { id: target })}>Reset to style</button>}
             {setName && <span className="muted small">Changes here change „{setName}” in every view that takes it.</span>}
             {(view || target === '3d') && (
               <label className="row" title={LOD_HELP}><span className="muted small">Level of development</span>

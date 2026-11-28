@@ -3554,7 +3554,7 @@ body.panel-dragging, body.panel-dragging * { cursor: grabbing !important; user-s
 .health-pill { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
 .health-pill.ok { color: var(--ok); }
 .health-pill.warn { color: var(--accent); }
-.health-popover { position: absolute; bottom: 26px; left: 0; z-index: 60; width: 290px; max-height: 280px; overflow-y: auto; padding: 10px 12px; border: 1px solid var(--rule-strong); border-radius: 5px; background: var(--panel); color: var(--ink); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16); display: flex; flex-direction: column; gap: 6px; }
+.health-popover { position: fixed; z-index: 60; width: 290px; max-height: 280px; overflow-y: auto; padding: 10px 12px; border: 1px solid var(--rule-strong); border-radius: 5px; background: var(--panel); color: var(--ink); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16); display: flex; flex-direction: column; gap: 6px; }
 .health-head { display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 12px; }
 .health-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .health-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border: 1px solid var(--rule); border-radius: 3px; background: var(--bg); }

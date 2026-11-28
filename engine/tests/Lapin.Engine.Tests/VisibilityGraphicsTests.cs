@@ -224,6 +224,157 @@ public class VisibilityGraphicsTests
         Assert.True(Cuts(f, other).ContainsKey(wall));
     }
 
+    /// <summary>Two sets, X and Y; the architectural style names X, the structural Y.</summary>
+    static (string X, string Y) TwoStyleSets(Fixture f)
+    {
+        var scratch = Plan(f);
+        G(f, new JsonObject { ["id"] = scratch, ["category"] = "walls", ["value"] = Hidden });
+        var x = (string)f.Run("view.saveGraphicsSet", new JsonObject { ["id"] = scratch, ["name"] = "X" })!["id"]!;
+        var y = (string)f.Run("view.saveGraphicsSet", new JsonObject { ["id"] = scratch, ["name"] = "Y" })!["id"]!;
+        f.Run("viewStyle.update", new JsonObject { ["id"] = "architectural", ["graphicsSet"] = x });
+        f.Run("viewStyle.update", new JsonObject { ["id"] = "structural", ["graphicsSet"] = y });
+        return (x, y);
+    }
+
+    static string? Effective(Fixture f, string view) => GraphicsSets.EffectiveSet(f.Model, f.Model.Get(view)!);
+
+    [Fact]
+    public void A_new_style_brings_its_set_over_the_view_s_own_set()
+    {
+        // Forum topic 255: a view that took a set follows its new style's.
+        var f = F();
+        var (x, y) = TwoStyleSets(f);
+        var plan = Plan(f);
+        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["style"] = "architectural" });
+        f.Run("view.useGraphicsSet", new JsonObject { ["id"] = plan, ["setId"] = x });
+        Assert.Equal(x, Effective(f, plan));
+        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["style"] = "structural" });
+        Assert.Equal(y, Effective(f, plan));
+        Assert.Null(f.Model.Get(plan)!.Str("graphicsSet"));
+        // One undo step brings the set back.
+        f.Session.Undo();
+        Assert.Equal(x, f.Model.Get(plan)!.Str("graphicsSet"));
+        Assert.Equal("architectural", f.Model.Get(plan)!.Str("viewStyle"));
+    }
+
+    [Fact]
+    public void A_new_style_brings_its_set_over_empty_own_graphics()
+    {
+        var f = F();
+        var (x, y) = TwoStyleSets(f);
+        var plan = Plan(f);
+        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["style"] = "architectural" });
+        // Its own graphics, starting from the set's (walls hidden), emptied again: empty graphics of its own, against the style's set.
+        f.Run("view.useGraphicsSet", new JsonObject { ["id"] = plan, ["setId"] = null });
+        G(f, new JsonObject { ["id"] = plan, ["category"] = "walls", ["value"] = null });
+        Assert.Null(Effective(f, plan));
+        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["style"] = "structural" });
+        Assert.Equal(y, Effective(f, plan));
+        Assert.Null(f.Model.Get(plan)!.Attrs["graphics"]);
+        // Back to its discipline's style (none named): the architectural's set.
+        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["style"] = null });
+        Assert.Equal(x, Effective(f, plan));
+    }
+
+    [Fact]
+    public void A_new_style_keeps_the_view_s_real_overrides()
+    {
+        var f = F();
+        TwoStyleSets(f);
+        var plan = Plan(f);
+        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["style"] = "architectural" });
+        f.Run("view.useGraphicsSet", new JsonObject { ["id"] = plan, ["setId"] = null });
+        G(f, new JsonObject { ["id"] = plan, ["category"] = "doors", ["value"] = Hidden });
+        var own = f.Model.Get(plan)!.Attrs["graphics"]!.ToJsonString();
+        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["style"] = "structural" });
+        Assert.Null(Effective(f, plan));
+        Assert.Equal(own, f.Model.Get(plan)!.Attrs["graphics"]!.ToJsonString());
+    }
+
+    [Fact]
+    public void The_same_style_again_changes_nothing()
+    {
+        var f = F();
+        var (x, _) = TwoStyleSets(f);
+        var plan = Plan(f);
+        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["style"] = "structural" });
+        f.Run("view.useGraphicsSet", new JsonObject { ["id"] = plan, ["setId"] = x });
+        var before = f.Model.Get(plan)!.Attrs.ToJsonString();
+        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["style"] = "structural" });
+        Assert.Equal(before, f.Model.Get(plan)!.Attrs.ToJsonString());
+        Assert.Equal(x, Effective(f, plan));
+    }
+
+    [Fact]
+    public void The_3d_view_s_new_style_brings_its_set()
+    {
+        var f = F();
+        var (x, y) = TwoStyleSets(f);
+        f.Run("view.setStyle", new JsonObject { ["id"] = GraphicsSets.View3d, ["style"] = "architectural" });
+        f.Run("view.useGraphicsSet", new JsonObject { ["id"] = GraphicsSets.View3d, ["setId"] = x });
+        Assert.Equal(x, GraphicsSets.EffectiveSet(f.Model, GraphicsSets.As3dView(f.Model)));
+        f.Run("view.setStyle", new JsonObject { ["id"] = GraphicsSets.View3d, ["style"] = "structural" });
+        Assert.Equal(y, GraphicsSets.EffectiveSet(f.Model, GraphicsSets.As3dView(f.Model)));
+    }
+
+    [Fact]
+    public void Reset_to_style_drops_the_view_s_set_and_own_graphics()
+    {
+        // Forum topic 255: the way back to the style's set.
+        var f = F();
+        var (x, y) = TwoStyleSets(f);
+        var plan = Plan(f);
+        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["style"] = "structural" });
+        f.Run("view.useGraphicsSet", new JsonObject { ["id"] = plan, ["setId"] = null });
+        G(f, new JsonObject { ["id"] = plan, ["category"] = "doors", ["value"] = Hidden });
+        Assert.Null(Effective(f, plan));
+        var vis = (JsonObject)f.Session.Query("view.visibility", new JsonObject { ["id"] = plan })!;
+        Assert.Equal(y, (string?)vis["styleSet"]);
+        f.Run("view.resetGraphicsToStyle", new JsonObject { ["id"] = plan });
+        Assert.Equal(y, Effective(f, plan));
+        Assert.Null(f.Model.Get(plan)!.Attrs["graphics"]);
+        Assert.Null(f.Model.Get(plan)!.Str("graphicsSet"));
+        Assert.True((bool)((JsonObject)f.Session.Query("view.visibility", new JsonObject { ["id"] = plan })!)["fromStyle"]!);
+        // One undo step brings its own graphics back.
+        f.Session.Undo();
+        Assert.Null(Effective(f, plan));
+        Assert.NotNull(f.Model.Get(plan)!.Attrs["graphics"]);
+        // A set taken: reset drops it too.
+        f.Run("view.useGraphicsSet", new JsonObject { ["id"] = plan, ["setId"] = x });
+        Assert.Equal(x, Effective(f, plan));
+        f.Run("view.resetGraphicsToStyle", new JsonObject { ["id"] = plan });
+        Assert.Equal(y, Effective(f, plan));
+        Assert.Null(f.Model.Get(plan)!.Str("graphicsSet"));
+        Assert.Null(f.Model.Get(plan)!.Attrs["graphics"]);
+    }
+
+    [Fact]
+    public void Reset_to_style_leaves_a_following_view_as_it_is()
+    {
+        var f = F();
+        var (_, y) = TwoStyleSets(f);
+        var plan = Plan(f);
+        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["style"] = "structural" });
+        var before = f.Model.Get(plan)!.Attrs.ToJsonString();
+        f.Run("view.resetGraphicsToStyle", new JsonObject { ["id"] = plan });
+        Assert.Equal(before, f.Model.Get(plan)!.Attrs.ToJsonString());
+        Assert.Equal(y, Effective(f, plan));
+    }
+
+    [Fact]
+    public void The_3d_view_resets_to_its_style_s_set()
+    {
+        var f = F();
+        var (x, y) = TwoStyleSets(f);
+        f.Run("view.setStyle", new JsonObject { ["id"] = GraphicsSets.View3d, ["style"] = "structural" });
+        f.Run("view.useGraphicsSet", new JsonObject { ["id"] = GraphicsSets.View3d, ["setId"] = x });
+        Assert.Equal(x, GraphicsSets.EffectiveSet(f.Model, GraphicsSets.As3dView(f.Model)));
+        f.Run("view.resetGraphicsToStyle", new JsonObject { ["id"] = GraphicsSets.View3d });
+        Assert.Equal(y, GraphicsSets.EffectiveSet(f.Model, GraphicsSets.As3dView(f.Model)));
+        f.Session.Undo();
+        Assert.Equal(x, GraphicsSets.EffectiveSet(f.Model, GraphicsSets.As3dView(f.Model)));
+    }
+
     [Fact]
     public void An_old_view_s_graphics_read_as_before()
     {

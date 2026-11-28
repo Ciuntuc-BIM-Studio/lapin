@@ -348,6 +348,19 @@ public static class GraphicsSets
             return null;
         });
 
+        // Reset to style (forum topic 255): the view drops its set and its own graphics, so it follows its style's set again;
+        // a view already following it is left as it is.
+        r.Command("view.resetGraphicsToStyle", "Reset graphics to style", (ctx, a) =>
+        {
+            var (v, write) = Target(ctx, (string?)a["id"]);
+            if (!v.Attrs.ContainsKey("graphicsSet") && !v.Attrs.ContainsKey("graphics")) return null;
+            var attrs = v.CloneAttrs();
+            attrs.Remove("graphicsSet");
+            attrs.Remove("graphics");
+            write(attrs);
+            return null;
+        });
+
         // A set removed: its views keep its settings as their own.
         r.Command("view.removeGraphicsSet", "Remove graphics set", (ctx, a) =>
         {
@@ -399,6 +412,8 @@ public static class GraphicsSets
                 // The set comes from the view's style (its template), not chosen on the view.
                 ["fromStyle"] = setId != null && v.Str("graphicsSet") != setId,
                 ["style"] = ViewStyles.StyleOf(q.Model, v).Name,
+                // The set its style names (null: none, or gone), for Reset to style.
+                ["styleSet"] = ViewStyles.StyleOf(q.Model, v).GraphicsSet is { } ss && FindSet(q.Model, ss) != null ? ss : null,
                 // Its level of development (decision 404): the one it draws at, the one it sets itself (null: its style's), its style's.
                 ["detail"] = ViewDetail.Of(q.Model, v), ["ownDetail"] = ViewDetail.Own(v, VisibilityGraphics.Of(q.Model, v)), ["styleDetail"] = ViewStyles.StyleOf(q.Model, v).Detail,
                 // The components' detail sets by name (forum #224), each shown here unless its row hides it.

@@ -7585,6 +7585,8 @@ export const DA: Record<string, string> = {
   "Its package is missing: install it again.": "Dets pakke mangler: installer det igen.",
   "Its folder holds another extension or version.": "Dets mappe rummer en anden udvidelse eller version.",
   "Extension modules are installed in the desktop app only.": "Udvidelsesmoduler installeres kun i desktop-appen.",
+  "Reset to style": "Nulstil til stil",
+  "The view follows its style's graphics set again; its own settings are dropped": "Visningen følger igen sin stils grafiksæt; dens egne indstillinger kasseres",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

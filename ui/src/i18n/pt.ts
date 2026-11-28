@@ -7588,6 +7588,8 @@ export const PT: Record<string, string> = {
   "Its package is missing: install it again.": "Falta o seu pacote: instale-o de novo.",
   "Its folder holds another extension or version.": "A sua pasta contém outra extensão ou versão.",
   "Extension modules are installed in the desktop app only.": "Os módulos de extensão só se instalam na aplicação de desktop.",
+  "Reset to style": "Repor o estilo",
+  "The view follows its style's graphics set again; its own settings are dropped": "A vista volta a seguir o conjunto de gráficos do seu estilo; as suas definições próprias são descartadas",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

@@ -39,7 +39,7 @@ One resolver in the platform, `VisibilityGraphics` (`Lapin.Platform/VisibilityGr
 ```
 
 - **The dialog** keeps its head (the view's own graphics or a set, Save as a set, hidden lines) and gets Revit's tabs: *Model categories*, *Annotation categories*, *Imported categories*, *Filters*, *Links*, and *IFC classes* (Lapin's own: what IFC calls the thing). Each tab is a table; the model categories unfold into their subcategories.
-- **Templates**: a view style names a graphics set (`graphicsSet` on the style). A view without graphics of its own and without a set takes its style's set; so a Structural style can carry "no finishes, no furniture, rebar shown" and every structural view follows. The set stays editable in the dialog as now.
+- **Templates**: a view style names a graphics set (`graphicsSet` on the style). A view without graphics of its own and without a set takes its style's set; so a Structural style can carry "no finishes, no furniture, rebar shown" and every structural view follows. The set stays editable in the dialog as now. A style change brings the new style's set (forum topic 255, decision 922): `view.setStyle` drops the view's own set and an empty `graphics` marker when the effective style changes and the new style names a set; the view's real overrides (non-empty `graphics`) are kept, and the same style again changes nothing. **Reset to style** in the dialog (`view.resetGraphicsToStyle` {id}, {3D} too) is the way back: it drops the view's own set and its `graphics`, so the view follows its style's set again; a view already following it is left as it is.
 
 ### Model categories and subcategories
 

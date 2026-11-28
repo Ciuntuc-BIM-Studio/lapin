@@ -7552,6 +7552,8 @@ export const FR: Record<string, string> = {
   "Its package is missing: install it again.": "Son paquet manque : installez-le à nouveau.",
   "Its folder holds another extension or version.": "Son dossier contient une autre extension ou version.",
   "Extension modules are installed in the desktop app only.": "Les modules d'extension s’installent seulement dans l’application de bureau.",
+  "Reset to style": "Revenir au style",
+  "The view follows its style's graphics set again; its own settings are dropped": "La vue suit de nouveau le jeu graphique de son style ; ses propres réglages sont abandonnés",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

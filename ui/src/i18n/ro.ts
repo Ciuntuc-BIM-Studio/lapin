@@ -7544,6 +7544,8 @@ export const RO: Record<string, string> = {
   "Its package is missing: install it again.": "Îi lipsește pachetul: instalează-l din nou.",
   "Its folder holds another extension or version.": "Folderul lui conține altă extensie sau altă versiune.",
   "Extension modules are installed in the desktop app only.": "Modulele de extensie se instalează doar în aplicația desktop.",
+  "Reset to style": "Revino la stil",
+  "The view follows its style's graphics set again; its own settings are dropped": "Vederea urmează din nou setul de grafică al stilului ei; se renunță la setările ei proprii",
 };
 
 /** Phrases with a number or a name in them. */
