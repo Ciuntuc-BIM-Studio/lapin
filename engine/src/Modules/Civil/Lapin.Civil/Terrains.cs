@@ -75,7 +75,7 @@ public static class Terrains
     /// <summary>The first terrain whose ground reaches a point in plan, or null.</summary>
     public static Entity? Under(IModelView m, Vec2 p) => All(m).FirstOrDefault(t => Of(t).ElevationAt(p.X, p.Y) != null);
 
-    static readonly ConditionalWeakTable<Entity, Terrain> Cache = new();
+    static readonly ConditionalWeakTable<Entity, Keyed> Cache = new();
 
     /// <summary>
     /// A survey brought into a project whose altitude is still 0 (decision 867, the user's answer 5): the terrain's datum, the
@@ -97,43 +97,60 @@ public static class Terrains
     }
 
     /// <summary>The terrain in model heights (z − datum).</summary>
-    public static Terrain Of(Entity e) => Cache.GetValue(e, x => Built(x, sculpted: true));
+    public static Terrain Of(Entity e) => Keep(Cache.GetValue(e, x => Built(x, sculpted: true))).Terrain;
 
-    static readonly ConditionalWeakTable<Entity, Terrain> ExistingCache = new();
+    static readonly ConditionalWeakTable<Entity, Keyed> ExistingCache = new();
 
     /// <summary>The ground as surveyed (or snapshotted in <c>existingPoints</c>), before the brush (what cut and fill are measured against).</summary>
-    public static Terrain Existing(Entity e) => ExistingCache.GetValue(e, x => Built(x, sculpted: false));
+    public static Terrain Existing(Entity e) => Keep(ExistingCache.GetValue(e, x => Built(x, sculpted: false))).Terrain;
 
-    static readonly ConditionalWeakTable<Entity, Terrain> BaseCache = new();
+    static readonly ConditionalWeakTable<Entity, Keyed> BaseCache = new();
 
     /// <summary>
     /// The ground as worked, without its feature lines (T2): what a draped feature line, and a corner without a height of its own,
     /// read their heights from. The same as <see cref="Of"/> for a terrain with none.
     /// </summary>
-    public static Terrain Base(Entity e) => e.Attrs[FeatureLines.Derived] == null ? Of(e) : BaseCache.GetValue(e, x => Built(x, sculpted: true, features: false));
+    public static Terrain Base(Entity e) => e.Attrs[FeatureLines.Derived] == null ? Of(e) : Keep(BaseCache.GetValue(e, x => Built(x, sculpted: true, features: false))).Terrain;
 
     /// <summary>The attributes a terrain's surface is made of; the others (spot levels, tags, subregions, the parcel, labels) leave it as it is.</summary>
     static readonly string[] SurfaceKeys = ["points", "faces", "breaklines", "sculpts", "datum", BoundaryKey, BoundaryArcs, FeatureLines.Derived];
     static readonly string[] ExistingKeys = ["points", "faces", "existingPoints", "existingFaces", "breaklines", "datum", BoundaryKey, BoundaryArcs];
 
-    /// <summary>The surfaces built lately, by what they are made of: a terrain changed only in what it shows keeps its surface.</summary>
-    static readonly Dictionary<string, Terrain> ByContent = [];
+    sealed record Keyed(string Key, Terrain Terrain);
 
-    static Terrain Built(Entity x, bool sculpted, bool features = true)
+    /// <summary>The surfaces used lately, by what they are made of: a terrain changed only in what it shows keeps its surface, and the one used longest ago goes first when there are too many (emptying the cache would rebuild the surface in the views).</summary>
+    static readonly Dictionary<string, LinkedListNode<Keyed>> ByContent = [];
+    static readonly LinkedList<Keyed> ByUse = new();
+
+    static Keyed Built(Entity x, bool sculpted, bool features = true)
     {
         using var hash = System.Security.Cryptography.IncrementalHash.CreateHash(System.Security.Cryptography.HashAlgorithmName.SHA256);
         foreach (var k in sculpted ? SurfaceKeys : ExistingKeys)
             if (features || k != FeatureLines.Derived)
                 hash.AppendData(System.Text.Encoding.UTF8.GetBytes($"{k}={x.Attrs[k]?.ToJsonString()}\n"));
         var key = (sculpted ? features ? "s" : "b" : "e") + Convert.ToHexString(hash.GetHashAndReset());
-        lock (ByContent) if (ByContent.TryGetValue(key, out var known)) return known;
-        var t = BuildTerrain(x, sculpted, features);
+        lock (ByContent) if (ByContent.TryGetValue(key, out var known)) return known.Value;
+        return new Keyed(key, BuildTerrain(x, sculpted, features));
+    }
+
+    /// <summary>Marks a surface as the one used last, keeping it when none is kept under its key; the one kept.</summary>
+    static Keyed Keep(Keyed surface)
+    {
         lock (ByContent)
         {
-            if (ByContent.Count >= 32) ByContent.Clear();
-            ByContent[key] = t;
+            if (ByContent.TryGetValue(surface.Key, out var node)) ByUse.Remove(node);
+            else
+            {
+                if (ByContent.Count >= 32)
+                {
+                    ByContent.Remove(ByUse.First!.Value.Key);
+                    ByUse.RemoveFirst();
+                }
+                ByContent[surface.Key] = node = new(surface);
+            }
+            ByUse.AddLast(node);
+            return node.Value;
         }
-        return t;
     }
 
     /// <summary>The faces a terrain keeps from its file (LandXML): triples of indices into <paramref name="count"/> points; null when there are none or one is out of range.</summary>
